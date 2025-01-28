@@ -20,7 +20,7 @@ iniconfig==2.0.0
     # via pytest
 joblib==1.4.2
     # via scikit-learn
-narwhals==1.17.0
+narwhals==1.21.1
     # via tubular (pyproject.toml)
 nodeenv==1.9.1
     # via pre-commit

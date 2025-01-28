@@ -1,5 +1,6 @@
-import numpy as np
-import pandas as pd
+import re
+
+import narwhals as nw
 import pytest
 import test_aide as ta
 from test_BaseNominalTransformer import GenericNominalTransformTests
@@ -12,6 +13,7 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.nominal import GroupRareLevelsTransformer
 
 
@@ -70,25 +72,36 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
-    def test_learnt_values_no_weight(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_no_weight(self, library):
         """Test that the impute values learnt during fit, without using a weight, are expected."""
-        df = d.create_df_5()
+        df = d.create_df_5(library=library)
+
+        # first handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(
+            nw.col("b").fill_null("a"),
+            nw.col("c").fill_null("c"),
+        ).to_native()
 
         x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
 
         x.fit(df)
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "non_rare_levels": {"b": [None, "a"], "c": ["a", "c", "e"]},
-            },
-            msg="non_rare_levels attribute",
-        )
+        expected = {"b": ["a"], "c": ["a", "c", "e"]}
+        actual = x.non_rare_levels
+        assert (
+            actual == expected
+        ), f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
 
-    def test_learnt_values_weight(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_weight(self, library):
         """Test that the impute values learnt during fit, using a weight, are expected."""
-        df = d.create_df_6()
+        df = d.create_df_6(library=library)
+
+        # first handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("b").fill_null("a")).to_native()
 
         x = GroupRareLevelsTransformer(
             columns=["b"],
@@ -98,15 +111,20 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
 
         x.fit(df)
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={"non_rare_levels": {"b": ["a", np.nan]}},
-            msg="non_rare_levels attribute",
-        )
+        expected = {"b": ["a"]}
+        actual = x.non_rare_levels
+        assert (
+            actual == expected
+        ), f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
 
-    def test_learnt_values_weight_2(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_weight_2(self, library):
         """Test that the impute values learnt during fit, using a weight, are expected."""
-        df = d.create_df_6()
+        df = d.create_df_6(library=library)
+
+        # handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").fill_null("f")).to_native()
 
         x = GroupRareLevelsTransformer(
             columns=["c"],
@@ -116,35 +134,31 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
 
         x.fit(df)
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={"non_rare_levels": {"c": ["f", "g"]}},
-            msg="non_rare_levels attribute",
-        )
+        expected = {"c": ["f", "g"]}
+        actual = x.non_rare_levels
+        assert (
+            actual == expected
+        ), f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
 
-    def test_rare_level_name_not_diff_col_type(self):
-        """Test that an exception is raised if rare_level_name is of a different type with respect columns."""
-        df = d.create_df_10()
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("col", ["a", "c"])
+    def test_column_strlike_error(self, col, library):
+        """Test that checks error is raised if transform is run on non-strlike columns."""
+        df = d.create_df_10(library=library)
 
+        x = GroupRareLevelsTransformer(columns=[col], rare_level_name="bla")
+
+        msg = "GroupRareLevelsTransformer: transformer must run on str-like columns"
         with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: rare_level_name must be of the same type of the columns",
+            TypeError,
+            match=msg,
         ):
-            x = GroupRareLevelsTransformer(columns=["a", "b"], rare_level_name=2)
-
             x.fit(df)
 
-        with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: rare_level_name must be of the same type of the columns",
-        ):
-            x = GroupRareLevelsTransformer(columns=["c"])
-
-            x.fit(df)
-
-    def test_training_data_levels_stored(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_training_data_levels_stored(self, library):
         """Test that the levels present in the training data are stored if unseen_levels_to_rare is false"""
-        df = d.create_df_8()
+        df = d.create_df_8(library=library)
 
         expected_training_data_levels = {
             "b": set(df["b"]),
@@ -167,48 +181,50 @@ class TestTransform(GenericNominalTransformTests):
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self, library="pandas"):
         """Expected output for test_expected_output_no_weight."""
-        df = pd.DataFrame({"a": [1, 2, 3, 4, 5, 6, 7, 8, 9, np.nan]})
 
-        df["b"] = pd.Series(
-            ["a", "a", "a", "rare", "rare", "rare", "rare", np.nan, np.nan, np.nan],
-        )
+        df_dict = {
+            "a": [1, 2, 3, 4, 5, 6, 7, 8, 9, None],
+            "b": ["a", "a", "a", "rare", "rare", "rare", "rare", "a", "a", "a"],
+            "c": ["a", "a", "c", "c", "e", "e", "rare", "rare", "rare", "e"],
+        }
 
-        df["c"] = pd.Series(
-            ["a", "a", "c", "c", "e", "e", "rare", "rare", "rare", "rare"],
-            dtype=pd.CategoricalDtype(
-                categories=["a", "c", "e", "rare"],
-                ordered=False,
-            ),
-        )
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        return df
+        df = nw.from_native(df)
 
-    def expected_df_2():
+        return df.with_columns(nw.col("c").cast(nw.Categorical)).to_native()
+
+    def expected_df_2(self, library="pandas"):
         """Expected output for test_expected_output_weight."""
-        df = pd.DataFrame(
-            {
-                "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
-                "b": ["a", "a", "a", "d", "e", "f", "g", np.nan, np.nan, np.nan],
-                "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", np.nan],
-            },
-        )
 
-        df["c"] = df["c"].astype("category")
+        df_dict = {
+            "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
+            "b": ["a", "a", "a", "rare", "rare", "rare", "rare", "a", "a", "a"],
+            "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", None],
+        }
 
-        df["b"] = pd.Series(
-            ["a", "a", "a", "rare", "rare", "rare", "rare", np.nan, np.nan, np.nan],
-        )
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        return df
+        df = nw.from_native(df)
+
+        return df.with_columns(nw.col("c").cast(nw.Categorical)).to_native()
 
     def test_non_mappable_rows_exception_raised(self):
         """override test in GenericNominalTransformTests as not relevant to this transformer."""
 
-    def test_learnt_values_not_modified(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_not_modified(self, library):
         """Test that the non_rare_levels from fit are not changed in transform."""
-        df = d.create_df_5()
+        df = d.create_df_5(library=library)
+
+        # handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(
+            nw.col("b").fill_null("a"),
+            nw.col("c").fill_null("c"),
+        ).to_native()
 
         x = GroupRareLevelsTransformer(columns=["b", "c"])
 
@@ -220,114 +236,92 @@ class TestTransform(GenericNominalTransformTests):
 
         x2.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=x.non_rare_levels,
-            actual=x2.non_rare_levels,
-            msg="Non rare levels not changed in transform",
-        )
+        actual = x2.non_rare_levels
+        expected = x.non_rare_levels
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_5(), expected_df_1()),
-    )
-    def test_expected_output_no_weight(self, df, expected):
+        assert (
+            actual == expected
+        ), f"non_rare_levels attr modified in transform, expected {expected} but got {actual}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_no_weight(self, library):
         """Test that the output is expected from transform."""
+
+        df = d.create_df_5(library=library)
+
+        # first handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(
+            nw.col("b").fill_null("a"),
+            nw.col("c").fill_null("e"),
+        ).to_native()
+
+        expected = self.expected_df_1(library=library)
+
         x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
-        x.non_rare_levels = {"b": ["a", None], "c": ["e", "c", "a"]}
+        x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in GroupRareLevelsTransformer.transform",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    def test_expected_output_no_weight_single_row_na(self):
-        """Test output from a single row transform with np.NaN value remains the same,
-        the type is perserved if using existing dataframe, so need to create a new dataframe.
-        """
-        one_row_df = pd.DataFrame({"b": [np.nan], "c": [np.nan]})
-        x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
-
-        # set the mappging dict directly rather than fitting x on df so test works with decorators
-        x.non_rare_levels = {"b": ["a", np.nan], "c": ["e", "c", "a", np.nan]}
-
-        one_row_df_transformed = x.transform(one_row_df)
-
-        ta.equality.assert_frame_equal_msg(
-            actual=one_row_df_transformed,
-            expected=one_row_df,
-            msg_tag="Unexpected values in GroupRareLevelsTransformer.transform",
-        )
-
-    def test_expected_output_no_weight_single_row_na_category_column(self):
-        """Test output from a single row transform with np.NaN value remains the same, when column is type category,
-        the type is perserved if using existing dataframe, so need to create a new dataframe.
-        """
-        one_row_df = pd.DataFrame({"b": [np.nan], "c": [np.nan]})
-        one_row_df["c"] = one_row_df["c"].astype("category")
-
-        x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
-
-        # set the mappging dict directly rather than fitting x on df so test works with decorators
-        x.non_rare_levels = {"b": ["a", np.nan], "c": ["e", "c", "a", np.nan]}
-
-        one_row_df_transformed = x.transform(one_row_df)
-
-        expected_df = one_row_df.copy()
-        expected_df["c"] = expected_df["c"].cat.add_categories(x.rare_level_name)
-
-        ta.equality.assert_frame_equal_msg(
-            actual=one_row_df_transformed,
-            expected=expected_df,
-            msg_tag="Unexpected values in GroupRareLevelsTransformer.transform",
-        )
-
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_6(), expected_df_2()),
-    )
-    def test_expected_output_weight(self, df, expected):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_weight(self, library):
         """Test that the output is expected from transform, when weights are used."""
+
+        df = d.create_df_6(library=library)
+
+        # handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("b").fill_null("a")).to_native()
+
+        expected = self.expected_df_2(library=library)
+
         x = GroupRareLevelsTransformer(
             columns=["b"],
             cut_off_percent=0.3,
             weights_column="a",
         )
 
-        # set the mappging dict directly rather than fitting x on df so test works with decorators
-        x.non_rare_levels = {"b": ["a", None]}
+        # set the mapping dict directly rather than fitting x on df so test works with decorators
+        x.non_rare_levels = {"b": ["a"]}
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in GroupRareLevelsTransformer.transform (with weights)",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(("label", "col"), [(2.0, "a"), ("zzzz", "b"), (100, "c")])
-    def test_rare_level_name_same_col_type(self, label, col):
-        """Test that checks if output columns are of the same type with respect to the input label."""
-        df = d.create_df_10()
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_column_strlike_error(self, library):
+        """Test that checks error is raised if transform is run on non-strlike columns."""
+        df = d.create_df_10(library=library)
 
-        x = GroupRareLevelsTransformer(columns=[col], rare_level_name=label)
+        # handle nulls
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("b").fill_null("a")).to_native()
+
+        x = GroupRareLevelsTransformer(columns=["b"], rare_level_name="bla")
 
         x.fit(df)
 
-        df_2 = x.transform(df)
+        # overwrite columns to non str-like before transform, to trigger error
+        x.columns = ["a"]
 
-        assert (
-            pd.Series(label).dtype == df_2[col].dtypes
-        ), "column type should be the same as label type"
+        msg = re.escape(
+            "GroupRareLevelsTransformer: transformer must run on str-like columns, but got non-strlike {'a'}",
+        )
+        with pytest.raises(
+            TypeError,
+            match=msg,
+        ):
+            x.transform(df)
 
-    def test_expected_output_unseen_levels_not_encoded(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_unseen_levels_not_encoded(self, library):
         """Test that unseen levels are not encoded when unseen_levels_to_rare is false"""
 
-        df = d.create_df_8()
+        df = d.create_df_8(library=library)
 
         expected = ["w", "w", "rare", "rare", "unseen_level"]
 
@@ -338,20 +332,30 @@ class TestTransform(GenericNominalTransformTests):
         )
         x.fit(df)
 
-        df["b"] = ["w", "w", "z", "y", "unseen_level"]
+        df = nw.from_native(df)
+        native_namespace = nw.get_native_namespace(df)
+
+        df = df.with_columns(
+            nw.new_series(
+                name="b",
+                values=["w", "w", "z", "y", "unseen_level"],
+                native_namespace=native_namespace,
+            ),
+        ).to_native()
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=list(df_transformed["b"]),
-            msg="Unseen levels are not left unchanged when unseen_levels_to_rare is set to false",
-        )
+        actual = list(df_transformed["b"])
 
-    def test_rare_categories_forgotten(self):
+        assert (
+            actual == expected
+        ), f"unseen level handling not working as expected, expected {expected} but got {actual}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_rare_categories_forgotten(self, library):
         "test that for category dtype, categories encoded as rare are forgotten by series"
 
-        df = d.create_df_8()
+        df = d.create_df_8(library=library)
 
         column = "c"
 
@@ -366,7 +370,7 @@ class TestTransform(GenericNominalTransformTests):
 
         output_df = x.transform(df)
 
-        output_categories = output_df[column].dtype.categories
+        output_categories = nw.from_native(output_df)[column].cat.get_categories()
 
         for cat in expected_removed_cats:
             assert (
