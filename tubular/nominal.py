@@ -108,10 +108,6 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         Created in fit. A dict of key (column names) value (mappings between levels and integers for given
         column) pairs.
 
-    inverse_mapping_ : dict
-        Created in inverse_transform. Inverse mapping of mappings. Maps integer value back to categorical
-        levels.
-
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
@@ -128,6 +124,11 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         **kwargs: dict[str, bool],
     ) -> None:
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
+
+        # this transformer shouldn't really be used with huge numbers of levels
+        # so setup to use int8 type
+        # if there are more levels than this, will get a type error
+        self.return_dtypes = {c: "Int8" for c in self.columns}
 
         if not isinstance(start_encoding, int):
             msg = f"{self.classname()}: start_encoding should be an integer"
@@ -158,6 +159,13 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
                 k: i for i, k in enumerate(col_values, self.start_encoding)
             }
 
+            # if more levels than int8 type can handle, then error
+            if len(self.mappings[c]) > 127:
+                msg = f"{self.classname()}: column {c} has too many levels to encode"
+                raise ValueError(
+                    msg,
+                )
+
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -183,44 +191,6 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         X = super().transform(X)
 
         return BaseMappingTransformMixin.transform(self, X)
-
-    def inverse_transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Converts integer values back to categorical / nominal values. Does the inverse of the transform method.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to with integer columns to convert back to catgeorical.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed input X with integers mapped back to categorical levels.
-
-        """
-        X = BaseTransformer.transform(self, X)
-
-        self.check_is_fitted(["mappings"])
-
-        self.inverse_mapping_ = {}
-
-        for c in self.columns:
-            # calculate the reverse mapping
-            self.inverse_mapping_[c] = {v: k for k, v in self.mappings[c].items()}
-
-            mappable_rows = (
-                X[c].isin([k for k, v in self.inverse_mapping_[c].items()]).sum()
-            )
-
-            X[c] = X[c].replace(self.inverse_mapping_[c])
-
-            if (X.shape[0] - mappable_rows) > 0:
-                raise ValueError(
-                    f"{self.classname()}: nulls introduced from levels not present in mapping for column: "
-                    + c,
-                )
-
-        return X
 
 
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
@@ -976,6 +946,11 @@ class OrdinalEncoderTransformer(
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 
+        # this transformer shouldn't really be used with huge numbers of levels
+        # so setup to use int8 type
+        # if there are more levels than this, will get a type error
+        self.return_dtypes = {c: "Int8" for c in self.columns}
+
     def fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
 
@@ -1047,6 +1022,14 @@ class OrdinalEncoderTransformer(
                 }
 
                 self.mappings[c] = ordinal_encoded_dict
+
+        for col in self.columns:
+            # if more levels than int8 type can handle, then error
+            if len(self.mappings[col]) > 127:
+                msg = f"{self.classname()}: column {c} has too many levels to encode"
+                raise ValueError(
+                    msg,
+                )
 
         return self
 

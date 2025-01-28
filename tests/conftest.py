@@ -127,6 +127,9 @@ def minimal_attribute_dict():
         },
         "BaseMappingTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
+            # this arg is dependent on inputs, so
+            # may not generalise well
+            "return_dtypes": {"a": "Int8"},
         },
         "BaseMappingTransformMixin": {
             "columns": ["a"],
@@ -208,6 +211,9 @@ def minimal_attribute_dict():
         },
         "MappingTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
+            # this arg is dependent on inputs, so
+            # may not generalise well
+            "return_dtypes": {"a": "Int8"},
         },
         "MeanImputer": {
             "columns": ["b"],

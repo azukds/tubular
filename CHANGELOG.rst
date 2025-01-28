@@ -37,6 +37,13 @@ Changed
 - narwhalified BaseNumericTransformer `#358 https://github.com/lvgig/tubular/issues/358`
 - narwhalified DropOriginalMixin `#352 <https://github.com/lvgig/tubular/issues/352>_`
 - narwhalified BaseMappingTransformer `#367 <https://github.com/lvgig/tubular/issues/367>_`
+- narwhalified BaseMappingTransformerMixin. As part of this made mapping transformers more 
+type-conscious, they now rely on an input 'return_dtypes' dict arg.
+`#369 <https://github.com/lvgig/tubular/issues/369>_`
+- As part of #369, updated OrdinalEncoderTransformer to output Int8 type
+- As part of #369, updated NominalToIntegerTransformer to output Int8 type. Removed inverse_mapping
+functionality, as this is more complicated when transform is opinionated on types.
+- placeholder
 - placeholder
 - placeholder
 - placeholder

@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import test_aide as ta
@@ -11,6 +12,7 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.nominal import OrdinalEncoderTransformer
 
 
@@ -105,6 +107,23 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         ):
             x.fit(df, df["a"])
 
+    def test_error_for_too_many_levels(self):
+        "test that transformer.transform errors for column with too many levels"
+        transformer = OrdinalEncoderTransformer(columns=["a"])
+
+        df = pd.DataFrame(
+            {
+                "a": list(range(1000)),
+                "b": list(range(1000)),
+            },
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="OrdinalEncoderTransformer: column a has too many levels to encode",
+        ):
+            transformer.fit(df, df["b"])
+
 
 class TestTransform(GenericTransformTests):
     """Tests for OrdinalEncoderTransformer.transform()."""
@@ -127,6 +146,8 @@ class TestTransform(GenericTransformTests):
         )
 
         df["c"] = df["c"].astype("category")
+        for col in ["b", "d", "f"]:
+            df[col] = df[col].astype(np.int8)
 
         return df
 
@@ -170,11 +191,7 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in OrdinalEncoderTransformer.transform",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

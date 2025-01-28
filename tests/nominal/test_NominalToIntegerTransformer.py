@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import test_aide as ta
@@ -7,7 +8,6 @@ import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
     GenericFitTests,
-    GenericTransformTests,
     OtherBaseBehaviourTests,
 )
 from tubular.nominal import NominalToIntegerTransformer
@@ -52,6 +52,23 @@ class TestFit(GenericFitTests):
             msg="mappings attribute",
         )
 
+    def test_error_for_too_many_levels(self):
+        "test that transformer.transform errors for column with too many levels"
+        transformer = NominalToIntegerTransformer(columns=["a"])
+
+        df = pd.DataFrame(
+            {
+                "a": list(range(1000)),
+                "b": list(range(1000)),
+            },
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="NominalToIntegerTransformer: column a has too many levels to encode",
+        ):
+            transformer.fit(df, df["b"])
+
 
 class TestTransform(GenericNominalTransformTests):
     """Tests for NominalToIntegerTransformer.transform()."""
@@ -66,9 +83,17 @@ class TestTransform(GenericNominalTransformTests):
             {"a": [1, 2, 3, 4, 5, 6], "b": ["a", "b", "c", "d", "e", "f"]},
         )
 
-        df["a"] = df["a"].replace({k: i for i, k in enumerate(df["a"].unique())})
+        df["a"] = (
+            df["a"]
+            .replace({k: i for i, k in enumerate(df["a"].unique())})
+            .astype(np.int8)
+        )
 
-        df["b"] = df["b"].replace({k: i for i, k in enumerate(df["b"].unique())})
+        df["b"] = (
+            df["b"]
+            .replace({k: i for i, k in enumerate(df["b"].unique())})
+            .astype(np.int8)
+        )
 
         return df
 
@@ -110,78 +135,6 @@ class TestTransform(GenericNominalTransformTests):
             actual=df_transformed,
             expected=expected,
             msg_tag="Unexpected values in NominalToIntegerTransformer.transform",
-        )
-
-
-class TestInverseTransform(GenericNominalTransformTests, GenericTransformTests):
-    """Tests for NominalToIntegerTransformer.inverse_transform()."""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "NominalToIntegerTransformer"
-
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), d.create_df_1()),
-    )
-    def test_expected_output(self, df, expected):
-        """Test that transform then inverse_transform gets back to the original df."""
-        x = NominalToIntegerTransformer(columns=["a", "b"])
-
-        # set the mapping dict directly rather than fitting x on df so test works with helpers
-        x.mappings = {
-            "a": {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5},
-            "b": {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5},
-        }
-
-        df_transformed = x.transform(df)
-
-        df_transformed_back = x.inverse_transform(df_transformed)
-
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed_back,
-            expected=expected,
-            msg_tag="transform reverse does not get back to original",
-        )
-
-    def test_non_mappable_rows_raises_error(self):
-        """Test that rows that cannot be mapped result in an exception."""
-        x = NominalToIntegerTransformer(columns=["a", "b"])
-
-        df = d.create_df_1()
-
-        x.fit(df)
-
-        df_transformed = x.transform(df)
-
-        df_transformed["b"] = df_transformed["b"] + 1
-
-        with pytest.raises(
-            ValueError,
-            match="NominalToIntegerTransformer: nulls introduced from levels not present in mapping for column: b",
-        ):
-            x.inverse_transform(df_transformed)
-
-    def test_learnt_values_not_modified(self):
-        """Test that the mappings from fit are not changed in inverse_transform."""
-        df = d.create_df_1()
-
-        x = NominalToIntegerTransformer(columns=["a", "b"])
-
-        x.fit(df)
-
-        x2 = NominalToIntegerTransformer(columns=["a", "b"])
-
-        x2.fit(df)
-
-        df_transformed = x2.transform(df)
-
-        x2.inverse_transform(df_transformed)
-
-        ta.equality.assert_equal_dispatch(
-            expected=x.mappings,
-            actual=x2.mappings,
-            msg="Impute values not changed in inverse_transform",
         )
 
 

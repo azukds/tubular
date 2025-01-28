@@ -2,8 +2,8 @@ import copy
 import re
 
 import pandas as pd
+import polars as pl
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -12,7 +12,7 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.mapping import BaseMappingTransformMixin
 
 # Note there are no tests that need inheriting from this file as the only difference is an expected transform output
@@ -21,8 +21,8 @@ from tubular.mapping import BaseMappingTransformMixin
 @pytest.fixture()
 def mapping():
     return {
-        "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},
-        "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
+        "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h", 9: None},
+        "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, None: 9},
     }
 
 
@@ -51,61 +51,82 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseMappingTransformMixin"
 
-    def test_expected_output(self, mapping):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output(self, mapping, library):
         """Test that X is returned from transform."""
 
-        df = d.create_df_1()
+        df = d.create_df_1(library=library)
 
-        expected = pd.DataFrame(
-            {
-                "a": ["a", "b", "c", "d", "e", "f"],
-                "b": [1, 2, 3, 4, 5, 6],
-            },
+        expected_dict = {
+            "a": ["a", "b", "c", "d", "e", "f"],
+            "b": [1, 2, 3, 4, 5, 6],
+        }
+
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_dict,
+            library=library,
         )
 
-        x = BaseMappingTransformMixin(columns=["a", "b"])
+        transformer = BaseMappingTransformMixin(columns=["a", "b"])
 
-        x.mappings = mapping
+        # if transformer is not yet polars compatible, skip this test
+        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            return
 
-        df_transformed = x.transform(df)
+        transformer.mappings = mapping
+        transformer.return_dtypes = {"a": "String", "b": "Int64"}
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="BaseMappingTransformMixin from transform",
-        )
+        df_transformed = transformer.transform(df)
 
-    def test_mappings_unchanged(self, mapping):
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_mappings_unchanged(self, mapping, library):
         """Test that mappings is unchanged in transform."""
-        df = d.create_df_1()
+        df = d.create_df_1(library=library)
 
-        x = BaseMappingTransformMixin(columns=["a", "b"])
+        transformer = BaseMappingTransformMixin(columns=["a", "b"])
 
-        x.mappings = mapping
+        # if transformer is not yet polars compatible, skip this test
+        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            return
 
-        x.transform(df)
+        transformer.mappings = mapping
+        transformer.return_dtypes = {
+            "a": "String",
+            "b": "Int64",
+        }
 
-        ta.equality.assert_equal_dispatch(
-            expected=mapping,
-            actual=x.mappings,
-            msg="BaseMappingTransformer.transform has changed self.mappings unexpectedly",
-        )
+        transformer.transform(df)
 
+        assert (
+            mapping == transformer.mappings
+        ), f"BaseMappingTransformer.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("non_df", [1, True, "a", [1, 2], {"a": 1}, None])
     def test_non_pd_type_error(
         self,
         non_df,
         mapping,
+        library,
     ):
         """Test that an error is raised in transform is X is not a pd.DataFrame."""
 
-        df = d.create_df_10()
+        df = d.create_df_10(library=library)
 
-        x = BaseMappingTransformMixin(columns=["a"])
+        transformer = BaseMappingTransformMixin(columns=["a"])
 
-        x.mappings = mapping
+        # if transformer is not yet polars compatible, skip this test
+        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            return
 
-        x_fitted = x.fit(df, df["c"])
+        transformer.mappings = mapping
+        transformer.return_dtypes = {
+            "a": "String",
+        }
+
+        x_fitted = transformer.fit(df, df["c"])
 
         with pytest.raises(
             TypeError,
@@ -113,15 +134,21 @@ class TestTransform(GenericTransformTests):
         ):
             x_fitted.transform(X=non_df)
 
-    def test_no_rows_error(self, mapping):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_no_rows_error(self, mapping, library):
         """Test an error is raised if X has no rows."""
-        df = d.create_df_10()
+        df = d.create_df_10(library=library)
 
-        x = BaseMappingTransformMixin(columns=["a"])
+        transformer = BaseMappingTransformMixin(columns=["a"])
 
-        x.mappings = mapping
+        # if transformer is not yet polars compatible, skip this test
+        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            return
 
-        x = x.fit(df, df["c"])
+        transformer.mappings = mapping
+        transformer.return_dtypes = {"a": "String"}
+
+        transformer = transformer.fit(df, df["c"])
 
         df = pd.DataFrame(columns=["a", "b", "c"])
 
@@ -129,22 +156,28 @@ class TestTransform(GenericTransformTests):
             ValueError,
             match=re.escape("BaseMappingTransformMixin: X has no rows; (0, 3)"),
         ):
-            x.transform(df)
+            transformer.transform(df)
 
-    def test_original_df_not_updated(self, mapping):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_original_df_not_updated(self, mapping, library):
         """Test that the original dataframe is not transformed when transform method used."""
 
-        df = d.create_df_10()
+        df = d.create_df_10(library=library)
 
-        x = BaseMappingTransformMixin(columns=["a"])
+        transformer = BaseMappingTransformMixin(columns=["a"])
 
-        x.mappings = mapping
+        # if transformer is not yet polars compatible, skip this test
+        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            return
 
-        x = x.fit(df, df["c"])
+        transformer.mappings = mapping
+        transformer.return_dtypes = {"a": "String", "b": "Int64"}
 
-        _ = x.transform(df)
+        transformer = transformer.fit(df, df["c"])
 
-        pd.testing.assert_frame_equal(df, d.create_df_10())
+        _ = transformer.transform(df)
+
+        assert_frame_equal_dispatch(df, d.create_df_10(library=library))
 
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
@@ -160,17 +193,23 @@ class TestTransform(GenericTransformTests):
         """Test that the original (pandas) dataframe index is not transformed when transform method used."""
 
         df = minimal_dataframe_lookup[self.transformer_name]
-        x = initialized_transformers[self.transformer_name]
-        x.mappings = mapping
+        transformer = initialized_transformers[self.transformer_name]
+
+        # if transformer is not yet polars compatible, skip this test
+        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            return
+
+        transformer.mappings = mapping
+        transformer.return_dtypes = {"a": "String", "b": "String"}
 
         # update to abnormal index
         df.index = [2 * i for i in df.index]
 
         original_df = copy.deepcopy(df)
 
-        x = x.fit(df, df["a"])
+        transformer = transformer.fit(df, df["a"])
 
-        _ = x.transform(df)
+        _ = transformer.transform(df)
 
         assert_frame_equal_dispatch(df, original_df)
 

@@ -115,9 +115,11 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         mapping = {
             "b": {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7},
         }
+        return_dtypes = {"b": "Float32"}
 
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["mappings"] = mapping
+        args["return_dtypes"] = return_dtypes
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
