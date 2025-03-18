@@ -55,7 +55,7 @@ class BaseImputer(BaseTransformer):
 
         new_col_expressions = [
             nw.col(c).fill_null(self.impute_values_[c])
-            if self.impute_values_[c]
+            if self.impute_values_[c] is not None
             else nw.col(c)
             for c in self.columns
         ]
