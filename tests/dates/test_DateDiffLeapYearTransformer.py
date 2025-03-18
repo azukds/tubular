@@ -218,6 +218,7 @@ class TestTransform(
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("columns"),
         [
@@ -225,7 +226,7 @@ class TestTransform(
             ["datetime_col_1", "datetime_col_2"],
         ],
     )
-    def test_expected_output_nans_in_data(self, columns):
+    def test_expected_output_nans_in_data(self, columns, library):
         "Test that transform works for different date datatype combinations with nans in data"
         x = DateDiffLeapYearTransformer(
             columns=columns,
@@ -233,9 +234,9 @@ class TestTransform(
             drop_original=True,
         )
 
-        expected = d.expected_date_diff_df_2()
+        expected = d.expected_date_diff_df_2(library=library)
 
-        df = d.create_date_diff_different_dtypes_and_nans()
+        df = d.create_date_diff_different_dtypes_and_nans(library=library)
 
         df_transformed = x.transform(df[columns])
 

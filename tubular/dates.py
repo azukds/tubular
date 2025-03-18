@@ -136,7 +136,7 @@ class BaseGenericDateTransformer(
         self,
         X: FrameT,
         datetime_only: bool = False,
-    ) -> pd.DataFrame:
+    ) -> FrameT:
         """Base transform method, calls parent transform and validates data.
 
         Parameters
@@ -254,7 +254,7 @@ class BaseDateTwoColumnTransformer(
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -311,7 +311,7 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -381,7 +381,8 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
         return age
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
         """Calculate year gap between the two provided columns.
 
         New column is created under the 'new_column_name', and optionally removes the
@@ -389,19 +390,33 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame
-            Data containing column_upper and column_lower.
+        X : pd/pl.DataFrame
+            Data containing self.columns
 
         Returns
         -------
-        X : pd.DataFrame
-            Transformed data with new_column_name column.
+        X : pd/pl.DataFrame
+            Data containing self.columns
 
         """
 
-        X = super().transform(X)
+        X = nw.from_native(super().transform(X))
+        age = pd.DataFrame(
+            X.select([nw.col(self.columns)]).rows(),
+            columns=self.columns,
+        ).apply(self.calculate_age, axis=1)
 
-        X[self.new_column_name] = X.apply(self.calculate_age, axis=1)
+        # Get the native namespace of the input data
+        native_namespace = nw.get_native_namespace(X)
+        age = nw.new_series(
+            name="age",
+            values=age,
+            backend=native_namespace.__name__,
+        )
+
+        X = X.with_columns(
+            age.alias(self.new_column_name),
+        )
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
