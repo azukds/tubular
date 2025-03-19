@@ -7,7 +7,6 @@ import narwhals.selectors as ncs
 import numpy as np
 
 if TYPE_CHECKING:
-    import pandas as pd
     from narhwals.typing import FrameT
 
 
@@ -77,7 +76,7 @@ class DropOriginalMixin:
         X: FrameT,
         drop_original: bool,
         columns: list[str] | str | None,
-    ) -> pd.DataFrame:
+    ) -> FrameT:
         """Method for dropping input columns from X if drop_original set to True.
 
         Parameters

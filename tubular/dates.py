@@ -136,7 +136,7 @@ class BaseGenericDateTransformer(
         self,
         X: FrameT,
         datetime_only: bool = False,
-    ) -> pd.DataFrame:
+    ) -> FrameT:
         """Base transform method, calls parent transform and validates data.
 
         Parameters
@@ -254,7 +254,7 @@ class BaseDateTwoColumnTransformer(
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -438,7 +438,7 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -477,21 +477,24 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[1]
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: FrameT) -> FrameT:
         """Calculate the difference between the given fields in the specified units.
 
         Parameters
         ----------
-        X : pd.DataFrame
-            Data to transform.
+        X : pd/pl.DataFrame
+            Data containing self.columns
 
         """
 
-        X = super().transform(X)
+        X = nw.from_native(super().transform(X))
 
-        X[self.new_column_name] = (
-            X[self.columns[1]] - X[self.columns[0]]
-        ) / np.timedelta64(1, self.units)
+        X = X.with_columns(
+            (
+                (nw.col(self.columns[1]) - nw.col(self.columns[0]))
+                / np.timedelta64(1, self.units)
+            ).alias(self.new_column_name),
+        )
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(

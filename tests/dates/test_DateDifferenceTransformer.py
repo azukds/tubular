@@ -1,8 +1,8 @@
 import datetime
 
 import numpy as np
+import polars as pl
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -727,10 +727,117 @@ def expected_df_7(library="pandas"):
                 58,
                 tzinfo=datetime.timezone.utc,
             ),
-            np.nan,
+            np.nan if library == "pandas" else None,
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
         ],
         "b": [
-            np.nan,
+            np.nan if library == "pandas" else None,
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "D": [
+            np.nan if library == "pandas" else None,
+            np.nan if library == "pandas" else None,
+            10957.0,
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
+def create_datediff_test_nulls_df(library="pandas"):
+    """Create DataFrame with nulls for DateDifferenceTransformer tests."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            np.nan if library == "pandas" else None,
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "b": [
+            np.nan if library == "pandas" else None,
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
+def expected_df_8(library="pandas"):
+    """Expected output for test_expected_output_nulls2."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            np.nan if library == "pandas" else None,
+        ],
+        "b": [
+            np.nan if library == "pandas" else None,
             datetime.datetime(
                 2019,
                 12,
@@ -742,15 +849,18 @@ def expected_df_7(library="pandas"):
             ),
         ],
         "D": [
-            np.nan,
-            np.nan,
+            np.nan if library == "pandas" else None,
+            np.nan if library == "pandas" else None,
         ],
     }
-
+    if library == "polars":
+        expected = dataframe_init_dispatch(df_dict, library=library)
+        # change the D column to float as in the transformer it is a calculated field and this is automatically set up as float.
+        return expected.cast({"D": pl.Float64})
     return dataframe_init_dispatch(df_dict, library=library)
 
 
-def create_datediff_test_nulls_df(library="pandas"):
+def create_datediff_test_nulls_df2(library="pandas"):
     """Create DataFrame with nulls only for DateDifferenceTransformer tests."""
 
     df_dict = {
@@ -764,10 +874,10 @@ def create_datediff_test_nulls_df(library="pandas"):
                 58,
                 tzinfo=datetime.timezone.utc,
             ),
-            np.nan,
+            np.nan if library == "pandas" else None,
         ],
         "b": [
-            np.nan,
+            np.nan if library == "pandas" else None,
             datetime.datetime(
                 2019,
                 12,
@@ -796,10 +906,16 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_3(),
-        ),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_3(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_3(library="polars"),
+            ),
+        ],
     )
     def test_expected_output_units_D(self, df, expected):
         """Test that the output is expected from transform, when units is D.
@@ -820,10 +936,16 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_4(),
-        ),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_4(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_4(library="polars"),
+            ),
+        ],
     )
     def test_expected_output_units_h(self, df, expected):
         """Test that the output is expected from transform, when units is h.
@@ -844,10 +966,16 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_5(),
-        ),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_5(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_5(library="polars"),
+            ),
+        ],
     )
     def test_expected_output_units_m(self, df, expected):
         """Test that the output is expected from transform, when units is m.
@@ -868,10 +996,16 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_6(),
-        ),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_6(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_6(library="polars"),
+            ),
+        ],
     )
     def test_expected_output_units_s(self, df, expected):
         """Test that the output is expected from transform, when units is s.
@@ -892,12 +1026,44 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_datediff_test_nulls_df(),
-            expected_df_7(),
-        ),
+        [
+            (
+                create_datediff_test_nulls_df(library="pandas"),
+                expected_df_7(library="pandas"),
+            ),
+            (
+                create_datediff_test_nulls_df(library="polars"),
+                expected_df_7(library="polars"),
+            ),
+        ],
     )
     def test_expected_output_nulls(self, df, expected):
+        """Test that the output is expected from transform, when columns have nulls."""
+        x = DateDifferenceTransformer(
+            columns=["a", "b"],
+            new_column_name="D",
+            units="D",
+            verbose=False,
+        )
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(df_transformed, expected)
+
+    @pytest.mark.parametrize(
+        ("df", "expected"),
+        [
+            (
+                create_datediff_test_nulls_df2(library="pandas"),
+                expected_df_8(library="pandas"),
+            ),
+            (
+                create_datediff_test_nulls_df2(library="polars"),
+                expected_df_8(library="polars"),
+            ),
+        ],
+    )
+    def test_expected_output_nulls2(self, df, expected):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
