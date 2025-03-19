@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 import narwhals as nw
-import pandas as pd
+import polars as pl
+from beartype import beartype
 
 from tubular.base import BaseTransformer
 from tubular.mixins import WeightColumnMixin
 
 if TYPE_CHECKING:
-    import pandas as pd
     from narwhals.typing import FrameT
+
+pl.enable_string_cache()
 
 
 class BaseImputer(BaseTransformer):
@@ -87,25 +89,17 @@ class ArbitraryImputer(BaseImputer):
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
     """
 
-    polars_compatible = False
-
+    polars_compatible = True
     FITS = False
 
+    @beartype
     def __init__(
         self,
-        impute_value: float | str,
-        columns: str | list[str],
-        **kwargs: dict[str, bool],
+        impute_value: Union[int, float, str, bool],
+        columns: Union[str, list[str]],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
-
-        if (
-            not isinstance(impute_value, int)
-            and not isinstance(impute_value, float)
-            and not isinstance(impute_value, str)
-        ):
-            msg = f"{self.classname()}: impute_value should be a single value (int, float or str)"
-            raise ValueError(msg)
 
         self.impute_values_ = {}
         self.impute_value = impute_value
@@ -113,45 +107,50 @@ class ArbitraryImputer(BaseImputer):
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
         """Impute missing values with the supplied impute_value.
         If columns is None all columns in X will be imputed.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : FrameT
             Data containing columns to impute.
 
         Returns
         -------
-        X : pd.DataFrame
+        X : FrameT
             Transformed input X with nulls imputed with the specified impute_value, for the specified columns.
-
-        Additions
-        ---------
-        * Preserving the datatypes of columns
-        * Finding the target column dtype and cast imputer values as same dtype
         """
+
         self.check_is_fitted(["impute_value"])
         self.columns_check(X)
-        for c in self.columns:
-            if (
-                "category" in X[c].dtype.name
-                and self.impute_value not in X[c].cat.categories
-            ):
-                X[c] = X[c].cat.add_categories(
-                    self.impute_value,
-                )  # add new category
 
-        # Calling the BaseImputer's transform method to impute the values
-        X_transformed = super().transform(X)
+        if len(X) == 0:
+            msg = f"{self.classname()}: X has no rows; {X.shape}"
+            raise ValueError(msg)
 
-        # casting imputer value as same dtype as original column
-        for c in self.columns:
-            dtype = X[c].dtype  # get the dtype of original column
-            X_transformed[c] = X_transformed[c].astype(dtype)
+        # Save the original dtypes BEFORE we cast anything
+        original_dtypes = {}
 
-        return X_transformed
+        for col in self.columns:
+            original_dtypes[col] = X[col].dtype
+
+        # first handle categorical vars
+        # need to explicitly add category for pandas
+        is_pandas = nw.get_native_namespace(X).__name__ == "pandas"
+        if is_pandas:
+            X = nw.to_native(X)
+            for col in self.columns:
+                if str(original_dtypes[col]) == "Categorical" and (
+                    self.impute_value not in X[col].cat.categories
+                ):
+                    X[col] = X[col] = X["c"].cat.add_categories(
+                        self.impute_value,
+                    )
+            X = nw.from_native(X)
+
+        return nw.from_native(super().transform(X))
 
 
 class MedianImputer(BaseImputer, WeightColumnMixin):

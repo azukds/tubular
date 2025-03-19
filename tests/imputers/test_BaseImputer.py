@@ -1,7 +1,6 @@
 from copy import deepcopy
 
 import narwhals as nw
-import pandas as pd
 import polars as pl
 import pytest
 from sklearn.exceptions import NotFittedError
@@ -78,6 +77,22 @@ class GenericImputerTransformTests:
 
         return narwhals_df.to_native()
 
+    @pytest.fixture()
+    def expected_df_4(self, request):
+        library = request.param
+        df4_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, None],
+            "b": ["a", "b", "c", "d", "e", "f", "z"],
+            "c": ["a", "b", "c", "d", "e", "f", "z"],
+        }
+
+        df4 = u.dataframe_init_dispatch(dataframe_dict=df4_dict, library=library)
+
+        narwhals_df = nw.from_native(df4)
+        narwhals_df = narwhals_df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
+
+        return narwhals_df.to_native()
+
     @pytest.mark.parametrize("test_fit_df", ["pandas", "polars"], indirect=True)
     def test_not_fitted_error_raised(self, test_fit_df, initialized_transformers):
         transformer = initialized_transformers[self.transformer_name]
@@ -123,27 +138,28 @@ class GenericImputerTransformTests:
         transformer.impute_values_ = {"a": 7}
         transformer.columns = ["a"]
 
+        # Transform the DataFrame
         df_transformed = transformer.transform(df2)
 
-        # Convert both DataFrames to a common format using Narwhals
-        df_transformed_common = nw.from_native(df_transformed)
-        expected_df_1_common = nw.from_native(expected_df_1)
+        # Check whole dataframes
+        u.assert_frame_equal_dispatch(
+            df_transformed,
+            expected_df_1,
+        )
+        df2 = nw.from_native(df2)
+        expected_df_1 = nw.from_native(expected_df_1)
 
         # Check outcomes for single rows
-        for i in range(len(df_transformed_common)):
-            df_transformed_row = df_transformed_common[[i]].to_native()
-            df_expected_row = expected_df_1_common[[i]].to_native()
+        # turn off type change errors to avoid having to type the single rows
+        transformer.error_on_type_change = False
+        for i in range(len(df2)):
+            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_expected_row = expected_df_1[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
                 df_transformed_row,
                 df_expected_row,
             )
-
-        # Check whole dataframes
-        u.assert_frame_equal_dispatch(
-            df_transformed_common.to_native(),
-            expected_df_1_common.to_native(),
-        )
 
     @pytest.mark.parametrize(
         ("library", "expected_df_2"),
@@ -168,32 +184,41 @@ class GenericImputerTransformTests:
         # Transform the DataFrame
         df_transformed = transformer.transform(df2)
 
-        # Convert both DataFrames to a common format using Narwhals
-        df_transformed_common = nw.from_native(df_transformed)
-        expected_df_2_common = nw.from_native(expected_df_2)
+        # Check whole dataframes
+        u.assert_frame_equal_dispatch(
+            df_transformed,
+            expected_df_2,
+        )
+        df2 = nw.from_native(df2)
+        expected_df_2 = nw.from_native(expected_df_2)
 
         # Check outcomes for single rows
-        for i in range(len(df_transformed_common)):
-            df_transformed_row = df_transformed_common[[i]].to_native()
-            df_expected_row = expected_df_2_common[[i]].to_native()
+        # turn off type change errors to avoid having to type the single rows
+        transformer.error_on_type_change = False
+        for i in range(len(df2)):
+            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_expected_row = expected_df_2[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
                 df_transformed_row,
                 df_expected_row,
             )
 
-        # Check whole dataframes
-        u.assert_frame_equal_dispatch(
-            df_transformed_common.to_native(),
-            expected_df_2_common.to_native(),
-        )
-
     @pytest.mark.parametrize(
-        ("library", "expected_df_3"),
-        [("pandas", "pandas"), ("polars", "polars")],
+        ("library", "expected_df_3", "impute_values_dict"),
+        [
+            ("pandas", "pandas", {"b": "g", "c": "f"}),
+            ("polars", "polars", {"b": "g", "c": "f"}),
+        ],
         indirect=["expected_df_3"],
     )
-    def test_expected_output_3(self, library, expected_df_3, initialized_transformers):
+    def test_expected_output_3(
+        self,
+        library,
+        expected_df_3,
+        initialized_transformers,
+        impute_values_dict,
+    ):
         """Test that transform is giving the expected output when applied to object and categorical columns."""
         # Create the DataFrame using the library parameter
         df2 = d.create_df_2(library=library)
@@ -205,42 +230,32 @@ class GenericImputerTransformTests:
         if not transformer.polars_compatible and isinstance(df2, pl.DataFrame):
             return
 
-        transformer.impute_values_ = {"b": "g", "c": "f"}
+        transformer.impute_values_ = impute_values_dict
+        transformer.impute_value = "f"
         transformer.columns = ["b", "c"]
 
         # Transform the DataFrame
         df_transformed = transformer.transform(df2)
-        df_transformed["c"]
 
-        # ArbitraryImputer will add a new categorical level to cat columns,
-        # make sure expected takes this into account
-        if self.transformer_name == "ArbitraryImputer" and isinstance(
+        # Check whole dataframes
+        u.assert_frame_equal_dispatch(
+            df_transformed,
             expected_df_3,
-            pd.DataFrame,
-        ):
-            expected_df_3["c"] = expected_df_3["c"].cat.add_categories(
-                transformer.impute_value,
-            )
-
-        # Convert both DataFrames to a common format using Narwhals
-        df_transformed_common = nw.from_native(df_transformed)
-        expected_df_3_common = nw.from_native(expected_df_3)
+        )
+        df2 = nw.from_native(df2)
+        expected_df_3 = nw.from_native(expected_df_3)
 
         # Check outcomes for single rows
-        for i in range(len(df_transformed_common)):
-            df_transformed_row = df_transformed_common[[i]].to_native()
-            df_expected_row = expected_df_3_common[[i]].to_native()
+        # turn off type change errors to avoid having to type the single rows
+        transformer.error_on_type_change = False
+        for i in range(len(df2)):
+            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_expected_row = expected_df_3[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
                 df_transformed_row,
                 df_expected_row,
             )
-
-        # Check whole dataframes
-        u.assert_frame_equal_dispatch(
-            df_transformed_common.to_native(),
-            expected_df_3_common.to_native(),
-        )
 
     @pytest.mark.parametrize(
         "library",
@@ -250,6 +265,7 @@ class GenericImputerTransformTests:
         """Test that transform is giving the expected output when applied to object and categorical columns."""
         # Create the DataFrame using the library parameter
         df_dict = {
+            "a": [True, False, None],
             "b": [1, 2, None],
         }
 
@@ -262,10 +278,11 @@ class GenericImputerTransformTests:
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
-        transformer.impute_values_ = {"b": 0}
-        transformer.columns = ["b"]
+        transformer.impute_values_ = {"a": False, "b": 0}
+        transformer.columns = ["a", "b"]
 
         expected_df_dict = {
+            "a": [True, False, False],
             "b": [1.0, 2.0, 0.0],
         }
 

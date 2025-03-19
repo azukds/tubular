@@ -93,7 +93,7 @@ class BaseMappingTransformer(BaseTransformer):
         mappings: dict[str, dict[str, str | float | int]],
     ) -> dict[str, str]:
         "infer return_dtypes from provided mappings"
-        print(mappings)
+
         return {col: str(pl.Series(mappings[col].values()).dtype) for col in mappings}
 
     @nw.narwhalify

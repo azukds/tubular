@@ -1,6 +1,8 @@
-import pandas as pd
+import narwhals as nw
 import pytest
 
+import tests.test_data as d
+import tests.utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
     GenericFitTests,
@@ -12,38 +14,37 @@ from tubular.imputers import ArbitraryImputer
 
 
 # Dataframe used exclusively in this testing script
-def create_downcast_df():
-    """Create a dataframe with mixed dtypes to use in downcasting tests."""
-    return pd.DataFrame(
-        {
-            "a": [1, 2, 3, 4, 5],
-            "b": [1.0, 2.0, 3.0, 4.0, 5.0],
-        },
-    )
+@pytest.fixture(params=["pandas", "polars"])
+def downcast_df(request):
+    """
+    Fixture that returns a DataFrame with columns suitable for downcasting
+    for both pandas and polars.
+    """
+    data = {
+        "a": [1, 2, 3, 4, 5],
+        "b": [1.0, 2.0, 3.0, 4.0, 5.0],
+    }
+    library = request.param
+
+    return u.dataframe_init_dispatch(data, library)
 
 
 class TestInit(ColumnStrListInitTests):
     """Generic tests for transformer.init()."""
 
+    # overload some inherited arg tests that have been replaced by beartype
+    def test_columns_non_string_or_list_error(self):
+        pass
+
+    def test_columns_list_element_error(self):
+        pass
+
+    def test_verbose_non_bool_error(self):
+        pass
+
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "ArbitraryImputer"
-
-    def test_impute_value_type_error(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-    ):
-        """Test that an exception is raised if impute_value is not an int, float or str."""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["impute_value"] = [1, 2]
-
-        with pytest.raises(
-            ValueError,
-            match="ArbitraryImputer: impute_value should be a single value .*",
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
 
 
 class TestFit(GenericFitTests):
@@ -61,40 +62,81 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "ArbitraryImputer"
 
-    # Unit testing to check if downcast datatypes of columns is preserved after imputation is done
-    def test_impute_value_preserve_dtype(self):
-        """Testing downcast dtypes of columns are preserved after imputation using the create_downcast_df dataframe.
+    def test_impute_value_preserve_dtype(self, downcast_df):
+        """Test that downcast dtypes are preserved after imputation."""
 
-        Explicitly setting the dtype of "a" to int8 and "b" to float16 and check if the dtype of the columns are preserved after imputation.
-        """
-        df = (
-            create_downcast_df()
-        )  # By default the dtype of "a" and "b" are int64 and float64 respectively
+        df_nw = nw.from_native(downcast_df)
 
-        # Imputing the dataframe
+        df_nw = df_nw.with_columns(
+            nw.col("a").cast(nw.Int8),
+            nw.col("b").cast(nw.Float32),
+        )
+
         x = ArbitraryImputer(impute_value=1, columns=["a", "b"])
+        df_transformed_native = x.transform(df_nw.to_native())
 
-        # Setting the dtype of "a" to int8 and "b" to float16
-        df["a"] = df["a"].astype("int8")
-        df["b"] = df["b"].astype("float16")
+        df_transformed_nw = nw.from_native(df_transformed_native)
 
-        # Checking if the dtype of "a" and "b" are int8 and float16 respectively
-        assert df["a"].dtype == "int8"
-        assert df["b"].dtype == "float16"
+        assert df_transformed_nw["a"].dtype == df_nw["a"].dtype
+        assert df_transformed_nw["b"].dtype == df_nw["b"].dtype
 
-        # Impute the dataframe
-        df = x.transform(df)
+    @pytest.mark.parametrize(
+        ("library", "expected_df_4", "impute_values_dict"),
+        [
+            ("pandas", "pandas", {"b": "z", "c": "z"}),
+            ("polars", "polars", {"b": "z", "c": "z"}),
+        ],
+        indirect=["expected_df_4"],
+    )
+    def test_expected_output_4(
+        self,
+        library,
+        expected_df_4,
+        initialized_transformers,
+        impute_values_dict,
+    ):
+        """Test that transform is giving the expected output when applied to object and categorical columns
+        (when we're imputing with a new categorical level, which is only possible for arbitrary imputer).
+        """
+        # Create the DataFrame using the library parameter
+        df2 = d.create_df_2(library=library)
 
-        # Checking if the dtype of "a" and "b" are int8 and float16 respectively after imputation
-        assert df["a"].dtype == "int8"
-        assert df["b"].dtype == "float16"
+        # Initialize the transformer
+        transformer = initialized_transformers[self.transformer_name]
+
+        transformer.impute_values_ = impute_values_dict
+        transformer.impute_value = "z"
+        transformer.columns = ["b", "c"]
+
+        # Transform the DataFrame
+        df_transformed = transformer.transform(df2)
+
+        # Check whole dataframes
+        u.assert_frame_equal_dispatch(
+            df_transformed,
+            expected_df_4,
+        )
+        df2 = nw.from_native(df2)
+        expected_df_4 = nw.from_native(expected_df_4)
+
+        # Check outcomes for single rows
+        # turn off type change errors to avoid having to type the single rows
+        transformer.error_on_type_change = False
+        for i in range(len(df2)):
+            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_expected_row = expected_df_4[[i]].to_native()
+
+            u.assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+            )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod
