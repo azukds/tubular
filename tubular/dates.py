@@ -311,7 +311,7 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -341,47 +341,8 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[1]
 
-    def calculate_age(self, row: pd.Series) -> int:
-        """Function to calculate age from two date columns in a pd.DataFrame.
-
-        This function, although slower than the np.timedelta64 solution (or something
-        similar), accounts for leap years to accurately calculate age for all values.
-
-        Parameters
-        ----------
-        row : pd.Series
-            Named pandas series, with lower_date_name and upper_date_name as index values.
-
-        Returns
-        -------
-        age : int
-            Year gap between the upper and lower date values passes.
-
-        """
-        if not isinstance(row, pd.Series):
-            msg = f"{self.classname()}: row should be a pd.Series"
-            raise TypeError(msg)
-
-        if (pd.isna(row[self.columns[0]])) or (pd.isna(row[self.columns[1]])):
-            return self.missing_replacement
-
-        age = row[self.columns[1]].year - row[self.columns[0]].year
-
-        if age > 0:
-            if (row[self.columns[1]].month, row[self.columns[1]].day) < (
-                row[self.columns[0]].month,
-                row[self.columns[0]].day,
-            ):
-                age += -1
-        elif age < 0 and (row[self.columns[1]].month, row[self.columns[1]].day) > (
-            row[self.columns[0]].month,
-            row[self.columns[0]].day,
-        ):
-            age += 1
-
-        return age
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
         """Calculate year gap between the two provided columns.
 
         New column is created under the 'new_column_name', and optionally removes the
@@ -389,19 +350,61 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame
-            Data containing column_upper and column_lower.
+        X : pd/pl.DataFrame
+            Data containing self.columns
 
         Returns
         -------
-        X : pd.DataFrame
-            Transformed data with new_column_name column.
+        X : pd/pl.DataFrame
+            Data containing self.columns
 
         """
 
-        X = super().transform(X)
+        X = nw.from_native(super().transform(X))
 
-        X[self.new_column_name] = X.apply(self.calculate_age, axis=1)
+        # Create a helping column col0 for the first date. This will convert the date into an integer in a format or YYYYMMDD
+        X = X.with_columns(
+            (
+                nw.col(self.columns[0]).cast(nw.Date).dt.year().cast(nw.Int64) * 10000
+                + nw.col(self.columns[0]).cast(nw.Date).dt.month().cast(nw.Int64) * 100
+                + nw.col(self.columns[0]).cast(nw.Date).dt.day().cast(nw.Int64)
+            ).alias("col0"),
+        )
+        # Create a helping column col1 for the second date. This will convert the date into an integer in a format or YYYYMMDD
+        X = X.with_columns(
+            (
+                nw.col(self.columns[1]).cast(nw.Date).dt.year().cast(nw.Int64) * 10000
+                + nw.col(self.columns[1]).cast(nw.Date).dt.month().cast(nw.Int64) * 100
+                + nw.col(self.columns[1]).cast(nw.Date).dt.day().cast(nw.Int64)
+            ).alias("col1"),
+        )
+
+        # Compute difference between integers and if the difference is negative then adjust.
+        # Finally devide by 10000 to get the years.
+        X = X.with_columns(
+            nw.when(nw.col("col1") < nw.col("col0"))
+            .then(((nw.col("col0") - nw.col("col1")) // 10000) * (-1))
+            .otherwise((nw.col("col1") - nw.col("col0")) // 10000)
+            .cast(nw.Int64)
+            .alias(self.new_column_name),
+        ).drop(["col0", "col1"])
+
+        # When we get a missing then replace with missing_replacement otherwise return the above calculation
+        if self.missing_replacement is not None:
+            X = X.with_columns(
+                nw.when(
+                    (nw.col(self.columns[0]).is_null())
+                    or (nw.col(self.columns[1]).is_null()),
+                )
+                .then(
+                    self.missing_replacement,
+                )
+                .otherwise(
+                    nw.col(self.new_column_name),
+                )
+                .cast(nw.Int64)
+                .alias(self.new_column_name),
+            )
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(

@@ -1,10 +1,9 @@
 import datetime
 
 import narwhals as nw
-import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -20,39 +19,6 @@ from tests.dates.test_BaseGenericDateTransformer import (
 )
 from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.dates import DateDiffLeapYearTransformer
-
-
-class TestCalculateAge:
-    """Tests for the calculate_age function in dates.py."""
-
-    def test_row_type_error(self):
-        """Test that an exception is raised if row is not a pd.Series."""
-        row = "dummy_row"
-        date_transformer = DateDiffLeapYearTransformer(
-            columns=["a", "b"],
-            new_column_name="c",
-            drop_original=True,
-        )
-
-        with pytest.raises(
-            TypeError,
-            match="DateDiffLeapYearTransformer: row should be a pd.Series",
-        ):
-            date_transformer.calculate_age(row=row)
-
-    def test_null_replacement(self):
-        """Test correct value is replaced using null_replacement."""
-        row = pd.Series({"a": np.nan, "b": np.nan})
-        date_transformer = DateDiffLeapYearTransformer(
-            columns=["a", "b"],
-            new_column_name="c",
-            drop_original=True,
-            missing_replacement="missing_replacement",
-        )
-
-        val = date_transformer.calculate_age(row=row)
-
-        assert val == "missing_replacement"
 
 
 class TestInit(
@@ -95,6 +61,9 @@ def expected_df_1(library="pandas"):
             30,
         ],
     }
+
+    if library == "pandas":
+        return pd.DataFrame(df_dict, dtype="int64[pyarrow]")
 
     return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
@@ -148,23 +117,58 @@ def expected_df_2(library="pandas"):
             nw.col(col).cast(nw.Date),
         )
 
+    if library == "pandas":
+        df = nw.to_native(df)
+        df["c"] = df["c"].astype("int64[pyarrow]")
+        return df
+
     return nw.to_native(df)
 
 
-def expected_df_3(library="pandas"):
-    """Expected output for test_expected_output_nulls."""
+# add the expected to fix float to int with results
+def expected_date_diff_df_2(library="pandas"):
+    """Expected output for test_expected_output_nans_in_data."""
 
     df_dict = {
-        "a": [
-            np.nan,
+        "c": [
+            pd.NA if library == "pandas" else None,
+            19,
+            0,
+            0,
+            0,
+            -2,
+            -3,
+            30,
         ],
-        "b": [
-            np.nan,
-        ],
-        "c": [None],
     }
 
-    return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+    if library == "pandas":
+        return pd.DataFrame(df_dict, dtype="int64[pyarrow]")
+
+    return pl.DataFrame(df_dict)
+
+
+# add the expected to fix float to int with results
+def expected_date_diff_df_3(library="pandas"):
+    """Expected output for test_expected_output_nans_in_data with missing replace with 0."""
+
+    df_dict = {
+        "c": [
+            0,
+            19,
+            0,
+            0,
+            0,
+            -2,
+            -3,
+            30,
+        ],
+    }
+
+    if library == "pandas":
+        return pd.DataFrame(df_dict, dtype="int64[pyarrow]")
+
+    return pl.DataFrame(df_dict)
 
 
 class TestTransform(
@@ -180,7 +184,10 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_date_test_df(), expected_df_1()),
+        [
+            (d.create_date_test_df(library="pandas"), expected_df_1(library="pandas")),
+            (d.create_date_test_df(library="polars"), expected_df_1(library="polars")),
+        ],
     )
     def test_expected_output_drop_original_true(self, df, expected):
         """Test that the output is expected from transform, when drop_original is True.
@@ -200,7 +207,10 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_date_test_df(), expected_df_2()),
+        [
+            (d.create_date_test_df(library="pandas"), expected_df_2(library="pandas")),
+            (d.create_date_test_df(library="polars"), expected_df_2(library="polars")),
+        ],
     )
     def test_expected_output_drop_original_false(self, df, expected):
         """Test that the output is expected from transform, when drop_original is False.
@@ -218,6 +228,7 @@ class TestTransform(
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("columns"),
         [
@@ -225,7 +236,7 @@ class TestTransform(
             ["datetime_col_1", "datetime_col_2"],
         ],
     )
-    def test_expected_output_nans_in_data(self, columns):
+    def test_expected_output_nans_in_data(self, columns, library):
         "Test that transform works for different date datatype combinations with nans in data"
         x = DateDiffLeapYearTransformer(
             columns=columns,
@@ -233,11 +244,29 @@ class TestTransform(
             drop_original=True,
         )
 
-        expected = d.expected_date_diff_df_2()
+        expected = expected_date_diff_df_2(library=library)
 
-        df = d.create_date_diff_different_dtypes_and_nans()
+        df = d.create_date_diff_different_dtypes_and_nans(library=library)
 
         df_transformed = x.transform(df[columns])
+
+        assert_frame_equal_dispatch(df_transformed, expected)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_nans_in_data_with_replace(self, library):
+        "Test that transform works for different date datatype combinations with nans in data and replace nans"
+        x = DateDiffLeapYearTransformer(
+            columns=["date_col_1", "date_col_2"],
+            new_column_name="c",
+            drop_original=True,
+            missing_replacement=0,
+        )
+
+        expected = expected_date_diff_df_3(library=library)
+
+        df = d.create_date_diff_different_dtypes_and_nans(library=library)
+
+        df_transformed = x.transform(df[["date_col_1", "date_col_2"]])
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
