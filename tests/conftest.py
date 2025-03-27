@@ -331,6 +331,9 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
         "CrossColumnMultiplyTransformer",
         "CrossColumnAddTransformer",
         "BaseCrossColumnNumericTransformer",
+        # prevent below two from being imported from import in nominal file
+        "MedianImputer",
+        "MeanImputer",
     ]
     for transformer in other_num_transformers:
         min_df_dict[transformer] = num_df

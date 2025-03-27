@@ -1,10 +1,8 @@
 from itertools import product
 
+import narwhals as nw
 import numpy as np
-import pandas as pd
 import pytest
-import test_aide as ta
-from pandas.testing import assert_series_equal
 
 from tests.base_tests import (
     ColumnStrListInitTests,
@@ -14,73 +12,75 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.nominal import MeanResponseTransformer
 
 
 # Dataframe used exclusively in this testing script
-def create_MeanResponseTransformer_test_df():
+def create_MeanResponseTransformer_test_df(library="pandas"):
     """Create DataFrame to use MeanResponseTransformer tests that correct values are.
 
     DataFrame column a is the response, the other columns are categorical columns
     of types; object, category, int, float, bool.
 
     """
-    df = pd.DataFrame(
-        {
-            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "b": ["a", "b", "c", "d", "e", "f"],
-            "c": ["a", "b", "c", "d", "e", "f"],
-            "d": [1, 2, 3, 4, 5, 6],
-            "e": [1, 2, 3, 4, 5, 6.0],
-            "f": [False, False, False, True, True, True],
-            "multi_level_response": [
-                "blue",
-                "blue",
-                "yellow",
-                "yellow",
-                "green",
-                "green",
-            ],
-        },
-    )
+    df_dict = {
+        "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        "b": ["a", "b", "c", "d", "e", "f"],
+        "c": ["a", "b", "c", "d", "e", "f"],
+        "d": [1, 2, 3, 4, 5, 6],
+        "e": [1, 2, 3, 4, 5, 6],
+        "f": [False, False, False, True, True, True],
+        "multi_level_response": [
+            "blue",
+            "blue",
+            "yellow",
+            "yellow",
+            "green",
+            "green",
+        ],
+    }
 
-    df["c"] = df["c"].astype("category")
+    df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    return df
+    df = nw.from_native(df)
+    df = df.with_columns(nw.col("c").cast(nw.Categorical))
+
+    return df.to_native()
 
 
 # Dataframe used exclusively in this testing script
-def create_MeanResponseTransformer_test_df_unseen_levels():
+def create_MeanResponseTransformer_test_df_unseen_levels(library="pandas"):
     """Create DataFrame to use in MeanResponseTransformer tests that check correct values are
     generated when using transform method on data with unseen levels.
     DataFrame column a is the response, the other columns are categorical columns
     of types; object, category, int, float, bool.
 
     """
-    df = pd.DataFrame(
-        {
-            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-            "b": ["a", "b", "c", "d", "e", "f", "g", "h"],
-            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-            "d": [1, 2, 3, 4, 5, 6, 7, 8],
-            "e": [1, 2, 3, 4, 5, 6.0, 7, 8],
-            "f": [False, False, False, True, True, True, True, False],
-            "multi_level_response": [
-                "blue",
-                "blue",
-                "yellow",
-                "yellow",
-                "green",
-                "green",
-                "yellow",
-                "blue",
-            ],
-        },
-    )
+    df_dict = {
+        "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+        "b": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        "d": [1, 2, 3, 4, 5, 6, 7, 8],
+        "e": [1, 2, 3, 4, 5, 6, 7, 8],
+        "f": [False, False, False, True, True, True, True, False],
+        "multi_level_response": [
+            "blue",
+            "blue",
+            "yellow",
+            "yellow",
+            "green",
+            "green",
+            "yellow",
+            "blue",
+        ],
+    }
 
-    df["c"] = df["c"].astype("category")
+    df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+    df = nw.from_native(df)
+    df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-    return df
+    return df.to_native()
 
 
 @pytest.fixture()
@@ -123,10 +123,10 @@ def learnt_unseen_levels_encoding_dict_mean():
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_median():
     return_dict = {
-        "b": (3.0 + 4.0) / 2,
-        "b_blue": (0.0 + 0.0) / 2,
-        "b_yellow": (0.0 + 0.0) / 2,
-        "b_green": (0.0 + 0.0) / 2,
+        "b": 3.0,
+        "b_blue": 0.0,
+        "b_yellow": 0.0,
+        "b_green": 0.0,
     }
 
     for key in return_dict:
@@ -181,88 +181,161 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
-    def test_prior_not_int_error(self):
-        """Test that an exception is raised if prior is not an int."""
-        with pytest.raises(TypeError, match="prior should be a int"):
-            MeanResponseTransformer(prior="1")
+    # overload inherited arg tests that have been replaced by beartype
+    def test_columns_non_string_or_list_error(self):
+        pass
+
+    def test_columns_list_element_error(self):
+        pass
+
+    def test_verbose_non_bool_error(self):
+        pass
+
+    def test_weight_arg_errors(self):
+        pass
 
     def test_prior_not_positive_int_error(self):
         """Test that an exception is raised if prior is not a positive int."""
         with pytest.raises(ValueError, match="prior should be positive int"):
             MeanResponseTransformer(prior=-1)
 
-    @pytest.mark.parametrize("level", [{"dict": 1}, 2, 2.5])
-    def test_level_wrong_type_error(self, level):
-        with pytest.raises(
-            TypeError,
-            match=f"Level should be a NoneType, list or str but got {type(level)}",
-        ):
-            MeanResponseTransformer(level=level)
-
-    def test_unseen_level_handling_incorrect_value_error(self):
-        """Test that an exception is raised if unseen_level_handling is an incorrect value."""
-        with pytest.raises(
-            ValueError,
-            match="unseen_level_handling should be the option: Mean, Median, Lowest, Highest or an arbitrary int/float value",
-        ):
-            MeanResponseTransformer(unseen_level_handling="AAA")
-
-    def test_return_type_handling_incorrect_value_error(self):
-        """Test that an exception is raised if return_type is an incorrect value."""
-        with pytest.raises(
-            ValueError,
-            match="return_type should be one of: 'float64', 'float32'",
-        ):
-            MeanResponseTransformer(return_type="int")
-
 
 class TestPriorRegularisation:
     "tests for _prior_regularisation method."
 
-    def test_output1(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_output1(self, library):
         "Test output of method."
         x = MeanResponseTransformer(columns="a", prior=3)
 
-        x.fit(X=pd.DataFrame({"a": [1, 2]}), y=pd.Series([2, 3]))
+        df_dict = {"a": [1, 2]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        y = nw.new_series(name="y", values=[2, 3], backend=library)
+
+        x.fit(X=df, y=y)
 
         expected1 = (1 * 1 + 3 * 2.5) / (1 + 3)
 
         expected2 = (2 * 2 + 3 * 2.5) / (2 + 3)
 
-        expected = pd.Series([expected1, expected2])
+        expected = {"a": expected1, "b": expected2}
 
-        output = x._prior_regularisation(
-            cat_freq=pd.Series([1, 2]),
-            target_means=pd.Series([1, 2]),
+        weights_column = "weights"
+        response_column = "means"
+        column = "column"
+        group_means_and_weights_dict = {
+            column: ["a", "b"],
+            response_column: [1, 2],
+            weights_column: [1, 2],
+        }
+
+        group_means_and_weights_df = dataframe_init_dispatch(
+            dataframe_dict=group_means_and_weights_dict,
+            library="pandas",
         )
 
-        assert_series_equal(expected, output)
+        output = x._prior_regularisation(
+            group_means_and_weights=group_means_and_weights_df,
+            column=column,
+            weights_column=weights_column,
+            response_column=response_column,
+        )
 
-    @pytest.mark.parametrize(
-        "dtype",
-        ["object", "category"],
-    )
-    def test_output2(self, dtype):
-        "Test output of method - for category and object dtypes"
+        assert (
+            output == expected
+        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_output2(self, library):
+        "Test output of method - for category dtypes"
         x = MeanResponseTransformer(columns="a", prior=0)
 
-        df = pd.DataFrame({"a": ["a", "b"]})
-        df["a"] = df["a"].astype(dtype)
+        df_dict = {"a": ["a", "b"]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        x.fit(X=df, y=pd.Series([2, 3]))
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("a").cast(nw.Categorical))
+        df = nw.to_native(df)
+
+        y = nw.new_series(name="y", values=[2, 3], backend=library)
+
+        x.fit(X=df, y=y)
 
         expected1 = (1 * 1) / (1)
 
         expected2 = (2 * 2) / (2)
 
-        expected = pd.Series([expected1, expected2])
+        expected = {"a": expected1, "b": expected2}
 
-        output = x._prior_regularisation(
-            cat_freq=pd.Series([1, 2]),
-            target_means=pd.Series([1, 2]),
+        weights_column = "weights"
+        response_column = "means"
+        column = "column"
+        group_means_and_weights_dict = {
+            column: ["a", "b"],
+            response_column: [1, 2],
+            weights_column: [1, 2],
+        }
+
+        group_means_and_weights_df = dataframe_init_dispatch(
+            dataframe_dict=group_means_and_weights_dict,
+            library="pandas",
         )
 
-        assert_series_equal(expected, output)
+        output = x._prior_regularisation(
+            group_means_and_weights=group_means_and_weights_df,
+            column=column,
+            weights_column=weights_column,
+            response_column=response_column,
+        )
+
+        assert (
+            output == expected
+        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+
+    @pytest.mark.parametrize("library", ["pandas"])
+    def test_output3(self, library):
+        "Test output of method - for pandas object dtype"
+        x = MeanResponseTransformer(columns="a", prior=0)
+
+        df_dict = {"a": ["a", "b"]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        df["a"] = df["a"].astype("object")
+
+        y = nw.new_series(name="y", values=[2, 3], backend=library)
+
+        x.fit(X=df, y=y)
+
+        expected1 = (1 * 1) / (1)
+
+        expected2 = (2 * 2) / (2)
+
+        expected = {"a": expected1, "b": expected2}
+
+        weights_column = "weights"
+        response_column = "means"
+        column = "column"
+        group_means_and_weights_dict = {
+            column: ["a", "b"],
+            response_column: [1, 2],
+            weights_column: [1, 2],
+        }
+
+        group_means_and_weights_df = dataframe_init_dispatch(
+            dataframe_dict=group_means_and_weights_dict,
+            library="pandas",
+        )
+
+        output = x._prior_regularisation(
+            group_means_and_weights=group_means_and_weights_df,
+            column=column,
+            weights_column=weights_column,
+            response_column=response_column,
+        )
+
+        assert (
+            output == expected
+        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
 
 
 class TestFit(GenericFitTests, WeightColumnFitMixinTests):
@@ -270,12 +343,29 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_weights_column_missing_error(self, library):
+        """Test that an exception is raised if weights_column is specified but not present in data for fit."""
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        x = MeanResponseTransformer(weights_column="z", columns=["b", "d", "f"])
+
+        with pytest.raises(
+            ValueError,
+            match=r"weight col \(z\) is not present in columns of data",
+        ):
+            x.fit(
+                df,
+                df["a"],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("level", "target_column", "unseen_level_handling"),
         [
-            (None, "a", "Mean"),
+            (None, "a", "mean"),
             ("all", "multi_level_response", 32),
-            (["yellow", "blue"], "multi_level_response", "Highest"),
+            (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
     def test_response_column_nulls_error(
@@ -283,10 +373,20 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         level,
         target_column,
         unseen_level_handling,
+        library,
     ):
         """Test that an exception is raised if nulls are present in response_column."""
-        df = create_MeanResponseTransformer_test_df()
-        df.loc[1, target_column] = np.nan
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        df = nw.from_native(df)
+        df = df.with_columns(
+            nw.new_series(
+                name=target_column,
+                values=[*[1.0] * (len(df) - 1), None],
+                backend=library,
+            ),
+        )
+        df = nw.to_native(df)
 
         x = MeanResponseTransformer(
             columns=["b"],
@@ -300,11 +400,12 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         ):
             x.fit(df, df[target_column])
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("level", "target_column", "unseen_level_handling"),
         [
-            (None, "a", "Mean"),
-            (None, "a", "Lowest"),
+            (None, "a", "mean"),
+            (None, "a", "min"),
         ],
     )
     def test_correct_mappings_stored_numeric_response(
@@ -313,9 +414,10 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         level,
         target_column,
         unseen_level_handling,
+        library,
     ):
         "Test that the mapping dictionary created in fit has the correct keys and values."
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
         columns = ["b", "c"]
         x = MeanResponseTransformer(
             columns=columns,
@@ -331,12 +433,13 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
             expected = learnt_mapping_dict[column]
             assert actual == expected
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("level", "target_column", "unseen_level_handling"),
         [
-            (["blue"], "multi_level_response", "Median"),
+            (["blue"], "multi_level_response", "median"),
             ("all", "multi_level_response", 32),
-            (["yellow", "blue"], "multi_level_response", "Highest"),
+            (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
     def test_correct_mappings_stored_categorical_response(
@@ -345,9 +448,10 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         level,
         target_column,
         unseen_level_handling,
+        library,
     ):
         "Test that the mapping dictionary created in fit has the correct keys and values."
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
         columns = ["b", "c"]
         x = MeanResponseTransformer(
             columns=columns,
@@ -356,12 +460,14 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         )
         x.fit(df, df[target_column])
 
+        df = nw.from_native(df)
+
         if level == "all":
             expected_created_cols = {
                 prefix + "_" + suffix
                 for prefix, suffix in product(
                     columns,
-                    df[target_column].unique().tolist(),
+                    df[target_column].unique().to_list(),
                 )
             }
 
@@ -370,24 +476,25 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
                 prefix + "_" + suffix for prefix, suffix in product(columns, level)
             }
         assert (
-            set(x.mapped_columns) == expected_created_cols
-        ), "Stored mapped columns are not as expected"
+            set(x.encoded_columns) == expected_created_cols
+        ), "Stored encoded columns are not as expected"
 
-        for column in x.mapped_columns:
+        for column in x.encoded_columns:
             actual = x.mappings[column]
             expected = learnt_mapping_dict[column]
             assert actual == expected
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("level", "target_column", "unseen_level_handling"),
         [
-            (None, "a", "Mean"),
-            (None, "a", "Median"),
-            (None, "a", "Lowest"),
-            (None, "a", "Highest"),
+            (None, "a", "mean"),
+            (None, "a", "median"),
+            (None, "a", "min"),
+            (None, "a", "max"),
             (None, "a", 22.0),
-            ("all", "multi_level_response", "Mean"),
-            (["yellow", "blue"], "multi_level_response", "Mean"),
+            ("all", "multi_level_response", "mean"),
+            (["yellow", "blue"], "multi_level_response", "mean"),
         ],
     )
     def test_correct_unseen_levels_encoding_dict_stored(
@@ -400,9 +507,10 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         level,
         target_column,
         unseen_level_handling,
+        library,
     ):
         "Test that the unseen_levels_encoding_dict dictionary created in fit has the correct keys and values."
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
         x = MeanResponseTransformer(
             columns=["b"],
             level=level,
@@ -434,42 +542,46 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
                 "b",
             }, "Stored unseen_levels_encoding_dict key is not as expected"
 
-            if unseen_level_handling == "Mean":
+            if unseen_level_handling == "mean":
                 for column in x.unseen_levels_encoding_dict:
                     actual = x.unseen_levels_encoding_dict[column]
                     expected = learnt_unseen_levels_encoding_dict_mean[column]
                     assert actual == expected
 
-            if unseen_level_handling == "Median":
+            elif unseen_level_handling == "median":
                 for column in x.unseen_levels_encoding_dict:
                     actual = x.unseen_levels_encoding_dict[column]
                     expected = learnt_unseen_levels_encoding_dict_median[column]
                     assert actual == expected
 
-            if unseen_level_handling == "Lowest":
+            elif unseen_level_handling == "min":
                 for column in x.unseen_levels_encoding_dict:
                     actual = x.unseen_levels_encoding_dict[column]
                     expected = learnt_unseen_levels_encoding_dict_lowest[column]
                     assert actual == expected
 
-            if unseen_level_handling == "Highest":
+            elif unseen_level_handling == "max":
                 for column in x.unseen_levels_encoding_dict:
                     actual = x.unseen_levels_encoding_dict[column]
                     expected = learnt_unseen_levels_encoding_dict_highest[column]
                     assert actual == expected
 
-            if unseen_level_handling == "Abitrary":
+            else:
                 for column in x.unseen_levels_encoding_dict:
                     actual = x.unseen_levels_encoding_dict[column]
                     expected = learnt_unseen_levels_encoding_dict_arbitrary[column]
                     assert actual == expected
 
-    def test_missing_categories_ignored(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_missing_categories_ignored(self, library):
         "test that where a categorical column has missing levels, these do not make it into the encoding dict"
 
-        df = create_MeanResponseTransformer_test_df()
-        unobserved_value = "bla"
-        df["c"] = df["c"].cat.add_categories(unobserved_value)
+        df = create_MeanResponseTransformer_test_df(library=library)
+        unobserved_value = "a"
+        df = nw.from_native(df)
+        df = df.filter(nw.col("c") == unobserved_value)
+        df = nw.to_native(df)
+
         target_column = "e"
         x = MeanResponseTransformer(
             columns=["c"],
@@ -488,15 +600,25 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
-    def test_learnt_values(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values(self, library):
         """Test that the mean response values learnt during fit are expected."""
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        df = nw.from_native(df)
+        weights_column = "weights_column"
+        df = df.with_columns(nw.lit(1).alias(weights_column)).to_native()
 
         x = MeanResponseTransformer(columns=["b", "d", "f"])
 
         x.mappings = {}
 
-        x._fit_binary_response(df, df["a"], x.columns)
+        x._fit_binary_response(
+            df,
+            x.columns,
+            weights_column=weights_column,
+            response_column="a",
+        )
 
         expected_mappings = {
             "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
@@ -510,24 +632,34 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     expected_mappings[key][value],
                 )
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": expected_mappings,
-                "global_mean": np.float64(3.5),
-            },
-            msg="mappings attribute",
-        )
+        expected_global_mean = np.float64(3.5)
+        assert (
+            x.global_mean == expected_global_mean
+        ), f"global mean not learnt as expected, expected {expected_global_mean} but got {x.global_mean}"
 
-    def test_learnt_values_prior_no_weight(self):
+        assert (
+            x.mappings == expected_mappings
+        ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_prior_no_weight(self, library):
         """Test that the mean response values learnt during fit are expected."""
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        df = nw.from_native(df)
+        weights_column = "weights_column"
+        df = df.with_columns(nw.lit(1).alias(weights_column)).to_native()
 
         x = MeanResponseTransformer(columns=["b", "d", "f"], prior=5)
 
         x.mappings = {}
 
-        x._fit_binary_response(df, df["a"], x.columns)
+        x._fit_binary_response(
+            df,
+            x.columns,
+            weights_column=weights_column,
+            response_column="a",
+        )
 
         expected_mappings = {
             "b": {
@@ -554,24 +686,34 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     expected_mappings[key][value],
                 )
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": expected_mappings,
-                "global_mean": np.float64(3.5),
-            },
-            msg="mappings attribute",
-        )
+        expected_global_mean = np.float64(3.5)
+        assert (
+            x.global_mean == expected_global_mean
+        ), f"global mean not learnt as expected, expected {expected_global_mean} but got {x.global_mean}"
 
-    def test_learnt_values_no_prior_weight(self):
+        assert (
+            x.mappings == expected_mappings
+        ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_no_prior_weight(self, library):
         """Test that the mean response values learnt during fit are expected if a weights column is specified."""
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
+        weights_column = "e"
 
-        x = MeanResponseTransformer(weights_column="e", columns=["b", "d", "f"])
+        x = MeanResponseTransformer(
+            weights_column=weights_column,
+            columns=["b", "d", "f"],
+        )
 
         x.mappings = {}
 
-        x._fit_binary_response(df, df["a"], x.columns)
+        x._fit_binary_response(
+            df,
+            x.columns,
+            response_column="a",
+            weights_column=weights_column,
+        )
 
         expected_mappings = {
             "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
@@ -585,29 +727,40 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     expected_mappings[key][value],
                 )
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": expected_mappings,
-            },
-            msg="mappings attribute",
-        )
+        assert (
+            x.mappings == expected_mappings
+        ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
 
-    def test_learnt_values_prior_weight(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_prior_weight(self, library):
         """Test that the mean response values learnt during fit are expected - when using weight and prior."""
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
 
-        df["weight"] = [1, 1, 1, 2, 2, 2]
+        df = nw.from_native(df)
+        weights_column = "weights_column"
+        native_namespace = nw.get_native_namespace(df)
+        df = df.with_columns(
+            nw.new_series(
+                name=weights_column,
+                values=[1, 1, 1, 2, 2, 2],
+                backend=native_namespace.__name__,
+            ),
+        ).to_native()
 
         x = MeanResponseTransformer(
             columns=["d", "f"],
             prior=5,
-            weights_column="weight",
+            weights_column=weights_column,
         )
 
         x.mappings = {}
 
-        x._fit_binary_response(df, df["a"], x.columns)
+        x._fit_binary_response(
+            df,
+            x.columns,
+            weights_column=weights_column,
+            response_column="a",
+        )
 
         expected_mappings = {
             "d": {1: 7 / 2, 2: 11 / 3, 3: 23 / 6, 4: 4.0, 5: 30 / 7, 6: 32 / 7},
@@ -619,40 +772,60 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     expected_mappings[key][value],
                 )
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": expected_mappings,
-                "global_mean": np.float64(4.0),
-            },
-            msg="mappings attribute",
-        )
+        expected_global_mean = np.float64(4.0)
+        assert (
+            x.global_mean == expected_global_mean
+        ), f"global mean not learnt as expected, expected {expected_global_mean} but got {x.global_mean}"
 
+        assert (
+            x.mappings == expected_mappings
+        ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
-    def test_prior_logic(self, prior):
+    def test_prior_logic(self, prior, library):
         "Test that for prior>0 encodings are closer to global mean than for prior=0."
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
 
-        df["weight"] = [1, 1, 1, 2, 2, 2]
+        df = nw.from_native(df)
+        weights_column = "weights_column"
+        native_namespace = nw.get_native_namespace(df)
+        df = df.with_columns(
+            nw.new_series(
+                name=weights_column,
+                values=[1, 1, 1, 2, 2, 2],
+                backend=native_namespace.__name__,
+            ),
+        )
 
         x_prior = MeanResponseTransformer(
             columns=["d", "f"],
             prior=prior,
-            weights_column="weight",
+            weights_column=weights_column,
         )
 
         x_no_prior = MeanResponseTransformer(
             columns=["d", "f"],
             prior=0,
-            weights_column="weight",
+            weights_column=weights_column,
         )
 
         x_prior.mappings = {}
         x_no_prior.mappings = {}
 
-        x_prior._fit_binary_response(df, df["a"], x_prior.columns)
+        x_prior._fit_binary_response(
+            df,
+            x_prior.columns,
+            response_column="a",
+            weights_column=weights_column,
+        )
 
-        x_no_prior._fit_binary_response(df, df["a"], x_no_prior.columns)
+        x_no_prior._fit_binary_response(
+            df,
+            x_no_prior.columns,
+            weights_column=weights_column,
+            response_column="a",
+        )
 
         prior_mappings = x_prior.mappings
 
@@ -676,42 +849,63 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     prior_mean_dist <= no_prior_mean_dist
                 ), "encodings using priors should be closer to the global mean than without"
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("low_weight", "high_weight"),
         ((1, 2), (2, 3), (3, 4), (10, 20)),
     )
-    def test_prior_logic_for_weights(self, low_weight, high_weight):
+    def test_prior_logic_for_weights(self, low_weight, high_weight, library):
         "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        df = nw.from_native(df)
+        weights_column = "weights_column"
+        native_namespace = nw.get_native_namespace(df)
 
         # column f looks like [False, False, False, True, True, True]
-        df["weight"] = [
-            low_weight,
-            low_weight,
-            low_weight,
-            high_weight,
-            high_weight,
-            high_weight,
-        ]
+        df = df.with_columns(
+            nw.new_series(
+                name=weights_column,
+                values=[
+                    low_weight,
+                    low_weight,
+                    low_weight,
+                    high_weight,
+                    high_weight,
+                    high_weight,
+                ],
+                backend=native_namespace.__name__,
+            ),
+        )
 
         x_prior = MeanResponseTransformer(
             columns=["f"],
             prior=5,
-            weights_column="weight",
+            weights_column=weights_column,
         )
 
         x_no_prior = MeanResponseTransformer(
             columns=["f"],
             prior=0,
-            weights_column="weight",
+            weights_column=weights_column,
         )
 
         x_prior.mappings = {}
         x_no_prior.mappings = {}
 
-        x_prior._fit_binary_response(df, df["a"], x_prior.columns)
+        x_prior._fit_binary_response(
+            df,
+            x_prior.columns,
+            weights_column=weights_column,
+            response_column="a",
+        )
 
-        x_no_prior._fit_binary_response(df, df["a"], x_no_prior.columns)
+        x_no_prior._fit_binary_response(
+            df,
+            x_no_prior.columns,
+            weights_column=weights_column,
+            response_column="a",
+        )
 
         prior_mappings = x_prior.mappings
 
@@ -747,18 +941,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             low_ratio <= high_ratio
         ), "encodings for categories with lower weights should be moved closer to the global mean than those with higher weights, for fixed prior"
 
-    def test_weights_column_missing_error(self):
-        """Test that an exception is raised if weights_column is specified but not present in data for fit."""
-        df = create_MeanResponseTransformer_test_df()
-
-        x = MeanResponseTransformer(weights_column="z", columns=["b", "d", "f"])
-
-        with pytest.raises(
-            ValueError,
-            match=r"weight col \(z\) is not present in columns of data",
-        ):
-            x._fit_binary_response(df, df["a"], x.columns)
-
 
 class TestTransform(GenericTransformTests):
     """Tests for MeanResponseTransformer.transform()."""
@@ -767,297 +949,302 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self, library="pandas"):
         """Expected output for single level response."""
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-                "b": [1, 2, 3, 4, 5, 6],
-                "c": ["a", "b", "c", "d", "e", "f"],
-                "d": [1, 2, 3, 4, 5, 6],
-                "e": [1, 2, 3, 4, 5, 6.0],
-                "f": [2, 2, 2, 5, 5, 5],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                ],
-            },
-        )
 
-        df["c"] = df["c"].astype("category")
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "b": [1, 2, 3, 4, 5, 6],
+            "c": ["a", "b", "c", "d", "e", "f"],
+            "d": [1, 2, 3, 4, 5, 6],
+            "e": [1, 2, 3, 4, 5, 6],
+            "f": [2, 2, 2, 5, 5, 5],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+            ],
+        }
 
-        return df
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    def expected_df_2():
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
+
+        return df.to_native()
+
+    def expected_df_2(self, library="pandas"):
         """Expected output for response with level = blue."""
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-                "c": ["a", "b", "c", "d", "e", "f"],
-                "d": [1, 2, 3, 4, 5, 6],
-                "e": [1, 2, 3, 4, 5, 6.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                ],
-                "b_blue": [1, 1, 0, 0, 0, 0],
-                "f_blue": [2 / 3, 2 / 3, 2 / 3, 0, 0, 0],
-            },
-        )
 
-        df["c"] = df["c"].astype("category")
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "c": ["a", "b", "c", "d", "e", "f"],
+            "d": [1, 2, 3, 4, 5, 6],
+            "e": [1, 2, 3, 4, 5, 6],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+            ],
+            "b_blue": [1, 1, 0, 0, 0, 0],
+            "f_blue": [2 / 3, 2 / 3, 2 / 3, 0, 0, 0],
+        }
 
-        return df
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    def expected_df_3():
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
+
+        return df.to_native()
+
+    def expected_df_3(self, library="pandas"):
         """Expected output for response with level = 'all'."""
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-                "c": ["a", "b", "c", "d", "e", "f"],
-                "d": [1, 2, 3, 4, 5, 6],
-                "e": [1, 2, 3, 4, 5, 6.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                ],
-                "b_blue": [1, 1, 0, 0, 0, 0],
-                "f_blue": [2 / 3, 2 / 3, 2 / 3, 0, 0, 0],
-                "b_green": [0, 0, 0, 0, 1, 1],
-                "f_green": [0, 0, 0, 2 / 3, 2 / 3, 2 / 3],
-                "b_yellow": [0, 0, 1, 1, 0, 0],
-                "f_yellow": [1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3],
-            },
-        )
 
-        df["c"] = df["c"].astype("category")
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "c": ["a", "b", "c", "d", "e", "f"],
+            "d": [1, 2, 3, 4, 5, 6],
+            "e": [1, 2, 3, 4, 5, 6],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+            ],
+            "b_blue": [1, 1, 0, 0, 0, 0],
+            "f_blue": [2 / 3, 2 / 3, 2 / 3, 0.0, 0.0, 0.0],
+            "b_green": [0, 0, 0, 0, 1, 1],
+            "f_green": [0.0, 0.0, 0.0, 2 / 3, 2 / 3, 2 / 3],
+            "b_yellow": [0, 0, 1, 1, 0, 0],
+            "f_yellow": [1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3],
+        }
 
-        return df
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    def expected_df_4():
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
+
+        return df.to_native()
+
+    def expected_df_4(self, library="pandas"):
         """Expected output for transform on dataframe with single level response and unseen levels,
-        where unseen_level_handling = 'Mean'.
+        where unseen_level_handling = 'mean'.
         """
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.5, 3.5],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.5, 3.5],
-                "e": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-                "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-            },
-        )
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.5, 3.5],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.5, 3.5],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+        }
 
-        df["c"] = df["c"].astype("category")
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-        return df
+        return df.to_native()
 
-    def expected_df_5():
+    def expected_df_5(self, library="pandas"):
         """Expected output for transform on dataframe with single level response and unseen levels,
-        where unseen_level_handling = 'Median'.
+        where unseen_level_handling = 'median'.
         """
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.5, 3.5],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.5, 3.5],
-                "e": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-                "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-            },
-        )
 
-        df["c"] = df["c"].astype("category")
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 3.0],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 3.0],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+        }
 
-        return df
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-    def expected_df_6():
+        return df.to_native()
+
+    def expected_df_6(self, library="pandas"):
         """Expected output for transform on dataframe with single level response and unseen levels,
-        where unseen_level_handling = 'Lowest'.
+        where unseen_level_handling = 'min'.
         """
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 1.0],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 1.0],
-                "e": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-                "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-            },
-        )
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 1.0],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 1.0],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+        }
 
-        df["c"] = df["c"].astype("category")
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-        return df
+        return df.to_native()
 
-    def expected_df_7():
+    def expected_df_7(self, library="pandas"):
         """Expected output for transform on dataframe with single level response and unseen levels,
-        where unseen_level_handling = 'Highest'.
+        where unseen_level_handling = 'max'.
         """
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 6.0, 6.0],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 6.0, 6.0],
-                "e": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-                "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-            },
-        )
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 6.0, 6.0],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 6.0, 6.0],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+        }
 
-        df["c"] = df["c"].astype("category")
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-        return df
+        return df.to_native()
 
-    def expected_df_8():
+    def expected_df_8(self, library="pandas"):
         """Expected output for transform on dataframe with single level response and unseen levels,
         where unseen_level_handling set to arbitrary int/float value.
         """
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 21.6, 21.6],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 21.6, 21.6],
-                "e": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-                "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-            },
-        )
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "b": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 21.6, 21.6],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 21.6, 21.6],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "f": [2.0, 2.0, 2.0, 5.0, 5.0, 5.0, 5.0, 2.0],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+        }
 
-        df["c"] = df["c"].astype("category")
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-        return df
+        return df.to_native()
 
-    def expected_df_9():
+    def expected_df_9(self, library="pandas"):
         """Expected output for transform on dataframe with multi-level response with level = blue and unseen levels in data."""
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1, 2, 3, 4, 5, 6, 7, 8],
-                "e": [1, 2, 3, 4, 5, 6.0, 7, 8],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-                "b_blue": [1, 1, 0, 0, 0, 0, 2 / 6, 2 / 6],
-                "f_blue": [2 / 3, 2 / 3, 2 / 3, 0, 0, 0, 0, 2 / 3],
-            },
-        )
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1, 2, 3, 4, 5, 6, 7, 8],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+            "b_blue": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 2 / 6, 2 / 6],
+            "f_blue": [2 / 3, 2 / 3, 2 / 3, 0.0, 0.0, 0.0, 0, 2 / 3],
+        }
 
-        df["c"] = df["c"].astype("category")
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-        return df
+        return df.to_native()
 
-    def expected_df_10():
+    def expected_df_10(self, library="pandas"):
         """Expected output for transform on dataframe with multi-level response with level = "all" and unseen levels in data."""
-        df = pd.DataFrame(
-            {
-                "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
-                "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
-                "d": [1, 2, 3, 4, 5, 6, 7, 8],
-                "e": [1, 2, 3, 4, 5, 6.0, 7, 8],
-                "multi_level_response": [
-                    "blue",
-                    "blue",
-                    "yellow",
-                    "yellow",
-                    "green",
-                    "green",
-                    "yellow",
-                    "blue",
-                ],
-                "b_blue": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
-                "f_blue": [2 / 3, 2 / 3, 2 / 3, 0, 0, 0, 0, 2 / 3],
-                "b_yellow": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
-                "f_yellow": [1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3],
-                "b_green": [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-                "f_green": [0.0, 0.0, 0.0, 2 / 3, 2 / 3, 2 / 3, 2 / 3, 0],
-            },
-        )
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 3.0],
+            "c": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "d": [1, 2, 3, 4, 5, 6, 7, 8],
+            "e": [1, 2, 3, 4, 5, 6, 7, 8],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+                "yellow",
+                "blue",
+            ],
+            "b_blue": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+            "f_blue": [2 / 3, 2 / 3, 2 / 3, 0, 0, 0, 0, 2 / 3],
+            "b_yellow": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
+            "f_yellow": [1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3],
+            "b_green": [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            "f_green": [0.0, 0.0, 0.0, 2 / 3, 2 / 3, 2 / 3, 2 / 3, 0],
+        }
 
-        df["c"] = df["c"].astype("category")
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
-        return df
+        return df.to_native()
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df(),
-            expected_df_1(),
-        ),
-    )
-    def test_expected_output_binary_response(self, df, expected):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_binary_response(self, library):
         """Test that the output is expected from transform with a binary response."""
+
+        df = create_MeanResponseTransformer_test_df(library=library)
+        expected = self.expected_df_1(library=library)
+
         columns = ["b", "d", "f"]
         x = MeanResponseTransformer(columns=columns)
 
@@ -1067,36 +1254,51 @@ class TestTransform(GenericTransformTests):
             "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
             "f": {False: 2, True: 5},
         }
+        x.column_to_encoded_columns = {"b": ["b"], "d": ["d"], "f": ["f"]}
+        x.encoded_columns = ["b", "d", "f"]
+        x.return_dtypes = {col: x.return_type for col in x.encoded_columns}
 
         df_transformed = x.transform(df)
 
-        for col in columns:
-            expected[col] = expected[col].astype(x.return_type)
+        expected = nw.from_native(expected)
+        for col in x.encoded_columns:
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
+        expected = nw.to_native(expected)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order],
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df(),
-            expected_df_2(),
-        ),
-    )
-    def test_expected_output_one_multi_level(self, df, expected):
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_one_multi_level(self, library):
         """Test that the output is expected from transform with a multi-level response and one level selected."""
+
+        df = create_MeanResponseTransformer_test_df(library=library)
+        expected = self.expected_df_2(library=library)
+
         columns = ["b", "f"]
         level = ["blue"]
-        expected_created_cols = [
-            prefix + "_" + suffix for prefix, suffix in product(columns, level)
-        ]
         x = MeanResponseTransformer(columns=columns, level=level)
-
-        for col in expected_created_cols:
-            expected[col] = expected[col].astype(x.return_type)
 
         # set the impute values dict directly rather than fitting x on df so test works with helpers
         x.mappings = {
@@ -1104,32 +1306,51 @@ class TestTransform(GenericTransformTests):
             "f_blue": {False: 2 / 3, True: 0},
         }
         x.response_levels = level
-        x.mapped_columns = list(x.mappings.keys())
+        x.encoded_columns = list(x.mappings.keys())
+        x.column_to_encoded_columns = {"b": ["b_blue"], "f": ["f_blue"]}
+        x.return_dtypes = {col: "Float32" for col in x.mappings}
         df_transformed = x.transform(df)
         new_expected_created_cols = [
             prefix + "_" + suffix
             for prefix, suffix in product(columns, x.response_levels)
         ]
 
+        expected = nw.from_native(expected)
         for col in new_expected_created_cols:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
+        expected = nw.to_native(expected)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
-            check_like=False,
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order],
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df(),
-            expected_df_3(),
-        ),
-    )
-    def test_expected_output_all_levels(self, df, expected):
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_all_levels(self, library):
         """Test that the output is expected from transform for a multi-level response and all levels selected."""
+
+        df = create_MeanResponseTransformer_test_df(library=library)
+        expected = self.expected_df_3(library=library)
+
         columns = ["b", "f"]
         x = MeanResponseTransformer(columns=columns, level="all")
 
@@ -1144,28 +1365,53 @@ class TestTransform(GenericTransformTests):
         }
 
         x.response_levels = ["blue", "green", "yellow"]
-        x.mapped_columns = list(x.mappings.keys())
+        x.encoded_columns = list(x.mappings.keys())
+        x.column_to_encoded_columns = {
+            "b": ["b_blue", "b_yellow", "b_green"],
+            "f": ["f_blue", "f_yellow", "f_green"],
+        }
+        x.return_dtypes = {col: "Float32" for col in x.mappings}
         df_transformed = x.transform(df)
         expected_created_cols = [
             prefix + "_" + suffix
             for prefix, suffix in product(columns, x.response_levels)
         ]
 
+        expected = nw.from_native(expected)
         for col in expected_created_cols:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
-            check_like=False,
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    def test_expected_output_sigle_level_response_unseen_levels_default(self):
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_sigle_level_response_unseen_levels_default(self, library):
         """Test that the output is expected from transform with a single level response with unseen levels in data with
         unseen_level_handling set to 'None', i.e., default value.
         """
-        initial_df = create_MeanResponseTransformer_test_df()
+
+        initial_df = create_MeanResponseTransformer_test_df(library=library)
         x = MeanResponseTransformer(columns=["b", "d", "f"])
         x.fit(initial_df, initial_df["a"])
         df = create_MeanResponseTransformer_test_df_unseen_levels()
@@ -1175,161 +1421,223 @@ class TestTransform(GenericTransformTests):
         ):
             x.transform(df)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_4(),
-        ),
-    )
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_sigle_level_response_unseen_levels_mean(
         self,
-        df,
-        expected,
+        library,
     ):
         """Test that the output is expected from transform with a single level response with unseen levels in data with
-        unseen_level_handling set to 'Mean'.
+        unseen_level_handling set to 'mean'.
         """
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_4(library=library)
+
         columns = ["b", "d", "f"]
         target = "a"
         x = MeanResponseTransformer(
             columns=columns,
-            unseen_level_handling="Mean",
+            unseen_level_handling="mean",
         )
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
         df_transformed = x.transform(df)
 
+        expected = nw.from_native(expected)
         for col in columns:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_5(),
-        ),
-    )
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_sigle_level_response_unseen_levels_median(
         self,
-        df,
-        expected,
+        library,
     ):
         """Test that the output is expected from transform with a single level response with unseen levels in data
-        with unseen_level_handling set to 'Median'.
+        with unseen_level_handling set to 'median'.
         """
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_5(library=library)
+
         columns = ["b", "d", "f"]
         target = "a"
         x = MeanResponseTransformer(
             columns=columns,
-            unseen_level_handling="Median",
+            unseen_level_handling="median",
         )
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
         df_transformed = x.transform(df)
 
+        expected = nw.from_native(expected)
         for col in columns:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_6(),
-        ),
-    )
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_sigle_level_response_unseen_levels_lowest(
         self,
-        df,
-        expected,
+        library,
     ):
         """Test that the output is expected from transform with a single level response with unseen levels in data
-        with unseen_level_handling set to 'Lowest'.
+        with unseen_level_handling set to 'min'.
         """
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_6(library=library)
+
         columns = ["b", "d", "f"]
         target = "a"
         x = MeanResponseTransformer(
             columns=columns,
-            unseen_level_handling="Lowest",
+            unseen_level_handling="min",
         )
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
         df_transformed = x.transform(df)
 
+        expected = nw.from_native(expected)
         for col in columns:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        df_transformed = nw.from_native(df_transformed)
+        column_order = df_transformed.columns
+
+        assert_frame_equal_dispatch(
+            df_transformed.to_native(),
+            expected[column_order].to_native(),
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_7(),
-        ),
-    )
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_sigle_level_response_unseen_levels_highest(
         self,
-        df,
-        expected,
+        library,
     ):
         """Test that the output is expected from transform with a single level response with unseen levels in data
-        with unseen_level_handling set to 'Highest'.
+        with unseen_level_handling set to 'max'.
         """
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_7(library=library)
+
         columns = ["b", "d", "f"]
         target = "a"
         x = MeanResponseTransformer(
             columns=["b", "d", "f"],
-            unseen_level_handling="Highest",
+            unseen_level_handling="max",
         )
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
         df_transformed = x.transform(df)
 
+        expected = nw.from_native(expected)
         for col in columns:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_8(),
-        ),
-    )
-    def test_expected_output_sigle_level_response_unseen_levels_arbitrary(
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_single_level_response_unseen_levels_arbitrary(
         self,
-        df,
-        expected,
+        library,
     ):
         """Test that the output is expected from transform with a single level response with unseen levels in data
         with unseen_level_handling set to an arbitrary int/float value'.
         """
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_8(library=library)
+
         columns = ["b", "d", "f"]
         target = "a"
         x = MeanResponseTransformer(columns=columns, unseen_level_handling=21.6)
@@ -1338,24 +1646,41 @@ class TestTransform(GenericTransformTests):
         x.fit(initial_df, initial_df[target])
         df_transformed = x.transform(df)
 
-        for col in columns:
-            expected[col] = expected[col].astype(x.return_type)
+        expected = nw.from_native(expected)
+        for col in x.columns:
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_9(),
-        ),
-    )
-    def test_expected_output_one_multi_level_unseen_levels(self, df, expected):
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_one_multi_level_unseen_levels(self, library):
         """Test that the output is expected from transform with a multi-level response and unseen levels and one level selected."""
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_9(library=library)
+
         columns = ["b", "f"]
         level = ["blue"]
         expected_created_cols = [
@@ -1364,31 +1689,48 @@ class TestTransform(GenericTransformTests):
         x = MeanResponseTransformer(
             columns=columns,
             level=level,
-            unseen_level_handling="Mean",
+            unseen_level_handling="mean",
         )
 
+        expected = nw.from_native(expected)
         for col in expected_created_cols:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df["multi_level_response"])
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_MeanResponseTransformer_test_df_unseen_levels(),
-            expected_df_10(),
-        ),
-    )
-    def test_expected_output_all_multi_level_unseen_levels(self, df, expected):
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_all_multi_level_unseen_levels(self, library):
         """Test that the output is expected from transform with a multi-level response and unseen levels and all level selected."""
+
+        df = create_MeanResponseTransformer_test_df_unseen_levels(library=library)
+        expected = self.expected_df_10(library=library)
+
         columns = ["b", "f"]
         target = "multi_level_response"
         initial_df = create_MeanResponseTransformer_test_df()
@@ -1399,30 +1741,52 @@ class TestTransform(GenericTransformTests):
         x = MeanResponseTransformer(
             columns=columns,
             level="all",
-            unseen_level_handling="Highest",
+            unseen_level_handling="max",
         )
 
         x.fit(initial_df, initial_df[target])
         df_transformed = x.transform(df)
 
+        expected = nw.from_native(expected)
         for col in expected_created_cols:
-            expected[col] = expected[col].astype(x.return_type)
+            expected = expected.with_columns(
+                nw.col(col).cast(getattr(nw, x.return_type)),
+            )
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in MeanResponseTransformer.transform",
+        column_order = nw.from_native(df_transformed).columns
+
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected[column_order].to_native(),
         )
 
-    def test_nulls_introduced_in_transform_error(self):
+        # also test single row transform
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            column_order = nw.from_native(df_transformed_row).columns
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row[column_order],
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_nulls_introduced_in_transform_error(self, library):
         """Test that transform will raise an error if nulls are introduced."""
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
 
         x = MeanResponseTransformer(columns=["b", "d", "f"])
 
         x.fit(df, df["a"])
 
-        df["b"] = "z"
+        df = nw.from_native(df)
+        df = df.with_columns(nw.lit("z").alias("b"))
+        df = nw.to_native(df)
 
         with pytest.raises(
             ValueError,
@@ -1430,13 +1794,14 @@ class TestTransform(GenericTransformTests):
         ):
             x.transform(df)
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "prior, level, target, unseen_level_handling",
         [
-            (5, "all", "c", "Mean"),
-            (100, ["a", "b"], "c", "Lowest"),
-            (1, None, "a", "Highest"),
-            (0, None, "a", "Median"),
+            (5, "all", "c", "mean"),
+            (100, ["a", "b"], "c", "min"),
+            (1, None, "a", "max"),
+            (0, None, "a", "median"),
         ],
     )
     def test_return_type_can_be_changed(
@@ -1445,15 +1810,16 @@ class TestTransform(GenericTransformTests):
         level,
         target,
         unseen_level_handling,
+        library,
     ):
         "Test that output return types are controlled by return_type param, this defaults to float32 so test float64 here"
 
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
 
         columns = ["b", "d", "f"]
         x = MeanResponseTransformer(
             columns=columns,
-            return_type="float64",
+            return_type="Float64",
             prior=prior,
             unseen_level_handling=unseen_level_handling,
             level=level,
@@ -1461,10 +1827,10 @@ class TestTransform(GenericTransformTests):
 
         x.fit(df, df[target])
 
-        output_df = x.transform(df)
+        output_df = nw.from_native(x.transform(df))
 
         if target == "c":
-            actual_levels = df[target].unique().tolist() if level == "all" else level
+            actual_levels = df[target].unique().to_list() if level == "all" else level
             expected_created_cols = [
                 prefix + "_" + suffix
                 for prefix, suffix in product(columns, actual_levels)
@@ -1475,14 +1841,15 @@ class TestTransform(GenericTransformTests):
 
         for col in expected_created_cols:
             expected_type = x.return_type
-            actual_type = output_df[col].dtype.name
+            actual_type = str(output_df[col].dtype)
             assert (
                 actual_type == expected_type
             ), f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
 
-    def test_learnt_values_not_modified(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_not_modified(self, library):
         """Test that the mappings from fit are not changed in transform."""
-        df = create_MeanResponseTransformer_test_df()
+        df = create_MeanResponseTransformer_test_df(library=library)
 
         x = MeanResponseTransformer(columns="b")
 
@@ -1494,11 +1861,9 @@ class TestTransform(GenericTransformTests):
 
         x2.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=x.mappings,
-            actual=x2.mappings,
-            msg="Mean response values not changed in transform",
-        )
+        assert (
+            x.mappings == x2.mappings
+        ), "Mean response values not changed in transform"
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
