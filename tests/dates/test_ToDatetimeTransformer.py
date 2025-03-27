@@ -109,9 +109,6 @@ class TestTransform(GenericTransformTests):
         df_transformed = to_dt_1.transform(df)
         df_transformed = to_dt_2.transform(df_transformed)
 
-        print(df_transformed)
-        print(expected)
-
         ta.equality.assert_equal_dispatch(
             expected=expected,
             actual=df_transformed,
