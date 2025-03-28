@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import narwhals as nw
 import pandas as pd
+
+if TYPE_CHECKING:
+    from narwhals.typing import FrameT
 
 from tubular.base import BaseTransformer
 
@@ -29,7 +35,7 @@ class SetValueTransformer(BaseTransformer):
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -42,25 +48,25 @@ class SetValueTransformer(BaseTransformer):
 
         super().__init__(columns=columns, copy=copy, **kwargs)
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
         """Set columns to value.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : FrameT
             Data to apply mappings to.
 
         Returns
         -------
-        X : pd.DataFrame
+        X : FrameT
             Transformed input X with columns set to value.
 
         """
-        X = super().transform(X)
+        X = nw.from_native(super().transform(X))
 
-        X[self.columns] = self.value
-
-        return X
+        set_value_expression = [nw.lit(self.value).alias(col) for col in self.columns]
+        return X.with_columns(set_value_expression)
 
 
 class ColumnDtypeSetter(BaseTransformer):

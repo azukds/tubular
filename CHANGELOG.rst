@@ -49,7 +49,7 @@ and refuse columns with nulls (raises an error directing to imputers.) `#372 <ht
 - Optional wanted_levels feature has been integrated into the OneHotEncodingTransformer which allows users to specify which levels in a column they wish to encode. `#384 <https://github.com/azukds/tubular/issues/384>_`
 - Created unit tests to check if the values provided for wanted_values are as expected and if the output is as expected.
 - fix: issue with falsey values not imputing for ArbitraryImputer `#391 <https://github.com/azukds/tubular/issues/391>_`
-- placeholder
+- narhwalify SetValueTransformer `#398 <https://github.com/azukds/tubular/issues/398>_`
 - placeholder
 - placeholder
 - narwhalified DateDifferenceTransformer. `#376 <https://github.com/azukds/tubular/issues/376>_`
