@@ -52,6 +52,7 @@ Changed
 - placeholder 
 - narwhalified DateDifferenceTransformer. `#376 <https://github.com/azukds/tubular/issues/376>_`
 - narwhalified DateDiffLeapYearTransformer.
+- Add Sphinx documentation `#347 <https://github.com/azukds/tubular/issues/347>_`
 
 1.4.1 (02/12/2024)
 ------------------
