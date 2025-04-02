@@ -14,6 +14,16 @@ documentation for details.
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   modules
-   tubular
+
+   Modules <modules>
+   Tubular Documentation <tubular>
+   Changelog <changelog>
+   Contributing <CONTRIBUTING>
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
