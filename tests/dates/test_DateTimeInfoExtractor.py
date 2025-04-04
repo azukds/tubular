@@ -284,7 +284,7 @@ class TestMapValues:
     def test_valid_nan_output(self, timeofday_extractor):
         """Test that correct values are return with valid inputs."""
         output = timeofday_extractor._map_values(np.nan, "timeofday")
-        print(output)
+
         assert np.isnan(
             output,
         ), f"passing np.nan should result in np.nan, instead received {output}"

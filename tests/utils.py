@@ -4,6 +4,10 @@ from narwhals.typing import FrameT
 from pandas.testing import assert_frame_equal as assert_pandas_frame_equal
 from polars.testing import assert_frame_equal as assert_polars_frame_equal
 
+from tubular._utils import (
+    _assess_pandas_object_column,  # noqa: PLC2701, purposefully using private method in tests
+)
+
 PANDAS_TO_POLARS_TYPES = {
     "int64": pl.Int64,
     "int32": pl.Int32,
@@ -18,7 +22,7 @@ PANDAS_TO_POLARS_TYPES = {
     "datetime64[ns, UTC]": pl.Datetime(time_zone="UTC"),
     "date32[day][pyarrow]": pl.Date,
     # this is not a pandas type, but include to help manage null column handling
-    "null": pl.Null,
+    "null": pl.Unknown,
 }
 
 
@@ -52,12 +56,10 @@ def _align_pandas_and_polars_dtypes(
         # creating a polars col with object type would give values like 'true', 'none'
         # overwrite these cases for better handling
         if pandas_col_type == "object":
-            if pandas_df[col].notna().sum() == 0:
-                pandas_col_type = "null"
-
-            # check if all non-null values are bool
-            elif sum(isinstance(value, bool) for value in pandas_df[col] if value):
-                pandas_col_type = "bool"
+            pandas_col_type, polars_col_type = _assess_pandas_object_column(
+                pandas_df=pandas_df,
+                col=col,
+            )
 
         polars_col_type = PANDAS_TO_POLARS_TYPES[pandas_col_type]
         polars_df = polars_df.with_columns(polars_df[col].cast(polars_col_type))
