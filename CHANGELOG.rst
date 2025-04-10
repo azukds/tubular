@@ -27,6 +27,7 @@ Changed
 - narhwalify SetValueTransformer `#398 <https://github.com/azukds/tubular/issues/398>_`
 - narwhalified DateDifferenceTransformer. `#376 <https://github.com/azukds/tubular/issues/376>_`
 - narwhalified DateDiffLeapYearTransformer.
+- added OneDKmeansTransformer. `#406 <https://github.com/azukds/tubular/issues/406>_`
 - placeholder
 - placeholder 
 - placeholder

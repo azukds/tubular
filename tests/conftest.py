@@ -236,6 +236,10 @@ def minimal_attribute_dict():
         "NullIndicator": {
             "columns": ["a"],
         },
+        "OneDKmeansTransformer": {
+            "column": "a",
+            "new_column_name": "new",
+        },
         "OneHotEncodingTransformer": {
             "columns": ["a", "b"],
             "drop_original": True,

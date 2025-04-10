@@ -216,7 +216,7 @@ def create_bool_and_float_df(library="pandas"):
     """Create simple DataFrame to use in other tests."""
 
     df_dict = {
-        "a": [1.0, 2.0, np.nan],
+        "a": [1.0, 2.0, None],
         "b": [True, False, None],
     }
 
