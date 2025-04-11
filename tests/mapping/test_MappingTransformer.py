@@ -1,14 +1,5 @@
-import numpy as np
-import pandas as pd
+import narwhals as nw
 import pytest
-import test_aide as ta
-from pandas.api.types import (
-    is_bool_dtype,
-    is_categorical_dtype,
-    is_float_dtype,
-    is_integer_dtype,
-    is_object_dtype,
-)
 
 import tests.test_data as d
 from tests.mapping.test_BaseMappingTransformer import (
@@ -17,8 +8,36 @@ from tests.mapping.test_BaseMappingTransformer import (
     GenericFitTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.mapping import MappingTransformer
+
+
+def expected_df_1(library="pandas"):
+    """Expected output for test_expected_output."""
+
+    df_dict = {"a": ["a", "b", "c", "d", "e", "f"], "b": [1, 2, 3, 4, 5, 6]}
+
+    df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+    df = nw.from_native(df)
+
+    df = df.with_columns(nw.col("b").cast(nw.Int8))
+
+    return df.to_native()
+
+
+def expected_df_2(library="pandas"):
+    """Expected output for test_non_specified_values_unchanged."""
+
+    df_dict = {"a": [5, 6, 7, 4, 5, 6], "b": ["z", "y", "x", "d", "e", "f"]}
+
+    df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+    df = nw.from_native(df)
+
+    df = df.with_columns(nw.col("a").cast(nw.Int8))
+
+    return df.to_native()
 
 
 class TestInit(BaseMappingTransformerInitTests):
@@ -44,34 +63,13 @@ class TestTransform(BaseMappingTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "MappingTransformer"
 
-    def expected_df_1():
-        """Expected output for test_expected_output."""
-
-        df = pd.DataFrame(
-            {"a": ["a", "b", "c", "d", "e", "f"], "b": [1, 2, 3, 4, 5, 6]},
-        )
-
-        df["b"] = df["b"].astype(np.int8)
-
-        return df
-
-    def expected_df_2():
-        """Expected output for test_non_specified_values_unchanged."""
-
-        df = pd.DataFrame(
-            {"a": [5, 6, 7, 4, 5, 6], "b": ["z", "y", "x", "d", "e", "f"]},
-        )
-
-        df["a"] = df["a"].astype(np.int8)
-
-        return df
-
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_1()),
-    )
-    def test_expected_output(self, df, expected):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output(self, library):
         """Test that transform is giving the expected output."""
+
+        df = d.create_df_1(library=library)
+        expected = expected_df_1(library=library)
+
         mapping = {
             "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},
             "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
@@ -85,12 +83,26 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_2()),
-    )
-    def test_non_specified_values_unchanged(self, df, expected):
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        # also check single rows
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_non_specified_values_unchanged(self, library):
         """Test that values not specified in mappings are left unchanged in transform."""
+
+        df = d.create_df_1(library=library)
+        expected = expected_df_2(library=library)
+
         mapping = {"a": {1: 5, 2: 6, 3: 7}, "b": {"a": "z", "b": "y", "c": "x"}}
 
         return_dtypes = {"a": "Int8", "b": "String"}
@@ -101,25 +113,39 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        # also check single rows
+        for i in range(len(df)):
+            df_transformed_row = x.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        ("mapping", "return_dtypes", "output_col_type_check"),
+        ("mapping", "return_dtypes"),
         [
-            ({"a": {1: 1.1, 6: 6.6}}, {"a": "Float64"}, is_float_dtype),
-            ({"a": {1: "one", 6: "six"}}, {"a": "String"}, is_object_dtype),
+            ({"a": {1: 1.1, 6: 6.6}}, {"a": "Float64"}),
+            (
+                {"a": {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}},
+                {"a": "String"},
+            ),
             (
                 {"a": {1: True, 2: True, 3: True, 4: False, 5: False, 6: False}},
                 {"a": "Boolean"},
-                is_bool_dtype,
             ),
             (
                 {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}},
                 {"b": "Int32"},
-                is_integer_dtype,
             ),
             (
                 {"b": {"a": 1.1, "b": 2.2, "c": 3.3, "d": 4.4, "e": 5.5, "f": 6.6}},
                 {"b": "Float32"},
-                is_float_dtype,
             ),
         ],
     )
@@ -127,21 +153,27 @@ class TestTransform(BaseMappingTransformerTransformTests):
         self,
         mapping,
         return_dtypes,
-        output_col_type_check,
+        library,
     ):
-        df = d.create_df_1()
+        df = d.create_df_1(library=library)
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
         df = x.transform(df)
 
-        assert output_col_type_check(df[list(return_dtypes.keys())[0]])
+        column = list(mapping.keys())[0]
+        actual_dtype = str(nw.from_native(df).get_column(column).dtype)
+        assert (
+            actual_dtype == return_dtypes[column]
+        ), f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
 
-    def test_category_dtype_is_conserved(self):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_category_dtype_is_conserved(self, library):
         """This is a separate test due to the behaviour of category dtypes.
 
         See documentation of transform method
         """
-        df = d.create_df_1()
-        df["b"] = df["b"].astype("category")
+        df = d.create_df_1(library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("b").cast(nw.Categorical)).to_native()
 
         mapping = {"b": {"a": "aaa", "b": "bbb"}}
         return_dtypes = {"b": "Categorical"}
@@ -149,18 +181,20 @@ class TestTransform(BaseMappingTransformerTransformTests):
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
         df = x.transform(df)
 
-        assert is_categorical_dtype(df["b"])
+        assert (
+            nw.from_native(df).get_column("b").dtype == nw.Categorical
+        ), "Categorical dtype not preserved for column b"
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("mapping", "mapped_col", "return_dtypes"),
         [
-            ({"a": {99: "99", 98: "98"}}, "a", {"a": "Int32"}),
-            # below types come out as str-like as not all existing str vals converted
-            ({"b": {"z": 99, "y": 98}}, "b", {"b": "String"}),
+            ({"a": {99: 99, 98: 98}}, "a", {"a": "Int32"}),
+            ({"b": {"z": "99", "y": "98"}}, "b", {"b": "String"}),
         ],
     )
-    def test_no_applicable_mapping(self, mapping, mapped_col, return_dtypes):
-        df = d.create_df_1()
+    def test_no_applicable_mapping(self, mapping, mapped_col, return_dtypes, library):
+        df = d.create_df_1(library=library)
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
@@ -170,15 +204,16 @@ class TestTransform(BaseMappingTransformerTransformTests):
         ):
             x.transform(df)
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("mapping", "mapped_col", "return_dtypes"),
         [
-            ({"a": {1: "1", 99: "99"}}, "a", {"a": "String"}),
-            ({"b": {"a": 1, "z": 99}}, "b", {"b": "String"}),
+            ({"a": {1: 1, 99: 99}}, "a", {"a": "Int64"}),
+            ({"b": {"a": "1", "z": "99"}}, "b", {"b": "String"}),
         ],
     )
-    def test_excess_mapping_values(self, mapping, mapped_col, return_dtypes):
-        df = d.create_df_1()
+    def test_excess_mapping_values(self, mapping, mapped_col, return_dtypes, library):
+        df = d.create_df_1(library=library)
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 

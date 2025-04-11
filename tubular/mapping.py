@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 from beartype import beartype
-from pandas.api.types import is_categorical_dtype
 
 from tubular.base import BaseTransformer
 
@@ -222,6 +221,9 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         example the following dict {'a': {1: 2, 3: 4}, 'b': {'a': 1, 'b': 2}} would specify
         a mapping for column a of 1->2, 3->4 and a mapping for column b of 'a'->1, b->2.
 
+    return_dtype: Optional[Dict[str, RETURN_DTYPES]]
+        Dictionary of col:dtype for returned columns
+
     **kwargs
         Arbitrary keyword arguments passed onto BaseMappingTransformer.init method.
 
@@ -231,18 +233,21 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         Dictionary of mappings for each column individually. The dict passed to mappings in
         init is set to the mappings attribute.
 
+    return_dtypes: dict[str, RETURN_DTYPES]
+        Dictionary of col:dtype for returned columns
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
+    @nw.narwhalify
     def transform(
         self,
-        X: pd.DataFrame,
-        suppress_dtype_warning: bool = False,
-    ) -> pd.DataFrame:
+        X: FrameT,
+    ) -> FrameT:
         """Transform the input data X according to the mappings in the mappings attribute dict.
 
         This method calls the BaseMappingTransformMixin.transform. Note, this transform method is
@@ -250,37 +255,25 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         use the BaseMappingTransformMixin.transform method. Here, if a value does not exist in
         the mapping it is unchanged.
 
-        Due to the way pd.Series.map works, mappings can result in column dtypes changing,
-        sometimes unexpectedly. If the result of the mappings is a dtype that doesn't match
-        the original dtype, or the dtype of the values provided in the mapping a warning
-        will be raised. This normally results from an incomplete mapping being provided,
-        or a mix of dtypes causing pandas to default to the object dtype.
-
-        For columns with a 'category' dtype the warning will not be raised.
-
         Parameters
         ----------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Data with nominal columns to transform.
-
-        suppress_dtype_warning: Bool, default = False
-            Whether to suppress warnings about dtype changes
 
         Returns
         -------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Transformed input X with levels mapped accoriding to mappings dict.
 
         """
 
-        X = BaseTransformer.transform(self, X)
+        BaseTransformer.transform(self, X)
 
         mapped_columns = self.mappings.keys()
-        original_dtypes = X[mapped_columns].dtypes
 
         for col in mapped_columns:
             values_to_be_mapped = set(self.mappings[col].keys())
-            values_in_df = set(X[col].unique())
+            values_in_df = set(X.get_column(col).unique())
 
             if len(values_to_be_mapped.intersection(values_in_df)) == 0:
                 warnings.warn(
@@ -294,30 +287,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
                     stacklevel=2,
                 )
 
-        X = BaseMappingTransformMixin.transform(self, X)
-
-        mapped_dtypes = X[mapped_columns].dtypes
-
-        if not suppress_dtype_warning:
-            for col in mapped_columns:
-                col_mappings = pd.Series(self.mappings[col])
-                mapping_dtype = col_mappings.dtype
-
-                if (
-                    (mapped_dtypes[col] != mapping_dtype)
-                    and (mapped_dtypes[col] != original_dtypes[col])
-                    and not (
-                        is_categorical_dtype(original_dtypes[col])
-                        and is_categorical_dtype(mapped_dtypes[col])
-                    )
-                ):
-                    # Confirm the initial and end dtypes are not categories
-                    warnings.warn(
-                        f"{self.classname()}: This mapping changes {col} dtype from {original_dtypes[col]} to {mapped_dtypes[col]}. This is often caused by having multiple dtypes in one column, or by not mapping all values.",
-                        stacklevel=2,
-                    )
-
-        return X
+        return nw.from_native(BaseMappingTransformMixin.transform(self, X))
 
 
 class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
