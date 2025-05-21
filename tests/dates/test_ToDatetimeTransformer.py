@@ -1,9 +1,7 @@
 import datetime
 
-import numpy as np
-import pandas as pd
 import pytest
-import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.base_tests import (
     ColumnStrListInitTests,
@@ -12,6 +10,7 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.dates import ToDatetimeTransformer
 
 
@@ -26,25 +25,12 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    def test_to_datetime_kwargs_type_error(self):
-        """Test that an exception is raised if to_datetime_kwargs is not a dict."""
+    def test_time_format_type_error(self):
+        """Test that an exception is raised for bad time_zone arg."""
         with pytest.raises(
-            TypeError,
-            match=r"""ToDatetimeTransformer: to_datetime_kwargs should be a dict but got type \<class 'int'\>""",
+            BeartypeCallHintParamViolation,
         ):
-            ToDatetimeTransformer(column="b", new_column_name="a", to_datetime_kwargs=1)
-
-    def test_to_datetime_kwargs_key_type_error(self):
-        """Test that an exception is raised if to_datetime_kwargs has keys which are not str."""
-        with pytest.raises(
-            TypeError,
-            match=r"""ToDatetimeTransformer: unexpected type \(\<class 'int'\>\) for to_datetime_kwargs key in position 1, must be str""",
-        ):
-            ToDatetimeTransformer(
-                new_column_name="a",
-                column="b",
-                to_datetime_kwargs={"a": 1, 2: "b"},
-            )
+            ToDatetimeTransformer(column="a", time_format=1)
 
 
 class TestTransform(GenericTransformTests):
@@ -54,66 +40,84 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self, library="pandas"):
         """Expected output for test_expected_output."""
-        return pd.DataFrame(
-            {
-                "a": [1950, 1960, 2000, 2001, np.nan, 2010],
-                "b": [1, 2, 3, 4, 5, np.nan],
-                "a_Y": [
-                    datetime.datetime(1950, 1, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(1960, 1, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(2001, 1, 1, tzinfo=datetime.timezone.utc),
-                    pd.NaT,
-                    datetime.datetime(2010, 1, 1, tzinfo=datetime.timezone.utc),
-                ],
-                "b_m": [
-                    datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(1900, 2, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(1900, 3, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(1900, 4, 1, tzinfo=datetime.timezone.utc),
-                    datetime.datetime(1900, 5, 1, tzinfo=datetime.timezone.utc),
-                    pd.NaT,
-                ],
-            },
-        )
 
-    def create_to_datetime_test_df():
+        df_dict = {
+            "a": [
+                # ignore the rule that insists on timezones for following,
+                # as complicates tests and lack of tz is not meaningful here
+                datetime.datetime(1950, 1, 1),  # noqa: DTZ001
+                datetime.datetime(1960, 1, 1),  # noqa: DTZ001
+                datetime.datetime(2000, 1, 1),  # noqa: DTZ001
+                datetime.datetime(2001, 1, 1),  # noqa: DTZ001
+                None,
+                datetime.datetime(2010, 1, 1),  # noqa: DTZ001
+            ],
+            "b": [
+                datetime.datetime(2001, 1, 1),  # noqa: DTZ001
+                None,
+                datetime.datetime(2002, 1, 1),  # noqa: DTZ001
+                datetime.datetime(2004, 1, 1),  # noqa: DTZ001
+                None,
+                datetime.datetime(2010, 1, 1),  # noqa: DTZ001
+            ],
+            "c": [
+                datetime.datetime(2025, 2, 1),  # noqa: DTZ001
+                datetime.datetime(1996, 4, 3),  # noqa: DTZ001
+                datetime.datetime(2023, 12, 3),  # noqa: DTZ001
+                datetime.datetime(1980, 8, 20),  # noqa: DTZ001
+                None,
+                None,
+            ],
+            "d": [
+                datetime.datetime(2020, 5, 3),  # noqa: DTZ001
+                datetime.datetime(1990, 10, 2),  # noqa: DTZ001
+                datetime.datetime(2004, 11, 5),  # noqa: DTZ001
+                None,
+                None,
+                datetime.datetime(1997, 9, 5),  # noqa: DTZ001
+            ],
+        }
+
+        return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+    def create_to_datetime_test_df(self, library="pandas"):
         """Create DataFrame to be used in the ToDatetimeTransformer tests."""
-        return pd.DataFrame(
-            {"a": [1950, 1960, 2000, 2001, np.nan, 2010], "b": [1, 2, 3, 4, 5, np.nan]},
-        )
+
+        df_dict = {
+            "a": ["1950", "1960", "2000", "2001", None, "2010"],
+            "b": ["2001", None, "2002", "2004", None, "2010"],
+            "c": ["01/02/2025", "03/04/1996", "03/12/2023", "20/08/1980", None, None],
+            "d": ["03/05/2020", "02/10/1990", "05/11/2004", None, None, "05/09/1997"],
+        }
+
+        return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
     @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_to_datetime_test_df(),
-            expected_df_1(),
-        ),
+        "library",
+        ["pandas", "polars"],
     )
-    def test_expected_output(self, df, expected):
+    @pytest.mark.parametrize(
+        ("columns", "time_format"),
+        [
+            (["a", "b"], "%Y"),
+            (["c", "d"], "%d/%m/%Y"),
+        ],
+    )
+    def test_expected_output_year_parsing(self, library, columns, time_format):
         """Test input data is transformed as expected."""
-        to_dt_1 = ToDatetimeTransformer(
-            column="a",
-            new_column_name="a_Y",
-            to_datetime_kwargs={"format": "%Y", "utc": datetime.timezone.utc},
-        )
 
-        to_dt_2 = ToDatetimeTransformer(
-            column="b",
-            new_column_name="b_m",
-            to_datetime_kwargs={"format": "%m", "utc": datetime.timezone.utc},
-        )
+        df = self.create_to_datetime_test_df(library=library)
+        expected = self.expected_df_1(library=library)
 
-        df_transformed = to_dt_1.transform(df)
-        df_transformed = to_dt_2.transform(df_transformed)
-
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="ToDatetimeTransformer.transform output",
+        to_dt = ToDatetimeTransformer(
+            columns=columns,
+            time_format=time_format,
         )
+        df_transformed = to_dt.transform(df)
+
+        assert_frame_equal_dispatch(expected[columns], df_transformed[columns])
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

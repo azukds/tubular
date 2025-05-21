@@ -278,8 +278,8 @@ def minimal_attribute_dict():
             "separator": "-",
         },
         "ToDatetimeTransformer": {
-            "new_column_name": "b",
-            "column": "a",
+            "columns": "a",
+            "time_format": "%d/%m/%Y",
         },
         "TwoColumnOperatorTransformer": {
             "columns": ["a", "b"],

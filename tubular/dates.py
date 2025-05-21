@@ -5,12 +5,13 @@ from __future__ import annotations
 import datetime
 import warnings
 import zoneinfo
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import narwhals as nw
 import narwhals.selectors as ncs
 import numpy as np
 import pandas as pd
+from beartype import beartype
 
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
@@ -518,14 +519,8 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
     columns : List[str]
         List of names of the column to convert to datetime.
 
-    new_column_name : str
-        Name given to the new datetime column.
-
-    drop_original: bool
-        Boolean flag indicating whether to drop original column.
-
-    to_datetime_kwargs : dict, default = {}
-        A dictionary of keyword arguments to be passed to the pd.to_datetime method when it is called in transform.
+    time_format: str
+        str indicating format of time to parse, e.g. '%d/%m/%Y'
 
     **kwargs
         Arbitrary keyword arguments passed onto pd.to_datetime().
@@ -538,65 +533,40 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        column: str,
-        new_column_name: str,
-        drop_original: bool = False,
-        to_datetime_kwargs: dict[str, object] | None = None,
+        columns: Union[str, list[str]],
+        time_format: str,
         **kwargs: dict[str, bool],
     ) -> None:
-        if to_datetime_kwargs is None:
-            to_datetime_kwargs = {}
-        else:
-            if type(to_datetime_kwargs) is not dict:
-                msg = f"{self.classname()}: to_datetime_kwargs should be a dict but got type {type(to_datetime_kwargs)}"
-                raise TypeError(msg)
-
-            for i, k in enumerate(to_datetime_kwargs.keys()):
-                if type(k) is not str:
-                    msg = f"{self.classname()}: unexpected type ({type(k)}) for to_datetime_kwargs key in position {i}, must be str"
-                    raise TypeError(msg)
-
-        self.to_datetime_kwargs = to_datetime_kwargs
-
-        # This attribute is not for use in any method, use 'columns' instead.
-        # Here only as a fix to allow string representation of transformer.
-        self.column = column
+        self.format = time_format
 
         super().__init__(
-            columns=[column],
-            new_column_name=new_column_name,
-            drop_original=drop_original,
+            columns=columns,
+            # new_column_name is not actually used
+            new_column_name="dummy",
             **kwargs,
         )
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
         """Convert specified column to datetime using pd.to_datetime.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Data with column to transform.
 
         """
         # purposely avoid BaseDateTransformer method, as uniquely for this transformer columns
         # are not yet date/datetime
-        X = BaseTransformer.transform(self, X)
+        X = nw.from_native(BaseTransformer.transform(self, X))
 
-        X[self.new_column_name] = pd.to_datetime(
-            X[self.columns[0]],
-            **self.to_datetime_kwargs,
-        )
-
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            self,
-            X,
-            self.drop_original,
-            self.columns,
+        return X.with_columns(
+            nw.col(col).str.to_datetime(format=self.format) for col in self.columns
         )
 
 
