@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -12,6 +12,7 @@ import pandas as pd
 import polars as pl
 from beartype import beartype
 
+from tubular._utils import new_narwhals_series_with_optimal_pandas_types
 from tubular.base import BaseTransformer
 
 if TYPE_CHECKING:
@@ -67,7 +68,7 @@ class BaseMappingTransformer(BaseTransformer):
     @beartype
     def __init__(
         self,
-        mappings: dict[str, dict[Union[str, float, int], Union[str, float, int]]],
+        mappings: dict[str, dict[Any, Any]],
         return_dtypes: Union[dict[str, RETURN_DTYPES], None] = None,
         **kwargs: Optional[bool],
     ) -> None:
@@ -75,7 +76,22 @@ class BaseMappingTransformer(BaseTransformer):
             msg = f"{self.classname()}: mappings has no values"
             raise ValueError(msg)
 
+        null_mappings = {col: None for col in mappings}
+        for col in mappings:
+            null_keys = [key for key in mappings[col] if pd.isna(key)]
+
+            if len(null_keys) > 1:
+                multi_null_map_msg = f"Multiple mappings have been provided for null values in column {col}, transformer is set up to handle nan/None/NA as one"
+                raise ValueError(
+                    multi_null_map_msg,
+                )
+
+            # Assign the mapping to the single null key if it exists
+            if len(null_keys) != 0:
+                null_mappings[col] = mappings[col][null_keys[0]]
+
         self.mappings = mappings
+        self.null_mappings = null_mappings
 
         columns = list(mappings.keys())
 
@@ -148,7 +164,7 @@ class BaseMappingTransformMixin(BaseTransformer):
             Transformed input X with levels mapped accoriding to mappings dict.
 
         """
-        self.check_is_fitted(["mappings", "return_dtypes"])
+        self.check_is_fitted(["mappings", "return_dtypes", "null_mappings"])
 
         X = nw.from_native(super().transform(X))
         native_backend = nw.get_native_namespace(X)
@@ -156,7 +172,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         # will do a join further down, which does not preserve index
         # polars does not care about this, but pandas does,
         # so need to handle a bit carefully
-        if nw.get_native_namespace(X).__name__ == "pandas":
+        if native_backend.__name__ == "pandas":
             index = nw.to_native(X).index
 
         # pull out column order to preserve
@@ -167,22 +183,64 @@ class BaseMappingTransformMixin(BaseTransformer):
 
             # TODO - update this logic once narwhals implements map_dict
             # differentiate between unmapped cols and cols mapped to null
-            # by including unmapped cols
+            # by including unmapped cols mapped to self
             unique = X.get_column(col).unique()
-            mappings = {key: mappings.get(key, key) for key in unique}
-
+            mappings = {
+                key: mappings.get(key, key)
+                for key in unique
+                # nulls are handled separately at the end,
+                # treated as imputations
+                if not pd.isna(key)
+            }
             new_col_values = f"new_{col}_values"
+
+            # have to be careful at each stage to avoid pandas
+            # default non-nullable types
+            dtypes = {}
+            dtypes["keys"] = X.get_column(col).dtype
+            dtypes["values"] = getattr(nw, self.return_dtypes[col])
+
+            # from_dict also appears to struggle with category dtypes
+            # so convert to string and back again later
+            temp_dtypes = {}
+            for dtype_key in ["keys", "values"]:
+                temp_dtypes[dtype_key] = dtypes[dtype_key]
+                if dtypes[dtype_key] == nw.Categorical:
+                    temp_dtypes[dtype_key] = nw.String
+
+            mappings_keys = new_narwhals_series_with_optimal_pandas_types(
+                name=col,
+                values=list(mappings.keys()),
+                backend=native_backend.__name__,
+                dtype=temp_dtypes["keys"],
+            )
+
+            mappings_values = new_narwhals_series_with_optimal_pandas_types(
+                name=new_col_values,
+                values=list(mappings.values()),
+                backend=native_backend.__name__,
+                dtype=temp_dtypes["values"],
+            )
+
             mappings_df = nw.from_dict(
                 {
-                    col: list(mappings.keys()),
-                    new_col_values: list(mappings.values()),
-                },
-                schema={
-                    col: X.get_column(col).dtype,
-                    new_col_values: getattr(nw, self.return_dtypes[col]),
+                    col: mappings_keys,
+                    new_col_values: mappings_values,
                 },
                 backend=native_backend,
             )
+
+            # bring back category types, and keep forcing better bool type
+            for dtype_key, col_name in zip(["keys", "values"], [col, new_col_values]):
+                if dtypes[dtype_key] == nw.Categorical:
+                    mappings_df = mappings_df.with_columns(
+                        nw.col(col_name).cast(nw.Categorical),
+                    )
+
+                if self.return_dtypes[col] == "Boolean":
+                    mappings_df = mappings_df.with_columns(
+                        nw.maybe_convert_dtypes(mappings_df[col_name]),
+                    )
 
             X = (
                 X.join(
@@ -193,6 +251,13 @@ class BaseMappingTransformMixin(BaseTransformer):
                 .drop(col)
                 .rename({new_col_values: col})
             )
+
+            # null keys are not joined on, so just fill nulls at end
+            if self.null_mappings[col] is not None:
+                X = X.with_columns(nw.col(col).fill_null(self.null_mappings[col]))
+                X = X.with_columns(
+                    nw.col(col).cast(getattr(nw, self.return_dtypes[col])),
+                )
 
         # restore original index for pandas
         if nw.get_native_namespace(X).__name__ == "pandas":

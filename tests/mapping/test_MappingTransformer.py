@@ -223,6 +223,58 @@ class TestTransform(BaseMappingTransformerTransformTests):
         ):
             x.transform(df)
 
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_boolean(self, library):
+        """Test that output is as expected for tricky bool case."""
+
+        df_dict = {
+            "a": [None, 0, 1, None, 0],
+            "b": [True, False, None, True, False],
+            "c": [None, 0, 0, None, 1],
+            "d": [True, None, None, True, False],
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        mapping = {
+            "a": {0: False, 1: True},
+            "b": {False: 0, True: 1},
+            "c": {0: False, None: False, 1: True},
+            "d": {False: 1, True: 0, None: 1},
+        }
+
+        return_dtypes = {
+            "a": "Boolean",
+            "b": "Float64",
+            "c": "Boolean",
+            "d": "Int64",
+        }
+
+        expected_dict = {
+            "a": [None, False, True, None, False],
+            "b": [1, 0, None, 1, 0],
+            "c": [False, False, False, False, True],
+            "d": [0, 1, 1, 0, 1],
+        }
+
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_dict,
+            library=library,
+        )
+
+        # convert bool type to pyarrow
+        if library == "pandas":
+            expected = nw.from_native(expected)
+            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["c"]))
+            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["a"]))
+            expected = expected.to_native()
+
+        transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        df_transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(expected, df_transformed)
+
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """

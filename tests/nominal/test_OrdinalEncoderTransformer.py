@@ -188,6 +188,7 @@ class TestTransform(GenericTransformTests):
             "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
             "f": {False: 1, True: 2},
         }
+        x.null_mappings = {"b": None, "d": None, "f": None}
 
         df_transformed = x.transform(df)
 

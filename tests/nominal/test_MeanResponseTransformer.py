@@ -1252,6 +1252,7 @@ class TestTransform(GenericTransformTests):
         x.response_levels = level
         x.encoded_columns = list(x.mappings.keys())
         x.return_dtypes = {col: x.return_type for col in x.encoded_columns}
+        x.null_mappings = {col: None for col in x.encoded_columns}
 
         df_transformed = x.transform(df)
 

@@ -1,4 +1,9 @@
+from typing import Literal
+
+import narwhals as nw
 import pandas as pd
+from narwhals.typing import IntoDType
+from numpy.typing import ArrayLike
 
 
 def _assess_pandas_object_column(pandas_df: pd.DataFrame, col: str) -> tuple[str, str]:
@@ -46,3 +51,47 @@ def _assess_pandas_object_column(pandas_df: pd.DataFrame, col: str) -> tuple[str
     # we may wish to add more cases in future, but starting with these
 
     return pandas_col_type, polars_col_type
+
+
+def new_narwhals_series_with_optimal_pandas_types(
+    name: str,
+    values: ArrayLike,
+    backend: Literal["pandas", "polars"],
+    dtype: IntoDType,
+) -> nw.Series:
+    """wraps around nw.new_series to ensure that pandas doesn't default to non-nullable
+    types
+
+    Parameters
+    ----------
+    name:
+        name of new series
+
+    values:
+        values for new series
+
+    backend:
+        data processing package to use (pandas or polars)
+
+    dtype:
+        wanted narwhals dtype for output
+
+    Returns
+    ----------
+    nw.Series: new narwhals series
+    """
+
+    if backend == "pandas":
+        series = pd.Series(name=name, data=values)
+        series = nw.maybe_convert_dtypes(nw.from_native(series, allow_series=True))
+        # for int/float values, we may still want to cast to better type
+        # (e.g. int8)
+        # but for bool/str values, maybe_convert_types has already
+        # cast to improved typing, so avoid further casting for these
+        if dtype not in [nw.String, nw.Object, nw.Boolean]:
+            series = series.cast(dtype)
+
+    else:
+        series = nw.new_series(name=name, values=values, backend=backend, dtype=dtype)
+
+    return series

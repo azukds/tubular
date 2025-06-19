@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import polars as pl
 import pytest
 import test_aide as ta
@@ -67,6 +69,37 @@ class BaseMappingTransformerInitTests(GenericInitTests):
         assert (
             actual == expected
         ), f"return_dtypes attr not inferred as expected, expected {expected} but got {actual}"
+
+    @pytest.mark.parametrize(
+        "mappings",
+        [
+            {"a": {np.nan: 1, None: 2}},
+            {"a": {np.nan: 1, pd.NA: 2}},
+            {"a": {None: 1, pd.NA: 2}},
+        ],
+    )
+    def test_multiple_null_mappings_error(
+        self,
+        uninitialized_transformers,
+        minimal_attribute_dict,
+        mappings,
+    ):
+        "verify error thrown if multiple mappings for null are provided"
+
+        return_dtypes = {
+            "b": "Int64",
+        }
+
+        kwargs = minimal_attribute_dict[self.transformer_name]
+
+        kwargs["mappings"] = mappings
+        kwargs["return_dtypes"] = return_dtypes
+
+        with pytest.raises(
+            ValueError,
+            match="Multiple mappings have been provided for null values in column a, transformer is set up to handle nan/None/NA as one",
+        ):
+            uninitialized_transformers[self.transformer_name](**kwargs)
 
 
 class BaseMappingTransformerTransformTests(GenericTransformTests):

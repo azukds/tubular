@@ -21,6 +21,18 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- narwhalified ToDatetimeTransformer. Also made some usability improvements, e.g. to accept multiple columns `#379 <https://github.com/azukds/tubular/issues/379>_`
+- fixed bug with MappingTransformer, BaseMappingTransformerMixin where nullable boolean mappings were being converted to non-nullable booleans
+- Working on above, found additional bug with mapping null values. 
+Considered removing this functionality, but it is actually needed for 
+inverse pipelines. Changed this part of logic to work more like an imputer.
+- placeholder 
+
+1.4.3 (02/06/2025)
+------------------
+
+Changed
+^^^^^^^
 - narwhalified ArbitraryImputer `#315 <https://github.com/azukds/tubular/issues/315>_`
 - narwhalified BetweenDatesTransformer `#377 <https://github.com/azukds/tubular/issues/377>_`
 - feat: narwhalified MeanResponseTransformer `373 <https://github.com/azukds/tubular/issues/373>_`

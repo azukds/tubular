@@ -12,7 +12,7 @@ from beartype import beartype
 
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
-from tubular.mapping import BaseMappingTransformMixin
+from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumnMixin
 
 if TYPE_CHECKING:
@@ -169,6 +169,17 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
                 raise ValueError(
                     msg,
                 )
+
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=self.mappings,
+            return_dtypes=self.return_dtypes,
+        )
+
+        self.mappings = base_mapping_transformer.mappings
+        self.null_mappings = base_mapping_transformer.null_mappings
+        self.return_dtypes = base_mapping_transformer.return_dtypes
 
         return self
 
@@ -919,6 +930,17 @@ class MeanResponseTransformer(
         # this is used to cast the narwhals mapping df, so uses narwhals types
         self.return_dtypes = {col: self.return_type for col in self.encoded_columns}
 
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=self.mappings,
+            return_dtypes=self.return_dtypes,
+        )
+
+        self.mappings = base_mapping_transformer.mappings
+        self.null_mappings = base_mapping_transformer.null_mappings
+        self.return_dtypes = base_mapping_transformer.return_dtypes
+
         self._fit_unseen_level_handling_dict(X_y, weights_column)
 
         return self
@@ -1221,6 +1243,17 @@ class OrdinalEncoderTransformer(
                 raise ValueError(
                     msg,
                 )
+
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=self.mappings,
+            return_dtypes=self.return_dtypes,
+        )
+
+        self.mappings = base_mapping_transformer.mappings
+        self.null_mappings = base_mapping_transformer.null_mappings
+        self.return_dtypes = base_mapping_transformer.return_dtypes
 
         return self
 
