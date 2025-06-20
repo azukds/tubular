@@ -115,6 +115,7 @@ ignore = [
     "B905", # the below two rules seem to make changes that error for python3.9
     "UP038", 
     "PYI041", # clashes with beartype
+    "F821",
     ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
