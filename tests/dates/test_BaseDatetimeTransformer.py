@@ -14,6 +14,7 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
+from tubular.dates import TIME_UNITS
 
 
 class DatetimeMixinTransformTests:
@@ -71,13 +72,14 @@ class DatetimeMixinTransformTests:
                     nw.lit(bad_value).cast(getattr(nw, bad_type)).alias(col),
                 )
 
-            msg = rf"{col} type should be in \['datetime64'\] but got {bad_type}"
+            msg = rf"{col} type should be in ['Datetime'] but got {bad_type}. Note, Datetime columns should have time_unit in {TIME_UNITS} and time_zones from zoneinfo.available_timezones()"
 
             with pytest.raises(
                 TypeError,
-                match=msg,
-            ):
+            ) as exc_info:
                 transformer.transform(nw.to_native(bad_df))
+
+            assert msg in str(exc_info.value)
 
 
 class TestInit(

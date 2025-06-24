@@ -1,5 +1,4 @@
 import datetime
-import re
 
 import narwhals as nw
 import pandas as pd
@@ -20,7 +19,7 @@ from tests.dates.test_BaseGenericDateTransformer import (
     create_date_diff_different_dtypes,
 )
 from tests.utils import assert_frame_equal_dispatch
-from tubular.dates import BetweenDatesTransformer
+from tubular.dates import TIME_UNITS, BetweenDatesTransformer
 
 
 class TestInit(
@@ -393,26 +392,35 @@ class TestTransform(
     ):
         "Test that transform raises an error if one column is a date and one is datetime"
 
-        x = uninitialized_transformers[self.transformer_name](
+        transformer = uninitialized_transformers[self.transformer_name](
             columns=columns,
             new_column_name="c",
         )
 
         df = create_date_diff_different_dtypes(library=library)
 
+        df = (
+            nw.from_native(df)
+            .with_columns(
+                nw.col(col).cast(nw.Datetime(time_unit="ns", time_zone="UTC"))
+                for col in ["datetime_col_1", "datetime_col_2"]
+            )
+            .to_native()
+        )
+
         present_types = (
-            {"datetime64", "date32[pyarrow]"}
+            {nw.Datetime(time_unit="ns", time_zone="UTC"), nw.Date()}
             if datetime_col == 0
-            else {"date32[pyarrow]", "datetime64"}
+            else {nw.Date(), nw.Datetime(time_unit="ns", time_zone="UTC")}
         )
-        msg = re.escape(
-            f"Columns fed to datetime transformers should be ['datetime64', 'date32[pyarrow]'] and have consistent types, but found {present_types}. Please use ToDatetimeTransformer to standardise",
-        )
+        msg = f"Columns fed to datetime transformers should be ['Datetime', 'Date'] and have consistent types, but found {present_types}. Note, Datetime columns should have time_unit in {TIME_UNITS} and time_zones from zoneinfo.available_timezones(). Please use ToDatetimeTransformer to standardise."
+
         with pytest.raises(
             TypeError,
-            match=msg,
-        ):
-            x.transform(df)
+        ) as exc_info:
+            transformer.transform(df)
+
+        assert msg in str(exc_info.value)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
