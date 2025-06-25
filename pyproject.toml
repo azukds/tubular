@@ -44,8 +44,8 @@ dev = [
     "pytest>=5.4.1",
     "pytest-mock>=3.5.1",
     "pyarrow>=17.0.0",
-    "pytest-cov>=2.10.1",
-    "pre-commit==2.15.0",
+    "pytest-cov<=2.10.1",
+    "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
     "ruff==0.2.2",
     ]
 
