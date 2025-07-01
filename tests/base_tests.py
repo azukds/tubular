@@ -142,7 +142,7 @@ class DropOriginalInitMixinTests:
         args["drop_original"] = drop_orginal_column
 
         with pytest.raises(
-            TypeError,
+            BeartypeCallHintParamViolation,
             match=f"{self.transformer_name}: drop_original should be bool",
         ):
             uninitialized_transformers[self.transformer_name](**args)

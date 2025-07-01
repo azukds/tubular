@@ -1,5 +1,4 @@
 import copy
-import re
 
 import narwhals as nw
 import numpy as np
@@ -15,6 +14,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.test_data import create_date_diff_different_dtypes
+from tubular.dates import TIME_UNITS
 
 
 class GenericDatesMixinTransformTests:
@@ -28,9 +28,9 @@ class GenericDatesMixinTransformTests:
     @pytest.mark.parametrize(
         ("bad_value", "bad_type"),
         [
-            (1, "Int64"),
-            ("a", "String"),
-            (np.nan, "Float64"),
+            (1, nw.Int64()),
+            ("a", nw.String()),
+            (np.nan, nw.Float64()),
         ],
     )
     def test_non_datetypes_error(
@@ -60,16 +60,17 @@ class GenericDatesMixinTransformTests:
             col = columns[i]
             bad_df = nw.from_native(df).clone()
             bad_df = bad_df.with_columns(
-                nw.lit(bad_value).cast(getattr(nw, bad_type)).alias(col),
+                nw.lit(bad_value).cast(bad_type).alias(col),
             )
 
-            msg = rf"{col} type should be in \['datetime64', 'date32\[pyarrow\]'\] but got {bad_type}"
+            msg = rf"{col} type should be in ['Datetime', 'Date'] but got {bad_type}. Note, Datetime columns should have time_unit in {TIME_UNITS} and time_zones from zoneinfo.available_timezones()"
 
             with pytest.raises(
                 TypeError,
-                match=msg,
-            ):
+            ) as exc_info:
                 transformer.transform(nw.to_native(bad_df))
+
+            assert msg in str(exc_info.value)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
@@ -97,23 +98,32 @@ class GenericDatesMixinTransformTests:
 
         df = create_date_diff_different_dtypes(library=library)
 
+        df = (
+            nw.from_native(df)
+            .with_columns(
+                nw.col(col).cast(nw.Datetime(time_unit="ns", time_zone="UTC"))
+                for col in ["datetime_col_1", "datetime_col_2"]
+            )
+            .to_native()
+        )
+
         # if transformer is not yet polars compatible, skip this test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
         present_types = (
-            {"datetime64", r"date32[pyarrow]"}
+            {nw.Datetime(time_unit="ns", time_zone="UTC"), nw.Date()}
             if datetime_col == 0
-            else {r"date32[pyarrow]", "datetime64"}
+            else {nw.Date(), nw.Datetime(time_unit="ns", time_zone="UTC")}
         )
-        msg = re.escape(
-            f"Columns fed to datetime transformers should be ['datetime64', 'date32[pyarrow]'] and have consistent types, but found {present_types}. Please use ToDatetimeTransformer to standardise",
-        )
+        msg = f"Columns fed to datetime transformers should be ['Datetime', 'Date'] and have consistent types, but found {present_types}. Note, Datetime columns should have time_unit in {TIME_UNITS} and time_zones from zoneinfo.available_timezones(). Please use ToDatetimeTransformer to standardise."
+
         with pytest.raises(
             TypeError,
-            match=msg,
-        ):
+        ) as exc_info:
             transformer.transform(df)
+
+        assert msg in str(exc_info.value)
 
 
 class TestInit(
