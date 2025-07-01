@@ -286,6 +286,17 @@ def minimal_attribute_dict():
             "new_column_name": "c",
             "pd_method_name": "add",
         },
+        "BaseAggregationTransformer": {
+            "columns": ["col1", "col2"],
+            "aggregations": ["min", "max"],
+            "drop_original": False,
+        },
+        "AggregateRowOverColumnsTransformer": {
+            "columns": ["col1", "col2"],
+            "aggregations": ["min", "max"],
+            "key": "key_column",
+            "drop_original": False,
+        },
     }
 
 
