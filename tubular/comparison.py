@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Annotated, Optional
 
 import pandas as pd  # noqa: TCH002
 from beartype import beartype
+from beartype.vale import Is  # noqa: TCH002
 
 from tubular.base import BaseTransformer
-from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
+from tubular.mixins import DropOriginalMixin
 
 
 class EqualityChecker(
     DropOriginalMixin,
-    NewColumnNameMixin,
-    TwoColumnMixin,
     BaseTransformer,
 ):
     """Transformer to check if two columns are equal.
@@ -44,7 +43,10 @@ class EqualityChecker(
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: Annotated[
+            list[str],
+            Is[lambda list_arg: len(list_arg) == 2],
+        ],
         new_column_name: str,
         drop_original: bool = False,
         **kwargs: Optional[bool],
@@ -52,9 +54,7 @@ class EqualityChecker(
         super().__init__(columns=columns, **kwargs)
 
         self.drop_original = drop_original
-
-        self.check_two_columns(columns)
-        self.check_and_set_new_column_name(new_column_name)
+        self.new_column_name = new_column_name
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Create a column which is populated by the boolean

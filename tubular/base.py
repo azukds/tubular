@@ -66,7 +66,10 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: Union[
+            Annotated[list[str], Is[lambda list_arg: len(list_arg) > 0]],
+            str,
+        ],
         copy: Union[bool, None] = None,
         verbose: bool = False,
     ) -> None:
@@ -87,10 +90,6 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
             self.columns = [columns]
 
         elif isinstance(columns, list):
-            if not len(columns) > 0:
-                msg = f"{self.classname()}: columns has no values"
-                raise ValueError(msg)
-
             self.columns = columns
 
         self.copy = copy

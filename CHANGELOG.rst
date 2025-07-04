@@ -23,6 +23,9 @@ Changed
 ^^^^^^^
 - bugfix: updated env to make package importable, added basic test for this
 - feat: converted DropOriginalMixin and associated transformers to beartype
+- feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
+- feat: removed TwoColumnMixin and BaseDateTwoColumnTransformer and replaced with beartype
+for associated transformers
 - placeholder
 - placeholder
 

@@ -2,7 +2,6 @@ import datetime
 import re
 
 import narwhals as nw
-import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
@@ -36,27 +35,6 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "BetweenDatesTransformer"
 
-    # overload until we beartype the new_column_name mixin
-    @pytest.mark.parametrize(
-        "new_column_type",
-        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
-    )
-    def test_new_column_name_type_error(
-        self,
-        new_column_type,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if any type other than str passed to new_column_name"""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["new_column_name"] = new_column_type
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
-
     @pytest.mark.parametrize(
         ("param", "value"),
         [
@@ -69,8 +47,7 @@ class TestInit(
 
         param_dict = {param: value}
         with pytest.raises(
-            TypeError,
-            match=f"BetweenDatesTransformer: {param} should be a bool",
+            BeartypeCallHintParamViolation,
         ):
             BetweenDatesTransformer(
                 columns=["a", "b", "c"],
@@ -89,8 +66,7 @@ class TestInit(
         """Test that an exception is raised if too many/too few columns."""
 
         with pytest.raises(
-            ValueError,
-            match="BetweenDatesTransformer: This transformer works with three columns only",
+            BeartypeCallHintParamViolation,
         ):
             BetweenDatesTransformer(
                 columns=columns,
