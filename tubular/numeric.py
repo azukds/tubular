@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from beartype.vale import Is  # noqa: TCH002
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import (
@@ -158,10 +159,16 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None,
-        base: float | None = None,
+        columns: Optional[Union[str, list[str]]],
+        base: Optional[
+            Annotated[
+                Union[int, float],
+                Is[lambda v: v > 0],
+            ]
+        ] = None,
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
@@ -169,24 +176,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if not isinstance(add_1, bool):
-            add_1_error_msg = f"{self.classname()}: add_1 should be bool"
-            raise TypeError(add_1_error_msg)
-
-        if not isinstance(suffix, str):
-            suffix_error_msg = f"{self.classname()}: suffix should be str"
-            raise TypeError(suffix_error_msg)
-
-        if base is not None:
-            if not isinstance(base, (int, float)):
-                msg = f"{self.classname()}: base should be numeric or None"
-                raise ValueError(msg)
-            if not base > 0:
-                msg = f"{self.classname()}: base should be strictly positive"
-                raise ValueError(msg)
-
-        self.set_drop_original_column(drop_original)
-
+        self.drop_original = drop_original
         self.base = base
         self.add_1 = add_1
         self.suffix = suffix
@@ -966,7 +956,13 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: Union[
+            str,
+            Annotated[
+                list[str],
+                Is[lambda list_arg: len(list_arg) == 1],
+            ],
+        ],
         new_column_name: str,
         n_init: Union[str, int] = "auto",
         n_clusters: int = 8,
@@ -974,10 +970,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         kmeans_kwargs: Optional[dict[str, object]] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        if (isinstance(columns, list)) and (len(columns) > 1):
-            msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
-            raise TypeError(msg)
-
         if kmeans_kwargs is None:
             kmeans_kwargs = {}
 
@@ -985,6 +977,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         self.new_column_name = new_column_name
         self.n_init = n_init
         self.kmeans_kwargs = kmeans_kwargs
+        self.drop_original = drop_original
 
         if isinstance(columns, str):
             self.columns = [columns]
@@ -992,7 +985,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             self.columns = columns
 
         super().__init__(columns=[columns], **kwargs)
-        self.set_drop_original_column(drop_original)
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:

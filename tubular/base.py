@@ -5,11 +5,12 @@ from. These transformers contain key checks to be applied in all cases.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 import narwhals as nw
 import pandas as pd
 from beartype import beartype
+from beartype.vale import Is  # noqa: TCH002
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
@@ -284,48 +285,35 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
     polars_compatible = False
 
+    @beartype
     def __init__(
         self,
-        new_column_names: list[str] | str,
+        new_column_names: Union[list[str], str],
         pd_method_name: str,
-        columns: list[str] | str | None,
-        pd_method_kwargs: dict[str, object] | None = None,
+        columns: Optional[Union[list[str], str]],
+        pd_method_kwargs: Optional[
+            Annotated[
+                dict,
+                Is[
+                    lambda d: all(
+                        isinstance(key, str) and isinstance(value, (str, int, float))
+                        for key, value in d.items()
+                    )
+                ],
+            ]
+        ] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if type(new_column_names) is list:
-            for i, item in enumerate(new_column_names):
-                if type(item) is not str:
-                    msg = f"{self.classname()}: if new_column_names is a list, all elements must be strings but got {type(item)} in position {i}"
-                    raise TypeError(msg)
-
-        elif type(new_column_names) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(new_column_names)}) for new_column_names, must be str or list of strings"
-            raise TypeError(msg)
-
-        if type(pd_method_name) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(pd_method_name)}) for pd_method_name, expecting str"
-            raise TypeError(msg)
-
         if pd_method_kwargs is None:
             pd_method_kwargs = {}
-        else:
-            if type(pd_method_kwargs) is not dict:
-                msg = f"{self.classname()}: pd_method_kwargs should be a dict but got type {type(pd_method_kwargs)}"
-                raise TypeError(msg)
-
-            for i, k in enumerate(pd_method_kwargs.keys()):
-                if type(k) is not str:
-                    msg = f"{self.classname()}: unexpected type ({type(k)}) for pd_method_kwargs key in position {i}, must be str"
-                    raise TypeError(msg)
 
         self.new_column_names = new_column_names
         self.pd_method_name = pd_method_name
         self.pd_method_kwargs = pd_method_kwargs
-
-        DropOriginalMixin.set_drop_original_column(self, drop_original)
+        self.drop_original = drop_original
 
         try:
             df = pd.DataFrame()

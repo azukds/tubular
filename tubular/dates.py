@@ -63,17 +63,18 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
+        columns: Union[list[str], str],
+        new_column_name: Optional[str] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        self.set_drop_original_column(drop_original)
-        self.check_and_set_new_column_name(new_column_name)
+        self.drop_original = drop_original
+        self.new_column_name = new_column_name
 
     @nw.narwhalify
     def check_columns_are_date_or_datetime(

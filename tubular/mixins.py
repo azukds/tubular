@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 import narwhals as nw
 import narwhals.selectors as ncs
@@ -54,28 +54,12 @@ class DropOriginalMixin:
 
         return type(self).__name__
 
-    def set_drop_original_column(self, drop_original: bool) -> None:
-        """Helper method for validating 'drop_original' argument.
-
-        Parameters
-        ----------
-        drop_original : bool
-            boolean dictating dropping the input columns from X after checks.
-
-        """
-        # check if 'drop_original' argument is boolean
-        if type(drop_original) is not bool:
-            msg = f"{self.classname()}: drop_original should be bool"
-            raise TypeError(msg)
-
-        self.drop_original = drop_original
-
     @nw.narwhalify
     def drop_original_column(
         self,
         X: FrameT,
         drop_original: bool,
-        columns: list[str] | str | None,
+        columns: Optional[Union[list[str], str]],
     ) -> FrameT:
         """Method for dropping input columns from X if drop_original set to True.
 

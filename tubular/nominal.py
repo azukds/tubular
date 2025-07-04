@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Literal, Optional, Union
 
 import narwhals as nw
 import narwhals.selectors as ncs
 import numpy as np
 from beartype import beartype
+from beartype.vale import Is  # noqa: TCH002
 
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
@@ -662,7 +663,7 @@ class MeanResponseTransformer(
         self,
         columns: Optional[Union[str, list[str]]] = None,
         weights_column: Optional[str] = None,
-        prior: int = 0,
+        prior: Annotated[int, Is[lambda i: i >= 0]] = 0,
         level: Optional[Union[float, int, str, list]] = None,
         unseen_level_handling: Optional[
             Union[float, int, Literal["mean", "median", "min", "max"]]
@@ -671,16 +672,12 @@ class MeanResponseTransformer(
         drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
-        if not prior >= 0:
-            msg = f"{self.classname()}: prior should be positive int"
-            raise ValueError(msg)
-
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
         self.return_type = return_type
-        DropOriginalMixin.set_drop_original_column(self, drop_original=drop_original)
+        self.drop_original = drop_original
 
         self.MULTI_LEVEL = False
 
@@ -1330,48 +1327,37 @@ class OneHotEncodingTransformer(
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        wanted_values: dict[str, list[str]] | None = None,
+        columns: Optional[Union[str, list[str]]] = None,
+        wanted_values: Optional[
+            dict[
+                str,
+                Annotated[
+                    list,
+                    Is[
+                        lambda list_arg: all(
+                            isinstance(l_value, str) for l_value in list_arg
+                        )
+                    ],
+                ],
+            ]
+        ] = None,
         separator: str = "_",
         drop_original: bool = False,
-        copy: bool | None = None,
+        copy: Optional[bool] = None,
         verbose: bool = False,
-        **kwargs: dict[str, bool],
     ) -> None:
         BaseTransformer.__init__(
             self,
             columns=columns,
             verbose=verbose,
             copy=copy,
-            **kwargs,
         )
 
-        if wanted_values is not None:
-            if not isinstance(wanted_values, dict):
-                msg = f"{self.classname()}: wanted_values should be a dictionary"
-                raise TypeError(msg)
-
-            for key, val_list in wanted_values.items():
-                # check key is a string
-                if not isinstance(key, str):
-                    msg = f"{self.classname()}:  Key in 'wanted_values' should be a string"
-                    raise TypeError(msg)
-
-                # check value is a list
-                if not isinstance(val_list, list):
-                    msg = f"{self.classname()}: Values in the 'wanted_values' dictionary should be a list"
-                    raise TypeError(msg)
-
-                # check if each value within the list is a string
-                for val in val_list:
-                    if not isinstance(val, str):
-                        msg = f"{self.classname()}: Entries in 'wanted_values' list should be a string"
-                        raise TypeError(msg)
-
         self.wanted_values = wanted_values
-        self.set_drop_original_column(drop_original)
+        self.drop_original = drop_original
         self.check_and_set_separator_column(separator)
 
     @nw.narwhalify
