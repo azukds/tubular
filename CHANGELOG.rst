@@ -16,6 +16,14 @@ Subsections for each version can be one of the following;
 
 Each individual change should have a link to the pull request after the description of the change.
 
+1.4.6 (04/07/2025)
+------------------
+
+Changed
+^^^^^^^
+- Added deprecated warning for DateDiffLeapYearTransformer `#244 <https://github.com/azukds/tubular/issues/244>`
+- Added new units 'week', 'fornight', 'lunar_month', 'common_year' and 'custom_days' to DateDifferenceTransformer. The time component will be truncated for these units and for unit 'D'.
+
 1.4.5 (unreleased))
 ------------------
 

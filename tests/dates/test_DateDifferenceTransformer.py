@@ -35,7 +35,7 @@ class TestInit(
         """Test that an exception is raised if the value of inits is not one of accepted_values_units."""
         with pytest.raises(
             ValueError,
-            match=r"DateDifferenceTransformer: units must be one of \['D', 'h', 'm', 's'\], got y",
+            match=r"DateDifferenceTransformer: units must be one of \['week', 'fortnight', 'lunar_month', 'common_year', 'custom_days', 'D', 'h', 'm', 's'\], got y",
         ):
             DateDifferenceTransformer(
                 columns=["dummy_1", "dummy_2"],
@@ -198,13 +198,13 @@ def expected_df_3(library="pandas"):
             ),
         ],
         "D": [
-            9713.042372685186,
-            7219.957627314815,
+            9713.0,
+            7220.0,
             0.0,
             31.0,
-            -30.083333333333332,
-            -1064.9583333333333,
-            -1125.9583333333333,
+            -30.0,
+            -1065.0,
+            -1126.0,
             10957.0,
         ],
     }
@@ -893,6 +893,841 @@ def create_datediff_test_nulls_df2(library="pandas"):
     return dataframe_init_dispatch(df_dict, library=library)
 
 
+def expected_df_9(library="pandas"):
+    """Expected output for test_expected_output_units_week."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2000,
+                3,
+                19,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                10,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                12,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "b": [
+            datetime.datetime(
+                2020,
+                5,
+                1,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                9,
+                10,
+                9,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "week": [
+            1387.571429,
+            1031.428571,
+            0.0,
+            4.428571,
+            -4.285714,
+            -152.142857,
+            -160.857143,
+            1565.285714,
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
+def expected_df_10(library="pandas"):
+    """Expected output for test_expected_output_units_fortnight."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2000,
+                3,
+                19,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                10,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                12,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "b": [
+            datetime.datetime(
+                2020,
+                5,
+                1,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                9,
+                10,
+                9,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "fortnight": [
+            693.785714,
+            515.714286,
+            0.0,
+            2.214286,
+            -2.142857,
+            -76.071429,
+            -80.428571,
+            782.642857,
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
+def expected_df_11(library="pandas"):
+    """Expected output for test_expected_output_units_lunar_month."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2000,
+                3,
+                19,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                10,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                12,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "b": [
+            datetime.datetime(
+                2020,
+                5,
+                1,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                9,
+                10,
+                9,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "lunar_month": [
+            329.254237,
+            244.745763,
+            0.0,
+            1.050847,
+            -1.016949,
+            -36.101695,
+            -38.169492,
+            371.423729,
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
+def expected_df_12(library="pandas"):
+    """Expected output for test_expected_output_units_common_year."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2000,
+                3,
+                19,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                10,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                12,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "b": [
+            datetime.datetime(
+                2020,
+                5,
+                1,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                9,
+                10,
+                9,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "common_year": [
+            26.610958,
+            19.780822,
+            0.0,
+            0.084932,
+            -0.082192,
+            -2.917808,
+            -3.084932,
+            30.019178,
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
+def expected_df_13(library="pandas"):
+    """Expected output for test_expected_output_units_custom_days."""
+
+    df_dict = {
+        "a": [
+            datetime.datetime(
+                1993,
+                9,
+                27,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2000,
+                3,
+                19,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                10,
+                10,
+                10,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                12,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                1985,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "b": [
+            datetime.datetime(
+                2020,
+                5,
+                1,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2019,
+                12,
+                25,
+                11,
+                58,
+                58,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2018,
+                9,
+                10,
+                9,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                11,
+                10,
+                12,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+            datetime.datetime(
+                2015,
+                7,
+                23,
+                11,
+                59,
+                59,
+                tzinfo=datetime.timezone.utc,
+            ),
+        ],
+        "custom_days": [
+            388.52,
+            288.80,
+            0.0,
+            1.24,
+            -1.20,
+            -42.60,
+            -45.04,
+            438.28,
+        ],
+    }
+
+    return dataframe_init_dispatch(df_dict, library=library)
+
+
 class TestTransform(
     GenericTransformTests,
     GenericDatesMixinTransformTests,
@@ -1017,6 +1852,157 @@ class TestTransform(
             columns=["a", "b"],
             new_column_name="s",
             units="s",
+            verbose=False,
+        )
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize(
+        ("df", "expected"),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_9(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_9(library="polars"),
+            ),
+        ],
+    )
+    def test_expected_output_units_week(self, df, expected):
+        """Test that the output is expected from transform, when units is week.
+
+        This tests positive month gaps, negative month gaps, and missing values.
+
+        """
+        x = DateDifferenceTransformer(
+            columns=["a", "b"],
+            new_column_name="week",
+            units="week",
+            verbose=False,
+        )
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize(
+        ("df", "expected"),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_10(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_10(library="polars"),
+            ),
+        ],
+    )
+    def test_expected_output_units_fortnight(self, df, expected):
+        """Test that the output is expected from transform, when units is fortnight.
+
+        This tests positive month gaps, negative month gaps, and missing values.
+
+        """
+        x = DateDifferenceTransformer(
+            columns=["a", "b"],
+            new_column_name="fortnight",
+            units="fortnight",
+            verbose=False,
+        )
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize(
+        ("df", "expected"),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_11(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_11(library="polars"),
+            ),
+        ],
+    )
+    def test_expected_output_units_lunar_month(self, df, expected):
+        """Test that the output is expected from transform, when units is lunar_month.
+
+        This tests positive month gaps, negative month gaps, and missing values.
+
+        """
+        x = DateDifferenceTransformer(
+            columns=["a", "b"],
+            new_column_name="lunar_month",
+            units="lunar_month",
+            verbose=False,
+        )
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize(
+        ("df", "expected"),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_12(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_12(library="polars"),
+            ),
+        ],
+    )
+    def test_expected_output_units_common_year(self, df, expected):
+        """Test that the output is expected from transform, when units is common_year.
+
+        This tests positive month gaps, negative month gaps, and missing values.
+
+        """
+        x = DateDifferenceTransformer(
+            columns=["a", "b"],
+            new_column_name="common_year",
+            units="common_year",
+            verbose=False,
+        )
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize(
+        ("df", "expected"),
+        [
+            (
+                d.create_datediff_test_df(library="pandas"),
+                expected_df_13(library="pandas"),
+            ),
+            (
+                d.create_datediff_test_df(library="polars"),
+                expected_df_13(library="polars"),
+            ),
+        ],
+    )
+    def test_expected_output_units_custom_days(self, df, expected):
+        """Test that the output is expected from transform, when units is custom_days.
+
+        This tests positive month gaps, negative month gaps, and missing values.
+
+        """
+        x = DateDifferenceTransformer(
+            columns=["a", "b"],
+            new_column_name="custom_days",
+            units="custom_days",
+            custom_days_divider=25,
             verbose=False,
         )
 
