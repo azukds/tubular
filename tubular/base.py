@@ -14,6 +14,7 @@ from beartype.vale import Is  # noqa: TCH002
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
+from tubular._types import PandasKwargsType
 from tubular.mixins import DropOriginalMixin
 
 if TYPE_CHECKING:
@@ -290,17 +291,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         new_column_names: Union[list[str], str],
         pd_method_name: str,
         columns: Optional[Union[list[str], str]],
-        pd_method_kwargs: Optional[
-            Annotated[
-                dict,
-                Is[
-                    lambda d: all(
-                        isinstance(key, str) and isinstance(value, (str, int, float))
-                        for key, value in d.items()
-                    )
-                ],
-            ]
-        ] = None,
+        pd_method_kwargs: Optional[PandasKwargsType] = None,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:

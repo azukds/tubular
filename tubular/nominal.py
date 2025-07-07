@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import TYPE_CHECKING, Annotated, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import narwhals as nw
 import narwhals.selectors as ncs
 import numpy as np
 from beartype import beartype
-from beartype.vale import Is  # noqa: TCH002
 
+from tubular._types import ListOfStrings, PositiveInt
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
@@ -663,7 +663,7 @@ class MeanResponseTransformer(
         self,
         columns: Optional[Union[str, list[str]]] = None,
         weights_column: Optional[str] = None,
-        prior: Annotated[int, Is[lambda i: i >= 0]] = 0,
+        prior: PositiveInt = 0,
         level: Optional[Union[float, int, str, list]] = None,
         unseen_level_handling: Optional[
             Union[float, int, Literal["mean", "median", "min", "max"]]
@@ -1334,14 +1334,7 @@ class OneHotEncodingTransformer(
         wanted_values: Optional[
             dict[
                 str,
-                Annotated[
-                    list,
-                    Is[
-                        lambda list_arg: all(
-                            isinstance(l_value, str) for l_value in list_arg
-                        )
-                    ],
-                ],
+                ListOfStrings,
             ]
         ] = None,
         separator: str = "_",

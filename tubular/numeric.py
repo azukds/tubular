@@ -18,6 +18,7 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 
+from tubular._types import GenericKwargsTypes, PositiveNumber, SingleStrList
 from tubular.base import BaseTransformer, DataFrameMethodTransformer
 from tubular.mixins import (
     CheckNumericMixin,
@@ -161,12 +162,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     def __init__(
         self,
         columns: Optional[Union[str, list[str]]],
-        base: Optional[
-            Annotated[
-                Union[int, float],
-                Is[lambda v: v > 0],
-            ]
-        ] = None,
+        base: Optional[PositiveNumber] = None,
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
@@ -265,12 +261,7 @@ class CutTransformer(BaseNumericTransformer):
         self,
         column: str,
         new_column_name: str,
-        cut_kwargs: Optional[
-            Annotated[
-                dict[str, Union[int, float, str, list[int], list[str], list[float]]],
-                Is[lambda dict_arg: all(isinstance(key, str) for key in dict_arg)],
-            ]
-        ] = None,
+        cut_kwargs: Optional[GenericKwargsTypes] = None,
         **kwargs: dict[str, bool],
     ) -> None:
         if cut_kwargs is None:
@@ -941,10 +932,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         self,
         columns: Union[
             str,
-            Annotated[
-                list[str],
-                Is[lambda list_arg: len(list_arg) == 1],
-            ],
+            SingleStrList,
         ],
         new_column_name: str,
         n_init: Union[str, int] = "auto",
