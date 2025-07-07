@@ -5,16 +5,21 @@ from __future__ import annotations
 import datetime
 import warnings
 import zoneinfo
-from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import narwhals as nw
 import narwhals.selectors as ncs
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.vale import Is
 
+from tubular._types import (  # noqa: TCH001
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfThreeStrs,
+    ListOfTwoStrs,
+    TimeUnitsOptionsStr,
+)
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 
@@ -273,7 +278,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     @beartype
     def __init__(
         self,
-        columns: Annotated[list[str], Is[lambda list_arg: len(list_arg) == 2]],
+        columns: ListOfTwoStrs,
         new_column_name: str,
         missing_replacement: Optional[Union[float, int, str]] = None,
         drop_original: bool = False,
@@ -367,19 +372,6 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         )
 
 
-class TimeUnitsOptions(str, Enum):
-    DAYS = "D"
-    HOURS = "h"
-    MINUTES = "m"
-    SECONDS = "s"
-
-
-TimeUnitsOptionsStr = Annotated[
-    str,
-    Is[lambda s: s in TimeUnitsOptions._value2member_map_],
-]
-
-
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
@@ -411,7 +403,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     @beartype
     def __init__(
         self,
-        columns: Annotated[list[str], Is[lambda list_arg: len(list_arg) == 2]],
+        columns: ListOfTwoStrs,
         new_column_name: str,
         units: TimeUnitsOptionsStr = "D",
         copy: Optional[bool] = None,
@@ -599,20 +591,10 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
         new_column_name: str,
         pd_method_name: str,
         columns: Union[
-            Annotated[list[str], Is[lambda list_arg: len(list_arg) == 1]],
+            ListOfOneStr,
             str,
         ],
-        pd_method_kwargs: Optional[
-            Annotated[
-                dict,
-                Is[
-                    lambda dict_arg: all(
-                        isinstance(key, str) and isinstance(value, (str, int, float))
-                        for key, value in dict_arg.items()
-                    )
-                ],
-            ]
-        ] = None,
+        pd_method_kwargs: Optional[GenericKwargs] = None,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
@@ -759,7 +741,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     @beartype
     def __init__(
         self,
-        columns: Annotated[list[str], Is[lambda list_arg: len(list_arg) == 3]],
+        columns: ListOfThreeStrs,
         new_column_name: str,
         drop_original: bool = False,
         lower_inclusive: bool = True,

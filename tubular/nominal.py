@@ -10,7 +10,7 @@ import narwhals.selectors as ncs
 import numpy as np
 from beartype import beartype
 
-from tubular._types import ListOfStrings, PositiveInt
+from tubular._types import ListOfStrs, PositiveInt  # noqa: TCH001
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
@@ -1334,7 +1334,7 @@ class OneHotEncodingTransformer(
         wanted_values: Optional[
             dict[
                 str,
-                ListOfStrings,
+                ListOfStrs,
             ]
         ] = None,
         separator: str = "_",

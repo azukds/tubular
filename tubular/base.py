@@ -5,16 +5,15 @@ from. These transformers contain key checks to be applied in all cases.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Annotated, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import narwhals as nw
 import pandas as pd
 from beartype import beartype
-from beartype.vale import Is  # noqa: TCH002
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
-from tubular._types import PandasKwargsType
+from tubular._types import GenericKwargs, NonEmptyListOfStrs  # noqa: TCH001
 from tubular.mixins import DropOriginalMixin
 
 if TYPE_CHECKING:
@@ -68,7 +67,7 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
     def __init__(
         self,
         columns: Union[
-            Annotated[list[str], Is[lambda list_arg: len(list_arg) > 0]],
+            NonEmptyListOfStrs,
             str,
         ],
         copy: Union[bool, None] = None,
@@ -291,7 +290,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         new_column_names: Union[list[str], str],
         pd_method_name: str,
         columns: Optional[Union[list[str], str]],
-        pd_method_kwargs: Optional[PandasKwargsType] = None,
+        pd_method_kwargs: Optional[GenericKwargs] = None,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:

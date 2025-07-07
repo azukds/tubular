@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Optional
 
 import pandas as pd  # noqa: TCH002
 from beartype import beartype
-from beartype.vale import Is  # noqa: TCH002
 
+from tubular._types import ListOfTwoStrs  # noqa: TCH001
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 
@@ -43,10 +43,7 @@ class EqualityChecker(
     @beartype
     def __init__(
         self,
-        columns: Annotated[
-            list[str],
-            Is[lambda list_arg: len(list_arg) == 2],
-        ],
+        columns: ListOfTwoStrs,
         new_column_name: str,
         drop_original: bool = False,
         **kwargs: Optional[bool],

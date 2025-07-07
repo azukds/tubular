@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.vale import Is  # noqa: TCH002
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import (
@@ -18,7 +17,12 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 
-from tubular._types import GenericKwargsTypes, PositiveNumber, SingleStrList
+from tubular._types import (  # noqa: TCH001
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfTwoStrs,
+    PositiveNumber,
+)
 from tubular.base import BaseTransformer, DataFrameMethodTransformer
 from tubular.mixins import (
     CheckNumericMixin,
@@ -261,7 +265,7 @@ class CutTransformer(BaseNumericTransformer):
         self,
         column: str,
         new_column_name: str,
-        cut_kwargs: Optional[GenericKwargsTypes] = None,
+        cut_kwargs: Optional[GenericKwargs] = None,
         **kwargs: dict[str, bool],
     ) -> None:
         if cut_kwargs is None:
@@ -358,7 +362,7 @@ class TwoColumnOperatorTransformer(
     def __init__(
         self,
         pd_method_name: str,
-        columns: Annotated[list[str], Is[lambda list_arg: len(list_arg) == 2]],
+        columns: ListOfTwoStrs,
         new_column_name: str,
         pd_method_kwargs: Optional[dict[str, object]] = None,
         **kwargs: Optional[bool],
@@ -932,7 +936,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         self,
         columns: Union[
             str,
-            SingleStrList,
+            ListOfOneStr,
         ],
         new_column_name: str,
         n_init: Union[str, int] = "auto",

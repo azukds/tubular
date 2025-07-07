@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 from beartype import beartype
-from beartype.vale import Is  # noqa: TCH002
 
+from tubular._types import GenericKwargs, ListOfOneStr  # noqa: TCH001
 from tubular.base import BaseTransformer
 from tubular.mixins import SeparatorColumnMixin
 
@@ -65,19 +65,9 @@ class SeriesStrMethodTransformer(BaseTransformer):
         self,
         new_column_name: str,
         pd_method_name: str,
-        columns: Annotated[list[str], Is[lambda list_arg: len(list_arg) == 1]],
+        columns: ListOfOneStr,
         copy: Optional[bool] = None,
-        pd_method_kwargs: Optional[
-            Annotated[
-                dict,
-                Is[
-                    lambda dict_arg: all(
-                        isinstance(key, str) and isinstance(item, (str, int, float))
-                        for key, item in dict_arg.items()
-                    )
-                ],
-            ]
-        ] = None,
+        pd_method_kwargs: Optional[GenericKwargs] = None,
         **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, copy=copy, **kwargs)

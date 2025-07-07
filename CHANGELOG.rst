@@ -26,6 +26,7 @@ Changed
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
 - feat: removed TwoColumnMixin and BaseDateTwoColumnTransformer and replaced with beartype
 for associated transformers
+- feat: added _types file containing custom types
 - placeholder
 - placeholder
 
