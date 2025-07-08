@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import narwhals as nw
 import numpy as np
+from beartype import beartype
 
+from tubular._types import CapValuesDict, QuantileCapsDict
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
 
@@ -19,12 +21,13 @@ if TYPE_CHECKING:
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        capping_values: dict[str, list[int | float | None]] | None = None,
-        quantiles: dict[str, list[int | float]] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        capping_values: Optional[CapValuesDict] = None,
+        quantiles: Optional[QuantileCapsDict] = None,
+        weights_column: Optional[str] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         """Base class for capping transformers, contains functionality shared across capping
         transformer classes.
@@ -94,19 +97,11 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         if quantiles is not None:
             self.check_capping_values_dict(quantiles, "quantiles")
 
-            for k, quantile_values in quantiles.items():
-                for quantile_value in quantile_values:
-                    if (quantile_value is not None) and (
-                        quantile_value < 0 or quantile_value > 1
-                    ):
-                        msg = f"{self.classname()}: quantile values must be in the range [0, 1] but got {quantile_value} for key {k}"
-                        raise ValueError(msg)
-
             super().__init__(columns=list(quantiles.keys()), **kwargs)
 
         self.quantiles = quantiles
         self.capping_values = capping_values
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         if capping_values:
             self._replacement_values = copy.deepcopy(self.capping_values)
@@ -129,42 +124,19 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         None
 
         """
-        if type(capping_values_dict) is not dict:
-            msg = f"{self.classname()}: {dict_name} should be dict of columns and capping values"
-            raise TypeError(msg)
 
-        for k, cap_values in capping_values_dict.items():
-            if type(k) is not str:
-                msg = f"{self.classname()}: all keys in {dict_name} should be str, but got {type(k)}"
-                raise TypeError(msg)
+        # for _, cap_values in capping_values_dict.items():
 
-            if type(cap_values) is not list:
-                msg = f"{self.classname()}: each item in {dict_name} should be a list, but got {type(cap_values)} for key {k}"
-                raise TypeError(msg)
+        #     for cap_value in cap_values:
+        #         if np.isnan(cap_value) or np.isinf(cap_value):
+        #             msg = f"{self.classname()}: item in {dict_name} lists contains numpy NaN or Inf values"
+        #             raise ValueError(msg)
 
-            if len(cap_values) != 2:
-                msg = f"{self.classname()}: each item in {dict_name} should be length 2, but got {len(cap_values)} for key {k}"
-                raise ValueError(msg)
-
-            for cap_value in cap_values:
-                if cap_value is not None:
-                    if type(cap_value) not in [int, float]:
-                        msg = f"{self.classname()}: each item in {dict_name} lists must contain numeric values or None, got {type(cap_value)} for key {k}"
-                        raise TypeError(msg)
-
-                    if np.isnan(cap_value) or np.isinf(cap_value):
-                        msg = f"{self.classname()}: item in {dict_name} lists contains numpy NaN or Inf values"
-                        raise ValueError(msg)
-
-            if all(cap_value is not None for cap_value in cap_values) and (
-                cap_values[0] >= cap_values[1]
-            ):
-                msg = f"{self.classname()}: lower value is greater than or equal to upper value for key {k}"
-                raise ValueError(msg)
-
-            if all(cap_value is None for cap_value in cap_values):
-                msg = f"{self.classname()}: both values are None for key {k}"
-                raise ValueError(msg)
+        #         if all(cap_value is not None for cap_value in cap_values) and (
+        #             cap_values[0] >= cap_values[1]
+        #         ):
+        #             msg = f"{self.classname()}: lower value is greater than or equal to upper value for key {k}"
+        #             raise ValueError(msg)
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: None = None) -> BaseCappingTransformer:
@@ -518,12 +490,13 @@ class CappingTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        capping_values: dict[str, list[int | float | None]] | None = None,
-        quantiles: dict[str, list[int | float]] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        capping_values: Optional[CapValuesDict] = None,
+        quantiles: Optional[QuantileCapsDict] = None,
+        weights_column: Optional[str] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(capping_values, quantiles, weights_column, **kwargs)
 
@@ -608,12 +581,13 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        capping_values: dict[str, list[int | float | None]] | None = None,
-        quantiles: dict[str, list[int | float]] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        capping_values: Optional[CapValuesDict] = None,
+        quantiles: Optional[QuantileCapsDict] = None,
+        weights_column: Optional[str] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(
             capping_values=capping_values,

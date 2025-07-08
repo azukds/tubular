@@ -222,8 +222,7 @@ class WeightColumnInitMixinTests:
         args["weights_column"] = weights_column
 
         with pytest.raises(
-            TypeError,
-            match="weights_column should be str or None",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 

@@ -154,24 +154,3 @@ class WeightColumnMixin:
         if X.select(nw.col(weights_column).sum()).item() == 0:
             msg = f"{self.classname()}: total sample weights are not greater than 0"
             raise ValueError(msg)
-
-    def check_and_set_weight(self, weights_column: str) -> None:
-        """Helper method that validates and assigns the specified column name to be used as the weights_column attribute.
-        This function ensures that the `weights_column` parameter is either a string representing
-        the column name or None. If `weights_column` is not of type str and is not None, it raises
-        a TypeError.
-
-        Parameters:
-            weights_column (str or None): The name of the column to be used as weights. If None, no weights are used.
-
-        Raises:
-            TypeError: If `weights_column` is neither a string nor None.
-
-        Returns:
-            None
-        """
-
-        if weights_column is not None and not isinstance(weights_column, str):
-            msg = "weights_column should be str or None"
-            raise TypeError(msg)
-        self.weights_column = weights_column

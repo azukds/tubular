@@ -309,15 +309,16 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: nw.Series | None = None) -> FrameT:
@@ -399,15 +400,16 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: nw.Series | None = None) -> MeanImputer:
@@ -484,15 +486,15 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
-
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: nw.Series | None = None) -> FrameT:

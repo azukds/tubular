@@ -1,9 +1,8 @@
-import re
-
 import narwhals as nw
 import numpy as np
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -45,10 +44,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             args["capping_values"] = None
 
         with pytest.raises(
-            TypeError,
-            match=re.escape(
-                f"{self.transformer_name}: all keys in {cap_type} should be str",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -101,8 +97,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         args["capping_values"] = None
 
         with pytest.raises(
-            ValueError,
-            match=rf"{self.transformer_name}: quantile values must be in the range \[0, 1\] but got {out_range_value} for key f",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -122,8 +117,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             args["capping_values"] = None
 
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: {cap_type} should be dict of columns and capping values",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -143,8 +137,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             args["capping_values"] = None
 
         with pytest.raises(
-            TypeError,
-            match=rf"{self.transformer_name}: each item in {cap_type} should be a list, but got \<class 'tuple'\> for key b",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -164,8 +157,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             args["capping_values"] = None
 
         with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: each item in {cap_type} should be length 2, but got 1 for key b",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -185,8 +177,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             args["capping_values"] = None
 
         with pytest.raises(
-            TypeError,
-            match=rf"{self.transformer_name}: each item in {cap_type} lists must contain numeric values or None, got \<class 'str'\> for key b",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -206,8 +197,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             args["capping_values"] = None
 
         with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: lower value is greater than or equal to upper value for key b",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -224,8 +214,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         args["capping_values"] = {"b": [0.8, value]}
 
         with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: item in capping_values lists contains numpy NaN or Inf values",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 

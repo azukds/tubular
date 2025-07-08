@@ -3,6 +3,7 @@ import re
 import narwhals as nw
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import GenericNominalTransformTests
 
 import tests.test_data as d
@@ -27,40 +28,35 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
     def test_cut_off_percent_not_float_error(self):
         """Test that an exception is raised if cut_off_percent is not an float."""
         with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: cut_off_percent must be a float",
+            BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", cut_off_percent="a")
 
     def test_cut_off_percent_negative_error(self):
         """Test that an exception is raised if cut_off_percent is negative."""
         with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: cut_off_percent must be > 0 and < 1",
+            BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", cut_off_percent=-1.0)
 
     def test_cut_off_percent_gt_one_error(self):
         """Test that an exception is raised if cut_off_percent is greater than 1."""
         with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: cut_off_percent must be > 0 and < 1",
+            BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", cut_off_percent=2.0)
 
     def test_record_rare_levels_not_bool_error(self):
         """Test that an exception is raised if record_rare_levels is not a bool."""
         with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: record_rare_levels must be a bool",
+            BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", record_rare_levels=2)
 
     def test_unseen_levels_to_rare_not_bool_error(self):
         """Test that an exception is raised if unseen_levels_to_rare is not a bool."""
         with pytest.raises(
-            ValueError,
-            match="GroupRareLevelsTransformer: unseen_levels_to_rare must be a bool",
+            BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", unseen_levels_to_rare=2)
 
