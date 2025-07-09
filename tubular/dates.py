@@ -1225,7 +1225,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -1350,29 +1350,30 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             )
             raise ValueError(msg)
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
         """Transform - creates column containing sine or cosine of another datetime column.
 
         Which function is used is stored in the self.method attribute.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Data to transform.
 
         Returns
         -------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Input X with additional columns added, these are named "<method>_<original_column>"
         """
-        X = super().transform(X)
+        X = nw.from_native(super().transform(X))
 
         for column in self.columns:
             if not isinstance(self.units, dict):
-                column_in_desired_unit = getattr(X[column].dt, self.units)
+                column_in_desired_unit = getattr(X[column].dt, self.units)()
                 desired_units = self.units
             elif isinstance(self.units, dict):
-                column_in_desired_unit = getattr(X[column].dt, self.units[column])
+                column_in_desired_unit = getattr(X[column].dt, self.units[column])()
                 desired_units = self.units[column]
             if not isinstance(self.period, dict):
                 desired_period = self.period
@@ -1382,8 +1383,19 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for method in self.method:
                 new_column_name = f"{method}_{desired_period}_{desired_units}_{column}"
 
-                X[new_column_name] = getattr(np, method)(
-                    column_in_desired_unit * (2.0 * np.pi / desired_period),
+                # Calculate the sine or cosine of the column in the desired unit
+                X = X.with_columns(
+                    nw.col(column)
+                    .map_batches(
+                        lambda *_,
+                        method=method,
+                        column_in_desired_unit=column_in_desired_unit,
+                        desired_period=desired_period: getattr(np, method)(
+                            column_in_desired_unit * (2.0 * np.pi / desired_period),
+                        ),
+                        return_dtype=nw.Float64,
+                    )
+                    .alias(new_column_name),
                 )
 
         # Drop original columns if self.drop_original is True
