@@ -21,6 +21,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- narwhalified DatetimeInfoExtractor `#378 <https://github.com/azukds/tubular/issues/378>_`
 - bugfix: updated env to make package importable, added basic test for this
 - narwhalified DatetimeSinusoidCalculator '#425 <https://github.com/azukds/tubular/issues/425>_' 
 - placeholder
@@ -35,7 +36,6 @@ Changed
 - Working on above, found additional bug with mapping null values. 
 Considered removing this functionality, but it is actually needed for 
 inverse pipelines. Changed this part of logic to work more like an imputer.
-- placeholder 
 
 1.4.3 (02/06/2025)
 ------------------
