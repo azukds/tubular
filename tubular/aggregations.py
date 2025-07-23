@@ -76,22 +76,6 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         self.set_drop_original_column(drop_original)
 
-    @beartype
-    def create_new_col_names(self, prefix: str) -> list[str]:
-        """Automatically generate new column names based on the aggregation type.
-
-        Parameters
-        ----------
-        prefix : str
-            Prefix to use for generating new column names.
-
-        Returns
-        -------
-        list[str]
-            List of new column names with the specified prefix and aggregation type.
-        """
-        return [f"{prefix}_{agg}" for agg in self.aggregations]
-
     @nw.narwhalify
     def transform(
         self,
@@ -137,7 +121,7 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
     This transformer aggregates data within specified columns, grouping by a key column,
     and can optionally drop the original columns post-transformation.
 
-    Parameters
+    Attributes
     ----------
     columns : list[str]
         List of column names to apply the aggregation transformations to.
@@ -147,11 +131,6 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
         Column name to group by for aggregation.
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
-
-    Attributes
-    ----------
-    key : str
-        Column used for grouping during aggregation.
     """
 
     polars_compatible = True
@@ -178,7 +157,7 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
         self,
         X: FrameT,
     ) -> FrameT:
-        """Transforms the dataframe by aggregating rows over specified columns.
+        """Transforms the dataframe by aggregating rows over specified columns when grouped by key.
 
         Parameters
         ----------
@@ -214,6 +193,82 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
 
         # Merge the aggregated results back with the original DataFrame
         X = X.join(grouped_X, on=self.key, how="left")
+
+        # Use mixin method to drop original columns
+        return self.drop_original_column(
+            X,
+            self.drop_original,
+            self.columns,
+        )
+
+
+class AggregateColumnsTransformer(BaseAggregationTransformer):
+    """Transformer that aggregates over specified columns.
+
+    This transformer aggregates data within specified columns
+    and can optionally drop the original columns post-transformation.
+
+    Attributes
+    ----------
+    columns : list[str]
+        List of column names to apply the aggregation transformations to.
+    aggregations : list[str]
+        List of aggregation methods to apply.
+    drop_original : bool, optional
+        Whether to drop the original columns after transformation. Default is False.
+    verbose : bool, optional
+        Indicator for verbose output.
+    """
+
+    polars_compatible = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: list[str],
+        aggregations: ListOfAggregations,
+        drop_original: bool = False,
+        verbose: bool = False,
+    ) -> None:
+        super().__init__(
+            columns=columns,
+            aggregations=aggregations,
+            drop_original=drop_original,
+            verbose=verbose,
+        )
+
+    @nw.narwhalify
+    def transform(
+        self,
+        X: FrameT,
+    ) -> FrameT:
+        """Transforms the dataframe by aggregating rows over specified columns.
+
+        Parameters
+        ----------
+        X : pd.DataFrame or pl.DataFrame
+            DataFrame to transform by aggregating specified columns.
+
+        Returns
+        -------
+        pd.DataFrame or pl.DataFrame
+            Transformed DataFrame with aggregated columns.
+
+        """
+
+        super().transform(X)
+
+        expr_map = {
+            "min": nw.min_horizontal(*self.columns),
+            "max": nw.max_horizontal(*self.columns),
+            "sum": nw.sum_horizontal(*self.columns),
+            "mean": nw.mean_horizontal(*self.columns),
+        }
+
+        for aggregation in self.aggregations:
+            new_col_name = "_".join(self.columns) + f"_{aggregation}"
+
+            X = X.with_columns(expr_map[aggregation].alias(new_col_name))
 
         # Use mixin method to drop original columns
         return self.drop_original_column(
