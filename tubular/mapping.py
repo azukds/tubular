@@ -340,17 +340,18 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
             values_to_be_mapped = set(self.mappings[col].keys())
             values_in_df = set(X.get_column(col).unique())
 
-            if len(values_to_be_mapped.intersection(values_in_df)) == 0:
-                warnings.warn(
-                    f"{self.classname()}: No values from mapping for {col} exist in dataframe.",
-                    stacklevel=2,
-                )
+            if self.verbose:
+                if len(values_to_be_mapped.intersection(values_in_df)) == 0:
+                    warnings.warn(
+                        f"{self.classname()}: No values from mapping for {col} exist in dataframe.",
+                        stacklevel=2,
+                    )
 
-            if len(values_to_be_mapped.difference(values_in_df)) > 0:
-                warnings.warn(
-                    f"{self.classname()}: There are values in the mapping for {col} that are not present in the dataframe",
-                    stacklevel=2,
-                )
+                if len(values_to_be_mapped.difference(values_in_df)) > 0:
+                    warnings.warn(
+                        f"{self.classname()}: There are values in the mapping for {col} that are not present in the dataframe",
+                        stacklevel=2,
+                    )
 
         return nw.from_native(BaseMappingTransformMixin.transform(self, X))
 
