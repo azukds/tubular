@@ -1304,7 +1304,7 @@ class OneHotEncodingTransformer(
     drop_original : bool, default = False
         Should original columns be dropped after creating dummy fields?
 
-    copy : bool, default = True
+    copy : bool, default = False
         Should X be copied prior to transform? Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
 
     verbose : bool, default = True
@@ -1336,7 +1336,7 @@ class OneHotEncodingTransformer(
         wanted_values: dict[str, list[str]] | None = None,
         separator: str = "_",
         drop_original: bool = False,
-        copy: bool | None = None,
+        copy: bool = False,
         verbose: bool = False,
         **kwargs: dict[str, bool],
     ) -> None:

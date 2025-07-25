@@ -116,6 +116,7 @@ ignore = [
     "B905", # the below two rules seem to make changes that error for python3.9
     "UP038", 
     "PYI041", # clashes with beartype
+    "TCH001", # clashes with beartype
     ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
@@ -131,7 +132,11 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Ignore `E402` (import violations) in all `__init__.py` file.
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
-"tests/*" = ["ANN", "S101"]
+"tests/*" = [
+    "ANN",
+    "S101",
+    "PLC2701" # complains about private imports, which we test
+    ]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true

@@ -61,7 +61,7 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
         new_column_name: str,
         pd_method_name: str,
         columns: list,
-        copy: bool | None = None,
+        copy: bool = False,
         pd_method_kwargs: dict[str, object] | None = None,
         **kwargs: dict[str, bool],
     ) -> None:

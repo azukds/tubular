@@ -14,6 +14,7 @@ from beartype import beartype
 
 from tubular._utils import new_narwhals_series_with_optimal_pandas_types
 from tubular.base import BaseTransformer
+from tubular.types import DataFrame
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -148,8 +149,9 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     polars_compatible = True
 
+    @beartype
     @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    def transform(self, X: DataFrame) -> DataFrame:
         """Applies the mapping defined in the mappings dict to each column in the columns
         attribute.
 

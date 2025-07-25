@@ -439,7 +439,7 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         will be used.
     units : str, default = 'D'
         Accepted values are "week", "fortnight", "lunar_month", "common_year", "custom_days", 'D', 'h', 'm', 's'
-    copy : bool, default = True
+    copy : bool, default = False
         Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
     verbose: bool, default = False
         Control level of detail in printouts
@@ -471,7 +471,7 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
             "m",
             "s",
         ] = "D",
-        copy: bool | None = None,
+        copy: bool = False,
         verbose: bool = False,
         drop_original: bool = False,
         custom_days_divider: int = None,

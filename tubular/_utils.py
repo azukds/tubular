@@ -1,9 +1,52 @@
-from typing import Literal
+from typing import Literal, Optional
 
 import narwhals as nw
 import pandas as pd
+from beartype import beartype
 from narwhals.typing import IntoDType
 from numpy.typing import ArrayLike
+
+from tubular.types import DataFrame, Series
+
+
+@beartype
+def _narwhalify_X_if_needed(X: DataFrame) -> nw.DataFrame:
+    """narwhalifies dataframe, if dataframe is not already narwhals
+
+    Parameters
+    ----------
+    X: pd/pl/nw.Series
+        DataFrame to narwhalify if pd/pl type
+
+    Returns
+    ----------
+    nw.DataFrame: narwhalified dataframe
+    """
+
+    if not isinstance(X, nw.DataFrame):
+        X = nw.from_native(X)
+
+    return X
+
+
+@beartype
+def _narwhalify_y_if_needed(y: Optional[Series] = None) -> Optional[nw.Series]:
+    """narwhalifies series, if series is not already narwhals
+
+    Parameters
+    ----------
+    y: pd/pl/nw.Series
+        series to narwhalify if pd/pl type
+
+    Returns
+    ----------
+    nw.Series: narwhalified series
+    """
+
+    if y is not None and not isinstance(y, nw.Series):
+        y = nw.from_native(y, allow_series=True)
+
+    return y
 
 
 def _assess_pandas_object_column(pandas_df: pd.DataFrame, col: str) -> tuple[str, str]:

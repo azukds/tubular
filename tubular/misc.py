@@ -41,7 +41,7 @@ class SetValueTransformer(BaseTransformer):
         self,
         columns: str | list[str],
         value: type,
-        copy: bool | None = None,
+        copy: bool = False,
         **kwargs: dict[str, bool],
     ) -> None:
         self.value = value

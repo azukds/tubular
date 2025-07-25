@@ -7,6 +7,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    ReturnNativeTests,
 )
 from tests.utils import assert_frame_equal_dispatch
 
@@ -27,20 +28,32 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "BaseTransformer"
 
 
-class TestTransform(GenericTransformTests):
+class TestTransform(GenericTransformTests, ReturnNativeTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseTransformer"
 
     @pytest.mark.parametrize(
+        "return_native",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
         indirect=True,
     )
-    def test_X_returned(self, minimal_dataframe_lookup, initialized_transformers):
+    def test_X_returned(
+        self,
+        minimal_dataframe_lookup,
+        uninitialized_transformers,
+        minimal_attribute_dict,
+        return_native,
+    ):
         """Test that X is returned from transform."""
         df = minimal_dataframe_lookup[self.transformer_name]
-        x = initialized_transformers[self.transformer_name]
+        args = minimal_attribute_dict[self.transformer_name]
+        args["return_native"] = return_native
+        x = uninitialized_transformers[self.transformer_name](**args)
 
         # if transformer is not polars compatible, skip polars test
         if not x.polars_compatible and isinstance(df, pl.DataFrame):
@@ -53,6 +66,9 @@ class TestTransform(GenericTransformTests):
         expected = nw.to_native(expected)
 
         df_transformed = x.transform(X=df)
+
+        if not x.return_native:
+            df_transformed = nw.to_native(df_transformed)
 
         assert_frame_equal_dispatch(expected, df_transformed)
 

@@ -7,6 +7,7 @@ from tests.base_tests import (
     ColumnStrListInitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    ReturnNativeTests,
 )
 from tubular.imputers import NullIndicator
 
@@ -19,7 +20,7 @@ class TestInit(ColumnStrListInitTests):
         cls.transformer_name = "NullIndicator"
 
 
-class TestTransform(GenericTransformTests):
+class TestTransform(GenericTransformTests, ReturnNativeTests):
     """Tests for NullIndicator.transform()."""
 
     @classmethod

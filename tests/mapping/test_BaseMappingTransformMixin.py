@@ -5,6 +5,7 @@ import narwhals as nw
 import pandas as pd
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -266,8 +267,7 @@ class TestTransform(GenericTransformTests):
         x_fitted = transformer.fit(df, df["c"])
 
         with pytest.raises(
-            TypeError,
-            match="BaseMappingTransformMixin: X should be a polars or pandas DataFrame/LazyFrame",
+            BeartypeCallHintParamViolation,
         ):
             x_fitted.transform(X=non_df)
 
