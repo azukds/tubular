@@ -22,6 +22,8 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - bugfix: updated env to make package importable, added basic test for this
+- feat: converted DropOriginalMixin and associated transformers to beartype
+- feat: added _types file containing custom types
 - feat: added BaseAggregationTransformer and AggregateRowOverColumnsTransformer classes in new aggregations module
 - narwhalified DatetimeSinusoidCalculator '#425 <https://github.com/azukds/tubular/issues/425>_' 
 - Added deprecated warning for DateDiffLeapYearTransformer `#244 <https://github.com/azukds/tubular/issues/244>`

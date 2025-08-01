@@ -1,11 +1,11 @@
-import re
-
 import numpy as np
 import pandas as pd
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
+from tests.base_tests import DropOriginalInitMixinTests, DropOriginalTransformMixinTests
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -13,7 +13,7 @@ from tests.numeric.test_BaseNumericTransformer import (
 from tubular.numeric import LogTransformer
 
 
-class TestInit(BaseNumericTransformerInitTests):
+class TestInit(BaseNumericTransformerInitTests, DropOriginalInitMixinTests):
     """Tests for LogTransformer.init()"""
 
     @classmethod
@@ -23,8 +23,7 @@ class TestInit(BaseNumericTransformerInitTests):
     def test_base_type_error(self):
         """Test that an exception is raised if base is non-numeric."""
         with pytest.raises(
-            ValueError,
-            match=re.escape("LogTransformer: base should be numeric or None"),
+            BeartypeCallHintParamViolation,
         ):
             LogTransformer(
                 columns=["a"],
@@ -34,8 +33,7 @@ class TestInit(BaseNumericTransformerInitTests):
     def test_suffix_type_error(self):
         """Test that an exception is raised if suffix is non-str."""
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: suffix should be str",
+            BeartypeCallHintParamViolation,
         ):
             LogTransformer(
                 columns=["a"],
@@ -45,8 +43,7 @@ class TestInit(BaseNumericTransformerInitTests):
     def test_add_1_type_error(self):
         """Test that an exception is raised if add_1 is not bool."""
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: add_1 should be bool",
+            BeartypeCallHintParamViolation,
         ):
             LogTransformer(
                 columns=["a"],
@@ -56,8 +53,7 @@ class TestInit(BaseNumericTransformerInitTests):
     def test_base_not_strictly_positive_error(self):
         """Test that an exception is raised if base is not strictly positive."""
         with pytest.raises(
-            ValueError,
-            match=re.escape("LogTransformer: base should be strictly positive"),
+            BeartypeCallHintParamViolation,
         ):
             LogTransformer(
                 columns=["a"],
@@ -65,7 +61,10 @@ class TestInit(BaseNumericTransformerInitTests):
             )
 
 
-class TestTransform(BaseNumericTransformerTransformTests):
+class TestTransform(
+    BaseNumericTransformerTransformTests,
+    DropOriginalTransformMixinTests,
+):
     """Tests for LogTransformer.transform()"""
 
     @classmethod
