@@ -265,6 +265,9 @@ class TestTransform(GenericNominalTransformTests):
 
         df_transformed = x.transform(df)
 
+        # Ensure both data frames are of the same type
+        expected = nw.from_native(expected).to_native()
+
         assert_frame_equal_dispatch(df_transformed, expected)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -289,6 +292,9 @@ class TestTransform(GenericNominalTransformTests):
         x.non_rare_levels = {"b": ["a"]}
 
         df_transformed = x.transform(df)
+
+        # Ensure both data frames are of the same type
+        expected = nw.from_native(expected).to_native()
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
