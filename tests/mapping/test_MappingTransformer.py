@@ -4,6 +4,7 @@ import narwhals as nw
 import pytest
 
 import tests.test_data as d
+from tests.base_tests import ReturnNativeTests
 from tests.mapping.test_BaseMappingTransformer import (
     BaseMappingTransformerInitTests,
     BaseMappingTransformerTransformTests,
@@ -58,7 +59,7 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "MappingTransformer"
 
 
-class TestTransform(BaseMappingTransformerTransformTests):
+class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     """Tests for the transform method on MappingTransformer."""
 
     @classmethod

@@ -13,6 +13,7 @@ from tests.base_tests import (
     WeightColumnInitMixinTests,
 )
 from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import MeanResponseTransformer
 
 
@@ -1204,7 +1205,7 @@ class TestTransform(GenericTransformTests):
                 ["blue"],
                 {
                     "b_blue": {"a": 1, "b": 1, "c": 0, "d": 0, "e": 0, "f": 0},
-                    "f_blue": {False: 2 / 3, True: 0},
+                    "f_blue": {False: 2 / 3, True: 0.0},
                 },
                 {"b": ["b_blue"], "f": ["f_blue"]},
                 expected_df_2,
@@ -1217,9 +1218,9 @@ class TestTransform(GenericTransformTests):
                     "b_blue": {"a": 1, "b": 1, "c": 0, "d": 0, "e": 0, "f": 0},
                     "b_yellow": {"a": 0, "b": 0, "c": 1, "d": 1, "e": 0, "f": 0},
                     "b_green": {"a": 0, "b": 0, "c": 0, "d": 0, "e": 1, "f": 1},
-                    "f_blue": {False: 2 / 3, True: 0},
+                    "f_blue": {False: 2 / 3, True: 0.0},
                     "f_yellow": {False: 1 / 3, True: 1 / 3},
-                    "f_green": {False: 0, True: 2 / 3},
+                    "f_green": {False: 0.0, True: 2 / 3},
                 },
                 {
                     "b": ["b_blue", "b_yellow", "b_green"],
@@ -1248,11 +1249,20 @@ class TestTransform(GenericTransformTests):
         # set the impute values dict directly rather than fitting x on df so test works with helpers
         x.mappings = mappings
 
+        # mimic fit logics use of BaseMappingTransformer
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=mappings,
+        )
+
+        x.mappings = base_mapping_transformer.mappings
+        x.mappings_from_null = base_mapping_transformer.mappings_from_null
+
         x.column_to_encoded_columns = column_to_encoded_columns
         x.response_levels = level
         x.encoded_columns = list(x.mappings.keys())
-        x.return_dtypes = {col: x.return_type for col in x.encoded_columns}
-        x.null_mappings = {col: None for col in x.encoded_columns}
+        x.return_dtypes = {col: "Float32" for col in x.encoded_columns}
 
         df_transformed = x.transform(df)
 

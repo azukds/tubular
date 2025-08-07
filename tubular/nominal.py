@@ -199,7 +199,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         )
 
         self.mappings = base_mapping_transformer.mappings
-        self.null_mappings = base_mapping_transformer.null_mappings
+        self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         return self
@@ -971,7 +971,7 @@ class MeanResponseTransformer(
         )
 
         self.mappings = base_mapping_transformer.mappings
-        self.null_mappings = base_mapping_transformer.null_mappings
+        self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         self._fit_unseen_level_handling_dict(X_y, weights_column)
@@ -1054,8 +1054,8 @@ class MeanResponseTransformer(
                     self.unseen_levels_encoding_dict[c],
                 )
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Transform method to apply mean response encoding stored in the mappings attribute to
         each column in the columns attribute.
 
@@ -1080,64 +1080,94 @@ class MeanResponseTransformer(
 
         self.check_is_fitted(["mappings", "return_dtypes"])
 
-        # BaseTransformer.transform as we do not want to run check_mappable_rows in BaseNominalTransformer
-        # (it causes complications with unseen levels and new cols, so run later)
-        X = nw.from_native(BaseTransformer.transform(self, X))
-
-        # create new columns, replacing unseen values with None
-        # (they will be filled later)
-        X = X.with_columns(
-            nw.when(
-                nw.col(old_column).is_in(self.mappings[new_column].keys()),
-            )
-            .then(
-                nw.col(old_column),
-            )
-            .otherwise(
-                None,
-            )
-            .alias(new_column)
-            for old_column in self.columns
-            for new_column in self.column_to_encoded_columns[old_column]
-        )
+        X = _convert_dataframe_to_narwhals(X)
 
         # with columns created, can now run parent transforms
         if self.unseen_level_handling:
             # do not want to run check_mappable_rows in this case, as will not like unseen values
             self.check_is_fitted(["unseen_levels_encoding_dict"])
-        else:
-            # temp overwrite columns attr so that check_mappable_rows runs safely
-            original_columns = self.columns
-            self.columns = self.encoded_columns
-            X = nw.from_native(super().transform(X))
-            self.columns = original_columns
 
-        # next apply mappings
-        X = nw.from_native(BaseMappingTransformMixin.transform(self, X))
+            # BaseTransformer.transform as we do not want to run check_mappable_rows in BaseNominalTransformer
+            # (it causes complications with unseen levels and new cols, so run later)
+            X = BaseTransformer.transform(self, X, return_native_override=False)
+
+        else:
+            # mappings might look like {'a_blue': {'a': 1, 'b': 2,...}}
+            # what we want to check is whether the values of a are covered
+            # by the mappings, so temp change the mappings dict to focus on
+            # the original columns and set back to original value after
+            original_mappings = self.mappings
+            self.mappings = {
+                col: self.mappings[self.column_to_encoded_columns[col][0]]
+                for col in self.columns
+            }
+            X = super().transform(X, return_native_override=False)
+            self.mappings = original_mappings
+
+        # set up list of paired condition/outcome tuples for mapping
+        conditions_and_outcomes = {
+            output_col: [
+                self._create_mapping_conditions_and_outcomes(
+                    input_col,
+                    key,
+                    self.mappings,
+                    output_col=output_col,
+                )
+                for key in self.mappings[output_col]
+            ]
+            for input_col in self.columns
+            for output_col in self.column_to_encoded_columns[input_col]
+        }
 
         if self.unseen_level_handling:
-            for old_col in self.columns:
-                X = X.with_columns(
-                    nw.when(
-                        nw.col(new_col).is_in(list(self.mappings[new_col].values())),
-                    )
-                    .then(
-                        nw.col(new_col),
-                    )
-                    .otherwise(self.unseen_levels_encoding_dict[new_col])
-                    for new_col in self.column_to_encoded_columns[old_col]
+            unseen_level_condition_and_outcomes = {
+                output_col: (
+                    ~nw.col(input_col).is_in(self.mappings[output_col].keys()),
+                    (nw.lit(self.unseen_levels_encoding_dict[output_col])),
                 )
+                for input_col in self.columns
+                for output_col in self.column_to_encoded_columns[input_col]
+            }
+
+            conditions_and_outcomes = {
+                col: conditions_and_outcomes[col]
+                + [unseen_level_condition_and_outcomes[col]]
+                for col in self.encoded_columns
+            }
+
+        # apply mapping using functools reduce to build expression
+        transform_expressions = {
+            output_col: self._combine_mappings_into_expression(
+                input_col,
+                conditions_and_outcomes,
+                output_col,
+            )
+            for input_col in self.columns
+            for output_col in self.column_to_encoded_columns[input_col]
+        }
+
+        transform_expressions = {
+            col: transform_expressions[col].cast(getattr(nw, self.return_dtypes[col]))
+            for col in self.encoded_columns
+        }
+
+        X = X.with_columns(
+            **transform_expressions,
+        )
 
         columns_to_drop = [
             col for col in self.columns if col not in self.encoded_columns
         ]
 
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             columns_to_drop,
+            return_native=False,
         )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 class OrdinalEncoderTransformer(
@@ -1285,7 +1315,7 @@ class OrdinalEncoderTransformer(
         )
 
         self.mappings = base_mapping_transformer.mappings
-        self.null_mappings = base_mapping_transformer.null_mappings
+        self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         return self

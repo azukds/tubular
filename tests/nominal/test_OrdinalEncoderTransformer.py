@@ -13,6 +13,7 @@ from tests.base_tests import (
     WeightColumnInitMixinTests,
 )
 from tests.utils import assert_frame_equal_dispatch
+from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import OrdinalEncoderTransformer
 
 
@@ -183,12 +184,22 @@ class TestTransform(GenericTransformTests):
         x = OrdinalEncoderTransformer(columns=["b", "d", "f"])
 
         # set the impute values dict directly rather than fitting x on df so test works with helpers
-        x.mappings = {
+        mappings = {
             "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
             "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
             "f": {False: 1, True: 2},
         }
-        x.null_mappings = {"b": None, "d": None, "f": None}
+
+        # mimic fit logic and use base  class to set attrs
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=mappings,
+        )
+
+        x.mappings = base_mapping_transformer.mappings
+        x.mappings_from_null = base_mapping_transformer.mappings_from_null
+        x.return_dtypes = {col: "Int8" for col in x.columns}
 
         df_transformed = x.transform(df)
 
