@@ -440,7 +440,7 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
             X = X.with_columns(
                 nw.when(
                     (nw.col(self.columns[0]).is_null())
-                    or (nw.col(self.columns[1]).is_null()),
+                    | (nw.col(self.columns[1]).is_null()),
                 )
                 .then(
                     self.missing_replacement,
