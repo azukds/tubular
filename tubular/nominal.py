@@ -200,7 +200,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         )
 
         self.mappings = base_mapping_transformer.mappings
-        self.mappings_from_null = base_mapping_transformer.mappings_from_null
+        self.null_mappings = base_mapping_transformer.null_mappings
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         return self
@@ -972,7 +972,7 @@ class MeanResponseTransformer(
         )
 
         self.mappings = base_mapping_transformer.mappings
-        self.mappings_from_null = base_mapping_transformer.mappings_from_null
+        self.null_mappings = base_mapping_transformer.null_mappings
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         self._fit_unseen_level_handling_dict(X_y, weights_column)
@@ -1286,7 +1286,7 @@ class OrdinalEncoderTransformer(
         )
 
         self.mappings = base_mapping_transformer.mappings
-        self.mappings_from_null = base_mapping_transformer.mappings_from_null
+        self.null_mappings = base_mapping_transformer.null_mappings
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         return self

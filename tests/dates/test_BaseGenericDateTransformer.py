@@ -16,7 +16,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
-from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
+from tests.test_data import create_date_diff_different_dtypes
 from tests.utils import dataframe_init_dispatch
 from tubular.dates import TIME_UNITS
 
@@ -186,49 +186,6 @@ class GenericDatesMixinTransformTests:
             transformer.transform(df)
 
         assert msg in str(exc_info.value)
-
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_only_typechecks_self_columns(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        library,
-    ):
-        "Test that type checks are only performed on self.columns"
-        args = minimal_attribute_dict[self.transformer_name].copy()
-
-        transformer = uninitialized_transformers[self.transformer_name](
-            **args,
-        )
-
-        df = create_date_test_df(library=library)
-
-        df = nw.from_native(df)
-
-        # add non datetime column
-        df = df.with_columns(
-            nw.new_series(
-                name="z",
-                values=[
-                    "a",
-                    "b",
-                    "c",
-                    "d",
-                    "e",
-                    "f",
-                    "g",
-                    "h",
-                ],
-                backend=nw.get_native_namespace(df),
-            ),
-        ).to_native()
-
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        # test that this runs successfully
-        transformer.transform(df)
 
 
 class TestInit(

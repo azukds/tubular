@@ -133,8 +133,7 @@ class BaseGenericDateTransformer(
         # process datetime types for more readable error messages
         present_types = {
             dtype if not isinstance(dtype, nw.Datetime) else nw.Datetime
-            for name, dtype in schema.items()
-            if name in self.columns
+            for dtype in schema.values()
         }
 
         valid_types = present_types.issubset(set(allowed_types))
@@ -441,7 +440,7 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
             X = X.with_columns(
                 nw.when(
                     (nw.col(self.columns[0]).is_null())
-                    | (nw.col(self.columns[1]).is_null()),
+                    or (nw.col(self.columns[1]).is_null()),
                 )
                 .then(
                     self.missing_replacement,

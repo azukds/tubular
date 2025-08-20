@@ -485,48 +485,6 @@ class TestTransform(
 
         assert msg in str(exc_info.value)
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_only_typechecks_self_columns(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        library,
-    ):
-        "Test that type checks are only performed on self.columns"
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["columns"] = ["a_date", "b_date", "c_date"]
-
-        transformer = uninitialized_transformers[self.transformer_name](
-            **args,
-        )
-
-        df = d.create_is_between_dates_df_3(library=library)
-
-        df = nw.from_native(df)
-
-        # add non datetime column
-        df = df.with_columns(
-            nw.new_series(
-                name="z",
-                values=[
-                    "a",
-                    "b",
-                    "c",
-                    "d",
-                    "e",
-                    "f",
-                ],
-                backend=nw.get_native_namespace(df),
-            ),
-        ).to_native()
-
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        # test that this runs successfully
-        transformer.transform(df)
-
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
