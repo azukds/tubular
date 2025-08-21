@@ -1425,6 +1425,7 @@ class OneHotEncodingTransformer(
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
         columns: str | list[str] | None = None,
@@ -1443,34 +1444,12 @@ class OneHotEncodingTransformer(
             **kwargs,
         )
 
-        if wanted_values is not None:
-            if not isinstance(wanted_values, dict):
-                msg = f"{self.classname()}: wanted_values should be a dictionary"
-                raise TypeError(msg)
-
-            for key, val_list in wanted_values.items():
-                # check key is a string
-                if not isinstance(key, str):
-                    msg = f"{self.classname()}:  Key in 'wanted_values' should be a string"
-                    raise TypeError(msg)
-
-                # check value is a list
-                if not isinstance(val_list, list):
-                    msg = f"{self.classname()}: Values in the 'wanted_values' dictionary should be a list"
-                    raise TypeError(msg)
-
-                # check if each value within the list is a string
-                for val in val_list:
-                    if not isinstance(val, str):
-                        msg = f"{self.classname()}: Entries in 'wanted_values' list should be a string"
-                        raise TypeError(msg)
-
         self.wanted_values = wanted_values
         self.set_drop_original_column(drop_original)
         self.check_and_set_separator_column(separator)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series | None = None) -> FrameT:
+    @beartype
+    def fit(self, X: DataFrame, y: nw.Series | None = None) -> DataFrame:
         """Gets list of levels for each column to be transformed. This defines which dummy columns
         will be created in transform.
 
@@ -1483,6 +1462,9 @@ class OneHotEncodingTransformer(
             Ignored. This parameter exists only for compatibility with sklearn.pipeline.Pipeline.
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         BaseTransformer.fit(self, X=X, y=y)
 
         # Check for nulls
@@ -1536,6 +1518,7 @@ class OneHotEncodingTransformer(
 
         return self
 
+    @beartype
     def _warn_missing_levels(
         self,
         present_levels: list,
@@ -1568,6 +1551,7 @@ class OneHotEncodingTransformer(
 
         return missing_levels
 
+    @beartype
     def _get_feature_names(
         self,
         column: str,
@@ -1585,14 +1569,58 @@ class OneHotEncodingTransformer(
             column + self.separator + str(level) for level in self.categories_[column]
         ]
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def _check_for_nulls(self, X: DataFrame) -> None:
+        """check that transformer being called on only non-null columns.
+
+        Note, found including nulls to be quite complicated due to:
+        - categorical variables make use of NaN not None
+        - pl/nw categorical variables do not allow categories to be edited,
+        so adjusting requires converting to str as interim step
+        - NaNs are converted to nan, introducing complications
+
+        As this transformer is generally used post imputation, elected to remove null
+        functionality.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Data to transform
+
+        """
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        null_check_expressions = {
+            col: nw.col(col).is_null().sum().alias(col) for col in self.columns
+        }
+
+        null_counts = X.select(**null_check_expressions)
+
+        columns_with_nulls = [
+            col for col in self.columns if null_counts[col].item() > 0
+        ]
+
+        if columns_with_nulls:
+            msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
+            raise ValueError(msg)
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Create new dummy columns from categorical fields.
 
         Parameters
         ----------
         X : pd/pl.DataFrame
             Data to apply one hot encoding to.
+
+        return_native_override: Optional[bool]
+        option to override return_native attr in transformer, useful when calling parent
+        methods
 
         Returns
         -------
@@ -1602,21 +1630,18 @@ class OneHotEncodingTransformer(
             the output X.
 
         """
+        return_native = self._process_return_native(return_native_override)
 
         # Check that transformer has been fit before calling transform
         self.check_is_fitted(["categories_"])
 
-        X = nw.from_native(BaseTransformer.transform(self, X))
+        X = _convert_dataframe_to_narwhals(X)
+        X = BaseTransformer.transform(self, X, return_native_override=False)
+
+        self._check_for_nulls(X)
 
         missing_levels = {}
         for c in self.columns:
-            # Check for nulls
-            if X.select(nw.col(c).is_null().sum()).item() > 0:
-                raise ValueError(
-                    f"{self.classname()}: column %s has nulls - replace before proceeding"
-                    % c,
-                )
-
             # print warning for unseen levels
             present_levels = set(X.get_column(c).unique().to_list())
             unseen_levels = present_levels.difference(set(self.categories_[c]))
@@ -1644,9 +1669,11 @@ class OneHotEncodingTransformer(
             X = nw.concat([X, dummies.select(wanted_dummies)], how="horizontal")
 
         # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             self.columns,
         )
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
