@@ -48,9 +48,18 @@ class TestCreateDummyWeightsColumn:
             library=library,
         )
 
-        output = obj._create_dummy_weights_column(df, backend=library)
+        output, dummy_weights_column = obj._create_dummy_weights_column(
+            df,
+            backend=library,
+        )
 
         assert_frame_equal_dispatch(expected, output)
+
+        assert (
+            dummy_weights_column == f"dummy_weights_column_{i}"
+            if i != -1
+            else "dummy_weights_column"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("i", [0, 1, 2, 3, 4])
@@ -118,14 +127,16 @@ class TestCreateDummyWeightsColumn:
             "a": [1, 2, 3, 4],
         }
 
+        bad_weight_vals = [1, 1, 2, 1]
+        good_weight_vals = [1, 1, 1, 1]
         for j in range(-1, i):
             if j == -1:
                 df_dict["dummy_weights_column"] = (
-                    [1, 1, 2, 1] if i != j + 1 else [1, 1, 1, 1]
+                    bad_weight_vals if i != j + 1 else good_weight_vals
                 )
             else:
                 df_dict[f"dummy_weights_column_{j}"] = (
-                    [1, 1, 1, 1] if i != j + 1 else [1, 1, 1, 1]
+                    bad_weight_vals if i != j + 1 else good_weight_vals
                 )
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
@@ -137,9 +148,20 @@ class TestCreateDummyWeightsColumn:
             library=library,
         )
 
-        output = obj._create_dummy_weights_column(df, backend=library)
+        output, dummy_weights_column = obj._create_dummy_weights_column(
+            df,
+            backend=library,
+        )
 
         assert_frame_equal_dispatch(expected, output)
+
+        print(dummy_weights_column)
+        print(i)
+        assert (
+            dummy_weights_column == f"dummy_weights_column_{i - 1}"
+            if i != 0
+            else "dummy_weights_column"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_errors_if_too_many_failed_attempts(

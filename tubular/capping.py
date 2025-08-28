@@ -197,12 +197,11 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         weights_column = self.weights_column
         if self.weights_column is None:
-            X = WeightColumnMixin._create_dummy_weights_column(
+            X, weights_column = WeightColumnMixin._create_dummy_weights_column(
                 X,
                 backend=backend.__name__,
                 return_native=False,
             )
-            weights_column = "dummy_weights_column"
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
         self.quantile_capping_values = {}
@@ -692,12 +691,11 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         weights_column = self.weights_column
         if self.weights_column is None:
-            X = WeightColumnMixin._create_dummy_weights_column(
+            X, weights_column = WeightColumnMixin._create_dummy_weights_column(
                 X,
                 backend=backend.__name__,
                 return_native=False,
             )
-            weights_column = "dummy_weights_column"
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
         # need to overwrite attr for fit method to work

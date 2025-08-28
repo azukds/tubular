@@ -175,12 +175,11 @@ class WeightColumnMixin:
         return type(self).__name__
 
     @staticmethod
-    @beartype
     def _create_dummy_weights_column(
         X: DataFrame,
         backend: Literal["pandas", "polars"],
         return_native: bool = True,
-    ) -> DataFrame:
+    ) -> tuple[DataFrame, str]:
         """Create dummy weights column. Useful to streamline logic and just treat all
         cases as weighted, avoids branches for weights/non-weights.
 
@@ -216,7 +215,10 @@ class WeightColumnMixin:
                 )
                 # if exists already and is valid, return
                 if all_one:
-                    return _return_narwhals_or_native_dataframe(X, return_native)
+                    return _return_narwhals_or_native_dataframe(
+                        X,
+                        return_native,
+                    ), final_dummy_weights_column
 
                 # if exists and not valid, search for alternative name
                 previous_dummy_weights_column = final_dummy_weights_column
@@ -241,7 +243,10 @@ class WeightColumnMixin:
             ),
         )
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(
+            X,
+            return_native,
+        ), final_dummy_weights_column
 
     @nw.narwhalify
     def check_weights_column(self, X: FrameT, weights_column: str) -> None:
