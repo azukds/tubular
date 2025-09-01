@@ -194,142 +194,142 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
             MeanResponseTransformer(prior=-1)
 
 
-class TestPriorRegularisation:
-    "tests for _prior_regularisation method."
+# class TestPriorRegularisation:
+#     "tests for _prior_regularisation method."
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_output1(self, library):
-        "Test output of method."
-        x = MeanResponseTransformer(columns="a", prior=3)
+#     @pytest.mark.parametrize("library", ["pandas", "polars"])
+#     def test_output1(self, library):
+#         "Test output of method."
+#         x = MeanResponseTransformer(columns="a", prior=3)
 
-        df_dict = {"a": [1, 2]}
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-        y = nw.new_series(name="y", values=[2, 3], backend=library)
+#         df_dict = {"a": [1, 2]}
+#         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+#         y = nw.new_series(name="y", values=[2, 3], backend=library)
 
-        x.fit(X=df, y=y)
+#         x.fit(X=df, y=y)
 
-        expected1 = (1 + 3 * 2.5) / (1 + 3)
+#         expected1 = (1 + 3 * 2.5) / (1 + 3)
 
-        expected2 = (2 + 3 * 2.5) / (2 + 3)
+#         expected2 = (2 + 3 * 2.5) / (2 + 3)
 
-        expected = {"a": expected1, "b": expected2}
+#         expected = {"a": expected1, "b": expected2}
 
-        weights_column = "weights"
-        response_column = "means"
-        column = "column"
-        group_means_and_weights_dict = {
-            column: ["a", "b"],
-            response_column: [1, 2],
-            weights_column: [1, 2],
-        }
+#         weights_column = "weights"
+#         response_column = "means"
+#         column = "column"
+#         group_means_and_weights_dict = {
+#             column: ["a", "b"],
+#             response_column: [1, 2],
+#             weights_column: [1, 2],
+#         }
 
-        group_means_and_weights_df = dataframe_init_dispatch(
-            dataframe_dict=group_means_and_weights_dict,
-            library="pandas",
-        )
+#         group_means_and_weights_df = dataframe_init_dispatch(
+#             dataframe_dict=group_means_and_weights_dict,
+#             library="pandas",
+#         )
 
-        output = x._prior_regularisation(
-            group_means_and_weights=group_means_and_weights_df,
-            column=column,
-            weights_column=weights_column,
-            response_column=response_column,
-        )
+#         output = x._prior_regularisation(
+#             group_means_and_weights=group_means_and_weights_df,
+#             column=column,
+#             weights_column=weights_column,
+#             response_column=response_column,
+#         )
 
-        assert (
-            output == expected
-        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+#         assert (
+#             output == expected
+#         ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_output2(self, library):
-        "Test output of method - for category dtypes"
-        x = MeanResponseTransformer(columns="a", prior=0)
+#     @pytest.mark.parametrize("library", ["pandas", "polars"])
+#     def test_output2(self, library):
+#         "Test output of method - for category dtypes"
+#         x = MeanResponseTransformer(columns="a", prior=0)
 
-        df_dict = {"a": ["a", "b"]}
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+#         df_dict = {"a": ["a", "b"]}
+#         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        df = nw.from_native(df)
-        df = df.with_columns(nw.col("a").cast(nw.Categorical))
-        df = nw.to_native(df)
+#         df = nw.from_native(df)
+#         df = df.with_columns(nw.col("a").cast(nw.Categorical))
+#         df = nw.to_native(df)
 
-        y = nw.new_series(name="y", values=[2, 3], backend=library)
+#         y = nw.new_series(name="y", values=[2, 3], backend=library)
 
-        x.fit(X=df, y=y)
+#         x.fit(X=df, y=y)
 
-        expected1 = (1) / (1)
+#         expected1 = (1) / (1)
 
-        expected2 = (2) / (2)
+#         expected2 = (2) / (2)
 
-        expected = {"a": expected1, "b": expected2}
+#         expected = {"a": expected1, "b": expected2}
 
-        weights_column = "weights"
-        response_column = "means"
-        column = "column"
-        group_means_and_weights_dict = {
-            column: ["a", "b"],
-            response_column: [1, 2],
-            weights_column: [1, 2],
-        }
+#         weights_column = "weights"
+#         response_column = "means"
+#         column = "column"
+#         group_means_and_weights_dict = {
+#             column: ["a", "b"],
+#             response_column: [1, 2],
+#             weights_column: [1, 2],
+#         }
 
-        group_means_and_weights_df = dataframe_init_dispatch(
-            dataframe_dict=group_means_and_weights_dict,
-            library="pandas",
-        )
+#         group_means_and_weights_df = dataframe_init_dispatch(
+#             dataframe_dict=group_means_and_weights_dict,
+#             library="pandas",
+#         )
 
-        output = x._prior_regularisation(
-            group_means_and_weights=group_means_and_weights_df,
-            column=column,
-            weights_column=weights_column,
-            response_column=response_column,
-        )
+#         output = x._prior_regularisation(
+#             group_means_and_weights=group_means_and_weights_df,
+#             column=column,
+#             weights_column=weights_column,
+#             response_column=response_column,
+#         )
 
-        assert (
-            output == expected
-        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+#         assert (
+#             output == expected
+#         ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
 
-    @pytest.mark.parametrize("library", ["pandas"])
-    def test_output3(self, library):
-        "Test output of method - for pandas object dtype"
-        x = MeanResponseTransformer(columns="a", prior=0)
+#     @pytest.mark.parametrize("library", ["pandas"])
+#     def test_output3(self, library):
+#         "Test output of method - for pandas object dtype"
+#         x = MeanResponseTransformer(columns="a", prior=0)
 
-        df_dict = {"a": ["a", "b"]}
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+#         df_dict = {"a": ["a", "b"]}
+#         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        df["a"] = df["a"].astype("object")
+#         df["a"] = df["a"].astype("object")
 
-        y = nw.new_series(name="y", values=[2, 3], backend=library)
+#         y = nw.new_series(name="y", values=[2, 3], backend=library)
 
-        x.fit(X=df, y=y)
+#         x.fit(X=df, y=y)
 
-        expected1 = (1) / (1)
+#         expected1 = (1) / (1)
 
-        expected2 = (2) / (2)
+#         expected2 = (2) / (2)
 
-        expected = {"a": expected1, "b": expected2}
+#         expected = {"a": expected1, "b": expected2}
 
-        weights_column = "weights"
-        response_column = "means"
-        column = "column"
-        group_means_and_weights_dict = {
-            column: ["a", "b"],
-            response_column: [1, 2],
-            weights_column: [1, 2],
-        }
+#         weights_column = "weights"
+#         response_column = "means"
+#         column = "column"
+#         group_means_and_weights_dict = {
+#             column: ["a", "b"],
+#             response_column: [1, 2],
+#             weights_column: [1, 2],
+#         }
 
-        group_means_and_weights_df = dataframe_init_dispatch(
-            dataframe_dict=group_means_and_weights_dict,
-            library="pandas",
-        )
+#         group_means_and_weights_df = dataframe_init_dispatch(
+#             dataframe_dict=group_means_and_weights_dict,
+#             library="pandas",
+#         )
 
-        output = x._prior_regularisation(
-            group_means_and_weights=group_means_and_weights_df,
-            column=column,
-            weights_column=weights_column,
-            response_column=response_column,
-        )
+#         output = x._prior_regularisation(
+#             group_means_and_weights=group_means_and_weights_df,
+#             column=column,
+#             weights_column=weights_column,
+#             response_column=response_column,
+#         )
 
-        assert (
-            output == expected
-        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+#         assert (
+#             output == expected
+#         ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
 
 
 class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
@@ -587,289 +587,289 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         ), "MeanResponseTransformer should ignore unobserved levels"
 
 
-class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
-    """Tests for MeanResponseTransformer.fit()."""
+# class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
+#     """Tests for MeanResponseTransformer.fit()."""
 
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "MeanResponseTransformer"
+#     @classmethod
+#     def setup_class(cls):
+#         cls.transformer_name = "MeanResponseTransformer"
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize(
-        (
-            "columns",
-            "weights_values",
-            "prior",
-            "expected_mappings",
-            "expected_mean",
-        ),
-        [
-            # no prior, no weight
-            (
-                ["b", "d", "f"],
-                [1, 1, 1, 1, 1, 1],
-                0,
-                {
-                    "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
-                    "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
-                    "f": {False: 2.0, True: 5.0},
-                },
-                np.float64(3.5),
-            ),
-            # no weight, prior
-            (
-                ["b", "d", "f"],
-                [1, 1, 1, 1, 1, 1],
-                5,
-                {
-                    "b": {
-                        "a": 37 / 12,
-                        "b": 13 / 4,
-                        "c": 41 / 12,
-                        "d": 43 / 12,
-                        "e": 15 / 4,
-                        "f": 47 / 12,
-                    },
-                    "d": {
-                        1: 37 / 12,
-                        2: 13 / 4,
-                        3: 41 / 12,
-                        4: 43 / 12,
-                        5: 15 / 4,
-                        6: 47 / 12,
-                    },
-                    "f": {False: 47 / 16, True: 65 / 16},
-                },
-                np.float64(3.5),
-            ),
-            # weight, no prior
-            (
-                ["b", "d", "f"],
-                [1, 2, 3, 4, 5, 6],
-                0,
-                {
-                    "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
-                    "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
-                    "f": {False: 14 / 6, True: 77 / 15},
-                },
-                np.float64(13 / 3),
-            ),
-            # prior and weight
-            (
-                ["d", "f"],
-                [1, 1, 1, 2, 2, 2],
-                5,
-                {
-                    "d": {1: 7 / 2, 2: 11 / 3, 3: 23 / 6, 4: 4.0, 5: 30 / 7, 6: 32 / 7},
-                    "f": {False: 13 / 4, True: 50 / 11},
-                },
-                np.float64(4.0),
-            ),
-        ],
-    )
-    def test_learnt_values(
-        self,
-        library,
-        columns,
-        weights_values,
-        prior,
-        expected_mappings,
-        expected_mean,
-    ):
-        """Test that the mean response values learnt during fit are expected."""
-        df = create_MeanResponseTransformer_test_df(library=library)
+#     @pytest.mark.parametrize("library", ["pandas", "polars"])
+#     @pytest.mark.parametrize(
+#         (
+#             "columns",
+#             "weights_values",
+#             "prior",
+#             "expected_mappings",
+#             "expected_mean",
+#         ),
+#         [
+#             # no prior, no weight
+#             (
+#                 ["b", "d", "f"],
+#                 [1, 1, 1, 1, 1, 1],
+#                 0,
+#                 {
+#                     "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
+#                     "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
+#                     "f": {False: 2.0, True: 5.0},
+#                 },
+#                 np.float64(3.5),
+#             ),
+#             # no weight, prior
+#             (
+#                 ["b", "d", "f"],
+#                 [1, 1, 1, 1, 1, 1],
+#                 5,
+#                 {
+#                     "b": {
+#                         "a": 37 / 12,
+#                         "b": 13 / 4,
+#                         "c": 41 / 12,
+#                         "d": 43 / 12,
+#                         "e": 15 / 4,
+#                         "f": 47 / 12,
+#                     },
+#                     "d": {
+#                         1: 37 / 12,
+#                         2: 13 / 4,
+#                         3: 41 / 12,
+#                         4: 43 / 12,
+#                         5: 15 / 4,
+#                         6: 47 / 12,
+#                     },
+#                     "f": {False: 47 / 16, True: 65 / 16},
+#                 },
+#                 np.float64(3.5),
+#             ),
+#             # weight, no prior
+#             (
+#                 ["b", "d", "f"],
+#                 [1, 2, 3, 4, 5, 6],
+#                 0,
+#                 {
+#                     "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
+#                     "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
+#                     "f": {False: 14 / 6, True: 77 / 15},
+#                 },
+#                 np.float64(13 / 3),
+#             ),
+#             # prior and weight
+#             (
+#                 ["d", "f"],
+#                 [1, 1, 1, 2, 2, 2],
+#                 5,
+#                 {
+#                     "d": {1: 7 / 2, 2: 11 / 3, 3: 23 / 6, 4: 4.0, 5: 30 / 7, 6: 32 / 7},
+#                     "f": {False: 13 / 4, True: 50 / 11},
+#                 },
+#                 np.float64(4.0),
+#             ),
+#         ],
+#     )
+#     def test_learnt_values(
+#         self,
+#         library,
+#         columns,
+#         weights_values,
+#         prior,
+#         expected_mappings,
+#         expected_mean,
+#     ):
+#         """Test that the mean response values learnt during fit are expected."""
+#         df = create_MeanResponseTransformer_test_df(library=library)
 
-        df = nw.from_native(df)
+#         df = nw.from_native(df)
 
-        weights_column = "weights_column"
-        df = df.with_columns(
-            nw.new_series(name=weights_column, values=weights_values, backend=library),
-        ).to_native()
+#         weights_column = "weights_column"
+#         df = df.with_columns(
+#             nw.new_series(name=weights_column, values=weights_values, backend=library),
+#         ).to_native()
 
-        x = MeanResponseTransformer(columns=columns, prior=prior)
+#         x = MeanResponseTransformer(columns=columns, prior=prior)
 
-        x.mappings = {}
+#         x.mappings = {}
 
-        x._fit_binary_response(
-            df,
-            x.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
+#         x._fit_binary_response(
+#             df,
+#             x.columns,
+#             weights_column=weights_column,
+#             response_column="a",
+#         )
 
-        for key in expected_mappings:
-            for value in expected_mappings[key]:
-                expected_mappings[key][value] = x.cast_method(
-                    expected_mappings[key][value],
-                )
+#         for key in expected_mappings:
+#             for value in expected_mappings[key]:
+#                 expected_mappings[key][value] = x.cast_method(
+#                     expected_mappings[key][value],
+#                 )
 
-        assert (
-            x.global_mean == expected_mean
-        ), f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
+#         assert (
+#             x.global_mean == expected_mean
+#         ), f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
 
-        assert (
-            x.mappings == expected_mappings
-        ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
+#         assert (
+#             x.mappings == expected_mappings
+#         ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
-    def test_prior_logic(self, prior, library):
-        "Test that for prior>0 encodings are closer to global mean than for prior=0."
-        df = create_MeanResponseTransformer_test_df(library=library)
+#     @pytest.mark.parametrize("library", ["pandas", "polars"])
+#     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
+#     def test_prior_logic(self, prior, library):
+#         "Test that for prior>0 encodings are closer to global mean than for prior=0."
+#         df = create_MeanResponseTransformer_test_df(library=library)
 
-        df = nw.from_native(df)
-        weights_column = "weights_column"
-        native_backend = nw.get_native_namespace(df)
-        df = df.with_columns(
-            nw.new_series(
-                name=weights_column,
-                values=[1, 1, 1, 2, 2, 2],
-                backend=native_backend.__name__,
-            ),
-        )
+#         df = nw.from_native(df)
+#         weights_column = "weights_column"
+#         native_backend = nw.get_native_namespace(df)
+#         df = df.with_columns(
+#             nw.new_series(
+#                 name=weights_column,
+#                 values=[1, 1, 1, 2, 2, 2],
+#                 backend=native_backend.__name__,
+#             ),
+#         )
 
-        x_prior = MeanResponseTransformer(
-            columns=["d", "f"],
-            prior=prior,
-            weights_column=weights_column,
-        )
+#         x_prior = MeanResponseTransformer(
+#             columns=["d", "f"],
+#             prior=prior,
+#             weights_column=weights_column,
+#         )
 
-        x_no_prior = MeanResponseTransformer(
-            columns=["d", "f"],
-            prior=0,
-            weights_column=weights_column,
-        )
+#         x_no_prior = MeanResponseTransformer(
+#             columns=["d", "f"],
+#             prior=0,
+#             weights_column=weights_column,
+#         )
 
-        x_prior.mappings = {}
-        x_no_prior.mappings = {}
+#         x_prior.mappings = {}
+#         x_no_prior.mappings = {}
 
-        x_prior._fit_binary_response(
-            df,
-            x_prior.columns,
-            response_column="a",
-            weights_column=weights_column,
-        )
+#         x_prior._fit_binary_response(
+#             df,
+#             x_prior.columns,
+#             response_column="a",
+#             weights_column=weights_column,
+#         )
 
-        x_no_prior._fit_binary_response(
-            df,
-            x_no_prior.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
+#         x_no_prior._fit_binary_response(
+#             df,
+#             x_no_prior.columns,
+#             weights_column=weights_column,
+#             response_column="a",
+#         )
 
-        prior_mappings = x_prior.mappings
+#         prior_mappings = x_prior.mappings
 
-        no_prior_mappings = x_no_prior.mappings
+#         no_prior_mappings = x_no_prior.mappings
 
-        global_mean = x_prior.global_mean
+#         global_mean = x_prior.global_mean
 
-        assert (
-            global_mean == x_no_prior.global_mean
-        ), "global means for transformers with/without priors should match"
+#         assert (
+#             global_mean == x_no_prior.global_mean
+#         ), "global means for transformers with/without priors should match"
 
-        for col in prior_mappings:
-            for value in prior_mappings[col]:
-                prior_encoding = prior_mappings[col][value]
-                no_prior_encoding = no_prior_mappings[col][value]
+#         for col in prior_mappings:
+#             for value in prior_mappings[col]:
+#                 prior_encoding = prior_mappings[col][value]
+#                 no_prior_encoding = no_prior_mappings[col][value]
 
-                prior_mean_dist = np.abs(prior_encoding - global_mean)
-                no_prior_mean_dist = np.abs(no_prior_encoding - global_mean)
+#                 prior_mean_dist = np.abs(prior_encoding - global_mean)
+#                 no_prior_mean_dist = np.abs(no_prior_encoding - global_mean)
 
-                assert (
-                    prior_mean_dist <= no_prior_mean_dist
-                ), "encodings using priors should be closer to the global mean than without"
+#                 assert (
+#                     prior_mean_dist <= no_prior_mean_dist
+#                 ), "encodings using priors should be closer to the global mean than without"
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize(
-        ("low_weight", "high_weight"),
-        ((1, 2), (2, 3), (3, 4), (10, 20)),
-    )
-    def test_prior_logic_for_weights(self, low_weight, high_weight, library):
-        "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
-        df = create_MeanResponseTransformer_test_df(library=library)
+#     @pytest.mark.parametrize("library", ["pandas", "polars"])
+#     @pytest.mark.parametrize(
+#         ("low_weight", "high_weight"),
+#         ((1, 2), (2, 3), (3, 4), (10, 20)),
+#     )
+#     def test_prior_logic_for_weights(self, low_weight, high_weight, library):
+#         "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
+#         df = create_MeanResponseTransformer_test_df(library=library)
 
-        df = nw.from_native(df)
-        weights_column = "weights_column"
-        native_backend = nw.get_native_namespace(df)
+#         df = nw.from_native(df)
+#         weights_column = "weights_column"
+#         native_backend = nw.get_native_namespace(df)
 
-        # column f looks like [False, False, False, True, True, True]
-        df = df.with_columns(
-            nw.new_series(
-                name=weights_column,
-                values=[
-                    low_weight,
-                    low_weight,
-                    low_weight,
-                    high_weight,
-                    high_weight,
-                    high_weight,
-                ],
-                backend=native_backend.__name__,
-            ),
-        )
+#         # column f looks like [False, False, False, True, True, True]
+#         df = df.with_columns(
+#             nw.new_series(
+#                 name=weights_column,
+#                 values=[
+#                     low_weight,
+#                     low_weight,
+#                     low_weight,
+#                     high_weight,
+#                     high_weight,
+#                     high_weight,
+#                 ],
+#                 backend=native_backend.__name__,
+#             ),
+#         )
 
-        x_prior = MeanResponseTransformer(
-            columns=["f"],
-            prior=5,
-            weights_column=weights_column,
-        )
+#         x_prior = MeanResponseTransformer(
+#             columns=["f"],
+#             prior=5,
+#             weights_column=weights_column,
+#         )
 
-        x_no_prior = MeanResponseTransformer(
-            columns=["f"],
-            prior=0,
-            weights_column=weights_column,
-        )
+#         x_no_prior = MeanResponseTransformer(
+#             columns=["f"],
+#             prior=0,
+#             weights_column=weights_column,
+#         )
 
-        x_prior.mappings = {}
-        x_no_prior.mappings = {}
+#         x_prior.mappings = {}
+#         x_no_prior.mappings = {}
 
-        x_prior._fit_binary_response(
-            df,
-            x_prior.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
+#         x_prior._fit_binary_response(
+#             df,
+#             x_prior.columns,
+#             weights_column=weights_column,
+#             response_column="a",
+#         )
 
-        x_no_prior._fit_binary_response(
-            df,
-            x_no_prior.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
+#         x_no_prior._fit_binary_response(
+#             df,
+#             x_no_prior.columns,
+#             weights_column=weights_column,
+#             response_column="a",
+#         )
 
-        prior_mappings = x_prior.mappings
+#         prior_mappings = x_prior.mappings
 
-        no_prior_mappings = x_no_prior.mappings
+#         no_prior_mappings = x_no_prior.mappings
 
-        global_mean = x_prior.global_mean
+#         global_mean = x_prior.global_mean
 
-        assert (
-            global_mean == x_no_prior.global_mean
-        ), "global means for transformers with/without priors should match"
+#         assert (
+#             global_mean == x_no_prior.global_mean
+#         ), "global means for transformers with/without priors should match"
 
-        low_weight_prior_encoding = prior_mappings["f"][False]
-        high_weight_prior_encoding = prior_mappings["f"][True]
+#         low_weight_prior_encoding = prior_mappings["f"][False]
+#         high_weight_prior_encoding = prior_mappings["f"][True]
 
-        low_weight_no_prior_encoding = no_prior_mappings["f"][False]
-        high_weight_no_prior_encoding = no_prior_mappings["f"][True]
+#         low_weight_no_prior_encoding = no_prior_mappings["f"][False]
+#         high_weight_no_prior_encoding = no_prior_mappings["f"][True]
 
-        low_weight_prior_mean_dist = np.abs(low_weight_prior_encoding - global_mean)
-        high_weight_prior_mean_dist = np.abs(high_weight_prior_encoding - global_mean)
+#         low_weight_prior_mean_dist = np.abs(low_weight_prior_encoding - global_mean)
+#         high_weight_prior_mean_dist = np.abs(high_weight_prior_encoding - global_mean)
 
-        low_weight_no_prior_mean_dist = np.abs(
-            low_weight_no_prior_encoding - global_mean,
-        )
-        high_weight_no_prior_mean_dist = np.abs(
-            high_weight_no_prior_encoding - global_mean,
-        )
+#         low_weight_no_prior_mean_dist = np.abs(
+#             low_weight_no_prior_encoding - global_mean,
+#         )
+#         high_weight_no_prior_mean_dist = np.abs(
+#             high_weight_no_prior_encoding - global_mean,
+#         )
 
-        # check low weight group has been moved further towards mean than high weight group by prior, i.e
-        # that the distance remaining is a smaller proportion of the no prior distance
-        low_ratio = low_weight_prior_mean_dist / low_weight_no_prior_mean_dist
-        high_ratio = high_weight_prior_mean_dist / high_weight_no_prior_mean_dist
-        assert (
-            low_ratio <= high_ratio
-        ), "encodings for categories with lower weights should be moved closer to the global mean than those with higher weights, for fixed prior"
+#         # check low weight group has been moved further towards mean than high weight group by prior, i.e
+#         # that the distance remaining is a smaller proportion of the no prior distance
+#         low_ratio = low_weight_prior_mean_dist / low_weight_no_prior_mean_dist
+#         high_ratio = high_weight_prior_mean_dist / high_weight_no_prior_mean_dist
+#         assert (
+#             low_ratio <= high_ratio
+#         ), "encodings for categories with lower weights should be moved closer to the global mean than those with higher weights, for fixed prior"
 
 
 def expected_df_1(library="pandas"):

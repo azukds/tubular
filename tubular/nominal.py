@@ -757,121 +757,131 @@ class MeanResponseTransformer(
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 
-    @nw.narwhalify
-    def _prior_regularisation(
-        self,
-        group_means_and_weights: FrameT,
-        column: str,
-        weights_column: str,
-        response_column: str,
-    ) -> dict[str | float, float]:
-        """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
+    # @nw.narwhalify
+    # def _prior_regularisation(
+    #     self,
+    #     group_means_and_weights: FrameT,
+    #     column: str,
+    #     weights_column: str,
+    #     response_column: str,
+    # ) -> dict[str | float, float]:
+    #     """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
 
-        Parameters
-        ----------
-        group_means_and_weights: FrameT
-            dataframe containing info on group means and weights for a given column
+    #     Parameters
+    #     ----------
+    #     group_means_and_weights: FrameT
+    #         dataframe containing info on group means and weights for a given column
 
-        column: str
-            column to regularise
+    #     column: str
+    #         column to regularise
 
-        weights_column: str
-            name of weights column
+    #     weights_column: str
+    #         name of weights column
 
-        response_column: str
-            name of response column
+    #     response_column: str
+    #         name of response column
 
-        Returns
-        -------
-        regularised : nw.Series
-            Series of regularised encoding values
-        """
-        self.check_is_fitted(["global_mean"])
+    #     Returns
+    #     -------
+    #     regularised : nw.Series
+    #         Series of regularised encoding values
+    #     """
+    #     self.check_is_fitted(["global_mean"])
 
-        prior_col = "prior_encodings"
+    #     prior_col = "prior_encodings"
 
-        prior_df = group_means_and_weights.select(
-            nw.col(column),
-            (
-                ((nw.col(response_column)) + self.global_mean * self.prior)
-                / (nw.col(weights_column) + self.prior)
-            ).alias(prior_col),
-        )
+    #     prior_df = group_means_and_weights.select(
+    #         nw.col(column),
+    #         (
+    #             ((nw.col(response_column)) + self.global_mean * self.prior)
+    #             / (nw.col(weights_column) + self.prior)
+    #         ).alias(prior_col),
+    #     )
 
-        prior_encodings_dict = prior_df.to_dict(as_series=False)
+    #     prior_encodings_dict = prior_df.to_dict(as_series=False)
 
-        # return as dict
-        return dict(
-            zip(
-                prior_encodings_dict[column],
-                prior_encodings_dict[prior_col],
-            ),
-        )
+    #     # return as dict
+    #     return dict(
+    #         zip(
+    #             prior_encodings_dict[column],
+    #             prior_encodings_dict[prior_col],
+    #         ),
+    #     )
 
-    @nw.narwhalify
-    def _fit_binary_response(
-        self,
-        X_y: FrameT,
-        columns: list[str],
-        weights_column: str,
-        response_column: str,
-    ) -> None:
-        """Function to learn the MRE mappings for a given binary or continuous response.
+    # @beartype
+    # def _fit_binary_response(
+    #     self,
+    #     exprs_dict: dict[str, nw.Expr],
+    #     #X_y: FrameT,
+    #     columns: list[str],
+    #     weights_column: str,
+    #     response_column: str,
+    # ) -> None:
+    #     """Function to learn the MRE mappings for a given binary or continuous response.
 
-        Parameters
-        ----------
-        X_y : pd/pl.DataFrame
-            Data with catgeorical variable columns to transform, and target to encode against.
+    #     Parameters
+    #     ----------
+    #     exprs: dict[str, expr]
+    #         dictionary of expressions for mapping output columns and level specific response
+    #         columns
 
-        columns : list(str)
-            Post transform names of columns to be encoded. In the binary or continous case
-            this is just self.columns. In the multi-level case this should be of the form
-            {column_in_original_data}_{response_level}, where response_level is the level
-            being encoded against in this call of _fit_binary_response.
+    #     columns : list(str)
+    #         Post transform names of columns to be encoded. In the binary or continous case
+    #         this is just self.columns. In the multi-level case this should be of the form
+    #         {column_in_original_data}_{response_level}, where response_level is the level
+    #         being encoded against in this call of _fit_binary_response.
 
-        weights_column: str
-            name of weights column
+    #     weights_column: str
+    #         name of weights column
 
-        response_column: str
-            name of response column
-        """
-        # reuse mean imputer logic to calculate global mean
-        mean_imputer = MeanImputer(
-            columns=response_column,
-            weights_column=weights_column,
-        )
-        mean_imputer.fit(X_y)
-        self.global_mean = mean_imputer.impute_values_[response_column]
+    #     response_column: str
+    #         name of response column
+    #     """
+    #     # reuse mean imputer logic to calculate global mean
+    #     mean_imputer = MeanImputer(
+    #         columns=response_column,
+    #         weights_column=weights_column,
+    #     )
+    #     mean_imputer.fit(X_y)
+    #     self.global_mean = mean_imputer.impute_values_[response_column]
 
-        X_y = X_y.with_columns(
-            (nw.col(response_column) * nw.col(weights_column)).alias(response_column),
-        )
+    #     for c in columns:
 
-        for c in columns:
-            groupby_sum = X_y.group_by(c).agg(
-                nw.col(response_column).sum(),
-                nw.col(weights_column).sum(),
-            )
+    #         weighted_response=exprs_dict[c + "_" + str(level)] * nw.col(weights_column)
 
-            group_means_and_weights = groupby_sum.select(
-                nw.col(response_column),
-                nw.col(weights_column),
-                nw.col(c),
-            )
+    #     # X_y = X_y.with_columns(
+    #     #     (nw.col(response_column) * nw.col(weights_column)).alias(response_column),
+    #     # )
 
-            self.mappings[c] = self._prior_regularisation(
-                group_means_and_weights,
-                column=c,
-                weights_column=weights_column,
-                response_column=response_column,
-            )
+    #         weighted_response_sum_by_groups=weighted_response.sum().over(c)
 
-            # to_dict changes types
-            for key in self.mappings[c]:
-                self.mappings[c][key] = self.cast_method(self.mappings[c][key])
+    #         weights_sum_by_groups=nw.col(weights_column).sum().over(c)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series) -> FrameT:
+    #     #for c in columns:
+    #         # groupby_sum = X_y.group_by(c).agg(
+    #         #     nw.col(response_column).sum(),
+    #         #     nw.col(weights_column).sum(),
+    #         # )
+
+    #         # group_means_and_weights = groupby_sum.select(
+    #         #     nw.col(response_column),
+    #         #     nw.col(weights_column),
+    #         #     nw.col(c),
+    #         # )
+
+    #         self.mappings[c] = self._prior_regularisation(
+    #             exprs_dict,
+    #             column=c,
+    #             weights_column=weights_column,
+    #             response_column=response_column,
+    #         )
+
+    #         # to_dict changes types
+    #         for key in self.mappings[c]:
+    #             self.mappings[c][key] = self.cast_method(self.mappings[c][key])
+
+    @beartype
+    def fit(self, X: DataFrame, y: Series) -> MeanResponseTransformer:
         """Identify mapping of categorical levels to mean response values.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -890,18 +900,22 @@ class MeanResponseTransformer(
             Response variable or target.
 
         """
+
+        X=_convert_dataframe_to_narwhals(X)
+        y=_convert_series_to_narwhals(y)
+    
         BaseNominalTransformer.fit(self, X, y)
 
         self.mappings = {}
         self.unseen_levels_encoding_dict = {}
 
-        native_backend = nw.get_native_namespace(X)
+        backend = nw.get_native_namespace(X)
 
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_dummy_weights_column(
                 X,
-                backend=native_backend.__name__,
+                backend=backend.__name__,
                 return_native=False,
             )
 
@@ -913,7 +927,7 @@ class MeanResponseTransformer(
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
-        X_y = nw.from_native(self._combine_X_y(X, y))
+        X_y = self._combine_X_y(X, y, return_native_override=False)
         response_column = "_temporary_response"
 
         self.response_levels = self.level
@@ -927,9 +941,6 @@ class MeanResponseTransformer(
             msg = "Levels contains a level to encode against that is not present in the response."
             raise ValueError(msg)
 
-        self.column_to_encoded_columns = {column: [] for column in self.columns}
-        self.encoded_columns = []
-
         levels_to_iterate_through = (
             self.response_levels
             if self.response_levels is not None
@@ -937,45 +948,90 @@ class MeanResponseTransformer(
             else ["NO_LEVELS"]
         )
 
+        encoded_column_exprs={
+            f"{c}_{str(level)}" if self.MULTI_LEVEL else c: nw.col(c).alias(c + "_" + str(level) if self.MULTI_LEVEL else c)
+            for c in self.columns
+            for level in levels_to_iterate_through
+        }
+
+        self.column_to_encoded_columns={
+            c: [c] if not self.MULTI_LEVEL else [c + "_" + str(level) for level in levels_to_iterate_through]
+            for c in self.columns
+        }
+
+        self.encoded_columns=[
+            encoded_column 
+            for c in self.columns
+            for encoded_column in self.column_to_encoded_columns[c]
+            ]
+
+        level_response_exprs={
+            level: (nw.col(response_column) == level) if self.MULTI_LEVEL else nw.col(response_column)
+            for level in levels_to_iterate_through
+            }
+
+        weighted_response_exprs={
+            f"{response_column}_{str(level)}" if self.MULTI_LEVEL else response_column: level_response_exprs[level] * nw.col(weights_column)
+            for level in level_response_exprs
+        }
+
+        # need to materialise these here in order to use .over with pandas
+        X_y=X_y.with_columns(**weighted_response_exprs)
+
+        weighted_response_sum_over_groups_exprs={
+            f"{c}_{level}": nw.col(f"{response_column}_{str(level)}" if self.MULTI_LEVEL else response_column).sum().over(c)
+                for level in levels_to_iterate_through
+                for c in self.columns
+        }
+
+        weight_sum_over_groups_exprs={
+            c: nw.col(weights_column).sum().over(c)
+               for c in self.columns
+        }
+
+        self.global_mean={}
+
         for level in levels_to_iterate_through:
-            # if multi level, set up placeholder encoded columns
-            # if not multi level, will just overwrite existing column
-            mapping_columns_for_this_level = {
-                column: column + "_" + str(level) if self.MULTI_LEVEL else column
-                for column in self.columns
+
+            level_response_column=response_column+"_"+str(level) if self.MULTI_LEVEL else response_column
+
+        # reuse mean imputer logic to calculate global mean
+        mean_imputer = MeanImputer(
+            columns=[response_column+"_"+str(level) if self.MULTI_LEVEL else response_column for level in levels_to_iterate_through],
+            weights_column=weights_column,
+        )
+        mean_imputer.fit(X_y)
+
+        self.global_mean.update(
+            {
+                level: 
+                mean_imputer.impute_values_[
+                    response_column+"_"+str(level) if self.MULTI_LEVEL else response_column]
             }
+        )
+        
+        prior_exprs={
+            f"{c}_{str(level)}_encoded" if self.MULTI_LEVEL else f"{c}_encoded": (
+                    weighted_response_sum_over_groups_exprs[f"{c}_{level}"]+self.global_mean[level]*self.prior
+                )/(weight_sum_over_groups_exprs[c] + self.prior).cast(getattr(nw, self.return_type))
+            for c in self.columns
+            for level in levels_to_iterate_through
+        }
 
-            X_y = X_y.with_columns(
-                nw.col(column).alias(mapping_columns_for_this_level[column])
-                for column in mapping_columns_for_this_level
-            )
+        full_dict={}
+        full_dict.update(prior_exprs)
+        full_dict.update(encoded_column_exprs)
 
-            # create temporary single level response columns to individually encode
-            # if nans are present then will error in previous handling, so can assume not here
-            X_y = X_y.with_columns(
-                (y == level if self.MULTI_LEVEL else y).alias(response_column),
-            )
+        results_dict=X_y.select(**full_dict).to_dict(as_series=True)
 
-            self._fit_binary_response(
-                X_y,
-                list(mapping_columns_for_this_level.values()),
-                weights_column=weights_column,
-                response_column=response_column,
-            )
-
-            self.column_to_encoded_columns = {
-                column: [
-                    *self.column_to_encoded_columns[column],
-                    mapping_columns_for_this_level[column],
-                ]
-                for column in self.columns
-            }
-
-        self.encoded_columns = [
-            value
-            for column in self.columns
-            for value in self.column_to_encoded_columns[column]
-        ]
+        self.mappings.update(
+            {
+            f"{c}_{str(level)}" if self.MULTI_LEVEL else c:
+            dict(zip(results_dict[f"{c}_{str(level)}" if self.MULTI_LEVEL else c].to_list(), results_dict[f"{c}_{str(level)}_encoded" if self.MULTI_LEVEL else f"{c}_encoded"].to_list()))
+            for c in self.columns
+            for level in levels_to_iterate_through
+        }
+        )
 
         # set this attr up for BaseMappingTransformerMixin
         # this is used to cast the narwhals mapping df, so uses narwhals types
@@ -992,7 +1048,27 @@ class MeanResponseTransformer(
         self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
-        self._fit_unseen_level_handling_dict(X_y, weights_column)
+        #self._fit_unseen_level_handling_dict(X_y, weights_column)
+        if isinstance(self.unseen_level_handling, (int, float)):
+            self.unseen_levels_encoding_dict.update(
+                    {
+                        c: self.cast_method(
+                    self.unseen_level_handling,
+                        ) 
+                        for c in self.columns
+                    }
+                )
+            
+        elif isinstance(self.unseen_level_handling, str):
+            X_temp = BaseMappingTransformMixin.transform(self, X_y, return_native_override=False)
+
+            if self.unseen_level_handling in ["mean", "median"]:
+
+                unseen_levels_expr={
+                    c: nw.col(weights_column).sum().over(c)
+                    for c in self.columns
+                }
+
 
         return self
 
@@ -1018,12 +1094,6 @@ class MeanResponseTransformer(
             name of weights column
 
         """
-
-        if isinstance(self.unseen_level_handling, (int, float)):
-            for c in self.encoded_columns:
-                self.unseen_levels_encoding_dict[c] = self.cast_method(
-                    self.unseen_level_handling,
-                )
 
         elif isinstance(self.unseen_level_handling, str):
             X_temp = nw.from_native(BaseMappingTransformMixin.transform(self, X_y))
