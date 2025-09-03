@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
+import pandas as pd
 from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401
 
@@ -757,128 +758,128 @@ class MeanResponseTransformer(
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 
-    # @nw.narwhalify
-    # def _prior_regularisation(
-    #     self,
-    #     group_means_and_weights: FrameT,
-    #     column: str,
-    #     weights_column: str,
-    #     response_column: str,
-    # ) -> dict[str | float, float]:
-    #     """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
+    @beartype
+    def _prior_regularisation(
+        self,
+        weighted_response_sum_over_groups_exprs: dict[str, nw.Expr],
+        weight_sum_over_groups_exprs: dict[str, nw.Expr],
+        weights_column: str,
+    ) -> dict[str, nw.Expr]:
+        """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
 
-    #     Parameters
-    #     ----------
-    #     group_means_and_weights: FrameT
-    #         dataframe containing info on group means and weights for a given column
+        Parameters
+        ----------
 
-    #     column: str
-    #         column to regularise
 
-    #     weights_column: str
-    #         name of weights column
+        Returns
+        -------
+        prior_exprs: dict[str, nw.Expr]
+            dictionary of format col:prior expression for col
 
-    #     response_column: str
-    #         name of response column
+        """
 
-    #     Returns
-    #     -------
-    #     regularised : nw.Series
-    #         Series of regularised encoding values
-    #     """
-    #     self.check_is_fitted(["global_mean"])
+        self.global_mean = {}
 
-    #     prior_col = "prior_encodings"
+        # reuse mean imputer logic to calculate global mean
+        global_mean_imputer = MeanImputer(
+            columns=self.response_columns,
+            weights_column=weights_column,
+        )
 
-    #     prior_df = group_means_and_weights.select(
-    #         nw.col(column),
-    #         (
-    #             ((nw.col(response_column)) + self.global_mean * self.prior)
-    #             / (nw.col(weights_column) + self.prior)
-    #         ).alias(prior_col),
-    #     )
+        global_mean_exprs = global_mean_imputer._get_mean_calculation_expressions(
+            global_mean_imputer.columns,
+            weights_column,
+        )
 
-    #     prior_encodings_dict = prior_df.to_dict(as_series=False)
+        prior_exprs = {
+            encoded_column + "_mapped": (
+                weighted_response_sum_over_groups_exprs[
+                    f"{self.encoded_columns_to_columns[encoded_column]}_{self.encoded_columns_to_response_columns[encoded_column]}"
+                ]
+                + (
+                    global_mean_exprs[
+                        self.encoded_columns_to_response_columns[encoded_column]
+                    ]
+                    * nw.lit(self.prior)
+                )
+            )
+            / (
+                weight_sum_over_groups_exprs[
+                    self.encoded_columns_to_columns[encoded_column]
+                ]
+                + self.prior
+            ).cast(
+                getattr(nw, self.return_type),
+            )
+            for encoded_column in self.encoded_columns
+        }
 
-    #     # return as dict
-    #     return dict(
-    #         zip(
-    #             prior_encodings_dict[column],
-    #             prior_encodings_dict[prior_col],
-    #         ),
-    #     )
+        return prior_exprs
 
-    # @beartype
-    # def _fit_binary_response(
-    #     self,
-    #     exprs_dict: dict[str, nw.Expr],
-    #     #X_y: FrameT,
-    #     columns: list[str],
-    #     weights_column: str,
-    #     response_column: str,
-    # ) -> None:
-    #     """Function to learn the MRE mappings for a given binary or continuous response.
+    def _setup_fit_multi_level(
+        self,
+        y_vals: list[Union[int, float]],
+        response_column: str,
+    ):
+        """setup attrs needed for fit, for multi level case
 
-    #     Parameters
-    #     ----------
-    #     exprs: dict[str, expr]
-    #         dictionary of expressions for mapping output columns and level specific response
-    #         columns
+        Parameters
+        ----------
 
-    #     columns : list(str)
-    #         Post transform names of columns to be encoded. In the binary or continous case
-    #         this is just self.columns. In the multi-level case this should be of the form
-    #         {column_in_original_data}_{response_level}, where response_level is the level
-    #         being encoded against in this call of _fit_binary_response.
+        y_vals: list[Union[int, float]]
+            y values present in data
 
-    #     weights_column: str
-    #         name of weights column
+        response_column: str
+            name of response column
 
-    #     response_column: str
-    #         name of response column
-    #     """
-    #     # reuse mean imputer logic to calculate global mean
-    #     mean_imputer = MeanImputer(
-    #         columns=response_column,
-    #         weights_column=weights_column,
-    #     )
-    #     mean_imputer.fit(X_y)
-    #     self.global_mean = mean_imputer.impute_values_[response_column]
+        """
 
-    #     for c in columns:
+        self.response_levels = self.level
 
-    #         weighted_response=exprs_dict[c + "_" + str(level)] * nw.col(weights_column)
+        if self.level == "all":
+            self.response_levels = y_vals
 
-    #     # X_y = X_y.with_columns(
-    #     #     (nw.col(response_column) * nw.col(weights_column)).alias(response_column),
-    #     # )
+        elif any(level not in y_vals for level in self.level):
+            msg = "Levels contains a level to encode against that is not present in the response."
+            raise ValueError(msg)
 
-    #         weighted_response_sum_by_groups=weighted_response.sum().over(c)
+        self.column_to_encoded_columns = {
+            c: [c + "_" + str(level) for level in self.response_levels]
+            for c in self.columns
+        }
 
-    #         weights_sum_by_groups=nw.col(weights_column).sum().over(c)
+        self.encoded_columns_to_response_columns = {
+            c + "_" + str(level): response_column + "_" + str(level)
+            for c in self.columns
+            for level in self.response_levels
+        }
 
-    #     #for c in columns:
-    #         # groupby_sum = X_y.group_by(c).agg(
-    #         #     nw.col(response_column).sum(),
-    #         #     nw.col(weights_column).sum(),
-    #         # )
+        self.response_columns = [
+            response_column + "_" + level for level in self.response_levels
+        ]
 
-    #         # group_means_and_weights = groupby_sum.select(
-    #         #     nw.col(response_column),
-    #         #     nw.col(weights_column),
-    #         #     nw.col(c),
-    #         # )
+    def setup_fit_single_level(self, response_column: str):
+        """setup attrs needed for fit, for non-multi level case
 
-    #         self.mappings[c] = self._prior_regularisation(
-    #             exprs_dict,
-    #             column=c,
-    #             weights_column=weights_column,
-    #             response_column=response_column,
-    #         )
+        Parameters
+        ----------
+        response_column: str
+            name of response column
 
-    #         # to_dict changes types
-    #         for key in self.mappings[c]:
-    #             self.mappings[c][key] = self.cast_method(self.mappings[c][key])
+        """
+
+        # arbitrary len 1 iterable so logic can be shared with multi level
+        self.response_levels = ["SINGLE_LEVEL"]
+
+        self.column_to_encoded_columns = {c: [c] for c in self.columns}
+
+        self.encoded_columns_to_response_columns = {
+            c: response_column for c in self.columns
+        }
+
+        self.response_columns = [
+            response_column,
+        ]
 
     @beartype
     def fit(self, X: DataFrame, y: Series) -> MeanResponseTransformer:
@@ -901,9 +902,9 @@ class MeanResponseTransformer(
 
         """
 
-        X=_convert_dataframe_to_narwhals(X)
-        y=_convert_series_to_narwhals(y)
-    
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         BaseNominalTransformer.fit(self, X, y)
 
         self.mappings = {}
@@ -921,7 +922,9 @@ class MeanResponseTransformer(
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-        response_null_count = y.is_null().sum()
+        y_vals = y.unique().to_list()
+
+        response_null_count = sum(pd.isna(val) for val in y_vals)
 
         if response_null_count > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
@@ -930,107 +933,87 @@ class MeanResponseTransformer(
         X_y = self._combine_X_y(X, y, return_native_override=False)
         response_column = "_temporary_response"
 
-        self.response_levels = self.level
+        if self.MULTI_LEVEL:
+            self._setup_fit_multi_level(y_vals, response_column)
 
-        if self.level == "all":
-            self.response_levels = y.unique()
+        else:
+            self.setup_fit_single_level(response_column)
 
-        elif self.level is not None and any(
-            level not in list(y.unique()) for level in self.level
-        ):
-            msg = "Levels contains a level to encode against that is not present in the response."
-            raise ValueError(msg)
-
-        levels_to_iterate_through = (
-            self.response_levels
-            if self.response_levels is not None
-            # if no levels, just create arbitrary len 1 iterable
-            else ["NO_LEVELS"]
-        )
-
-        encoded_column_exprs={
-            f"{c}_{str(level)}" if self.MULTI_LEVEL else c: nw.col(c).alias(c + "_" + str(level) if self.MULTI_LEVEL else c)
-            for c in self.columns
-            for level in levels_to_iterate_through
-        }
-
-        self.column_to_encoded_columns={
-            c: [c] if not self.MULTI_LEVEL else [c + "_" + str(level) for level in levels_to_iterate_through]
-            for c in self.columns
-        }
-
-        self.encoded_columns=[
-            encoded_column 
+        self.encoded_columns_to_columns = {
+            encoded_column: c
             for c in self.columns
             for encoded_column in self.column_to_encoded_columns[c]
-            ]
-
-        level_response_exprs={
-            level: (nw.col(response_column) == level) if self.MULTI_LEVEL else nw.col(response_column)
-            for level in levels_to_iterate_through
-            }
-
-        weighted_response_exprs={
-            f"{response_column}_{str(level)}" if self.MULTI_LEVEL else response_column: level_response_exprs[level] * nw.col(weights_column)
-            for level in level_response_exprs
         }
+
+        self.encoded_columns = [
+            encoded_column
+            for c in self.columns
+            for encoded_column in self.column_to_encoded_columns[c]
+        ]
+
+        encoded_column_exprs = {
+            encoded_column: nw.col(
+                self.encoded_columns_to_columns[encoded_column],
+            ).alias(encoded_column)
+            for encoded_column in self.encoded_columns
+        }
+
+        response_exprs = {
+            response_column + "_" + level if self.MULTI_LEVEL else response_column: (
+                nw.col(response_column) == level
+            )
+            if self.MULTI_LEVEL
+            else nw.col(response_column)
+            for level in self.response_levels
+        }
+
+        weighted_response_exprs = {
+            "weighted_" + response_column: response_exprs[response_column]
+            * nw.col(weights_column)
+            for response_column in self.response_columns
+        }
+
+        all_response_exprs = {}
+        all_response_exprs.update(response_exprs)
+        all_response_exprs.update(weighted_response_exprs)
 
         # need to materialise these here in order to use .over with pandas
-        X_y=X_y.with_columns(**weighted_response_exprs)
+        X_y = X_y.with_columns(**all_response_exprs)
 
-        weighted_response_sum_over_groups_exprs={
-            f"{c}_{level}": nw.col(f"{response_column}_{str(level)}" if self.MULTI_LEVEL else response_column).sum().over(c)
-                for level in levels_to_iterate_through
-                for c in self.columns
-        }
-
-        weight_sum_over_groups_exprs={
-            c: nw.col(weights_column).sum().over(c)
-               for c in self.columns
-        }
-
-        self.global_mean={}
-
-        for level in levels_to_iterate_through:
-
-            level_response_column=response_column+"_"+str(level) if self.MULTI_LEVEL else response_column
-
-        # reuse mean imputer logic to calculate global mean
-        mean_imputer = MeanImputer(
-            columns=[response_column+"_"+str(level) if self.MULTI_LEVEL else response_column for level in levels_to_iterate_through],
-            weights_column=weights_column,
-        )
-        mean_imputer.fit(X_y)
-
-        self.global_mean.update(
-            {
-                level: 
-                mean_imputer.impute_values_[
-                    response_column+"_"+str(level) if self.MULTI_LEVEL else response_column]
-            }
-        )
-        
-        prior_exprs={
-            f"{c}_{str(level)}_encoded" if self.MULTI_LEVEL else f"{c}_encoded": (
-                    weighted_response_sum_over_groups_exprs[f"{c}_{level}"]+self.global_mean[level]*self.prior
-                )/(weight_sum_over_groups_exprs[c] + self.prior).cast(getattr(nw, self.return_type))
+        weighted_response_sum_over_groups_exprs = {
+            f"{c}_{response_column}": nw.col("weighted_" + response_column)
+            .sum()
+            .over(c)
+            for response_column in self.response_columns
             for c in self.columns
-            for level in levels_to_iterate_through
         }
 
-        full_dict={}
-        full_dict.update(prior_exprs)
-        full_dict.update(encoded_column_exprs)
+        weight_sum_over_groups_exprs = {
+            c: nw.col(weights_column).sum().over(c) for c in self.columns
+        }
 
-        results_dict=X_y.select(**full_dict).to_dict(as_series=True)
+        prior_exprs = self._prior_regularisation(
+            weighted_response_sum_over_groups_exprs,
+            weight_sum_over_groups_exprs,
+            weights_column,
+        )
+
+        full_expr_dict = {}
+        full_expr_dict.update(prior_exprs)
+        full_expr_dict.update(encoded_column_exprs)
+
+        results_dict = X_y.select(**full_expr_dict).to_dict(as_series=True)
 
         self.mappings.update(
             {
-            f"{c}_{str(level)}" if self.MULTI_LEVEL else c:
-            dict(zip(results_dict[f"{c}_{str(level)}" if self.MULTI_LEVEL else c].to_list(), results_dict[f"{c}_{str(level)}_encoded" if self.MULTI_LEVEL else f"{c}_encoded"].to_list()))
-            for c in self.columns
-            for level in levels_to_iterate_through
-        }
+                encoded_column: dict(
+                    zip(
+                        results_dict[encoded_column].to_list(),
+                        results_dict[f"{encoded_column}_mapped"].to_list(),
+                    ),
+                )
+                for encoded_column in self.encoded_columns
+            },
         )
 
         # set this attr up for BaseMappingTransformerMixin
@@ -1048,34 +1031,15 @@ class MeanResponseTransformer(
         self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
-        #self._fit_unseen_level_handling_dict(X_y, weights_column)
-        if isinstance(self.unseen_level_handling, (int, float)):
-            self.unseen_levels_encoding_dict.update(
-                    {
-                        c: self.cast_method(
-                    self.unseen_level_handling,
-                        ) 
-                        for c in self.columns
-                    }
-                )
-            
-        elif isinstance(self.unseen_level_handling, str):
-            X_temp = BaseMappingTransformMixin.transform(self, X_y, return_native_override=False)
-
-            if self.unseen_level_handling in ["mean", "median"]:
-
-                unseen_levels_expr={
-                    c: nw.col(weights_column).sum().over(c)
-                    for c in self.columns
-                }
-
+        self._fit_unseen_level_handling_dict(X_y, encoded_column_exprs, weights_column)
 
         return self
 
-    @nw.narwhalify
+    @beartype
     def _fit_unseen_level_handling_dict(
         self,
-        X_y: FrameT,
+        X_y: DataFrame,
+        encoded_column_exprs: dict[str, nw.Expr],
         weights_column: str,
     ) -> None:
         """Learn values for unseen levels to be mapped to, potential cases depend on unseen_level_handling attr:
@@ -1090,113 +1054,114 @@ class MeanResponseTransformer(
             Data to with categorical variable columns to transform and also containing response_column
             column.
 
+        encoded_column_exprs: dict[str, nw.Expr]
+            dict of format str: expression for creating initial encoded columns. Needed for Median
+            unseen level option which requires intermediate materialisations.
+
         weights_column : str
             name of weights column
 
         """
 
-        elif isinstance(self.unseen_level_handling, str):
-            X_temp = nw.from_native(BaseMappingTransformMixin.transform(self, X_y))
+        if isinstance(self.unseen_level_handling, (int, float)):
+            self.unseen_levels_encoding_dict.update(
+                {
+                    c: self.cast_method(
+                        self.unseen_level_handling,
+                    )
+                    for c in self.encoded_columns
+                },
+            )
 
-            for c in self.encoded_columns:
-                if self.unseen_level_handling in ["mean", "median"]:
-                    group_weights = X_temp.group_by(c).agg(
-                        nw.col(weights_column).sum(),
+        elif isinstance(self.unseen_level_handling, str):
+            unseen_level_exprs = {}
+
+            present_values = {c: X_y.get_column(c).unique() for c in self.columns}
+
+            schema = X_y.schema
+
+            mapping_expressions = self._process_mapping_expressions(
+                present_values=present_values,
+                unseen_level_handling=None,
+                schema=schema,
+            )
+
+            if self.unseen_level_handling in ["mean", "median"]:
+                if self.unseen_level_handling == "mean":
+                    # have to call this many times as  weights column varies with c
+                    unseen_level_exprs.update(
+                        MeanImputer._get_mean_calculation_expressions(
+                            self.encoded_columns,
+                            weights_column,
+                            initial_columns_exprs=mapping_expressions,
+                        ),
                     )
 
-                    if self.unseen_level_handling == "mean":
-                        # reuse MeanImputer logic to calculate means
-                        mean_imputer = MeanImputer(
-                            columns=c,
-                            weights_column=weights_column,
-                        )
-
-                        mean_imputer.fit(group_weights)
-
-                        self.unseen_levels_encoding_dict[
-                            c
-                        ] = mean_imputer.impute_values_[c]
-
-                    # else, median
-                    else:
-                        # reuse MedianImputer logic to calculate medians
-                        median_imputer = MedianImputer(
-                            columns=c,
-                            weights_column=weights_column,
-                        )
-
-                        median_imputer.fit(group_weights)
-
-                        self.unseen_levels_encoding_dict[
-                            c
-                        ] = median_imputer.impute_values_[c]
-
-                # else, min or max, which don't care about weights
+                # else, median
                 else:
-                    self.unseen_levels_encoding_dict[c] = getattr(
-                        X_temp[c],
-                        self.unseen_level_handling,
-                    )()
+                    for c in self.encoded_columns:
+                        X_temp = X_y.with_columns(**encoded_column_exprs)
+                        X_temp = X_temp.sort(c).filter(~nw.col(c).is_null())
 
-                self.unseen_levels_encoding_dict[c] = self.cast_method(
-                    self.unseen_levels_encoding_dict[c],
+                        unseen_level_exprs.update(
+                            {
+                                c: MedianImputer._get_median_calculation_expression(
+                                    c,
+                                    weights_column,
+                                    initial_column_expr=mapping_expressions[c],
+                                ),
+                            },
+                        )
+
+            # else, min/max
+            else:
+                unseen_level_exprs.update(
+                    {
+                        c: getattr(mapping_expressions[c], self.unseen_level_handling)()
+                        for c in self.encoded_columns
+                    },
                 )
 
-    @beartype
-    def transform(self, X: DataFrame) -> DataFrame:
-        """Transform method to apply mean response encoding stored in the mappings attribute to
-        each column in the columns attribute.
+            unseen_level_results = X_y.select(**unseen_level_exprs).to_dict(
+                as_series=True,
+            )
 
-        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
-        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
-        standard pd.Series.map method.
+            self.unseen_levels_encoding_dict = {
+                c: unseen_level_results[c].item(0) for c in self.encoded_columns
+            }
 
-        N.B. In the mutli-level case, this method briefly overwrites the self.columns attribute, but sets
-        it back to the original value at the end.
+            self.unseen_levels_encoding_dict = {
+                c: self.cast_method(
+                    self.unseen_levels_encoding_dict[c],
+                )
+                for c in self.encoded_columns
+            }
+
+    def _process_mapping_expressions(
+        self,
+        present_values: dict[str, list[Any]],
+        unseen_level_handling: bool,
+        schema: nw.Schema,
+    ) -> dict[str, nw.Expr]:
+        """process learnt mappings into expressions for transforming data
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
-            Data with nominal columns to transform.
+        present_levels: dict[str, list[Any]]
+            dict of format column: levels present in column
+
+        unseen_level_handling: bool
+            indicates whether to include unseen level handling values in mappings
+
+        schema: nw.Schema
+            data schema
 
         Returns
-        -------
-        X : pd/pl.DataFrame
-            Transformed input X with levels mapped accoriding to mappings dict.
+        ----------
+        dict[str, nw.Expr]:
+            dict of format column:expression for mapping column
 
         """
-
-        self.check_is_fitted(["mappings", "return_dtypes"])
-
-        X = _convert_dataframe_to_narwhals(X)
-
-        present_values = {col: set(X.get_column(col).unique()) for col in self.columns}
-
-        # with columns created, can now run parent transforms
-        if self.unseen_level_handling:
-            # do not want to run check_mappable_rows in this case, as will not like unseen values
-            self.check_is_fitted(["unseen_levels_encoding_dict"])
-
-            # BaseTransformer.transform as we do not want to run check_mappable_rows in BaseNominalTransformer
-            # (it causes complications with unseen levels and new cols, so run later)
-            X = BaseTransformer.transform(self, X, return_native_override=False)
-
-        else:
-            # mappings might look like {'a_blue': {'a': 1, 'b': 2,...}}
-            # what we want to check is whether the values of a are covered
-            # by the mappings, so temp change the mappings dict to focus on
-            # the original columns and set back to original value after
-            original_mappings = self.mappings
-            self.mappings = {
-                col: self.mappings[self.column_to_encoded_columns[col][0]]
-                for col in self.columns
-            }
-            X = super().transform(
-                X,
-                return_native_override=False,
-                present_values=present_values,
-            )
-            self.mappings = original_mappings
 
         # set up list of paired condition/outcome tuples for mapping
         conditions_and_outcomes = {
@@ -1207,6 +1172,14 @@ class MeanResponseTransformer(
                     self.mappings,
                     output_col=output_col,
                 )
+                if schema[input_col] not in [nw.Categorical, nw.Enum]
+                else self._create_mapping_conditions_and_outcomes(
+                    input_col,
+                    key,
+                    self.mappings,
+                    dtype=nw.String,
+                    output_col=output_col,
+                )
                 for key in self.mappings[output_col]
                 if key in present_values[input_col]
             ]
@@ -1214,7 +1187,7 @@ class MeanResponseTransformer(
             for output_col in self.column_to_encoded_columns[input_col]
         }
 
-        if self.unseen_level_handling:
+        if unseen_level_handling:
             unseen_level_condition_and_outcomes = {
                 output_col: (
                     ~nw.col(input_col).is_in(self.mappings[output_col].keys()),
@@ -1245,6 +1218,71 @@ class MeanResponseTransformer(
             col: transform_expressions[col].cast(getattr(nw, self.return_dtypes[col]))
             for col in self.encoded_columns
         }
+
+        return transform_expressions
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Transform method to apply mean response encoding stored in the mappings attribute to
+        each column in the columns attribute.
+
+        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
+        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
+        standard pd.Series.map method.
+
+        N.B. In the mutli-level case, this method briefly overwrites the self.columns attribute, but sets
+        it back to the original value at the end.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Data with nominal columns to transform.
+
+        Returns
+        -------
+        X : pd/pl.DataFrame
+            Transformed input X with levels mapped accoriding to mappings dict.
+
+        """
+
+        self.check_is_fitted(["mappings", "return_dtypes"])
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        present_values = {col: set(X.get_column(col).unique()) for col in self.columns}
+        schema = X.schema
+
+        # with columns created, can now run parent transforms
+        if self.unseen_level_handling:
+            # do not want to run check_mappable_rows in this case, as will not like unseen values
+            self.check_is_fitted(["unseen_levels_encoding_dict"])
+
+            # BaseTransformer.transform as we do not want to run check_mappable_rows in BaseNominalTransformer
+            # (it causes complications with unseen levels and new cols, so run later)
+            X = BaseTransformer.transform(self, X, return_native_override=False)
+
+        else:
+            # mappings might look like {'a_blue': {'a': 1, 'b': 2,...}}
+            # what we want to check is whether the values of a are covered
+            # by the mappings, so temp change the mappings dict to focus on
+            # the original columns and set back to original value after
+            original_mappings = self.mappings
+            self.mappings = {
+                col: self.mappings[self.column_to_encoded_columns[col][0]]
+                for col in self.columns
+            }
+            X = super().transform(
+                X,
+                return_native_override=False,
+                present_values=present_values,
+            )
+            self.mappings = original_mappings
+
+        transform_expressions = self._process_mapping_expressions(
+            present_values=present_values,
+            unseen_level_handling=self.unseen_level_handling,
+            schema=schema,
+        )
 
         X = X.with_columns(
             **transform_expressions,
