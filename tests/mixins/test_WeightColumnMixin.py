@@ -9,7 +9,7 @@ from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.mixins import WeightColumnMixin
 
 
-class TestCreateDummyWeightsColumn:
+class TestCreateUnitWeightsColumn:
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("i", [-1, 0, 1, 2, 3, 4])
     def test_new_column_output(
@@ -17,7 +17,7 @@ class TestCreateDummyWeightsColumn:
         library,
         i,
     ):
-        """Test dummy weights column created as expected"""
+        """Test unit weights column created as expected"""
 
         obj = WeightColumnMixin()
 
@@ -25,21 +25,11 @@ class TestCreateDummyWeightsColumn:
             "a": [1, 2, 3, 4],
         }
 
-        for j in range(-2, i):
-            if j == -2:
-                pass
-            elif j == -1:
-                df_dict["dummy_weights_column"] = [1, 2, 1, 1]
-            else:
-                df_dict[f"dummy_weights_column_{j}"] = [1, 2, 1, 1]
-
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
         expected_dict = deepcopy(df_dict)
 
-        expected_new_col = (
-            "dummy_weights_column" if i == -1 else f"dummy_weights_column_{i}"
-        )
+        expected_new_col = "unit_weights_column"
 
         expected_dict[expected_new_col] = [1, 1, 1, 1]
 
@@ -48,78 +38,21 @@ class TestCreateDummyWeightsColumn:
             library=library,
         )
 
-        output, dummy_weights_column = obj._create_dummy_weights_column(
+        output, unit_weights_column = obj._create_unit_weights_column(
             df,
             backend=library,
         )
 
         assert_frame_equal_dispatch(expected, output)
 
-        assert (
-            dummy_weights_column == f"dummy_weights_column_{i}"
-            if i != -1
-            else "dummy_weights_column"
-        )
+        assert unit_weights_column == "unit_weights_column"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("i", [0, 1, 2, 3, 4])
-    def test_warnings_raised_for_existing_dummy_weight_columns(
-        self,
-        library,
-        i,
-    ):
-        """Test warnings are raised when dummy weights columns already exist"""
-
-        obj = WeightColumnMixin()
-
-        df_dict = {
-            "a": [1, 2, 3, 4],
-        }
-
-        for j in range(-2, i):
-            if j == -2:
-                pass
-            elif j == -1:
-                df_dict["dummy_weights_column"] = [1, 2, 1, 1]
-            else:
-                df_dict[f"dummy_weights_column_{j}"] = [1, 2, 1, 1]
-
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-        with pytest.warns(
-            UserWarning,
-        ) as record:
-            obj._create_dummy_weights_column(df, backend=library)
-
-        previous_dummy_weights_columns = [
-            "dummy_weights_column",
-            *[f"dummy_weights_column_{i}" for i in range(i)],
-        ]
-        final_dummy_weights_columns = [
-            f"dummy_weights_column_{i}" for i in range(i + 1)
-        ]
-
-        assert len(record) == len(final_dummy_weights_columns)
-
-        for j, msg in enumerate(
-            [
-                f"{previous_dummy_weights_column} already exists in X but is not all 1, attempting to add {final_dummy_weights_column}"
-                for previous_dummy_weights_column, final_dummy_weights_column in zip(
-                    previous_dummy_weights_columns,
-                    final_dummy_weights_columns,
-                )
-            ],
-        ):
-            assert msg in str(record[j].message)
-
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("i", [0, 1, 2, 3, 4])
     def test_existing_column_used_if_possible(
         self,
         library,
-        i,
     ):
-        """Test dummy weights column created as expected"""
+        """Test existing unit weights column used if possible"""
 
         obj = WeightColumnMixin()
 
@@ -127,17 +60,9 @@ class TestCreateDummyWeightsColumn:
             "a": [1, 2, 3, 4],
         }
 
-        bad_weight_vals = [1, 1, 2, 1]
         good_weight_vals = [1, 1, 1, 1]
-        for j in range(-1, i):
-            if j == -1:
-                df_dict["dummy_weights_column"] = (
-                    bad_weight_vals if i != j + 1 else good_weight_vals
-                )
-            else:
-                df_dict[f"dummy_weights_column_{j}"] = (
-                    bad_weight_vals if i != j + 1 else good_weight_vals
-                )
+
+        df_dict["unit_weights_column"] = good_weight_vals
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
@@ -148,27 +73,21 @@ class TestCreateDummyWeightsColumn:
             library=library,
         )
 
-        output, dummy_weights_column = obj._create_dummy_weights_column(
+        output, unit_weights_column = obj._create_unit_weights_column(
             df,
             backend=library,
         )
 
         assert_frame_equal_dispatch(expected, output)
 
-        print(dummy_weights_column)
-        print(i)
-        assert (
-            dummy_weights_column == f"dummy_weights_column_{i - 1}"
-            if i != 0
-            else "dummy_weights_column"
-        )
+        assert unit_weights_column == "unit_weights_column"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_errors_if_too_many_failed_attempts(
+    def test_errors_if_bad_column_exists(
         self,
         library,
     ):
-        """Test that error is raised if suitable column name not found quickly"""
+        """Test that error is raised if unit_weights_column exists but is not all 1"""
 
         obj = WeightColumnMixin()
 
@@ -176,22 +95,16 @@ class TestCreateDummyWeightsColumn:
             "a": [1, 2, 3, 4],
         }
 
-        for j in range(-2, 5):
-            if j == -2:
-                pass
-            elif j == -1:
-                df_dict["dummy_weights_column"] = [1, 2, 1, 1]
-            else:
-                df_dict[f"dummy_weights_column_{j}"] = [1, 2, 1, 1]
+        df_dict["unit_weights_column"] = [1, 2, 1, 1]
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        msg = "Taking too long to find unused name for dummy weights column, consider renaming columns like 'dummy_weights_column' in X"
+        msg = "Attempting to insert column of unit weights named 'unit_weights_column', but an existing column shares this name and is not all 1, please rename existing column"
         with pytest.raises(
             RuntimeError,
             match=msg,
         ):
-            obj._create_dummy_weights_column(df, backend=library)
+            obj._create_unit_weights_column(df, backend=library)
 
 
 class TestCheckAndSetWeight:

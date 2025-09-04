@@ -7,7 +7,6 @@ from tests.base_tests import (
     GenericTransformTests,
 )
 from tests.utils import dataframe_init_dispatch
-from tubular.aggregations import BaseAggregationTransformer
 
 
 class TestBaseAggregationTransformerInit(
@@ -46,26 +45,6 @@ class TestBaseAggregationTransformerInit(
             BeartypeCallHintParamViolation,
         ):  # Adjust to expect BeartypeCallHintParamViolation
             uninitialized_transformers[self.transformer_name](**args)
-
-
-class TestBaseAggregationTransformerCreateNewColNames:
-    """Tests for methods in BaseAggregationTransformer."""
-
-    def test_create_new_col_names(self):
-        """Test create_new_col_names method returns correct column names."""
-        columns = ["a", "b"]
-        aggregations = ["min", "max", "mean"]
-        transformer = BaseAggregationTransformer(columns, aggregations)
-
-        # Use the column name itself as the prefix
-        expected_col_names = ["a_min", "a_max", "a_mean", "b_min", "b_max", "b_mean"]
-
-        # Generate new column names using each column name as prefix
-        new_col_names = []
-        for column in columns:
-            new_col_names.extend(transformer.create_new_col_names(column))
-
-        assert new_col_names == expected_col_names
 
 
 class TestBaseAggregationTransformerTransform(GenericTransformTests):

@@ -292,10 +292,15 @@ def minimal_attribute_dict():
             "aggregations": ["min", "max"],
             "drop_original": False,
         },
-        "AggregateRowOverColumnsTransformer": {
+        "AggregateRowsOverColumnTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
             "key": "c",
+            "drop_original": False,
+        },
+        "AggregateColumnsOverRowTransformer": {
+            "columns": ["a", "b"],
+            "aggregations": ["min", "max"],
             "drop_original": False,
         },
     }
@@ -322,6 +327,9 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     nan_df = create_numeric_df_2(library=library)
     object_df = create_object_df(library=library)
     date_df = create_is_between_dates_df_1(library=library)
+    agg_df = create_aggregate_over_rows_test_df(
+        library=library,
+    )
 
     # generally most transformers will work with num_df
     min_df_dict = {x[0]: num_df for x in get_all_classes()}
@@ -361,12 +369,8 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     for transformer in other_nan_transformers:
         min_df_dict[transformer] = nan_df
 
-    min_df_dict["BaseAggregationTransformer"] = create_aggregate_over_rows_test_df(
-        library=library,
-    )
-    min_df_dict[
-        "AggregateRowOverColumnsTransformer"
-    ] = create_aggregate_over_rows_test_df(library=library)
+    min_df_dict["BaseAggregationTransformer"] = agg_df
+    min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
 
     return min_df_dict
 

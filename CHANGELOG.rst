@@ -16,19 +16,29 @@ Subsections for each version can be one of the following;
 
 Each individual change should have a link to the pull request after the description of the change.
 
-1.4.7 (unreleased)
+1.4.9 (unreleased)
 ------------------
+
+- chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
+- feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
+- chore: renamed AggregateRowOverColumnsTransformer to AggregateRowsOverColumnTransformer
+- feat: optimisation changes to fit methods in imputers file
+- feat: optimisation changes to transform method of NullIndicator
+
+1.4.8 (03/09/25)
+----------------
+
+- feat: optimisation changes to OneHotEncodingTransformer
+- feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 https://github.com/azukds/tubular/issues/465>_`
+- feat: optimisation changes to AggregateRowsOverColumnTransformer, BaseAggregationTransformer
+
+1.4.7 (21/08/25)
+----------------
 
 Changed
 ^^^^^^^
 
 - feat: optimisations for MeanResponseTransformer, further optimisations for  MappingTransformer `#451 <https://github.com/azukds/tubular/issues/451>_`
-- feat: optimisation chnages to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. https://github.com/azukds/tubular/issues/465
-- chore: refactored dummy weight handling into method of WeightColumnMixin, tightened up handling
-- feat: optimisation changes to fit methods in imputers file
-- feat: optimisation changes to transform method of NullIndicator
-- placeholder
-- placeholder
 
 1.4.6 (19/08/2025)
 ------------------

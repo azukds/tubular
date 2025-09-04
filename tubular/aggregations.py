@@ -1,29 +1,54 @@
 from enum import Enum
+from typing import Union
 
 import narwhals as nw
-import narwhals.selectors as ncs
 from beartype import beartype
-from beartype.typing import Annotated, List
+from beartype.typing import Annotated, List, Optional
 from beartype.vale import Is
-from narwhals.typing import FrameT
 
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+)
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
+from tubular.types import DataFrame, NumericTypes
 
 
-class AggregationOptions(str, Enum):
+class ColumnsOverRowAggregationOptions(str, Enum):
     MIN = "min"
     MAX = "max"
     MEAN = "mean"
+    SUM = "sum"
+    # not currently easy to implement row-wise
+    # median or count, so leaving out for now
+
+
+class RowsOverColumnsAggregationOptions(str, Enum):
+    MIN = "min"
+    MAX = "max"
+    MEAN = "mean"
+    SUM = "sum"
     MEDIAN = "median"
     COUNT = "count"
 
 
-ListOfAggregations = Annotated[
+ListOfColumnsOverRowAggregations = Annotated[
     List,
     Is[
         lambda list_value: all(
-            entry in AggregationOptions._value2member_map_ for entry in list_value
+            entry in ColumnsOverRowAggregationOptions._value2member_map_
+            for entry in list_value
+        )
+    ],
+]
+
+ListOfRowsOverColumnsAggregations = Annotated[
+    List,
+    Is[
+        lambda list_value: all(
+            entry in RowsOverColumnsAggregationOptions._value2member_map_
+            for entry in list_value
         )
     ],
 ]
@@ -66,7 +91,10 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     def __init__(
         self,
         columns: list[str],
-        aggregations: ListOfAggregations,
+        aggregations: Union[
+            ListOfColumnsOverRowAggregations,
+            ListOfRowsOverColumnsAggregations,
+        ],
         drop_original: bool = False,
         verbose: bool = False,
     ) -> None:
@@ -77,32 +105,21 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         self.set_drop_original_column(drop_original)
 
     @beartype
-    def create_new_col_names(self, prefix: str) -> list[str]:
-        """Automatically generate new column names based on the aggregation type.
-
-        Parameters
-        ----------
-        prefix : str
-            Prefix to use for generating new column names.
-
-        Returns
-        -------
-        list[str]
-            List of new column names with the specified prefix and aggregation type.
-        """
-        return [f"{prefix}_{agg}" for agg in self.aggregations]
-
-    @nw.narwhalify
     def transform(
         self,
-        X: FrameT,
-    ) -> FrameT:
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Performs pre-transform safety checks.
 
         Parameters
         ----------
         X : pd.DataFrame or pl.DataFrame
             DataFrame to transform by aggregating specified columns.
+
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
 
         Returns
         -------
@@ -115,11 +132,17 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             If columns are non-numeric.
         """
 
-        super().transform(X)
+        return_native = self._process_return_native(return_native_override)
 
-        numerical_columns = X[self.columns].select(ncs.numeric()).columns
+        X = _convert_dataframe_to_narwhals(X)
 
-        non_numerical_columns = set(self.columns).difference(numerical_columns)
+        X = super().transform(X, return_native_override=False)
+
+        schema = X.schema
+
+        non_numerical_columns = [
+            col for col in self.columns if schema[col] not in NumericTypes
+        ]
 
         # convert to list and sort for consistency in return
         non_numerical_columns = list(non_numerical_columns)
@@ -128,16 +151,14 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             msg = f"{self.classname}: attempting to call transformer on non-numeric columns {non_numerical_columns}, which is not supported"
             raise TypeError(msg)
 
-        return X
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
-class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
-    """Transformer that aggregates rows over specified columns.
+class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
+    """Transformer that aggregates rows over specified columns, where rows are grouped
+    by provided key column.
 
-    This transformer aggregates data within specified columns, grouping by a key column,
-    and can optionally drop the original columns post-transformation.
-
-    Parameters
+    Attributes
     ----------
     columns : list[str]
         List of column names to apply the aggregation transformations to.
@@ -147,11 +168,6 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
         Column name to group by for aggregation.
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
-
-    Attributes
-    ----------
-    key : str
-        Column used for grouping during aggregation.
     """
 
     polars_compatible = True
@@ -160,7 +176,7 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
     def __init__(
         self,
         columns: list[str],
-        aggregations: ListOfAggregations,
+        aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
         verbose: bool = False,
@@ -173,11 +189,11 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
         )
         self.key = key
 
-    @nw.narwhalify
+    @beartype
     def transform(
         self,
-        X: FrameT,
-    ) -> FrameT:
+        X: DataFrame,
+    ) -> DataFrame:
         """Transforms the dataframe by aggregating rows over specified columns.
 
         Parameters
@@ -196,28 +212,113 @@ class AggregateRowOverColumnsTransformer(BaseAggregationTransformer):
             If the key column is not found in the DataFrame.
         """
 
-        super().transform(X)
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
 
         if self.key not in X.columns:
             msg = f"{self.classname()}: key '{self.key}' not found in dataframe columns"
             raise ValueError(msg)
 
-        aggregation_dict = {col: self.aggregations for col in self.columns}
+        expr_dict = {
+            f"{col}_{agg}": getattr(nw.col(col), agg)().over(self.key)
+            for col in self.columns
+            for agg in self.aggregations
+        }
 
-        grouped_X = X.group_by(self.key).agg(
-            *(
-                getattr(nw.col(col_name), agg)().alias(f"{col_name}_{agg}")
-                for col_name, aggs in aggregation_dict.items()
-                for agg in aggs
-            ),
-        )
+        X = X.with_columns(**expr_dict)
 
-        # Merge the aggregated results back with the original DataFrame
-        X = X.join(grouped_X, on=self.key, how="left")
-
-        # Use mixin method to drop original columns
-        return self.drop_original_column(
+        X = self.drop_original_column(
             X,
             self.drop_original,
             self.columns,
+            return_native=False,
         )
+
+        # Use mixin method to drop original columns
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
+    """Transformer that aggregates provided columns over each row
+
+    This transformer aggregates data within specified columns
+    and can optionally drop the original columns post-transformation.
+
+    Attributes
+    ----------
+    columns : list[str]
+        List of column names to apply the aggregation transformations to.
+    aggregations : list[str]
+        List of aggregation methods to apply.
+    drop_original : bool, optional
+        Whether to drop the original columns after transformation. Default is False.
+    verbose : bool, optional
+        Indicator for verbose output.
+    """
+
+    polars_compatible = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: list[str],
+        aggregations: ListOfColumnsOverRowAggregations,
+        drop_original: bool = False,
+        verbose: bool = False,
+    ) -> None:
+        super().__init__(
+            columns=columns,
+            aggregations=aggregations,
+            drop_original=drop_original,
+            verbose=verbose,
+        )
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+    ) -> DataFrame:
+        """Transforms the dataframe by aggregating provided columns over each row
+
+        Parameters
+        ----------
+        X : pd.DataFrame or pl.DataFrame
+            DataFrame to transform by aggregating provided columns over each row
+
+        Returns
+        -------
+        pd.DataFrame or pl.DataFrame
+            Transformed DataFrame with aggregated columns.
+
+        """
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
+
+        expr_map = {
+            "min": nw.min_horizontal(*self.columns),
+            "max": nw.max_horizontal(*self.columns),
+            "sum": nw.sum_horizontal(*self.columns),
+            "mean": nw.mean_horizontal(*self.columns),
+        }
+
+        transform_dict = {
+            "_".join(self.columns) + "_" + aggregation: expr_map[aggregation].alias(
+                "_".join(self.columns) + "_" + aggregation,
+            )
+            for aggregation in self.aggregations
+        }
+
+        X = X.with_columns(**transform_dict)
+
+        X = self.drop_original_column(
+            X,
+            self.drop_original,
+            self.columns,
+            return_native=False,
+        )
+
+        # Use mixin method to drop original columns
+        return _return_narwhals_or_native_dataframe(X, self.return_native)

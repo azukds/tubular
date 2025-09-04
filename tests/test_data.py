@@ -235,7 +235,7 @@ def create_df_with_none_and_nan_cols(library="pandas"):
 
 
 def create_aggregate_over_rows_test_df(library="pandas"):
-    "create a minimal test df for AggregateRowOverColumnsTransformer"
+    "create a minimal test df for AggregateRowsOverColumnTransformer"
 
     df_dict = {
         "a": [1, 2, 3, 4, 8],
