@@ -24,6 +24,7 @@ Each individual change should have a link to the pull request after the descript
 - chore: renamed AggregateRowOverColumnsTransformer to AggregateRowsOverColumnTransformer
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
+- feat: optimation changes to fit method of MeanResponseTransformer
 
 1.4.8 (03/09/25)
 ----------------
