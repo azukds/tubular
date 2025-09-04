@@ -23,7 +23,6 @@ from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumn
 from tubular.types import DataFrame, Series
 
 if TYPE_CHECKING:
-    import pandas as pd
     from narwhals.typing import FrameT
 
 
@@ -791,7 +790,7 @@ class MeanResponseTransformer(
             weights_column,
         )
 
-        prior_exprs = {
+        return {
             encoded_column + "_mapped": (
                 weighted_response_sum_over_groups_exprs[
                     f"{self.encoded_columns_to_columns[encoded_column]}_{self.encoded_columns_to_response_columns[encoded_column]}"
@@ -814,13 +813,11 @@ class MeanResponseTransformer(
             for encoded_column in self.encoded_columns
         }
 
-        return prior_exprs
-
     def _setup_fit_multi_level(
         self,
         y_vals: list[Union[int, float]],
         response_column: str,
-    ):
+    ) -> None:
         """setup attrs needed for fit, for multi level case
 
         Parameters
@@ -858,7 +855,7 @@ class MeanResponseTransformer(
             response_column + "_" + level for level in self.response_levels
         ]
 
-    def setup_fit_single_level(self, response_column: str):
+    def setup_fit_single_level(self, response_column: str) -> None:
         """setup attrs needed for fit, for non-multi level case
 
         Parameters
@@ -1214,12 +1211,10 @@ class MeanResponseTransformer(
             for output_col in self.column_to_encoded_columns[input_col]
         }
 
-        transform_expressions = {
+        return {
             col: transform_expressions[col].cast(getattr(nw, self.return_dtypes[col]))
             for col in self.encoded_columns
         }
-
-        return transform_expressions
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
