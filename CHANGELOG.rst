@@ -22,7 +22,7 @@ Each individual change should have a link to the pull request after the descript
 - chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
 - feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
 - chore: renamed AggregateRowOverColumnsTransformer to AggregateRowsOverColumnTransformer
-- placeholder
+- feat: optimisation changes to GroupRareLevelsTransformer fit method
 - placeholder
 
 
