@@ -69,17 +69,27 @@ class BaseImputer(BaseTransformer):
     def _get_all_null_columns(
         X: DataFrame,
         columns: list[str],
-    ):
+    ) -> list[str]:
+        """find columns in provided dataframe which are all null
+
+        Parameters
+        ----------
+        X : DataFrame
+            dataframe to check
+
+        columns: list[str]
+            list of columns in dataframe to check
+
+        Returns
+        -------
+        list[str]: list of all null columns
+
+        """
         null_exprs = {c: nw.col(c).is_null().all() for c in columns}
 
         null_results = X.select(**null_exprs).to_dict(as_series=False)
 
-        all_null_cols = []
-        for column in columns:
-            if null_results[column][0] is True:
-                all_null_cols.append(column)
-
-        return all_null_cols
+        return [col for col in columns if null_results[col][0] is True]
 
     @beartype
     def transform(
@@ -661,12 +671,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             for c in columns
         }
 
-        weighted_mean_exprs = {
+        return {
             c: (total_weighted_col_expressions[c] / total_weight_expressions[c])
             for c in columns
         }
-
-        return weighted_mean_exprs
 
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> MeanImputer:
@@ -810,7 +818,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             for c in columns
         }
 
-        mode_value_exprs = {
+        return {
             c: (
                 nw.when(level_weights_exprs[c] == level_weights_exprs[c].max())
                 .then(nw.col(c))
@@ -818,8 +826,6 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             )
             for c in columns
         }
-
-        return mode_value_exprs
 
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:
