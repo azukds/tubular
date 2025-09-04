@@ -124,11 +124,11 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         ) as warnings:
             x.fit(df)
 
-        for col, w in zip(columns, warnings):
-            assert (
-                w.message.args[0]
-                == f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
-            )
+        columns.sort()
+        warnings = [w.message.args[0] for w in warnings]
+        for col in columns:
+            msg = f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
+            assert msg in warnings
 
         assert (
             x.impute_values_ == expected_impute_values
@@ -183,17 +183,16 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         expected_impute_values = {
             "col": learnt_value,
         }
-
         with pytest.warns(
             UserWarning,
         ) as warnings:
             x.fit(df)
 
-        for col, w in zip(columns, warnings):
-            assert (
-                w.message.args[0]
-                == f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
-            )
+        columns.sort()
+        warnings = [w.message.args[0] for w in warnings]
+        for col in columns:
+            msg = f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
+            assert msg in warnings
 
         assert (
             x.impute_values_ == expected_impute_values
