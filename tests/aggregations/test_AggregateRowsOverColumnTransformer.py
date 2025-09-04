@@ -12,12 +12,12 @@ from tests.aggregations.test_BaseAggregationTransformer import (
 from tests.test_data import create_aggregate_over_rows_test_df
 
 
-class TestAggregateRowOverColumnsTransformerInit(TestBaseAggregationTransformerInit):
-    """Tests for init method in AggregateRowOverColumnsTransformer."""
+class TestAggregateRowsOverColumnTransformerInit(TestBaseAggregationTransformerInit):
+    """Tests for init method in AggregateRowsOverColumnTransformer."""
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "AggregateRowOverColumnsTransformer"
+        cls.transformer_name = "AggregateRowsOverColumnTransformer"
 
     @pytest.mark.parametrize("key", (0, ["a"], {"a": 10}, None))
     def test_key_arg_errors(
@@ -34,14 +34,14 @@ class TestAggregateRowOverColumnsTransformerInit(TestBaseAggregationTransformerI
             uninitialized_transformers[self.transformer_name](**args)
 
 
-class TestAggregateRowOverColumnsTransformerTransform(
+class TestAggregateRowsOverColumnTransformerTransform(
     TestBaseAggregationTransformerTransform,
 ):
-    """Tests for transform method in AggregateRowOverColumnsTransformer."""
+    """Tests for transform method in AggregateRowsOverColumnTransformer."""
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "AggregateRowOverColumnsTransformer"
+        cls.transformer_name = "AggregateRowsOverColumnTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_invalid_key_error(
@@ -69,9 +69,9 @@ class TestAggregateRowOverColumnsTransformerTransform(
     @pytest.mark.parametrize(
         "aggregations, expected_data",
         [
-            # Test cases for "min", "max", "mean", "median",  and "count"
+            # Test cases for "min", "max", "mean", "median", "sum", and "count"
             (
-                ["min", "max", "mean", "median", "count"],
+                ["min", "max", "mean", "median", "count", "sum"],
                 {
                     "a": [1, 2, 3, 4, 8],
                     "b": [2, 3, 4, 5, 9],
@@ -81,11 +81,13 @@ class TestAggregateRowOverColumnsTransformerTransform(
                     "a_mean": [4.0, 3.0, 4.0, 3.0, 4.0],
                     "a_median": [3.0, 3.0, 3.0, 3.0, 3.0],
                     "a_count": [3, 2, 3, 2, 3],
+                    "a_sum": [12, 6, 12, 6, 12],
                     "b_min": [2, 3, 2, 3, 2],
                     "b_max": [9, 5, 9, 5, 9],
                     "b_mean": [5.0, 4.0, 5.0, 4.0, 5.0],
                     "b_median": [4.0, 4.0, 4.0, 4.0, 4.0],
                     "b_count": [3, 2, 3, 2, 3],
+                    "b_sum": [15, 8, 15, 8, 15],
                 },
             ),
         ],
@@ -137,7 +139,7 @@ class TestAggregateRowOverColumnsTransformerTransform(
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b"]
-        args["aggregations"] = ["min", "max", "mean", "median", "count"]
+        args["aggregations"] = ["min", "max", "mean", "median", "count", "sum"]
         args["key"] = "c"
 
         # Create a single-row DataFrame
@@ -169,11 +171,13 @@ class TestAggregateRowOverColumnsTransformerTransform(
             "a_mean": [None],
             "a_median": [None],
             "a_count": [0],
+            "a_sum": [0],
             "b_min": [2],
             "b_max": [2],
             "b_mean": [2.0],
             "b_median": [2.0],
             "b_count": [1],
+            "b_sum": [2],
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
         # ensure none columns are numeric type
@@ -181,7 +185,7 @@ class TestAggregateRowOverColumnsTransformerTransform(
             nw.from_native(expected_df)
             .with_columns(
                 nw.col(col).cast(nw.Float64)
-                for col in ["a", "a_min", "a_max", "a_mean", "a_median"]
+                for col in ["a", "a_min", "a_max", "a_mean", "a_median", "a_sum"]
             )
             .to_native()
         )
@@ -210,7 +214,7 @@ class TestAggregateRowOverColumnsTransformerTransform(
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b"]
-        args["aggregations"] = ["min", "max", "mean", "median", "count"]
+        args["aggregations"] = ["min", "max", "mean", "median", "count", "sum"]
         args["key"] = "c"
 
         # Create a DataFrame with null values
@@ -234,11 +238,13 @@ class TestAggregateRowOverColumnsTransformerTransform(
             "a_mean": [4.0, None, 4.0, None, 4.0],
             "a_median": [3.0, None, 3.0, None, 3.0],
             "a_count": [3, 0, 3, 0, 3],
+            "a_sum": [12.0, 0.0, 12.0, 0.0, 12.0],
             "b_min": [9.0, 3.0, 9.0, 3.0, 9.0],
             "b_max": [9.0, 5.0, 9.0, 5.0, 9.0],
             "b_mean": [9.0, 4.0, 9.0, 4.0, 9.0],
             "b_median": [9.0, 4.0, 9.0, 4.0, 9.0],
             "b_count": [1, 2, 1, 2, 1],
+            "b_sum": [9.0, 8.0, 9.0, 8.0, 9.0],
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 

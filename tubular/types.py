@@ -1,8 +1,9 @@
-from typing import Union
+from typing import Annotated, Union
 
 import narwhals as nw
 import pandas as pd
 import polars as pl
+from beartype.vale import Is
 
 DataFrame = Union[
     pd.DataFrame,
@@ -30,4 +31,11 @@ NumericTypes = [
     nw.UInt32,
     nw.UInt64,
     nw.UInt128,
+]
+
+# needed as by default beartype will just randomly sample to type check elements
+# and we want consistency
+ListOfStrs = Annotated[
+    list,
+    Is[lambda list_arg: all(isinstance(l_value, str) for l_value in list_arg)],
 ]

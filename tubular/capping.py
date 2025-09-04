@@ -20,7 +20,7 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
-from tubular.types import DataFrame
+from tubular.types import DataFrame, Series
 
 
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
@@ -173,8 +173,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 msg = f"{self.classname()}: both values are None for key {k}"
                 raise ValueError(msg)
 
+    @beartype
     @nw.narwhalify
-    def fit(self, X: FrameT, y: None = None) -> BaseCappingTransformer:
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -183,7 +184,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             A dataframe with required columns to be capped.
 
         y : None
@@ -197,7 +198,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         weights_column = self.weights_column
         if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_dummy_weights_column(
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 backend=backend.__name__,
                 return_native=False,
@@ -691,7 +692,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         weights_column = self.weights_column
         if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_dummy_weights_column(
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 backend=backend.__name__,
                 return_native=False,

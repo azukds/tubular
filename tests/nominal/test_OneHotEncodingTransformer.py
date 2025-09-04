@@ -1,5 +1,7 @@
 import narwhals as nw
+import numpy as np
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import GenericNominalTransformTests
 
 import tests.test_data as d
@@ -37,8 +39,7 @@ class TestInit(
         args["wanted_values"] = values
 
         with pytest.raises(
-            TypeError,
-            match="OneHotEncodingTransformer: wanted_values should be a dictionary",
+            BeartypeCallHintParamViolation,
         ):
             OneHotEncodingTransformer(**args)
 
@@ -55,8 +56,7 @@ class TestInit(
         args["wanted_values"] = values
 
         with pytest.raises(
-            TypeError,
-            match="OneHotEncodingTransformer:  Key in 'wanted_values' should be a string",
+            BeartypeCallHintParamViolation,
         ):
             OneHotEncodingTransformer(**args)
 
@@ -74,8 +74,7 @@ class TestInit(
         args["wanted_values"] = values
 
         with pytest.raises(
-            TypeError,
-            match="OneHotEncodingTransformer: Values in the 'wanted_values' dictionary should be a list",
+            BeartypeCallHintParamViolation,
         ):
             OneHotEncodingTransformer(**args)
 
@@ -93,10 +92,46 @@ class TestInit(
         args["wanted_values"] = values
 
         with pytest.raises(
-            TypeError,
-            match="OneHotEncodingTransformer: Entries in 'wanted_values' list should be a string",
+            BeartypeCallHintParamViolation,
         ):
             OneHotEncodingTransformer(**args)
+
+    # need to overload the below until beartype pr completes
+    @pytest.mark.parametrize(
+        "separator",
+        [1, True, {"a": 1}, [1, 2], None, np.inf, np.nan],
+    )
+    def test_separator_type_error(
+        self,
+        separator,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test an error is raised if any type other than str passed to separator"""
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["separator"] = separator
+
+        with pytest.raises(
+            BeartypeCallHintParamViolation,
+        ):
+            uninitialized_transformers[self.transformer_name](**args)
+
+    @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
+    def test_drop_column_arg_errors(
+        self,
+        uninitialized_transformers,
+        minimal_attribute_dict,
+        drop_orginal_column,
+    ):
+        """Test that appropriate errors are throwm for non boolean arg."""
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["drop_original"] = drop_orginal_column
+
+        with pytest.raises(
+            BeartypeCallHintParamViolation,
+        ):
+            uninitialized_transformers[self.transformer_name](**args)
 
 
 class TestFit(GenericFitTests):
@@ -118,7 +153,7 @@ class TestFit(GenericFitTests):
 
         with pytest.raises(
             ValueError,
-            match="OneHotEncodingTransformer: column b has nulls - replace before proceeding",
+            match="transformer can only fit/apply on columns without nulls, columns b need to be imputed first",
         ):
             transformer.fit(df)
 
@@ -274,7 +309,7 @@ class TestTransform(
 
         with pytest.raises(
             ValueError,
-            match="OneHotEncodingTransformer: column b has nulls - replace before proceeding",
+            match="transformer can only fit/apply on columns without nulls, columns b need to be imputed first",
         ):
             transformer.transform(df_test)
 

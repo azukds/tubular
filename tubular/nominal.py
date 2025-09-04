@@ -20,7 +20,7 @@ from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumnMixin
-from tubular.types import DataFrame, Series
+from tubular.types import DataFrame, ListOfStrs, Series
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -489,7 +489,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         weights_column = self.weights_column
         if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_dummy_weights_column(
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 backend=native_backend.__name__,
                 return_native=False,
@@ -911,7 +911,7 @@ class MeanResponseTransformer(
 
         weights_column = self.weights_column
         if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_dummy_weights_column(
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 backend=backend.__name__,
                 return_native=False,
@@ -1521,15 +1521,16 @@ class OneHotEncodingTransformer(
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        wanted_values: dict[str, list[str]] | None = None,
+        columns: Optional[Union[str, ListOfStrs]] = None,
+        wanted_values: Optional[dict[str, ListOfStrs]] = None,
         separator: str = "_",
         drop_original: bool = False,
         copy: bool = False,
         verbose: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         BaseTransformer.__init__(
             self,
@@ -1539,34 +1540,45 @@ class OneHotEncodingTransformer(
             **kwargs,
         )
 
-        if wanted_values is not None:
-            if not isinstance(wanted_values, dict):
-                msg = f"{self.classname()}: wanted_values should be a dictionary"
-                raise TypeError(msg)
-
-            for key, val_list in wanted_values.items():
-                # check key is a string
-                if not isinstance(key, str):
-                    msg = f"{self.classname()}:  Key in 'wanted_values' should be a string"
-                    raise TypeError(msg)
-
-                # check value is a list
-                if not isinstance(val_list, list):
-                    msg = f"{self.classname()}: Values in the 'wanted_values' dictionary should be a list"
-                    raise TypeError(msg)
-
-                # check if each value within the list is a string
-                for val in val_list:
-                    if not isinstance(val, str):
-                        msg = f"{self.classname()}: Entries in 'wanted_values' list should be a string"
-                        raise TypeError(msg)
-
         self.wanted_values = wanted_values
         self.set_drop_original_column(drop_original)
         self.check_and_set_separator_column(separator)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series | None = None) -> FrameT:
+    @beartype
+    def _check_for_nulls(self, present_levels: dict[str, Any]) -> None:
+        """check that transformer being called on only non-null columns.
+
+        Note, found including nulls to be quite complicated due to:
+        - categorical variables make use of NaN not None
+        - pl/nw categorical variables do not allow categories to be edited,
+        so adjusting requires converting to str as interim step
+        - NaNs are converted to nan, introducing complications
+
+        As this transformer is generally used post imputation, elected to remove null
+        functionality.
+
+        Parameters
+        ----------
+        present_levels: dict[str, Any]
+            dict containing present levels per column
+
+        """
+        columns_with_nulls = []
+
+        for c in present_levels:
+            if any(pd.isna(val) for val in present_levels[c]):
+                columns_with_nulls.append(c)
+
+            if columns_with_nulls:
+                msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
+                raise ValueError(msg)
+
+    @beartype
+    def fit(
+        self,
+        X: DataFrame,
+        y: Optional[Series] = None,
+    ) -> OneHotEncodingTransformer:
         """Gets list of levels for each column to be transformed. This defines which dummy columns
         will be created in transform.
 
@@ -1579,65 +1591,59 @@ class OneHotEncodingTransformer(
             Ignored. This parameter exists only for compatibility with sklearn.pipeline.Pipeline.
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         BaseTransformer.fit(self, X=X, y=y)
 
-        # Check for nulls
+        # first handle checks
+        present_levels = {}
         for c in self.columns:
-            if X.select(nw.col(c).is_null().sum()).item() > 0:
-                raise ValueError(
-                    f"{self.classname()}: column %s has nulls - replace before proceeding"
-                    % c,
-                )
+            # print warning for unseen levels
+            present_levels[c] = set(X.get_column(c).unique().to_list())
+
+        self._check_for_nulls(present_levels)
+
+        # sort once nulls excluded
+        present_levels = {c: sorted(present_levels[c]) for c in present_levels}
 
         self.categories_ = {}
         self.new_feature_names_ = {}
         # Check each field has less than 100 categories/levels
         missing_levels = {}
         for c in self.columns:
-            levels = X.select(nw.col(c).unique())
-
-            level_count = levels.select(nw.col(c).count()).item()
+            level_count = len(present_levels[c])
 
             if level_count > 100:
                 raise ValueError(
                     f"{self.classname()}: column %s has over 100 unique values - consider another type of encoding"
                     % c,
                 )
-
-            # Set the categories_ attribute to ensure check_is_fitted works
-            levels_list = levels.get_column(c).to_list()
-
-            # for consistency
-            levels_list.sort()
-
             # categories if 'values' is provided
-            selected_values = (
-                self.wanted_values.get(c, None) if self.wanted_values else None
+            final_categories = (
+                present_levels[c]
+                if self.wanted_values is None
+                else self.wanted_values.get(c, None)
             )
-
-            if selected_values is None:
-                final_categories = levels_list
-            else:
-                final_categories = selected_values
 
             self.categories_[c] = final_categories
             self.new_feature_names_[c] = self._get_feature_names(column=c)
 
-            present_levels = set(X.get_column(c).unique().to_list())
             missing_levels = self._warn_missing_levels(
-                present_levels,
+                present_levels[c],
                 c,
                 missing_levels,
             )
 
         return self
 
+    @beartype
     def _warn_missing_levels(
         self,
-        present_levels: list,
+        present_levels: list[Any],
         c: str,
-        missing_levels: dict[str, list[str]],
-    ) -> dict[str, list[str]]:
+        missing_levels: dict[str, list[Any]],
+    ) -> dict[str, list[Any]]:
         """Logs a warning for user-specifed levels that are not found in the dataset and updates "missing_levels[c]" with those missing levels.
 
         Parameters
@@ -1655,8 +1661,8 @@ class OneHotEncodingTransformer(
 
         """
         # print warning for missing levels
-        missing_levels[c] = list(
-            set(self.categories_[c]).difference(present_levels),
+        missing_levels[c] = sorted(
+            set(self.categories_[c]).difference(set(present_levels)),
         )
         if len(missing_levels[c]) > 0:
             warning_msg = f"{self.classname()}: column {c} includes user-specified values {missing_levels[c]} not found in the dataset"
@@ -1664,6 +1670,7 @@ class OneHotEncodingTransformer(
 
         return missing_levels
 
+    @beartype
     def _get_feature_names(
         self,
         column: str,
@@ -1681,14 +1688,22 @@ class OneHotEncodingTransformer(
             column + self.separator + str(level) for level in self.categories_[column]
         ]
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Create new dummy columns from categorical fields.
 
         Parameters
         ----------
         X : pd/pl.DataFrame
             Data to apply one hot encoding to.
+
+        return_native_override: Optional[bool]
+        option to override return_native attr in transformer, useful when calling parent
+        methods
 
         Returns
         -------
@@ -1698,51 +1713,64 @@ class OneHotEncodingTransformer(
             the output X.
 
         """
+        return_native = self._process_return_native(return_native_override)
 
         # Check that transformer has been fit before calling transform
         self.check_is_fitted(["categories_"])
 
-        X = nw.from_native(BaseTransformer.transform(self, X))
+        X = _convert_dataframe_to_narwhals(X)
+        X = BaseTransformer.transform(self, X, return_native_override=False)
 
-        missing_levels = {}
+        # first handle checks
+        present_levels = {}
         for c in self.columns:
-            # Check for nulls
-            if X.select(nw.col(c).is_null().sum()).item() > 0:
-                raise ValueError(
-                    f"{self.classname()}: column %s has nulls - replace before proceeding"
-                    % c,
-                )
-
             # print warning for unseen levels
-            present_levels = set(X.get_column(c).unique().to_list())
-            unseen_levels = present_levels.difference(set(self.categories_[c]))
+            present_levels[c] = set(X.get_column(c).unique().to_list())
+            unseen_levels = set(present_levels[c]).difference(set(self.categories_[c]))
             if len(unseen_levels) > 0:
                 warning_msg = f"{self.classname()}: column {c} has unseen categories: {unseen_levels}"
                 warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
+        self._check_for_nulls(present_levels)
+
+        # sort once nulls excluded
+        present_levels = {key: sorted(present_levels[key]) for key in present_levels}
+
+        missing_levels = {}
+        transform_expressions = {}
+        for c in self.columns:
             # print warning for missing levels
-            self._warn_missing_levels(present_levels, c, missing_levels)
-
-            dummies = X.get_column(c).to_dummies(separator=self.separator)
-
-            # insert 0 cols for missing levels
-            dummies = dummies.with_columns(
-                nw.lit(0).alias(c + self.separator + str(missing_level))
-                for missing_level in missing_levels[c]
+            missing_levels = self._warn_missing_levels(
+                present_levels[c],
+                c,
+                missing_levels,
             )
 
             wanted_dummies = self.new_feature_names_[c]
 
-            # cast dummy columns to bool
-            dummies = dummies.with_columns(
-                nw.col(new_column).cast(nw.Boolean) for new_column in wanted_dummies
-            )
-            X = nw.concat([X, dummies.select(wanted_dummies)], how="horizontal")
+            for level in present_levels[c]:
+                if c + self.separator + str(level) in wanted_dummies:
+                    transform_expressions[c + self.separator + str(level)] = (
+                        nw.col(c) == level
+                    )
+
+            for level in missing_levels[c]:
+                transform_expressions[c + self.separator + str(level)] = nw.lit(
+                    False,
+                ).alias(c + self.separator + str(level))
+
+        # make column order consistent
+        sorted_keys = sorted(transform_expressions.keys())
+
+        X = X.with_columns(**{key: transform_expressions[key] for key in sorted_keys})
 
         # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             self.columns,
+            return_native=False,
         )
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
