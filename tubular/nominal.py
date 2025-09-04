@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -21,9 +21,6 @@ from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumnMixin
 from tubular.types import DataFrame, ListOfStrs, Series
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
 
 
 class BaseNominalTransformer(BaseTransformer):
