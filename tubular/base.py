@@ -4,9 +4,8 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
-import narwhals as nw
 import pandas as pd
 from beartype import beartype
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -19,9 +18,6 @@ from tubular._utils import (
 )
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, Series
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
 
 pd.options.mode.copy_on_write = True
 
@@ -134,8 +130,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         return self
 
-    @nw.narwhalify
-    def _combine_X_y(self, X: FrameT, y: nw.Series) -> FrameT:
+    @beartype
+    def _combine_X_y(
+        self,
+        X: DataFrame,
+        y: Series,
+        return_native_override: bool = True,
+    ) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
@@ -152,19 +153,21 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             Response variable.
 
         """
-        if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
-            msg = f"{self.classname()}: X should be a polars or pandas DataFrame/LazyFrame"
-            raise TypeError(msg)
 
-        if not isinstance(y, nw.Series):
-            msg = f"{self.classname()}: y should be a polars or pandas Series"
-            raise TypeError(msg)
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
 
-        if X.shape[0] != y.shape[0]:
-            msg = f"{self.classname()}: X and y have different numbers of rows ({X.shape[0]} vs {y.shape[0]})"
+        return_native = self._process_return_native(return_native_override)
+
+        len_X = len(X)
+        len_y = len(y)
+        if len_X != len_y:
+            msg = f"{self.classname()}: X and y have different numbers of rows ({len_X} vs {len_y})"
             raise ValueError(msg)
 
-        return X.with_columns(_temporary_response=y)
+        X = X.with_columns(_temporary_response=y)
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
     @beartype
     def _process_return_native(self, return_native_override: Optional[bool]) -> bool:
