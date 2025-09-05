@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import copy
 import datetime
 import warnings
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from enum import Enum
+from typing import TYPE_CHECKING, Annotated, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from beartype.vale import Is
 from typing_extensions import deprecated
 
 from tubular._utils import (
@@ -17,6 +20,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
 )
 from tubular.base import BaseTransformer
+from tubular.mapping import MappingTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
 from tubular.types import DataFrame
 
@@ -1007,6 +1011,29 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         )
 
 
+class DatetimeInfoOptions(str, Enum):
+    __slots__ = ()
+
+    TIME_OF_DAY = "timeofday"
+    TIME_OF_MONTH = "timeofmonth"
+    TIME_OF_YEAR = "timeofyear"
+    DAY_OF_WEEK = "dayofweek"
+
+
+DatetimeInfoOptionStr = Annotated[
+    str,
+    Is[lambda s: s in DatetimeInfoOptions._value2member_map_],
+]
+DatetimeInfoOptionList = Annotated[
+    list,
+    Is[
+        lambda list_value: all(
+            entry in DatetimeInfoOptions._value2member_map_ for entry in list_value
+        )
+    ],
+]
+
+
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
 
@@ -1087,79 +1114,64 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     """
 
-    polars_compatible = False
-
-    TIME_OF_DAY = "timeofday"
-    TIME_OF_MONTH = "timeofmonth"
-    TIME_OF_YEAR = "timeofyear"
-    DAY_OF_WEEK = "dayofweek"
+    polars_compatible = True
 
     DEFAULT_MAPPINGS = {
-        TIME_OF_DAY: {
-            "night": range(6),  # Midnight - 6am
-            "morning": range(6, 12),  # 6am - Noon
-            "afternoon": range(12, 18),  # Noon - 6pm
-            "evening": range(18, 24),  # 6pm - Midnight
+        DatetimeInfoOptions.TIME_OF_DAY: {
+            **{i: "night" for i in range(6)},  # Midnight - 6am
+            **{i: "morning" for i in range(6, 12)},  # 6am - Noon
+            **{i: "afternoon" for i in range(12, 18)},  # Noon - 6pm
+            **{i: "evening" for i in range(18, 24)},  # 6pm - Midnight
         },
-        TIME_OF_MONTH: {
-            "start": range(1, 11),
-            "middle": range(11, 21),
-            "end": range(21, 32),
+        DatetimeInfoOptions.TIME_OF_MONTH: {
+            **{i: "start" for i in range(1, 11)},
+            **{i: "middle" for i in range(11, 21)},
+            **{i: "end" for i in range(21, 32)},
         },
-        TIME_OF_YEAR: {
-            "spring": range(3, 6),  # Mar, Apr, May
-            "summer": range(6, 9),  # Jun, Jul, Aug
-            "autumn": range(9, 12),  # Sep, Oct, Nov
-            "winter": [12, 1, 2],  # Dec, Jan, Feb
+        DatetimeInfoOptions.TIME_OF_YEAR: {
+            **{i: "spring" for i in range(3, 6)},  # Mar, Apr, May
+            **{i: "summer" for i in range(6, 9)},  # Jun, Jul, Aug
+            **{i: "autumn" for i in range(9, 12)},  # Sep, Oct, Nov
+            **{i: "winter" for i in [12, 1, 2]},  # Dec, Jan, Feb
         },
-        DAY_OF_WEEK: {
-            "monday": [0],
-            "tuesday": [1],
-            "wednesday": [2],
-            "thursday": [3],
-            "friday": [4],
-            "saturday": [5],
-            "sunday": [6],
+        DatetimeInfoOptions.DAY_OF_WEEK: {
+            1: "monday",
+            2: "tuesday",
+            3: "wednesday",
+            4: "thursday",
+            5: "friday",
+            6: "saturday",
+            7: "sunday",
         },
     }
 
     INCLUDE_OPTIONS = list(DEFAULT_MAPPINGS.keys())
 
     RANGE_TO_MAP = {
-        TIME_OF_DAY: set(range(24)),
-        TIME_OF_MONTH: set(range(1, 32)),
-        TIME_OF_YEAR: set(range(1, 13)),
-        DAY_OF_WEEK: set(range(7)),
+        DatetimeInfoOptions.TIME_OF_DAY: set(range(24)),
+        DatetimeInfoOptions.TIME_OF_MONTH: set(range(1, 32)),
+        DatetimeInfoOptions.TIME_OF_YEAR: set(range(1, 13)),
+        DatetimeInfoOptions.DAY_OF_WEEK: set(range(1, 8)),
     }
 
     DATETIME_ATTR = {
-        TIME_OF_DAY: "hour",
-        TIME_OF_MONTH: "day",
-        TIME_OF_YEAR: "month",
-        DAY_OF_WEEK: "weekday",
+        DatetimeInfoOptions.TIME_OF_DAY: "hour",
+        DatetimeInfoOptions.TIME_OF_MONTH: "day",
+        DatetimeInfoOptions.TIME_OF_YEAR: "month",
+        DatetimeInfoOptions.DAY_OF_WEEK: "weekday",
     }
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        include: str | list[str] | None = None,
-        datetime_mappings: dict[str,] | None = None,
-        drop_original: bool = False,
+        columns: Union[str, list[str]],
+        include: Optional[DatetimeInfoOptionList] = None,
+        datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
+        drop_original: Optional[bool] = False,
         **kwargs: dict[str, bool],
     ) -> None:
         if include is None:
             include = self.INCLUDE_OPTIONS
-        else:
-            if type(include) is not list:
-                msg = f"{self.classname()}: include should be List"
-                raise TypeError(msg)
-
-        if datetime_mappings is None:
-            datetime_mappings = {}
-        else:
-            if type(datetime_mappings) is not dict:
-                msg = f"{self.classname()}: datetime_mappings should be Dict"
-                raise TypeError(msg)
 
         super().__init__(
             columns=columns,
@@ -1168,123 +1180,118 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             **kwargs,
         )
 
-        for var in include:
-            if var not in self.INCLUDE_OPTIONS:
-                msg = f"{self.classname()}: elements in include should be in {self.INCLUDE_OPTIONS}"
-                raise ValueError(msg)
-
-        if datetime_mappings != {}:
-            for key, mapping in datetime_mappings.items():
-                if type(mapping) is not dict:
-                    msg = f"{self.classname()}: values in datetime_mappings should be dict"
-                    raise TypeError(msg)
-                if key not in include:
-                    msg = f"{self.classname()}: keys in datetime_mappings should be in include"
-                    raise ValueError(msg)
-
         self.include = include
         self.datetime_mappings = datetime_mappings
-        self.mappings_provided = list(self.datetime_mappings.keys())
+        self._process_provided_mappings(datetime_mappings=datetime_mappings)
 
-        self._process_provided_mappings()
+        # this is a situation where we know the values our mappings allow,
+        # so enum type is more appropriate than categorical and we
+        # will cast to this at the end
+        self.enums = {
+            include_option: nw.Enum(
+                sorted(set(self.final_datetime_mappings[include_option].values())),
+            )
+            for include_option in self.include
+        }
 
-    def _process_provided_mappings(self) -> None:
-        """Method to process user provided mappings. Sets mappings attribute, then transforms to set a second
-        inverted_datetime_mappings attribute. Validates against RANGE_TO_MAP.
+        self.mapping_transformer = MappingTransformer(
+            mappings={
+                col + "_" + include_option: self.final_datetime_mappings[include_option]
+                for col in self.columns
+                for include_option in self.include
+            },
+            return_dtypes={
+                col + "_" + include_option: "Categorical"
+                for col in self.columns
+                for include_option in self.include
+            },
+        )
+
+    def _process_provided_mappings(
+        self,
+        datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]],
+    ) -> None:
+        """Method to process user provided mappings. Sets datetime_mappings attribute, then validates against RANGE_TO_MAP.
 
         Returns
         -------
         None
         """
 
-        self.mappings = {}
-        self.inverted_datetime_mappings = {}
-        for include_option in self.INCLUDE_OPTIONS:
-            if (include_option in self.include) and (
-                include_option in self.mappings_provided
-            ):
-                self.mappings[include_option] = self.datetime_mappings[include_option]
-            else:
-                self.mappings[include_option] = self.DEFAULT_MAPPINGS[include_option]
-
-            # Invert dictionaries for quicker lookup
-            if include_option in self.include:
-                self.inverted_datetime_mappings[include_option] = {
-                    vi: k for k, v in self.mappings[include_option].items() for vi in v
-                }
-
-                # check provided mappings fit required format
-                if (
-                    set(self.inverted_datetime_mappings[include_option].keys())
-                    != self.RANGE_TO_MAP[include_option]
-                ):
-                    msg = f"{self.classname()}: {include_option} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.inverted_datetime_mappings[include_option].keys())} are missing"
+        # initialise mappings attr with defaults,
+        # and overwrite with user provided mappings
+        # where possible
+        self.final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
+        if datetime_mappings:
+            for key in datetime_mappings:
+                if key not in self.include:
+                    msg = f"{self.classname()}: keys in datetime_mappings should be in include"
                     raise ValueError(msg)
-            else:
-                self.inverted_datetime_mappings[include_option] = {}
+                self.final_datetime_mappings[key] = copy.deepcopy(
+                    datetime_mappings[key],
+                )
 
-    def _map_values(self, value: float, include_option: str) -> str:
-        """Method to apply mappings for a specified interval ("timeofday", "timeofmonth", "timeofyear" or "dayofweek")
-        from corresponding mapping attribute to a single value.
+        for include_option in self.include:
+            # check provided mappings fit required format
+            if (
+                set(self.final_datetime_mappings[include_option].keys())
+                != self.RANGE_TO_MAP[include_option]
+            ):
+                msg = f"{self.classname()}: {include_option.value} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.final_datetime_mappings[include_option].keys())} are missing"
+                raise ValueError(msg)
 
-        Parameters
-        ----------
-        include_option : str
-            the time period to map "timeofday", "timeofmonth", "timeofyear" or "dayofweek"
-
-        value : float or int
-            the value to be mapped
-
-
-        Returns
-        -------
-        str : str
-            Mapped value
-        """
-        if isinstance(value, float):
-            if np.isnan(value):
-                return np.nan
-            if value.is_integer():
-                value = int(value)
-
-        if isinstance(value, int) and value in self.RANGE_TO_MAP[include_option]:
-            return self.inverted_datetime_mappings[include_option][value]
-
-        msg = f"{self.classname()}: value for {include_option} mapping in self._map_values should be an integer value in {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}"
-        raise ValueError(msg)
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Transform - Extracts new features from datetime variables.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Data with columns to extract info from.
 
         Returns
         -------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Transformed input X with added columns of extracted information.
         """
-        X = super().transform(X)
+        X = super().transform(X, return_native_override=False)
 
-        for col in self.columns:
-            for include_option in self.include:
-                X[col + "_" + include_option] = getattr(
-                    X[col].dt,
+        transform_dict = {
+            col + "_" + include_option: (
+                getattr(
+                    nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
-                ).apply(
-                    self._map_values,
-                    include_option=include_option,
+                )().replace_strict(
+                    self.mapping_transformer.mappings[col + "_" + include_option],
                 )
+            )
+            for col in self.columns
+            for include_option in self.include
+        }
+
+        # final casts
+        transform_dict = {
+            col + "_" + include_option: transform_dict[col + "_" + include_option].cast(
+                self.enums[include_option],
+            )
+            for col in self.columns
+            for include_option in self.include
+        }
+
+        X = X.with_columns(
+            **transform_dict,
+        )
 
         # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             self.columns,
+            return_native=False,
         )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
