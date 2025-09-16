@@ -327,7 +327,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         quantiles : None
             Weighted quantiles to calculate. Must all be between 0 and 1.
 
-        values_col: str
+        values_column: str
             name of relevant values column in data
 
         weights_column: str
@@ -340,27 +340,33 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
+        >>> import pandas as pd
         >>> x = CappingTransformer(capping_values={"a": [2, 10]})
+        >>> df=pd.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
         >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3], sample_weight = [1, 1, 1], quantiles = quantiles_to_compute)
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3], sample_weight = [0, 1, 0], quantiles = quantiles_to_compute)
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.5), np.float64(1.8), np.float64(2.1), np.float64(2.4), np.float64(2.7), np.float64(3.0)]
+
+        >>> df=pd.DataFrame({'a': [1,2,3], 'weight': [0,1,0]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3], sample_weight = [1, 1, 0], quantiles = quantiles_to_compute)
+        [np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0)]
+
+        >>> df=pd.DataFrame({'a':[1,2,3], 'weight': [1,1,0]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3, 4, 5], sample_weight = [1, 1, 1, 1, 1], quantiles = quantiles_to_compute)
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.4), np.float64(1.6), np.float64(1.8), np.float64(2.0)]
+
+        >>> df=pd.DataFrame({'a':[1,2,3,4,5], 'weight': [1,1,1,1,1]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3, 4, 5], sample_weight = [1, 0, 1, 0, 1], quantiles = [0, 0.5, 1.0])
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.5), np.float64(2.0), np.float64(2.5), np.float64(3.0), np.float64(3.5), np.float64(4.0), np.float64(4.5), np.float64(5.0)]
+
+        >>> df=pd.DataFrame({'a': [1,2,3,4,5], 'weight': [1,0,1,0,1]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = [0, 0.5, 1.0])
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 2.0, 5.0]
+        [np.float64(1.0), np.float64(2.0), np.float64(5.0)]
 
         """
         quantiles = np.array(quantiles)
