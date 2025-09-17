@@ -20,7 +20,7 @@ from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumnMixin
-from tubular.types import DataFrame, ListOfStrs, Series
+from tubular.types import DataFrame, ListOfStrs, PositiveInt, Series  # noqa: TCH001
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -717,7 +717,7 @@ class MeanResponseTransformer(
         self,
         columns: Optional[Union[str, list[str]]] = None,
         weights_column: Optional[str] = None,
-        prior: int = 0,
+        prior: PositiveInt = 0,
         level: Optional[Union[float, int, str, list]] = None,
         unseen_level_handling: Optional[
             Union[float, int, Literal["mean", "median", "min", "max"]]
@@ -726,16 +726,12 @@ class MeanResponseTransformer(
         drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
-        if not prior >= 0:
-            msg = f"{self.classname()}: prior should be positive int"
-            raise ValueError(msg)
-
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
         self.return_type = return_type
-        DropOriginalMixin.set_drop_original_column(self, drop_original=drop_original)
+        self.drop_original = drop_original
 
         self.MULTI_LEVEL = False
 
@@ -1427,18 +1423,16 @@ class OneHotEncodingTransformer(
         drop_original: bool = False,
         copy: bool = False,
         verbose: bool = False,
-        **kwargs: bool,
     ) -> None:
         BaseTransformer.__init__(
             self,
             columns=columns,
             verbose=verbose,
             copy=copy,
-            **kwargs,
         )
 
         self.wanted_values = wanted_values
-        self.set_drop_original_column(drop_original)
+        self.drop_original = drop_original
         self.check_and_set_separator_column(separator)
 
     @beartype

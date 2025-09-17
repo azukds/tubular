@@ -5,25 +5,6 @@ from tests.utils import assert_frame_equal_dispatch
 from tubular.mixins import DropOriginalMixin
 
 
-class TestSetDropOriginalColumn:
-    "tests for DropOriginalMixin.set_drop_original_column"
-
-    @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
-    def test_drop_column_arg_errors(
-        self,
-        drop_orginal_column,
-    ):
-        """Test that appropriate errors are throwm for non boolean arg."""
-
-        obj = DropOriginalMixin()
-
-        with pytest.raises(
-            TypeError,
-            match="DropOriginalMixin: drop_original should be bool",
-        ):
-            obj.set_drop_original_column(drop_original=drop_orginal_column)
-
-
 class TestDropOriginalColumn:
     "tests for DropOriginalMixin.drop_original_column"
 

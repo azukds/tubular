@@ -25,10 +25,14 @@ from tubular.base import BaseTransformer, DataFrameMethodTransformer
 from tubular.mixins import (
     CheckNumericMixin,
     DropOriginalMixin,
-    NewColumnNameMixin,
-    TwoColumnMixin,
 )
-from tubular.types import DataFrame
+from tubular.types import (  # noqa: TCH001  # noqa: TCH001
+    DataFrame,
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfTwoStrs,
+    PositiveNumber,
+)
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT, IntoSeriesT
@@ -171,10 +175,11 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None,
-        base: float | None = None,
+        columns: Optional[Union[str, list[str]]],
+        base: Optional[PositiveNumber] = None,
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
@@ -182,24 +187,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if not isinstance(add_1, bool):
-            add_1_error_msg = f"{self.classname()}: add_1 should be bool"
-            raise TypeError(add_1_error_msg)
-
-        if not isinstance(suffix, str):
-            suffix_error_msg = f"{self.classname()}: suffix should be str"
-            raise TypeError(suffix_error_msg)
-
-        if base is not None:
-            if not isinstance(base, (int, float)):
-                msg = f"{self.classname()}: base should be numeric or None"
-                raise ValueError(msg)
-            if not base > 0:
-                msg = f"{self.classname()}: base should be strictly positive"
-                raise ValueError(msg)
-
-        self.set_drop_original_column(drop_original)
-
+        self.drop_original = drop_original
         self.base = base
         self.add_1 = add_1
         self.suffix = suffix
@@ -285,32 +273,16 @@ class CutTransformer(BaseNumericTransformer):
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
         column: str,
         new_column_name: str,
-        cut_kwargs: dict[str, object] | None = None,
+        cut_kwargs: Optional[GenericKwargs] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        if type(column) is not str:
-            msg = f"{self.classname()}: column arg (name of column) should be a single str giving the column to discretise"
-            raise TypeError(msg)
-
-        if type(new_column_name) is not str:
-            msg = f"{self.classname()}: new_column_name must be a str"
-            raise TypeError(msg)
-
         if cut_kwargs is None:
             cut_kwargs = {}
-        else:
-            if type(cut_kwargs) is not dict:
-                msg = f"{self.classname()}: cut_kwargs should be a dict but got type {type(cut_kwargs)}"
-                raise TypeError(msg)
-
-        for i, k in enumerate(cut_kwargs.keys()):
-            if type(k) is not str:
-                msg = f"{self.classname()}: unexpected type ({type(k)}) for cut_kwargs key in position {i}, must be str"
-                raise TypeError(msg)
 
         self.cut_kwargs = cut_kwargs
         self.new_column_name = new_column_name
@@ -341,8 +313,6 @@ class CutTransformer(BaseNumericTransformer):
 
 
 class TwoColumnOperatorTransformer(
-    NewColumnNameMixin,
-    TwoColumnMixin,
     DataFrameMethodTransformer,
     BaseNumericTransformer,
 ):
@@ -401,13 +371,14 @@ class TwoColumnOperatorTransformer(
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
         pd_method_name: str,
-        columns: list[str],
+        columns: ListOfTwoStrs,
         new_column_name: str,
-        pd_method_kwargs: dict[str, object] | None = None,
-        **kwargs: dict[str, bool],
+        pd_method_kwargs: Optional[dict[str, object]] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         """Performs input checks not done in either DataFrameMethodTransformer.__init__ or BaseTransformer.__init__."""
         if pd_method_kwargs is None:
@@ -420,9 +391,7 @@ class TwoColumnOperatorTransformer(
                 msg = f"{self.classname()}: pd_method_kwargs 'axis' must be 0 or 1"
                 raise ValueError(msg)
 
-        # check_and_set_new_column_name function needs to be called before calling DataFrameMethodTransformer.__init__
-        # DFTransformer uses 'new_column_names' not 'new_column_name' so generic tests fail on regex if not ordered in this way
-        self.check_and_set_new_column_name(new_column_name)
+        self.new_column_name = new_column_name
 
         # call DataFrameMethodTransformer.__init__
         # This class will inherit all the below attributes from DataFrameMethodTransformer
@@ -434,7 +403,6 @@ class TwoColumnOperatorTransformer(
             **kwargs,
         )
 
-        self.check_two_columns(columns)
         self.column1_name = columns[0]
         self.column2_name = columns[1]
 
@@ -979,7 +947,10 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: Union[
+            str,
+            ListOfOneStr,
+        ],
         new_column_name: str,
         n_init: Union[str, int] = "auto",
         n_clusters: int = 8,
@@ -987,10 +958,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         kmeans_kwargs: Optional[dict[str, object]] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        if (isinstance(columns, list)) and (len(columns) > 1):
-            msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
-            raise TypeError(msg)
-
         if kmeans_kwargs is None:
             kmeans_kwargs = {}
 
@@ -998,6 +965,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         self.new_column_name = new_column_name
         self.n_init = n_init
         self.kmeans_kwargs = kmeans_kwargs
+        self.drop_original = drop_original
 
         if isinstance(columns, str):
             self.columns = [columns]
@@ -1005,7 +973,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             self.columns = columns
 
         super().__init__(columns=[columns], **kwargs)
-        self.set_drop_original_column(drop_original)
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
