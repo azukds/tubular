@@ -76,7 +76,9 @@ threadpoolctl==3.6.0
 tomli==2.2.1
     # via pytest
 typing-extensions==4.14.0
-    # via exceptiongroup
+    # via
+    #   tubular (pyproject.toml)
+    #   exceptiongroup
 tzdata==2025.2
     # via pandas
 virtualenv==20.31.2

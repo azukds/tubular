@@ -19,11 +19,12 @@ dependencies = [
     "pandas>=1.5.0",
     "scikit-learn>=1.2.0",
     "narwhals >= 1.31.0",
-    "polars >= 1.9.0",
+    "polars < 1.32.0",
     "beartype >= 0.19.0",
+    "typing-extensions>=4.5.0",
 ]
 requires-python = ">=3.9"
-authors = [{ name = "LV GI Data Science Team", email="#DataSciencePackages@lv.co.uk"}]
+authors = [{ name = "Allianz UK Data Science Team", email="datasciencepackages@allianz.co.uk"}]
 description = "Package to perform pre processing steps for machine learning models"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
@@ -51,9 +52,9 @@ dev = [
 
 [project.urls]
 Documentation = "https://tubular.readthedocs.io/en/latest/index.html"
-Repository = "https://github.com/lvgig/tubular"
-Issues = "https://github.com/lvgig/tubular/issues"
-Changelog = "https://github.com/lvgig/tubular/CHANGELOG.md"
+Repository = "https://github.com/azukds/tubular"
+Issues = "https://github.com/azukds/tubular/issues"
+Changelog = "https://github.com/azukds/tubular/CHANGELOG.md"
 
 [tool.ruff]
 # Same as Black.
@@ -115,6 +116,7 @@ ignore = [
     "B905", # the below two rules seem to make changes that error for python3.9
     "UP038", 
     "PYI041", # clashes with beartype
+    "TCH001", # clashes with beartype
     ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
@@ -130,7 +132,11 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Ignore `E402` (import violations) in all `__init__.py` file.
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
-"tests/*" = ["ANN", "S101"]
+"tests/*" = [
+    "ANN",
+    "S101",
+    "PLC2701" # complains about private imports, which we test
+    ]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true

@@ -8,6 +8,7 @@ from test_BaseNominalTransformer import GenericNominalTransformTests
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    DummyWeightColumnMixinTests,
     GenericFitTests,
     OtherBaseBehaviourTests,
     WeightColumnFitMixinTests,
@@ -65,7 +66,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
             GroupRareLevelsTransformer(columns="a", unseen_levels_to_rare=2)
 
 
-class TestFit(GenericFitTests, WeightColumnFitMixinTests):
+class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
     """Tests for GroupRareLevelsTransformer.fit()."""
 
     @classmethod
@@ -370,7 +371,9 @@ class TestTransform(GenericNominalTransformTests):
 
         output_df = x.transform(df)
 
-        output_categories = nw.from_native(output_df)[column].cat.get_categories()
+        output_categories = (
+            nw.from_native(output_df)[column].cat.get_categories().to_list()
+        )
 
         for cat in expected_removed_cats:
             assert (

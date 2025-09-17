@@ -17,16 +17,21 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 
-from tubular._types import (  # noqa: TCH001
-    GenericKwargs,
-    ListOfOneStr,
-    ListOfTwoStrs,
-    PositiveNumber,
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
 )
 from tubular.base import BaseTransformer, DataFrameMethodTransformer
 from tubular.mixins import (
     CheckNumericMixin,
     DropOriginalMixin,
+)
+from tubular.types import (  # noqa: TCH001  # noqa: TCH001
+    DataFrame,
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfTwoStrs,
+    PositiveNumber,
 )
 
 if TYPE_CHECKING:
@@ -88,8 +93,12 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         return self
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Base transform method. Validates data and attributes prior to the child objects tranform logic.
 
         Parameters
@@ -97,18 +106,22 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         X : pd/pl.DataFrame
             Data to transform.
 
+        return_native_override: Optional[bool]
+            Option to override return_native attr in transformer, useful when calling parent
+            methods
         Returns
         -------
         X : pd/pl.DataFrame
             Validated data
 
         """
-
-        X = super().transform(X)
+        X = _convert_dataframe_to_narwhals(X)
+        return_native = self._process_return_native(return_native_override)
+        X = super().transform(X, return_native_override=False)
 
         CheckNumericMixin.check_numeric_columns(self, X[self.columns])
 
-        return X
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
 
 class LogTransformer(BaseNumericTransformer, DropOriginalMixin):

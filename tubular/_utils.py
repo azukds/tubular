@@ -1,9 +1,86 @@
-from typing import Literal
+from typing import Literal, Optional
 
 import narwhals as nw
 import pandas as pd
+import polars as pl
+from beartype import beartype
 from narwhals.typing import IntoDType
 from numpy.typing import ArrayLike
+
+from tubular.types import DataFrame, Series
+
+
+@beartype
+def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.DataFrame:
+    """narwhalifies dataframe, if dataframe is not already narwhals
+
+    Parameters
+    ----------
+    X: pd/pl/nw.Series
+        DataFrame to narwhalify if pd/pl type
+
+    Returns
+    ----------
+    nw.DataFrame: narwhalified dataframe
+    """
+
+    if not isinstance(X, nw.DataFrame):
+        X = nw.from_native(X)
+
+    return X
+
+
+@beartype
+def _convert_series_to_narwhals(y: Optional[Series] = None) -> Optional[nw.Series]:
+    """narwhalifies series, if series is not already narwhals
+
+    Parameters
+    ----------
+    y: pd/pl/nw.Series
+        series to narwhalify if pd/pl type
+
+    Returns
+    ----------
+    nw.Series: narwhalified series
+    """
+
+    if y is not None and not isinstance(y, nw.Series):
+        y = nw.from_native(y, allow_series=True)
+
+    return y
+
+
+@beartype
+def _return_narwhals_or_native_dataframe(
+    X: DataFrame,
+    return_native: bool,
+) -> DataFrame:
+    """narwhalifies series, if series is not already narwhals
+
+    Parameters
+    ----------
+    X: pd/pl/nw.DataFrame
+        DataFrame to process and return
+
+    Returns
+    ----------
+    DataFrame: processed dataframe in correct type
+    """
+
+    if return_native:
+        if isinstance(X, nw.DataFrame):
+            return X.to_native()
+
+        # type hint and beartype means we don't have to check here,
+        # will be pandas or polars  frame
+        return X
+
+    if isinstance(X, (pl.DataFrame, pd.DataFrame)):
+        return nw.from_native(X)
+
+    # type hint and beartype means we don't have to check here,
+    # will be pandas or polars  frame
+    return X
 
 
 def _assess_pandas_object_column(pandas_df: pd.DataFrame, col: str) -> tuple[str, str]:

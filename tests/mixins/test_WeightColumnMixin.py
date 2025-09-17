@@ -1,9 +1,110 @@
+from copy import deepcopy
+
 import narwhals as nw
 import numpy as np
 import pytest
 
 from tests.test_data import create_df_2
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.mixins import WeightColumnMixin
+
+
+class TestCreateUnitWeightsColumn:
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("i", [-1, 0, 1, 2, 3, 4])
+    def test_new_column_output(
+        self,
+        library,
+        i,
+    ):
+        """Test unit weights column created as expected"""
+
+        obj = WeightColumnMixin()
+
+        df_dict = {
+            "a": [1, 2, 3, 4],
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        expected_dict = deepcopy(df_dict)
+
+        expected_new_col = "unit_weights_column"
+
+        expected_dict[expected_new_col] = [1, 1, 1, 1]
+
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_dict,
+            library=library,
+        )
+
+        output, unit_weights_column = obj._create_unit_weights_column(
+            df,
+            backend=library,
+        )
+
+        assert_frame_equal_dispatch(expected, output)
+
+        assert unit_weights_column == "unit_weights_column"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_existing_column_used_if_possible(
+        self,
+        library,
+    ):
+        """Test existing unit weights column used if possible"""
+
+        obj = WeightColumnMixin()
+
+        df_dict = {
+            "a": [1, 2, 3, 4],
+        }
+
+        good_weight_vals = [1, 1, 1, 1]
+
+        df_dict["unit_weights_column"] = good_weight_vals
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        expected_dict = deepcopy(df_dict)
+
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_dict,
+            library=library,
+        )
+
+        output, unit_weights_column = obj._create_unit_weights_column(
+            df,
+            backend=library,
+        )
+
+        assert_frame_equal_dispatch(expected, output)
+
+        assert unit_weights_column == "unit_weights_column"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_errors_if_bad_column_exists(
+        self,
+        library,
+    ):
+        """Test that error is raised if unit_weights_column exists but is not all 1"""
+
+        obj = WeightColumnMixin()
+
+        df_dict = {
+            "a": [1, 2, 3, 4],
+        }
+
+        df_dict["unit_weights_column"] = [1, 2, 1, 1]
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        msg = "Attempting to insert column of unit weights named 'unit_weights_column', but an existing column shares this name and is not all 1, please rename existing column"
+        with pytest.raises(
+            RuntimeError,
+            match=msg,
+        ):
+            obj._create_unit_weights_column(df, backend=library)
 
 
 class TestCheckAndSetWeight:

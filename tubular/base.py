@@ -4,7 +4,6 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING, Optional, Union
 
 import narwhals as nw
@@ -13,8 +12,18 @@ from beartype import beartype
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
-from tubular._types import GenericKwargs, NonEmptyListOfStrs  # noqa: TCH001
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _convert_series_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+)
 from tubular.mixins import DropOriginalMixin
+from tubular.types import (  # noqa: TCH001
+    DataFrame,
+    GenericKwargs,
+    NonEmptyListOfStrs,
+    Series,
+)
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -22,7 +31,7 @@ if TYPE_CHECKING:
 pd.options.mode.copy_on_write = True
 
 
-class BaseTransformer(TransformerMixin, BaseEstimator):
+class BaseTransformer(BaseEstimator, TransformerMixin):
     """Base tranformer class which all other transformers in the package inherit from.
 
     Provides fit and transform methods (required by sklearn transformers), simple input checking
@@ -34,11 +43,14 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
         Columns to apply the transformer to. If a str is passed this is put into a list. Value passed
         in columns is saved in the columns attribute on the object.
 
-    copy : bool, default = True
+    copy : bool, default = False
         Should X be copied before tansforms are applied? Copy argument no longer used and will be deprecated in a future release
 
     verbose : bool, default = False
         Should statements be printed when methods are run?
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
 
     Attributes
     ----------
@@ -55,6 +67,9 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
@@ -70,16 +85,10 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
             NonEmptyListOfStrs,
             str,
         ],
-        copy: Union[bool, None] = None,
+        copy: bool = False,
         verbose: bool = False,
+        return_native: bool = True,
     ) -> None:
-        if copy is not None:
-            warnings.warn(
-                "copy argument no longer used and will be deprecated in a future release",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         self.verbose = verbose
 
         if self.verbose:
@@ -93,9 +102,10 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
             self.columns = columns
 
         self.copy = copy
+        self.return_native = return_native
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series | None = None) -> BaseTransformer:
+    @beartype
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
         """Base transformer fit method, checks X and y types. Currently only pandas DataFrames are allowed for X
         and DataFrames or Series for y.
 
@@ -113,20 +123,18 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
         if self.verbose:
             print("BaseTransformer.fit() called")
 
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         self.columns_check(X)
 
         if not X.shape[0] > 0:
             msg = f"{self.classname()}: X has no rows; {X.shape}"
             raise ValueError(msg)
 
-        if y is not None:
-            if not isinstance(y, nw.Series):
-                msg = f"{self.classname()}: unexpected type for y, should be a polars or pandas Series"
-                raise TypeError(msg)
-
-            if not y.shape[0] > 0:
-                msg = f"{self.classname()}: y is empty; {y.shape}"
-                raise ValueError(msg)
+        if (y is not None) and (not y.shape[0] > 0):
+            msg = f"{self.classname()}: y is empty; {y.shape}"
+            raise ValueError(msg)
 
         return self
 
@@ -162,8 +170,33 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
 
         return X.with_columns(_temporary_response=y)
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def _process_return_native(self, return_native_override: Optional[bool]) -> bool:
+        """determine whether to override return_native attr
+
+        Parameters
+        ----------
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
+
+        Returns
+        ----------
+        bool: whether or not to return native type
+        """
+
+        return (
+            return_native_override
+            if return_native_override is not None
+            else self.return_native
+        )
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Base transformer transform method; checks X type (pandas/polars DataFrame only) and copies data if requested.
 
         Transform calls the columns_check method which will check columns in columns attribute are in X.
@@ -173,25 +206,35 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
         X : pd/pl.DataFrame
             Data to transform with the transformer.
 
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
+
         Returns
         -------
         X : pd/pl.DataFrame
             Input X, copied if specified by user.
 
         """
+
+        return_native = self._process_return_native(return_native_override)
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        if self.copy:
+            # to prevent overwriting original dataframe
+            X = X.clone()
+
         self.columns_check(X)
 
         if self.verbose:
             print("BaseTransformer.transform() called")
 
-        # to prevent overwriting original dataframe
-        X_view = X.clone()
-
-        if not X.shape[0] > 0:
+        if not len(X) > 0:
             msg = f"{self.classname()}: X has no rows; {X.shape}"
             raise ValueError(msg)
 
-        return X_view
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
     def check_is_fitted(self, attribute: str) -> None:
         """Check if particular attributes are on the object. This is useful to do before running transform to avoid
@@ -207,8 +250,8 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
         """
         check_is_fitted(self, attribute)
 
-    @nw.narwhalify
-    def columns_check(self, X: FrameT) -> None:
+    @beartype
+    def columns_check(self, X: DataFrame) -> None:
         """Method to check that the columns attribute is set and all values are present in X.
 
         Parameters
@@ -217,17 +260,19 @@ class BaseTransformer(TransformerMixin, BaseEstimator):
             Data to check columns are in.
 
         """
-        if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
-            msg = f"{self.classname()}: X should be a polars or pandas DataFrame/LazyFrame"
-            raise TypeError(msg)
+
+        X = _convert_dataframe_to_narwhals(X)
 
         if not isinstance(self.columns, list):
             msg = f"{self.classname()}: self.columns should be a list"
             raise TypeError(msg)
 
-        for c in self.columns:
-            if c not in X.columns:
-                raise ValueError(f"{self.classname()}: variable " + c + " is not in X")
+        missing_columns = set(self.columns).difference(X.columns)
+        if len(missing_columns) != 0:
+            msg = f"{self.classname()}: variables {missing_columns} not in X"
+            raise ValueError(
+                msg,
+            )
 
 
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):

@@ -124,7 +124,12 @@ class GenericImputerTransformTests:
         [("pandas", "pandas"), ("polars", "polars")],
         indirect=["expected_df_1"],
     )
-    def test_expected_output_1(self, library, expected_df_1, initialized_transformers):
+    def test_expected_output_on_float_column(
+        self,
+        library,
+        expected_df_1,
+        initialized_transformers,
+    ):
         """Test that transform is giving the expected output when applied to float column."""
         # Create the DataFrame using the library parameter
         df2 = d.create_df_2(library=library)
@@ -150,9 +155,6 @@ class GenericImputerTransformTests:
         df2 = nw.from_native(df2)
         expected_df_1 = nw.from_native(expected_df_1)
 
-        # Check outcomes for single rows
-        # turn off type change errors to avoid having to type the single rows
-        transformer.error_on_type_change = False
         for i in range(len(df2)):
             df_transformed_row = transformer.transform(df2[[i]].to_native())
             df_expected_row = expected_df_1[[i]].to_native()
@@ -167,7 +169,12 @@ class GenericImputerTransformTests:
         [("pandas", "pandas"), ("polars", "polars")],
         indirect=["expected_df_2"],
     )
-    def test_expected_output_2(self, library, expected_df_2, initialized_transformers):
+    def test_expected_output_on_object_column(
+        self,
+        library,
+        expected_df_2,
+        initialized_transformers,
+    ):
         """Test that transform is giving the expected output when applied to object column."""
         # Create the DataFrame using the library parameter
         df2 = d.create_df_2(library=library)
@@ -194,9 +201,6 @@ class GenericImputerTransformTests:
         df2 = nw.from_native(df2)
         expected_df_2 = nw.from_native(expected_df_2)
 
-        # Check outcomes for single rows
-        # turn off type change errors to avoid having to type the single rows
-        transformer.error_on_type_change = False
         for i in range(len(df2)):
             df_transformed_row = transformer.transform(df2[[i]].to_native())
             df_expected_row = expected_df_2[[i]].to_native()
@@ -214,7 +218,7 @@ class GenericImputerTransformTests:
         ],
         indirect=["expected_df_3"],
     )
-    def test_expected_output_3(
+    def test_expected_output_with_object_and_categorical_columns(
         self,
         library,
         expected_df_3,
@@ -246,9 +250,6 @@ class GenericImputerTransformTests:
         df2 = nw.from_native(df2)
         expected_df_3 = nw.from_native(expected_df_3)
 
-        # Check outcomes for single rows
-        # turn off type change errors to avoid having to type the single rows
-        transformer.error_on_type_change = False
         for i in range(len(df2)):
             df_transformed_row = transformer.transform(df2[[i]].to_native())
             df_expected_row = expected_df_3[[i]].to_native()
@@ -277,7 +278,7 @@ class GenericImputerTransformTests:
         impute_value,
         expected,
     ):
-        """Test that transform is giving the expected output when applied to object and categorical columns."""
+        """Test that transform is giving the expected output when imputation value is falsey."""
         # Create the DataFrame using the library parameter
         df_dict = {
             "a": [True, False, None],
@@ -295,12 +296,12 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        transformer.impute_values_ = {column: impute_value}
-
         if self.transformer_name == "ArbitraryImputer":
             transformer.impute_value = impute_value
 
         transformer.columns = [column]
+
+        transformer.impute_values_ = {col: impute_value for col in transformer.columns}
 
         expected_df_dict = {
             column: expected,

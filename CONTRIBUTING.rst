@@ -6,7 +6,7 @@ Thanks for your interest in contributing to this package! No contibution is too 
 Requests and feedback
 ---------------------
 
-For any bugs, issues or feature requests please open an `issue <https://github.com/lvgig/tubular/issues>`_ on the project.
+For any bugs, issues or feature requests please open an `issue <https://github.com/azukds/tubular/issues>`_ on the project.
 
 Requirements for contributions
 ------------------------------
@@ -21,7 +21,7 @@ Then clone the fork (or this repository if internal);
 
    .. code::
 
-     git clone https://github.com/lvgig/tubular.git
+     git clone https://github.com/azukds/tubular.git
      cd tubular
 
 Then install tubular and dependencies for development;
@@ -40,7 +40,7 @@ To configure ``pre-commit`` for your local repository run the following;
 
 If working in a codespace the dev requirements and precommit will be installed automatically in the dev container.
 
-If you are building the documentation locally you will need the `docs/requirements.txt <https://github.com/lvgig/tubular/blob/main/docs/requirements.txt>`_.
+If you are building the documentation locally you will need the `docs/requirements.txt <https://github.com/azukds/tubular/blob/main/docs/requirements.txt>`_.
 
 Dependencies
 ^^^^^^^^^^^^
@@ -65,7 +65,7 @@ General
 ^^^^^^^
 
 - Please try and keep each pull request to one change or feature only
-- Make sure to update the `changelog <https://github.com/lvgig/tubular/blob/main/CHANGELOG.rst>`_ with details of your change
+- Make sure to update the `changelog <https://github.com/azukds/tubular/blob/main/CHANGELOG.rst>`_ with details of your change
 
 Code formatting
 ^^^^^^^^^^^^^^^
@@ -77,7 +77,7 @@ As mentioned above we use ``pre-commit`` which streamlines checking that code ha
 CI
 ^^
 
-Make sure that pull requests pass our `CI <https://github.com/lvgig/tubular/actions>`_. It includes checks that;
+Make sure that pull requests pass our `CI <https://github.com/azukds/tubular/actions>`_. It includes checks that;
 
 - code is formatted with `black <https://black.readthedocs.io/en/stable/>`_
 - `flake8 <https://flake8.pycqa.org/en/latest/>`_ passes
@@ -93,7 +93,7 @@ All existing tests must pass and new functionality must be tested. We aim for 10
 
 There are some similarities across the tests for the different transformers in the package. Please refer to existing tests as they give great examples to work from and show what is expected to be covered in the tests.
 
-We also make use of the `test-aide <https://github.com/lvgig/test-aide>`_ package to make mocking easier and to help with generating data when `parametrizing <https://docs.pytest.org/en/6.2.x/parametrize.html>`_ tests for the correct output of transformers' transform methods.
+We also make use of the `test-aide <https://github.com/azukds/test-aide>`_ package to make mocking easier and to help with generating data when `parametrizing <https://docs.pytest.org/en/6.2.x/parametrize.html>`_ tests for the correct output of transformers' transform methods.
 
 We organise our tests with one script per transformer then group together tests for a particular method into a test class.
 
@@ -118,9 +118,9 @@ Optionally a ``reverse_transform(X)`` method may be appropriate too if there is 
 List of contributors
 --------------------
 
-For the full list of contributors see the `contributors page <https://github.com/lvgig/tubular/graphs/contributors>`_.
+For the full list of contributors see the `contributors page <https://github.com/azukds/tubular/graphs/contributors>`_.
 
-Prior to the open source release of the package there have been contributions from many individuals in the LV GI Data Science team;
+Prior to the open source release of the package there have been contributions from many individuals in the LV= GI (before becoming part of Allianz Personal) Data Science team:
 
 - Richard Angell
 - Ned Webster

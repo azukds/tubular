@@ -137,7 +137,7 @@ class TestFit(GenericFitTests):
 
         with pytest.raises(
             ValueError,
-            match="OneHotEncodingTransformer: column b has nulls - replace before proceeding",
+            match="transformer can only fit/apply on columns without nulls, columns b need to be imputed first",
         ):
             transformer.fit(df)
 
@@ -293,7 +293,7 @@ class TestTransform(
 
         with pytest.raises(
             ValueError,
-            match="OneHotEncodingTransformer: column b has nulls - replace before proceeding",
+            match="transformer can only fit/apply on columns without nulls, columns b need to be imputed first",
         ):
             transformer.transform(df_test)
 

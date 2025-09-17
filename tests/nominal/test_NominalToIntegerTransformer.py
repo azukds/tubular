@@ -10,6 +10,7 @@ from tests.base_tests import (
     GenericFitTests,
     OtherBaseBehaviourTests,
 )
+from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import NominalToIntegerTransformer
 
 
@@ -124,10 +125,22 @@ class TestTransform(GenericNominalTransformTests):
         x = NominalToIntegerTransformer(columns=["a", "b"])
 
         # set the mapping dict directly rather than fitting x on df so test works with helpers
-        x.mappings = {
+        mappings = {
             "a": {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5},
             "b": {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5},
         }
+
+        # mimic fit logic and use base  class to set attrs
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=mappings,
+        )
+
+        x.mappings = base_mapping_transformer.mappings
+        x.mappings_from_null = base_mapping_transformer.mappings_from_null
+        x.return_dtypes = {col: "Int8" for col in x.columns}
+
         x.null_mappings = {"a": None, "b": None}
 
         df_transformed = x.transform(df)

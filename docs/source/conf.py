@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath("../../"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "tubular"
-project_copyright = "2025, LV GI Data Science Team"
-author = "LV GI Data Science Team"
+project_copyright = "2025, Allianz UK Data Science Team"
+author = "Allianz UK Data Science Team"
 release = "tubular.__version__"
 
 # -- General configuration ---------------------------------------------------

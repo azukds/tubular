@@ -67,7 +67,7 @@ def _align_pandas_and_polars_dtypes(
     return polars_df
 
 
-def assert_frame_equal_dispatch(df1: FrameT, df2: FrameT) -> None:
+def assert_frame_equal_dispatch(df1: FrameT, df2: FrameT, **pandas_kwargs) -> None:
     """fixture to return correct pandas/polars assert_frame_equal method
 
     Parameters
@@ -78,10 +78,13 @@ def assert_frame_equal_dispatch(df1: FrameT, df2: FrameT) -> None:
     df1 : pd.DataFrame
         second df for comparison
 
+    pandas_kwargs:
+        additional kwargs to pass to pandas assert_frame_equal
+
     """
 
     if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
-        return assert_pandas_frame_equal(df1, df2)
+        return assert_pandas_frame_equal(df1, df2, **pandas_kwargs)
 
     if isinstance(df1, pl.DataFrame) and isinstance(df2, pl.DataFrame):
         return assert_polars_frame_equal(df1, df2)

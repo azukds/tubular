@@ -7,9 +7,9 @@ from typing import Optional, Union
 import pandas as pd
 from beartype import beartype
 
-from tubular._types import GenericKwargs, ListOfOneStr  # noqa: TCH001
 from tubular.base import BaseTransformer
 from tubular.mixins import SeparatorColumnMixin
+from tubular.types import GenericKwargs, ListOfOneStr  # noqa: TCH001
 
 
 class SeriesStrMethodTransformer(BaseTransformer):
@@ -66,7 +66,7 @@ class SeriesStrMethodTransformer(BaseTransformer):
         new_column_name: str,
         pd_method_name: str,
         columns: ListOfOneStr,
-        copy: Optional[bool] = None,
+        copy: bool = False,
         pd_method_kwargs: Optional[GenericKwargs] = None,
         **kwargs: Optional[bool],
     ) -> None:

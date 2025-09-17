@@ -1,7 +1,10 @@
+import warnings
+
 import narwhals as nw
 import pytest
 
 import tests.test_data as d
+from tests.base_tests import ReturnNativeTests
 from tests.mapping.test_BaseMappingTransformer import (
     BaseMappingTransformerInitTests,
     BaseMappingTransformerTransformTests,
@@ -56,7 +59,7 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "MappingTransformer"
 
 
-class TestTransform(BaseMappingTransformerTransformTests):
+class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     """Tests for the transform method on MappingTransformer."""
 
     @classmethod
@@ -196,7 +199,11 @@ class TestTransform(BaseMappingTransformerTransformTests):
     def test_no_applicable_mapping(self, mapping, mapped_col, return_dtypes, library):
         df = d.create_df_1(library=library)
 
-        x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+        x = MappingTransformer(
+            mappings=mapping,
+            return_dtypes=return_dtypes,
+            verbose=True,
+        )
 
         with pytest.warns(
             UserWarning,
@@ -215,7 +222,11 @@ class TestTransform(BaseMappingTransformerTransformTests):
     def test_excess_mapping_values(self, mapping, mapped_col, return_dtypes, library):
         df = d.create_df_1(library=library)
 
-        x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+        x = MappingTransformer(
+            mappings=mapping,
+            return_dtypes=return_dtypes,
+            verbose=True,
+        )
 
         with pytest.warns(
             UserWarning,
@@ -319,6 +330,50 @@ class TestTransform(BaseMappingTransformerTransformTests):
         df_transformed = transformer.transform(df)
 
         assert_frame_equal_dispatch(expected, df_transformed)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_warnings_issued_with_verbose_true(self, library):
+        """Test that warnings are issued when verbose is set to True."""
+        df = d.create_df_1(library=library)
+
+        mapping = {"a": {99: 99, 98: 98}, "b": {"z": "99", "y": "98"}}
+        return_dtypes = {"a": "Int32", "b": "String"}
+
+        transformer = MappingTransformer(
+            mappings=mapping,
+            return_dtypes=return_dtypes,
+            verbose=True,
+        )
+
+        with pytest.warns(
+            UserWarning,
+            match="MappingTransformer: No values from mapping for a exist in dataframe.",
+        ):
+            transformer.transform(df)
+
+        with pytest.warns(
+            UserWarning,
+            match="MappingTransformer: No values from mapping for b exist in dataframe.",
+        ):
+            transformer.transform(df)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_warnings_silenced_with_verbose_false(self, library):
+        """Test that warnings are silenced when verbose is set to defualt value False."""
+        df = d.create_df_1(library=library)
+
+        mapping = {"a": {99: 99, 98: 98}, "b": {"z": "99", "y": "98"}}
+        return_dtypes = {"a": "Int32", "b": "String"}
+
+        transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        # Guidance from pytest to use followiong syntax rather than pytest.warns(None)
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                transformer.transform(df)
+        except Warning:
+            pytest.fail("Warnings were issued despite verbose being set to False.")
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

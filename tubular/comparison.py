@@ -5,9 +5,9 @@ from typing import Optional
 import pandas as pd  # noqa: TCH002
 from beartype import beartype
 
-from tubular._types import ListOfTwoStrs  # noqa: TCH001
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
+from tubular.types import ListOfTwoStrs  # noqa: TCH001
 
 
 class EqualityChecker(

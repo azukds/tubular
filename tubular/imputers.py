@@ -3,19 +3,21 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Literal, Optional, Union
 
 import narwhals as nw
-import narwhals.selectors as ncs
 import polars as pl
 from beartype import beartype
 
-from tubular._utils import _assess_pandas_object_column
+from tubular._utils import (
+    _assess_pandas_object_column,
+    _convert_dataframe_to_narwhals,
+    _convert_series_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+)
 from tubular.base import BaseTransformer
 from tubular.mixins import WeightColumnMixin
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
+from tubular.types import DataFrame, Series
 
 pl.enable_string_cache()
 
@@ -32,20 +34,53 @@ class BaseImputer(BaseTransformer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
 
     FITS = False
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
-        """Impute missing values with median values calculated from fit method.
+    def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
+        """update input expressions to include imputation.
+
+        Parameters
+        ----------
+        expr : nw.Expr
+            initial expression
+        col: str
+            column being imputed
+
+        Returns
+        -------
+        nw.Expr: updated expression, with imputation
+
+        """
+
+        return (
+            expr.fill_null(value=self.impute_values_[col])
+            if (self.impute_values_[col] is not None)
+            else expr
+        )
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
+        """Impute missing values with values calculated from fit method.
 
         Parameters
         ----------
         X : FrameT
             Data to impute.
+
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
 
         Returns
         -------
@@ -53,20 +88,22 @@ class BaseImputer(BaseTransformer):
             Transformed input X with nulls imputed with the median value for the specified columns.
 
         """
-        self.check_is_fitted(["impute_values_"])
+        self.check_is_fitted("impute_values_")
 
-        X = nw.from_native(super().transform(X))
+        return_native = self._process_return_native(return_native_override)
 
-        new_col_expressions = [
-            nw.col(c).fill_null(self.impute_values_[c])
-            if self.impute_values_[c] is not None
-            else nw.col(c)
-            for c in self.columns
-        ]
+        X = _convert_dataframe_to_narwhals(X)
 
-        return X.with_columns(
-            new_col_expressions,
-        )
+        X = super().transform(X, return_native_override=False)
+
+        transform_expressions = {
+            col: self._generate_imputation_expressions(nw.col(col), col)
+            for col in self.columns
+        }
+
+        X = X.with_columns(**transform_expressions)
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
 
 class ArbitraryImputer(BaseImputer):
@@ -89,6 +126,9 @@ class ArbitraryImputer(BaseImputer):
 
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
     """
 
     polars_compatible = True
@@ -109,9 +149,30 @@ class ArbitraryImputer(BaseImputer):
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
 
+    def cat_to_enum_expr(self, expr: nw.Expr, categories: list[str]) -> nw.Expr:
+        """update expression to include handling of category types to allow new
+        impute value category
+
+        Parameters
+        ----------
+        expr : nw.Expr
+            initial expression
+        categories: list[str]
+            list of categories in field initially
+
+        Returns
+        -------
+        nw.Expr: updated expression, with category type handling
+
+        """
+
+        return expr.cast(nw.Enum(set(categories + [self.impute_value])))
+
     def _check_impute_value_type_works_with_columns(
         self,
-        X: FrameT,
+        X: DataFrame,
+        schema: nw.Schema,
+        native_namespace: Literal["pandas", "polars"],
     ) -> tuple[dict[str, str], list[StopIteration]]:
         """raises TypeError if there is a type clash between impute_value and columns in X for imputation
 
@@ -129,22 +190,44 @@ class ArbitraryImputer(BaseImputer):
             list of Unknown type columns, singled out for different type handling
 
         """
-        object_columns = set(self.columns).intersection(
-            [col for col, dtype in X.schema.items() if dtype == nw.Object],
-        )
-        cat_columns = set(self.columns).intersection(
-            X.select(ncs.categorical()).columns,
-        )
-        num_columns = set(self.columns).intersection(X.select(ncs.numeric()).columns)
-        bool_columns = set(self.columns).intersection(X.select(ncs.boolean()).columns)
-        str_columns = set(self.columns).intersection(X.select(ncs.string()).columns)
-        null_columns = set(self.columns).intersection(
-            [col for col, dtype in X.schema.items() if (dtype == nw.Unknown)],
-        )
+
+        object_columns = set()
+        cat_columns = set()
+        num_columns = set()
+        bool_columns = set()
+        str_columns = set()
+        null_columns = set()
+        for col in self.columns:
+            dtype = schema[col]
+            if dtype == nw.Object:
+                object_columns.add(col)
+            elif dtype == nw.Categorical:
+                cat_columns.add(col)
+            elif dtype in [
+                nw.Float32,
+                nw.Float64,
+                nw.Int64,
+                nw.Int32,
+                nw.Int16,
+                nw.Int8,
+            ]:
+                num_columns.add(col)
+            elif dtype == nw.Boolean:
+                bool_columns.add(col)
+            elif dtype == nw.String:
+                str_columns.add(col)
+            elif dtype == nw.Unknown:
+                null_columns.add(col)
+
+        if len(cat_columns) > 0 and native_namespace == "pandas":
+            warnings.warn(
+                f"{self.classname()}: this transformer will convert unordered categorical columns to ordered for pandas dfs",
+                stacklevel=2,
+            )
 
         # start with object columns, which can be a massive nuisance from pandas
         pandas_object_cols_to_polars_types = {}
-        if len(object_columns) > 0 and nw.get_native_namespace(X).__name__ == "pandas":
+        if len(object_columns) > 0 and native_namespace == "pandas":
             # pull out boolean columns from generic object columns
             for col in object_columns:
                 _, polars_type = _assess_pandas_object_column(
@@ -206,9 +289,12 @@ class ArbitraryImputer(BaseImputer):
             .union(null_columns),
         )
         if len(bad_type_cols) != 0:
+            bad_types = {
+                name: dtype for name, dtype in schema.items() if name in bad_type_cols
+            }
             msg = f"""
                 {self.classname()}: transformer can only handle Float/Int/Boolean/String/Categorical/Unknown type columns
-                but got columns with types {X.select(list(bad_type_cols)).schema}
+                but got columns with types {bad_types}
                 """
             raise TypeError(
                 msg,
@@ -216,8 +302,8 @@ class ArbitraryImputer(BaseImputer):
 
         return pandas_object_cols_to_polars_types, null_columns
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Impute missing values with the supplied impute_value.
         If columns is None all columns in X will be imputed.
 
@@ -226,23 +312,31 @@ class ArbitraryImputer(BaseImputer):
         X : FrameT
             Data containing columns to impute.
 
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
+
         Returns
         -------
         X : FrameT
             Transformed input X with nulls imputed with the specified impute_value, for the specified columns.
         """
 
-        self.check_is_fitted(["impute_value"])
-        self.columns_check(X)
+        X = _convert_dataframe_to_narwhals(X)
 
-        if len(X) == 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
+        schema = X.schema
+        native_namespace = nw.get_native_namespace(X).__name__
+
+        X = BaseTransformer.transform(self, X, return_native_override=False)
 
         (
             pandas_object_cols_to_polars_types,
             null_columns,
-        ) = self._check_impute_value_type_works_with_columns(X)
+        ) = self._check_impute_value_type_works_with_columns(
+            X,
+            schema,
+            native_namespace,
+        )
 
         # Save the original dtypes BEFORE we cast anything
         original_dtypes = {}
@@ -251,32 +345,43 @@ class ArbitraryImputer(BaseImputer):
                 # overwrite type if necessary, e.g. object->boolean
                 pandas_object_cols_to_polars_types[col]
                 if col in pandas_object_cols_to_polars_types
-                else X[col].dtype
+                else schema[col]
             )
 
-        # first handle categorical vars
-        # need to explicitly add category for pandas
-        is_pandas = nw.get_native_namespace(X).__name__ == "pandas"
-        if is_pandas:
-            X = nw.to_native(X)
-            for col in self.columns:
-                if str(original_dtypes[col]) == "Categorical" and (
-                    self.impute_value not in X[col].cat.categories
-                ):
-                    X[col] = X[col].cat.add_categories(
-                        self.impute_value,
-                    )
-            X = nw.from_native(X)
+        # have to handle categorical vars for pandas upfront
+        if native_namespace == "pandas":
+            transform_expressions = {
+                col: self.cat_to_enum_expr(
+                    nw.col(col),
+                    categories=X.get_column(col).cat.get_categories().to_list(),
+                )
+                if ((schema[col] == nw.Categorical) or (schema[col] == nw.Enum))
+                else nw.col(col)
+                for col in self.columns
+            }
+        else:
+            transform_expressions = {col: nw.col(col) for col in self.columns}
 
-        X = nw.from_native(super().transform(X))
+        # next handle imputing
+        transform_expressions = {
+            col: self._generate_imputation_expressions(
+                transform_expressions[col],
+                col,
+            )
+            for col in self.columns
+        }
 
-        # restore types that may have changed from e.g. fully imputing a float
-        # column may convert to int
-        # skip for Unknown type columns, which will warn and then convert to impute_value type
-        for col in set(self.columns).difference(null_columns):
-            X = X.with_columns(nw.col(col).cast(original_dtypes[col]))
+        # finally manage types
+        transform_expressions = {
+            col: transform_expressions[col].cast(original_dtypes[col])
+            if (col not in null_columns)
+            else transform_expressions[col]
+            for col in self.columns
+        }
 
-        return X
+        X = X.with_columns(**transform_expressions)
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 class MedianImputer(BaseImputer, WeightColumnMixin):
@@ -303,6 +408,9 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
@@ -319,8 +427,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series | None = None) -> FrameT:
+    @beartype
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> MedianImputer:
         """Calculate median values to impute with from X.
 
         Parameters
@@ -332,6 +440,10 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             Not required.
 
         """
+
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         super().fit(X, y)
 
         self.impute_values_ = {}
@@ -393,6 +505,9 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
@@ -409,8 +524,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series | None = None) -> MeanImputer:
+    @beartype
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> MeanImputer:
         """Calculate mean values to impute with from X.
 
         Parameters
@@ -422,6 +537,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             Not required.
 
         """
+
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         super().fit(X, y)
 
         self.impute_values_ = {}
@@ -478,6 +597,9 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
@@ -494,8 +616,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series | None = None) -> FrameT:
+    @beartype
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:
         """Calculate mode values to impute with from X - in the event of a tie,
         the highest modal value will be returned.
 
@@ -508,6 +630,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             Not required.
 
         """
+
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         super().fit(X, y)
 
         self.impute_values_ = {}
@@ -580,6 +706,9 @@ class NearestMeanResponseImputer(BaseImputer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
@@ -593,8 +722,8 @@ class NearestMeanResponseImputer(BaseImputer):
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: nw.Series) -> FrameT:
+    @beartype
+    def fit(self, X: DataFrame, y: Series) -> NearestMeanResponseImputer:
         """Calculate mean values to impute with.
 
         Parameters
@@ -608,6 +737,9 @@ class NearestMeanResponseImputer(BaseImputer):
             to the average response of the unknown levels is selected as the imputation value.
 
         """
+
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
 
         super().fit(X, y)
 
@@ -667,6 +799,9 @@ class NullIndicator(BaseTransformer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     """
 
     polars_compatible = True
@@ -678,8 +813,8 @@ class NullIndicator(BaseTransformer):
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Create new columns indicating the position of null values for each variable in self.columns.
 
         Parameters
@@ -688,11 +823,13 @@ class NullIndicator(BaseTransformer):
             Data to add indicators to.
 
         """
-        X = nw.from_native(super().transform(X))
+        super().transform(X)
+
+        X = _convert_dataframe_to_narwhals(X)
 
         for c in self.columns:
             X = X.with_columns(
-                (nw.col(c).is_null()).cast(nw.Boolean).alias(f"{c}_nulls"),
+                (nw.col(c).is_null()).alias(f"{c}_nulls"),
             )
 
-        return X
+        return X if not self.return_native else X.to_native()

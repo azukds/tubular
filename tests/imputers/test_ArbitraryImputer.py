@@ -12,6 +12,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import GenericImputerTransformTests
 from tubular.imputers import ArbitraryImputer
@@ -47,7 +48,11 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "ArbitraryImputer"
 
 
-class TestTransform(GenericImputerTransformTests, GenericTransformTests):
+class TestTransform(
+    GenericImputerTransformTests,
+    GenericTransformTests,
+    ReturnNativeTests,
+):
     """Tests for transformer.transform."""
 
     @classmethod
@@ -145,6 +150,13 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
         df_transformed_nw = nw.from_native(df_transformed_native)
 
         expected_dtype = df_nw[column].dtype
+
+        native_namespace = nw.get_native_namespace(df_nw).__name__
+
+        # for pandas categorical are converted to enum
+        if col_type == "Categorical" and native_namespace == "pandas":
+            expected_dtype = nw.Enum
+
         actual_dtype = df_transformed_nw[column].dtype
         assert (
             actual_dtype == expected_dtype
@@ -158,7 +170,14 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
             ),
         )
 
-        u.assert_frame_equal_dispatch(expected.to_native(), df_transformed_native)
+        u.assert_frame_equal_dispatch(
+            expected.to_native(),
+            df_transformed_native,
+            # this turns off checks for category metadata like ordering
+            # this transformer will convert an unordered pd categorical to ordered
+            # so this is needed
+            check_categorical=False,
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
@@ -263,6 +282,64 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
 
         u.assert_frame_equal_dispatch(expected.to_native(), df_transformed_native)
 
+    # have to overload this one, as has slightly different categorical type handling
+    @pytest.mark.parametrize(
+        ("library", "expected_df_3", "impute_values_dict"),
+        [
+            ("pandas", "pandas", {"b": "g", "c": "f"}),
+            ("polars", "polars", {"b": "g", "c": "f"}),
+        ],
+        indirect=["expected_df_3"],
+    )
+    def test_expected_output_with_object_and_categorical_columns(
+        self,
+        library,
+        expected_df_3,
+        initialized_transformers,
+        impute_values_dict,
+    ):
+        """Test that transform is giving the expected output when applied to object and categorical columns."""
+        # Create the DataFrame using the library parameter
+        df2 = d.create_df_2(library=library)
+
+        # Initialize the transformer
+        transformer = initialized_transformers[self.transformer_name]
+
+        transformer.impute_values_ = impute_values_dict
+
+        if self.transformer_name == "ArbitraryImputer":
+            transformer.impute_value = "f"
+
+        transformer.columns = ["b", "c"]
+
+        # Transform the DataFrame
+        df_transformed = transformer.transform(df2)
+
+        # Check whole dataframes
+        u.assert_frame_equal_dispatch(
+            df_transformed,
+            expected_df_3,
+            # this turns off checks for category metadata like ordering
+            # this transformer will convert an unordered pd categorical to ordered
+            # so this is needed
+            check_categorical=False,
+        )
+        df2 = nw.from_native(df2)
+        expected_df_3 = nw.from_native(expected_df_3)
+
+        for i in range(len(df2)):
+            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_expected_row = expected_df_3[[i]].to_native()
+
+            u.assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+                # this turns off checks for category metadata like ordering
+                # this transformer will convert an unordered pd categorical to ordered
+                # so this is needed
+                check_categorical=False,
+            )
+
     @pytest.mark.parametrize(
         ("library", "expected_df_4", "impute_values_dict"),
         [
@@ -271,7 +348,7 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
         ],
         indirect=["expected_df_4"],
     )
-    def test_expected_output_4(
+    def test_expected_output_when_adding_new_categorical_level(
         self,
         library,
         expected_df_4,
@@ -298,13 +375,14 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
         u.assert_frame_equal_dispatch(
             df_transformed,
             expected_df_4,
+            # this turns off checks for category metadata like ordering
+            # this transformer will convert an unordered pd categorical to ordered
+            # so this is needed
+            check_categorical=False,
         )
         df2 = nw.from_native(df2)
         expected_df_4 = nw.from_native(expected_df_4)
 
-        # Check outcomes for single rows
-        # turn off type change errors to avoid having to type the single rows
-        transformer.error_on_type_change = False
         for i in range(len(df2)):
             df_transformed_row = transformer.transform(df2[[i]].to_native())
             df_expected_row = expected_df_4[[i]].to_native()
@@ -312,6 +390,10 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
             u.assert_frame_equal_dispatch(
                 df_transformed_row,
                 df_expected_row,
+                # this turns off checks for category metadata like ordering
+                # this transformer will convert an unordered pd categorical to ordered
+                # so this is needed
+                check_categorical=False,
             )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -337,10 +419,12 @@ class TestTransform(GenericImputerTransformTests, GenericTransformTests):
 
         transformer = ArbitraryImputer(impute_value=1, columns=[column])
 
+        bad_types = dict(nw.from_native(df).select(nw.col(column)).schema.items())
+
         msg = re.escape(
             f"""
                 {self.transformer_name}: transformer can only handle Float/Int/Boolean/String/Categorical/Unknown type columns
-                but got columns with types {nw.from_native(df).select(nw.col(column)).schema}
+                but got columns with types {bad_types}
                 """,
         )
 

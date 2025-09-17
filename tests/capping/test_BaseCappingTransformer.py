@@ -7,6 +7,7 @@ import pytest
 
 import tests.test_data as d
 from tests.base_tests import (
+    DummyWeightColumnMixinTests,
     GenericFitTests,
     GenericInitTests,
     GenericTransformTests,
@@ -230,7 +231,11 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
             uninitialized_transformers[self.transformer_name](**args)
 
 
-class GenericCappingFitTests(WeightColumnFitMixinTests, GenericFitTests):
+class GenericCappingFitTests(
+    WeightColumnFitMixinTests,
+    GenericFitTests,
+    DummyWeightColumnMixinTests,
+):
     """Tests for BaseCappingTransformer.fit()."""
 
     @classmethod

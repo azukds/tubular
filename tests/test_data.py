@@ -234,6 +234,18 @@ def create_df_with_none_and_nan_cols(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library=library)
 
 
+def create_aggregate_over_rows_test_df(library="pandas"):
+    "create a minimal test df for AggregateRowsOverColumnTransformer"
+
+    df_dict = {
+        "a": [1, 2, 3, 4, 8],
+        "b": [2, 3, 4, 5, 9],
+        "c": ["A", "B", "A", "B", "A"],
+    }
+
+    return u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+
 def create_weighted_imputers_test_df(library="pandas"):
     """Create DataFrame to use imputer tests that correct values are imputed for weighted dataframes.
 

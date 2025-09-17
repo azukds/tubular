@@ -1,41 +1,39 @@
-"""This module contains a transformer that applies capping to numeric columns."""
+"""This module contains transformers for working with date columns"""
 
 from __future__ import annotations
 
+import copy
 import datetime
 import warnings
-import zoneinfo
-from typing import TYPE_CHECKING, Optional, Union
+from enum import Enum
+from typing import TYPE_CHECKING, Annotated, Literal, Optional, Union
 
 import narwhals as nw
-import narwhals.selectors as ncs
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from beartype.vale import Is
+from typing_extensions import deprecated
 
-from tubular._types import (  # noqa: TCH001
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+)
+from tubular.base import BaseTransformer
+from tubular.mapping import MappingTransformer
+from tubular.mixins import DropOriginalMixin
+from tubular.types import (  # noqa: TCH001
+    DataFrame,
     GenericKwargs,
     ListOfOneStr,
     ListOfThreeStrs,
     ListOfTwoStrs,
-    TimeUnitsOptionsStr,
 )
-from tubular.base import BaseTransformer
-from tubular.mixins import DropOriginalMixin
 
 if TYPE_CHECKING:
     from narhwals.typing import FrameT
 
 TIME_UNITS = ["us", "ns", "ms"]
-TIME_ZONES = zoneinfo.available_timezones().union({None})
-
-DATETIME_VARIANTS = [
-    nw.Datetime(time_unit=time_unit, time_zone=time_zone)
-    for time_unit in TIME_UNITS
-    for time_zone in TIME_ZONES
-    # exclude problem/generic timezones
-    if time_zone not in ["Factory", "localtime"]
-]
 
 
 class BaseGenericDateTransformer(
@@ -56,6 +54,9 @@ class BaseGenericDateTransformer(
     drop_original : bool
         Flag for whether to drop the original columns.
 
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
     **kwargs
         Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -64,6 +65,9 @@ class BaseGenericDateTransformer(
 
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
 
     """
 
@@ -82,13 +86,15 @@ class BaseGenericDateTransformer(
         self.drop_original = drop_original
         self.new_column_name = new_column_name
 
-    @nw.narwhalify
+    @beartype
     def check_columns_are_date_or_datetime(
         self,
-        X: FrameT,
+        X: DataFrame,
         datetime_only: bool,
     ) -> None:
-        """Raise a type error if a column to be operated on is not a datetime.datetime or datetime.date object
+        """Checks the schema of the DataFrame to ensure that each column listed in
+        self.columns is either a datetime or date type, depending on the datetime_only
+        flag. If a column does not meet the expected type criteria, a TypeError is raised.
 
         Parameters
         ----------
@@ -99,54 +105,68 @@ class BaseGenericDateTransformer(
         datetime_only: bool
             Indicates whether ONLY datetime types are accepted
 
+        Raises
+        ----------
+
+        TypeError: if non date/datetime types are found
+
+        TypeError: if mismatched date/datetime types are found,
+        types should be consistent
+
         """
 
-        type_dict = {}
-        datetime_type = "datetime64"
-        date_type = "date32[pyarrow]"
-        allowed_types = [datetime_type]
+        X = _convert_dataframe_to_narwhals(X)
+
+        type_msg = ["Datetime"]
+        date_type = nw.Date
+        allowed_types = [nw.Datetime]
         if not datetime_only:
             allowed_types = [*allowed_types, date_type]
+            type_msg += ["Date"]
 
-        date_columns = list(
-            X.select(ncs.by_dtype(nw.Date)).columns,
-        )
-
-        datetime_columns = list(
-            X.select(ncs.by_dtype(*DATETIME_VARIANTS)).columns,
-        )
+        schema = X.schema
 
         for col in self.columns:
-            is_datetime = col in datetime_columns
-            is_date = col in date_columns
-            if is_datetime:
-                type_dict[col] = datetime_type
+            is_datetime = False
+            is_date = False
+            if isinstance(schema[col], nw.Datetime):
+                is_datetime = True
 
-            elif (not datetime_only) and (is_date):
-                type_dict[col] = date_type
+            elif schema[col] == nw.Date:
+                is_date = True
 
-            else:
-                col_dtype = X.get_column(col).dtype
-
-                msg = f"{self.classname()}: {col} type should be in {allowed_types} but got {col_dtype}"
+            # first check for invalid types (non date/datetime)
+            if (not is_datetime) and (not (not datetime_only and is_date)):
+                msg = f"{self.classname()}: {col} type should be in {type_msg} but got {schema[col]}. Note, Datetime columns should have time_unit in {TIME_UNITS} and time_zones from zoneinfo.available_timezones()"
                 raise TypeError(msg)
 
-        present_types = set(type_dict.values())
+        # process datetime types for more readable error messages
+        present_types = {
+            dtype if not isinstance(dtype, nw.Datetime) else nw.Datetime
+            for name, dtype in schema.items()
+            if name in self.columns
+        }
 
         valid_types = present_types.issubset(set(allowed_types))
+        # convert to list and sort to ensure reproducible order
+        present_types = {str(value) for value in present_types}
+        present_types = list(present_types)
+        present_types.sort()
 
+        # next check for consistent types (all date or all datetime)
         if not valid_types or len(present_types) > 1:
-            msg = rf"{self.classname()}: Columns fed to datetime transformers should be {allowed_types} and have consistent types, but found {present_types}. Please use ToDatetimeTransformer to standardise."
+            msg = rf"{self.classname()}: Columns fed to datetime transformers should be {type_msg} and have consistent types, but found {present_types}. Note, Datetime columns should have time_unit in {TIME_UNITS} and time_zones from zoneinfo.available_timezones(). Please use ToDatetimeTransformer to standardise."
             raise TypeError(
                 msg,
             )
 
-    @nw.narwhalify
+    @beartype
     def transform(
         self,
-        X: FrameT,
+        X: DataFrame,
         datetime_only: bool = False,
-    ) -> FrameT:
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Base transform method, calls parent transform and validates data.
 
         Parameters
@@ -157,6 +177,10 @@ class BaseGenericDateTransformer(
         datetime_only: bool
             Indicates whether ONLY datetime types are accepted
 
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
+
         Returns
         -------
         X : pd/pl.DataFrame
@@ -164,11 +188,15 @@ class BaseGenericDateTransformer(
 
         """
 
-        X = nw.from_native(super().transform(X))
+        return_native = self._process_return_native(return_native_override)
+
+        X = super().transform(X, return_native_override=False)
+
+        X = _convert_dataframe_to_narwhals(X)
 
         self.check_columns_are_date_or_datetime(X, datetime_only=datetime_only)
 
-        return X
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
 
 class BaseDatetimeTransformer(BaseGenericDateTransformer):
@@ -213,17 +241,22 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
             **kwargs,
         )
 
-    @nw.narwhalify
+    @beartype
     def transform(
         self,
-        X: FrameT,
-    ) -> FrameT:
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """base transform method for transformers that operate exclusively on datetime columns
 
         Parameters
         ----------
         X : pd/pl.DataFrame
             Data containing self.columns
+
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
 
         Returns
         -------
@@ -232,11 +265,25 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
         """
 
-        return super().transform(X, datetime_only=True)
+        return_native = self._process_return_native(return_native_override)
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, datetime_only=True, return_native_override=False)
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@deprecated(
+    "This Transformer is deprecated, use DateDifferenceTransformer instead. "
+    "If you prefer this transformer to DateDifferenceTransformer, "
+    "let us know through a github issue",
+)
 class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     """Transformer to calculate the number of years between two dates.
+
+    !!! warning "Deprecated"
+        This transformer is now deprecated; use `DateDifferenceTransformer` instead.
 
     Parameters
     ----------
@@ -351,7 +398,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
             X = X.with_columns(
                 nw.when(
                     (nw.col(self.columns[0]).is_null())
-                    or (nw.col(self.columns[1]).is_null()),
+                    | (nw.col(self.columns[1]).is_null()),
                 )
                 .then(
                     self.missing_replacement,
@@ -383,14 +430,15 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         Name given to calculated datediff column. If None then {column_upper}_{column_lower}_datediff_{units}
         will be used.
     units : str, default = 'D'
-        Numpy datetime units, accepted values are 'D', 'h', 'm', 's'
-    copy : bool, default = True
+        Accepted values are "week", "fortnight", "lunar_month", "common_year", "custom_days", 'D', 'h', 'm', 's'
+    copy : bool, default = False
         Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
     verbose: bool, default = False
         Control level of detail in printouts
     drop_original:
         Boolean flag indicating whether to drop original columns.
-
+    custom_days_divider:
+        Integer value for the "custom_days" unit
     Attributes
     ----------
 
@@ -405,12 +453,41 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         self,
         columns: ListOfTwoStrs,
         new_column_name: str,
-        units: TimeUnitsOptionsStr = "D",
-        copy: Optional[bool] = None,
+        units: Literal[
+            "week",
+            "fortnight",
+            "lunar_month",
+            "common_year",
+            "custom_days",
+            "D",
+            "h",
+            "m",
+            "s",
+        ] = "D",
+        copy: bool = False,
         verbose: bool = False,
         drop_original: bool = False,
+        custom_days_divider: Optional[int] = None,
+        **kwargs: bool,
     ) -> None:
+        accepted_values_units = [
+            "week",
+            "fortnight",
+            "lunar_month",
+            "common_year",
+            "custom_days",
+            "D",
+            "h",
+            "m",
+            "s",
+        ]
+
+        if units not in accepted_values_units:
+            msg = f"{self.classname()}: units must be one of {accepted_values_units}, got {units}"
+            raise ValueError(msg)
+
         self.units = units
+        self.custom_days_divider = custom_days_divider
 
         super().__init__(
             columns=columns,
@@ -418,6 +495,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
             drop_original=drop_original,
             copy=copy,
             verbose=verbose,
+            **kwargs,
         )
 
         # This attribute is not for use in any method, use 'columns' instead.
@@ -425,7 +503,8 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[1]
 
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Calculate the difference between the given fields in the specified units.
 
         Parameters
@@ -435,22 +514,64 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         """
 
-        X = nw.from_native(super().transform(X))
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
+
+        # mapping for units and corresponding timedelta arg values
+        UNITS_TO_TIMEDELTA_PARAMS = {
+            "week": (7, "D"),
+            "fortnight": (14, "D"),
+            "lunar_month": (
+                int(29.5 * 24),
+                "h",
+            ),  # timedelta values need to be whole numbers so (29.5, 'D') cannot be used
+            "common_year": (365, "D"),
+            "D": (1, "D"),
+            "h": (1, "h"),
+            "m": (1, "m"),
+            "s": (1, "s"),
+        }
+
+        # list of units that require time truncation
+        UNITS_TO_TRUNCATE_TIME_FOR = [
+            "week",
+            "fortnight",
+            "lunar_month",
+            "common_year",
+            "custom_days",
+            "D",
+        ]
+
+        start_date_col = nw.col(self.columns[0])
+        end_date_col = nw.col(self.columns[1])
+
+        # truncating time for specific units
+        if self.units in UNITS_TO_TRUNCATE_TIME_FOR:
+            start_date_col = start_date_col.dt.truncate("1d")
+            end_date_col = end_date_col.dt.truncate("1d")
+
+        if self.units == "custom_days":
+            timedelta_value, timedelta_format = self.custom_days_divider, "D"
+            denominator = np.timedelta64(timedelta_value, timedelta_format)
+        else:
+            timedelta_value, timedelta_format = UNITS_TO_TIMEDELTA_PARAMS[self.units]
+            denominator = np.timedelta64(timedelta_value, timedelta_format)
 
         X = X.with_columns(
-            (
-                (nw.col(self.columns[1]) - nw.col(self.columns[0]))
-                / np.timedelta64(1, self.units)
-            ).alias(self.new_column_name),
+            ((end_date_col - start_date_col) / denominator).alias(self.new_column_name),
         )
 
         # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             self.columns,
+            return_native=False,
         )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 class ToDatetimeTransformer(BaseGenericDateTransformer):
@@ -818,6 +939,29 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         )
 
 
+class DatetimeInfoOptions(str, Enum):
+    __slots__ = ()
+
+    TIME_OF_DAY = "timeofday"
+    TIME_OF_MONTH = "timeofmonth"
+    TIME_OF_YEAR = "timeofyear"
+    DAY_OF_WEEK = "dayofweek"
+
+
+DatetimeInfoOptionStr = Annotated[
+    str,
+    Is[lambda s: s in DatetimeInfoOptions._value2member_map_],
+]
+DatetimeInfoOptionList = Annotated[
+    list,
+    Is[
+        lambda list_value: all(
+            entry in DatetimeInfoOptions._value2member_map_ for entry in list_value
+        )
+    ],
+]
+
+
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
 
@@ -831,47 +975,25 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     datetime_mappings : dict, default = {}
         Optional argument to define custom mappings for datetime values.
-        Keys of the dictionary must be contained in `include`
+        Keys of the dictionary must be contained in `include`.
         All possible values of each feature must be included in the mappings,
-        ie, a mapping for `dayofweek` must include all values 0-6;
-        datetime_mappings = {"dayofweek": {"week": [0, 1, 2, 3, 4],
-                                           "weekend": [5, 6]}}
-        The values for the mapping array must be iterable;
-        datetime_mappings = {"timeofday": {"am": range(0, 12),
-                                           "pm": range(12, 24)}}
+        ie, a mapping for `dayofweek` must include all values 1-7;
+        datetime_mappings = {
+                             "dayofweek": {
+                                           **{i: "week" for i in range(1,6)},
+                                           **{i: "week" for i in range(6,8)}
+                                           }
+                            }
+
         The required ranges for each mapping are:
             timeofday: 0-23
             timeofmonth: 1-31
             timeofyear: 1-12
-            dayofweek: 0-6
+            dayofweek: 1-7
 
-        If in include but no mappings provided default values will be used as follows:
-           timeofday_mapping = {
-                "night": range(0, 6),  # Midnight - 6am
-                "morning": range(6, 12),  # 6am - Noon
-                "afternoon": range(12, 18),  # Noon - 6pm
-                "evening": range(18, 24),  # 6pm - Midnight
-            }
-            timeofmonth_mapping = {
-                "start": range(0, 11),
-                "middle": range(11, 21),
-                "end": range(21, 32),
-            }
-            timeofyear_mapping = {
-                "spring": range(3, 6),  # Mar, Apr, May
-                "summer": range(6, 9),  # Jun, Jul, Aug
-                "autumn": range(9, 12),  # Sep, Oct, Nov
-                "winter": [12, 1, 2],  # Dec, Jan, Feb
-            }
-            dayofweek_mapping = {
-                "monday": [0],
-                "tuesday": [1],
-                "wednesday": [2],
-                "thursday": [3],
-                "friday": [4],
-                "saturday": [5],
-                "sunday": [6],
-            }
+        If an option is present in 'include' but no mappings are provided,
+        then default values from cls.DEFAULT_MAPPINGS will be used for this
+        option.
 
     drop_original: str
         indicates whether to drop provided columns post transform
@@ -898,79 +1020,64 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     """
 
-    polars_compatible = False
-
-    TIME_OF_DAY = "timeofday"
-    TIME_OF_MONTH = "timeofmonth"
-    TIME_OF_YEAR = "timeofyear"
-    DAY_OF_WEEK = "dayofweek"
+    polars_compatible = True
 
     DEFAULT_MAPPINGS = {
-        TIME_OF_DAY: {
-            "night": range(6),  # Midnight - 6am
-            "morning": range(6, 12),  # 6am - Noon
-            "afternoon": range(12, 18),  # Noon - 6pm
-            "evening": range(18, 24),  # 6pm - Midnight
+        DatetimeInfoOptions.TIME_OF_DAY: {
+            **{i: "night" for i in range(6)},  # Midnight - 6am
+            **{i: "morning" for i in range(6, 12)},  # 6am - Noon
+            **{i: "afternoon" for i in range(12, 18)},  # Noon - 6pm
+            **{i: "evening" for i in range(18, 24)},  # 6pm - Midnight
         },
-        TIME_OF_MONTH: {
-            "start": range(1, 11),
-            "middle": range(11, 21),
-            "end": range(21, 32),
+        DatetimeInfoOptions.TIME_OF_MONTH: {
+            **{i: "start" for i in range(1, 11)},
+            **{i: "middle" for i in range(11, 21)},
+            **{i: "end" for i in range(21, 32)},
         },
-        TIME_OF_YEAR: {
-            "spring": range(3, 6),  # Mar, Apr, May
-            "summer": range(6, 9),  # Jun, Jul, Aug
-            "autumn": range(9, 12),  # Sep, Oct, Nov
-            "winter": [12, 1, 2],  # Dec, Jan, Feb
+        DatetimeInfoOptions.TIME_OF_YEAR: {
+            **{i: "spring" for i in range(3, 6)},  # Mar, Apr, May
+            **{i: "summer" for i in range(6, 9)},  # Jun, Jul, Aug
+            **{i: "autumn" for i in range(9, 12)},  # Sep, Oct, Nov
+            **{i: "winter" for i in [12, 1, 2]},  # Dec, Jan, Feb
         },
-        DAY_OF_WEEK: {
-            "monday": [0],
-            "tuesday": [1],
-            "wednesday": [2],
-            "thursday": [3],
-            "friday": [4],
-            "saturday": [5],
-            "sunday": [6],
+        DatetimeInfoOptions.DAY_OF_WEEK: {
+            1: "monday",
+            2: "tuesday",
+            3: "wednesday",
+            4: "thursday",
+            5: "friday",
+            6: "saturday",
+            7: "sunday",
         },
     }
 
     INCLUDE_OPTIONS = list(DEFAULT_MAPPINGS.keys())
 
     RANGE_TO_MAP = {
-        TIME_OF_DAY: set(range(24)),
-        TIME_OF_MONTH: set(range(1, 32)),
-        TIME_OF_YEAR: set(range(1, 13)),
-        DAY_OF_WEEK: set(range(7)),
+        DatetimeInfoOptions.TIME_OF_DAY: set(range(24)),
+        DatetimeInfoOptions.TIME_OF_MONTH: set(range(1, 32)),
+        DatetimeInfoOptions.TIME_OF_YEAR: set(range(1, 13)),
+        DatetimeInfoOptions.DAY_OF_WEEK: set(range(1, 8)),
     }
 
     DATETIME_ATTR = {
-        TIME_OF_DAY: "hour",
-        TIME_OF_MONTH: "day",
-        TIME_OF_YEAR: "month",
-        DAY_OF_WEEK: "weekday",
+        DatetimeInfoOptions.TIME_OF_DAY: "hour",
+        DatetimeInfoOptions.TIME_OF_MONTH: "day",
+        DatetimeInfoOptions.TIME_OF_YEAR: "month",
+        DatetimeInfoOptions.DAY_OF_WEEK: "weekday",
     }
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        include: str | list[str] | None = None,
-        datetime_mappings: dict[str,] | None = None,
-        drop_original: bool = False,
+        columns: Union[str, list[str]],
+        include: Optional[DatetimeInfoOptionList] = None,
+        datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
+        drop_original: Optional[bool] = False,
         **kwargs: dict[str, bool],
     ) -> None:
         if include is None:
             include = self.INCLUDE_OPTIONS
-        else:
-            if type(include) is not list:
-                msg = f"{self.classname()}: include should be List"
-                raise TypeError(msg)
-
-        if datetime_mappings is None:
-            datetime_mappings = {}
-        else:
-            if type(datetime_mappings) is not dict:
-                msg = f"{self.classname()}: datetime_mappings should be Dict"
-                raise TypeError(msg)
 
         super().__init__(
             columns=columns,
@@ -979,123 +1086,118 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             **kwargs,
         )
 
-        for var in include:
-            if var not in self.INCLUDE_OPTIONS:
-                msg = f"{self.classname()}: elements in include should be in {self.INCLUDE_OPTIONS}"
-                raise ValueError(msg)
-
-        if datetime_mappings != {}:
-            for key, mapping in datetime_mappings.items():
-                if type(mapping) is not dict:
-                    msg = f"{self.classname()}: values in datetime_mappings should be dict"
-                    raise TypeError(msg)
-                if key not in include:
-                    msg = f"{self.classname()}: keys in datetime_mappings should be in include"
-                    raise ValueError(msg)
-
         self.include = include
         self.datetime_mappings = datetime_mappings
-        self.mappings_provided = list(self.datetime_mappings.keys())
+        self._process_provided_mappings(datetime_mappings=datetime_mappings)
 
-        self._process_provided_mappings()
+        # this is a situation where we know the values our mappings allow,
+        # so enum type is more appropriate than categorical and we
+        # will cast to this at the end
+        self.enums = {
+            include_option: nw.Enum(
+                sorted(set(self.final_datetime_mappings[include_option].values())),
+            )
+            for include_option in self.include
+        }
 
-    def _process_provided_mappings(self) -> None:
-        """Method to process user provided mappings. Sets mappings attribute, then transforms to set a second
-        inverted_datetime_mappings attribute. Validates against RANGE_TO_MAP.
+        self.mapping_transformer = MappingTransformer(
+            mappings={
+                col + "_" + include_option: self.final_datetime_mappings[include_option]
+                for col in self.columns
+                for include_option in self.include
+            },
+            return_dtypes={
+                col + "_" + include_option: "Categorical"
+                for col in self.columns
+                for include_option in self.include
+            },
+        )
+
+    def _process_provided_mappings(
+        self,
+        datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]],
+    ) -> None:
+        """Method to process user provided mappings. Sets datetime_mappings attribute, then validates against RANGE_TO_MAP.
 
         Returns
         -------
         None
         """
 
-        self.mappings = {}
-        self.inverted_datetime_mappings = {}
-        for include_option in self.INCLUDE_OPTIONS:
-            if (include_option in self.include) and (
-                include_option in self.mappings_provided
-            ):
-                self.mappings[include_option] = self.datetime_mappings[include_option]
-            else:
-                self.mappings[include_option] = self.DEFAULT_MAPPINGS[include_option]
-
-            # Invert dictionaries for quicker lookup
-            if include_option in self.include:
-                self.inverted_datetime_mappings[include_option] = {
-                    vi: k for k, v in self.mappings[include_option].items() for vi in v
-                }
-
-                # check provided mappings fit required format
-                if (
-                    set(self.inverted_datetime_mappings[include_option].keys())
-                    != self.RANGE_TO_MAP[include_option]
-                ):
-                    msg = f"{self.classname()}: {include_option} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.inverted_datetime_mappings[include_option].keys())} are missing"
+        # initialise mappings attr with defaults,
+        # and overwrite with user provided mappings
+        # where possible
+        self.final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
+        if datetime_mappings:
+            for key in datetime_mappings:
+                if key not in self.include:
+                    msg = f"{self.classname()}: keys in datetime_mappings should be in include"
                     raise ValueError(msg)
-            else:
-                self.inverted_datetime_mappings[include_option] = {}
+                self.final_datetime_mappings[key] = copy.deepcopy(
+                    datetime_mappings[key],
+                )
 
-    def _map_values(self, value: float, include_option: str) -> str:
-        """Method to apply mappings for a specified interval ("timeofday", "timeofmonth", "timeofyear" or "dayofweek")
-        from corresponding mapping attribute to a single value.
+        for include_option in self.include:
+            # check provided mappings fit required format
+            if (
+                set(self.final_datetime_mappings[include_option].keys())
+                != self.RANGE_TO_MAP[include_option]
+            ):
+                msg = f"{self.classname()}: {include_option.value} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.final_datetime_mappings[include_option].keys())} are missing"
+                raise ValueError(msg)
 
-        Parameters
-        ----------
-        include_option : str
-            the time period to map "timeofday", "timeofmonth", "timeofyear" or "dayofweek"
-
-        value : float or int
-            the value to be mapped
-
-
-        Returns
-        -------
-        str : str
-            Mapped value
-        """
-        if isinstance(value, float):
-            if np.isnan(value):
-                return np.nan
-            if value.is_integer():
-                value = int(value)
-
-        if isinstance(value, int) and value in self.RANGE_TO_MAP[include_option]:
-            return self.inverted_datetime_mappings[include_option][value]
-
-        msg = f"{self.classname()}: value for {include_option} mapping in self._map_values should be an integer value in {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}"
-        raise ValueError(msg)
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Transform - Extracts new features from datetime variables.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Data with columns to extract info from.
 
         Returns
         -------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Transformed input X with added columns of extracted information.
         """
-        X = super().transform(X)
+        X = super().transform(X, return_native_override=False)
 
-        for col in self.columns:
-            for include_option in self.include:
-                X[col + "_" + include_option] = getattr(
-                    X[col].dt,
+        transform_dict = {
+            col + "_" + include_option: (
+                getattr(
+                    nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
-                ).apply(
-                    self._map_values,
-                    include_option=include_option,
+                )().replace_strict(
+                    self.mapping_transformer.mappings[col + "_" + include_option],
                 )
+            )
+            for col in self.columns
+            for include_option in self.include
+        }
+
+        # final casts
+        transform_dict = {
+            col + "_" + include_option: transform_dict[col + "_" + include_option].cast(
+                self.enums[include_option],
+            )
+            for col in self.columns
+            for include_option in self.include
+        }
+
+        X = X.with_columns(
+            **transform_dict,
+        )
 
         # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             self.columns,
+            return_native=False,
         )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
@@ -1141,7 +1243,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
     def __init__(
         self,
@@ -1266,29 +1368,40 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             )
             raise ValueError(msg)
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Transform - creates column containing sine or cosine of another datetime column.
 
         Which function is used is stored in the self.method attribute.
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Data to transform.
+
+        return_native_override: Optional[bool]
+            Option to override return_native attr in transformer, useful when calling parent
+            methods
 
         Returns
         -------
-        X : pd.DataFrame
+        X : pd/pl.DataFrame
             Input X with additional columns added, these are named "<method>_<original_column>"
         """
-        X = super().transform(X)
+        X = _convert_dataframe_to_narwhals(X)
+        return_native = self._process_return_native(return_native_override)
 
+        X = super().transform(X, return_native_override=False)
+
+        exprs = {}
         for column in self.columns:
             if not isinstance(self.units, dict):
-                column_in_desired_unit = getattr(X[column].dt, self.units)
                 desired_units = self.units
             elif isinstance(self.units, dict):
-                column_in_desired_unit = getattr(X[column].dt, self.units[column])
                 desired_units = self.units[column]
             if not isinstance(self.period, dict):
                 desired_period = self.period
@@ -1298,14 +1411,37 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for method in self.method:
                 new_column_name = f"{method}_{desired_period}_{desired_units}_{column}"
 
-                X[new_column_name] = getattr(np, method)(
-                    column_in_desired_unit * (2.0 * np.pi / desired_period),
-                )
+                # Calculate the sine or cosine of the column in the desired unit
+                expr = getattr(
+                    nw.col(column).dt,
+                    desired_units,
+                )() * (2 * np.pi / desired_period)
 
+                expr = (
+                    expr.map_batches(
+                        lambda s: np.sin(
+                            s.to_numpy(),
+                        ),
+                        return_dtype=nw.Float64,
+                    )
+                    if method == "sin"
+                    else expr.map_batches(
+                        lambda s: np.cos(
+                            s.to_numpy(),
+                        ),
+                        return_dtype=nw.Float64,
+                    )
+                )
+                expr = expr.alias(new_column_name)
+                exprs[new_column_name] = expr
+
+        X = X.with_columns(**exprs)
         # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             self,
             X,
             self.drop_original,
             self.columns,
+            return_native=False,
         )
+        return _return_narwhals_or_native_dataframe(X, return_native)
