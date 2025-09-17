@@ -11,12 +11,10 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
-from tubular.types import NumericTypes
+from tubular.types import DataFrame, NumericTypes
 
 if TYPE_CHECKING:
     from narhwals.typing import FrameT
-
-from tubular.types import DataFrame
 
 
 class CheckNumericMixin:
@@ -72,23 +70,8 @@ class DropOriginalMixin:
 
         return type(self).__name__
 
-    def set_drop_original_column(self, drop_original: bool) -> None:
-        """Helper method for validating 'drop_original' argument.
-
-        Parameters
-        ----------
-        drop_original : bool
-            boolean dictating dropping the input columns from X after checks.
-
-        """
-        # check if 'drop_original' argument is boolean
-        if type(drop_original) is not bool:
-            msg = f"{self.classname()}: drop_original should be bool"
-            raise TypeError(msg)
-
-        self.drop_original = drop_original
-
     @beartype
+    @nw.narwhalify
     def drop_original_column(
         self,
         X: DataFrame,
