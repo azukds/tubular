@@ -1,6 +1,7 @@
 # tests to apply to all columns str or list transformers
 import copy
 import re
+from copy import deepcopy
 
 import joblib
 import narwhals as nw
@@ -797,6 +798,29 @@ class DummyWeightColumnMixinTests:
             match=msg,
         ):
             transformer.fit(df, df["a"])
+
+
+class FromJsonTests:
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_from_json_output_matches_original(
+        self,
+        minimal_dataframe_lookup,
+        initialized_transformers,
+    ):
+        df = minimal_dataframe_lookup[self.transformer_name]
+        x = initialized_transformers[self.transformer_name]
+
+        x = x.fit(df, df["a"])
+
+        json_dict = x.to_json()
+
+        x_from_json = deepcopy(x).from_json(json_dict)
+
+        assert x == x_from_json
 
 
 class GenericTransformTests:

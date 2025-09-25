@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
 import polars as pl
@@ -43,6 +43,22 @@ class BaseImputer(BaseTransformer):
     polars_compatible = True
 
     FITS = False
+
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        self.check_is_fitted("impute_values_")
+
+        json_dict = super().to_json()
+
+        # slightly awkward here as API not fully shared
+        # across classes
+        if not isinstance(self, ArbitraryImputer):
+            json_dict["init"]["weights_column"] = self.weights_column
+        else:
+            json_dict["init"]["impute_value"] = self.impute_value
+
+        json_dict["fit"]["impute_values_"] = self.impute_values_
+
+        return json_dict
 
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
         """update input expressions to include imputation.
@@ -149,6 +165,15 @@ class ArbitraryImputer(BaseImputer):
 
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
+
+    @beartype
+    def __eq__(self, other: ArbitraryImputer) -> bool:
+        if not super().__eq__(other):
+            return False
+
+        return (self.impute_value == other.impute_value) & (
+            self.impute_values_ == other.impute_values_
+        )
 
     def cat_to_enum_expr(self, expr: nw.Expr, categories: list[str]) -> nw.Expr:
         """update expression to include handling of category types to allow new
@@ -429,6 +454,13 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
     @beartype
+    def __eq__(self, other: MedianImputer) -> bool:
+        if not super().__eq__(other):
+            return False
+
+        return self.weights_column == other.weights_column
+
+    @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> MedianImputer:
         """Calculate median values to impute with from X.
 
@@ -526,6 +558,13 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
     @beartype
+    def __eq__(self, other: MeanImputer) -> bool:
+        if not super().__eq__(other):
+            return False
+
+        return self.weights_column == other.weights_column
+
+    @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> MeanImputer:
         """Calculate mean values to impute with from X.
 
@@ -616,6 +655,13 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         super().__init__(columns=columns, **kwargs)
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
+
+    @beartype
+    def __eq__(self, other: ModeImputer) -> bool:
+        if not super().__eq__(other):
+            return False
+
+        return self.weights_column == other.weights_column
 
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:

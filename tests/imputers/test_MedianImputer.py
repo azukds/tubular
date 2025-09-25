@@ -6,6 +6,7 @@ import tests.test_data as d
 from tests import utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FromJsonTests,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -122,7 +123,7 @@ class TestTransform(
         cls.transformer_name = "MedianImputer"
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, FromJsonTests):
     """
     Class to run tests for BaseTransformerBehaviour behaviour outside the three standard methods.
     May need to overwite specific tests in this class if the tested transformer modifies this behaviour.

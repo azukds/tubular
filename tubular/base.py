@@ -4,7 +4,7 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
@@ -106,6 +106,34 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         self.copy = copy
         self.return_native = return_native
+
+    @beartype
+    def __eq__(self, other: BaseTransformer) -> bool:
+        return (
+            (self.columns == other.columns)
+            & (self.copy == other.copy)
+            & (self.verbose == other.verbose)
+            & (self.return_native == other.return_native)
+        )
+
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        return {
+            "init": {
+                "columns": self.columns,
+                "copy": self.copy,
+                "verbose": self.verbose,
+                "return_native": self.return_native,
+            },
+            "fit": {},
+        }
+
+    def from_json(cls, json: dict[str, Any]) -> BaseTransformer:
+        cls.__init__(**json["init"])
+
+        for attr in json["fit"]:
+            setattr(cls, attr, json["fit"][attr])
+
+        return cls
 
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
