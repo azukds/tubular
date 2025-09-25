@@ -158,12 +158,14 @@ class TestTransform(
             expected_dtype = nw.Enum
 
         actual_dtype = df_transformed_nw[column].dtype
+
         assert (
             actual_dtype == expected_dtype
         ), f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
 
         # also check full df against expectation
         expected = df_nw.clone()
+
         expected = expected.with_columns(
             nw.new_series(name=column, values=expected_values, backend=library).cast(
                 getattr(nw, col_type),

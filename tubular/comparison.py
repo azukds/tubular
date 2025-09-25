@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import pandas as pd  # noqa: TCH002
+from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class EqualityChecker(
     DropOriginalMixin,
     NewColumnNameMixin,

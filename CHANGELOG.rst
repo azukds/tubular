@@ -24,6 +24,14 @@ Each individual change should have a link to the pull request after the descript
 - chore: renamed AggregateRowOverColumnsTransformer to AggregateRowsOverColumnTransformer
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
+- feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
+- chore: turned on doctest
+- chore: deprecated DataFrameMethodTransformer
+- chore: added doctest examples for BaseTransfomer
+- chore: deleted stale example notebooks for BaseTransfomer (replaced by doctest) and DataFrameMethodTransformer (deprecated)
+- bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype
+- chore: deprecated transformers that are not being converted to narwhals, and moved to bottom of their files. `#433 <https://github.com/azukds/tubular/issues/433>_`
+- chore: edited package init to only advertise non-deprecated transformers (and not base classes)
 
 1.4.8 (03/09/25)
 ----------------
@@ -38,6 +46,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 
+- feat: narwhalified DatetimeInfoExtractor `#378 <https://github.com/azukds/tubular/issues/378>_`
 - feat: optimisations for MeanResponseTransformer, further optimisations for  MappingTransformer `#451 <https://github.com/azukds/tubular/issues/451>_`
 
 1.4.6 (19/08/2025)

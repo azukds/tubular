@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import pandas as pd
+from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import NewColumnNameMixin, SeparatorColumnMixin
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If aspects of it have been useful to you, please raise an issue
+    for it to be replaced with more specific transformers
+    """,
+)
 class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
     """Tranformer that applies a pandas.Series.str method.
 
@@ -128,6 +136,12 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class StringConcatenator(NewColumnNameMixin, SeparatorColumnMixin, BaseTransformer):
     """Transformer to combine data from specified columns, of mixed datatypes, into a new column containing one string.
 

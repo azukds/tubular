@@ -11,6 +11,7 @@ import pandas as pd
 from beartype import beartype
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -65,6 +66,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
 
+    Example:
+    --------
+    >>> BaseTransformer(
+    ... columns='a',
+    ...    )
+    BaseTransformer(columns=['a'])
     """
 
     polars_compatible = True
@@ -115,6 +122,15 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y : None or pd.DataFrame or pd.Series, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer=BaseTransformer(
+        ... columns='a',
+        ...    )
+        >>> df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> transformer.fit(df)
+        BaseTransformer(columns=['a'])
         """
         if self.verbose:
             print("BaseTransformer.fit() called")
@@ -151,6 +167,24 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y : pd/pl.Series
             Response variable.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer=BaseTransformer(
+        ... columns='a',
+        ...    )
+        >>> X=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> y=pl.Series(name='a', values=[1,2])
+        >>> transformer._combine_X_y(X, y)
+        shape: (2, 3)
+        ┌─────┬─────┬─────────────────────┐
+        │ a   ┆ b   ┆ _temporary_response │
+        │ --- ┆ --- ┆ ---                 │
+        │ i64 ┆ i64 ┆ i64                 │
+        ╞═════╪═════╪═════════════════════╡
+        │ 1   ┆ 3   ┆ 1                   │
+        │ 2   ┆ 4   ┆ 2                   │
+        └─────┴─────┴─────────────────────┘
         """
         if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
             msg = f"{self.classname()}: X should be a polars or pandas DataFrame/LazyFrame"
@@ -179,6 +213,16 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         Returns
         ----------
         bool: whether or not to return native type
+
+        Example:
+        --------
+        >>> transformer=BaseTransformer(
+        ... columns='a',
+        ... return_native=True
+        ... )
+
+        >>> transformer._process_return_native(return_native_override=False)
+        False
         """
 
         return (
@@ -211,6 +255,25 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : pd/pl.DataFrame
             Input X, copied if specified by user.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer=BaseTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> transformer.transform(df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
         """
 
         return_native = self._process_return_native(return_native_override)
@@ -243,6 +306,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         attributes : List
             List of str values giving names of attribute to check exist on self.
 
+        Example:
+        --------
+        >>> transformer=BaseTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> transformer.check_is_fitted('columns')
         """
         check_is_fitted(self, attribute)
 
@@ -255,6 +325,16 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : pd/pl.DataFrame
             Data to check columns are in.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer=BaseTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> transformer.columns_check(df)
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -271,6 +351,15 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             )
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has been deprecated in favour of more specialised transformers.
+    See the aggregations module for aggregation type functionality formerly covered by
+    this transformer.
+    If other functionality was being used from this transformer, then please submit an
+    issue for it to be redeveloped!
+    """,
+)
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
     """Tranformer that applies a pandas.DataFrame method.

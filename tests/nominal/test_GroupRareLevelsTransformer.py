@@ -193,9 +193,16 @@ class TestTransform(GenericNominalTransformTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        df = nw.from_native(df)
+        # set categories for enum
+        categories = ["e", "c", "a", "rare"]
 
-        return df.with_columns(nw.col("c").cast(nw.Categorical)).to_native()
+        return (
+            nw.from_native(df)
+            .with_columns(
+                nw.col("c").cast(nw.Enum(categories=categories)),
+            )
+            .to_native()
+        )
 
     def expected_df_2(self, library="pandas"):
         """Expected output for test_expected_output_weight."""
@@ -247,7 +254,6 @@ class TestTransform(GenericNominalTransformTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_no_weight(self, library):
         """Test that the output is expected from transform."""
-
         df = d.create_df_5(library=library)
 
         # first handle nulls
@@ -266,7 +272,7 @@ class TestTransform(GenericNominalTransformTests):
 
         df_transformed = x.transform(df)
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_weight(self, library):

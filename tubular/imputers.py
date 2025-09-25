@@ -8,6 +8,7 @@ from typing import Literal, Optional, Union
 import narwhals as nw
 import polars as pl
 from beartype import beartype
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _assess_pandas_object_column,
@@ -899,6 +900,65 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         return self
 
 
+class NullIndicator(BaseTransformer):
+    """Class to create a binary indicator column for null values.
+
+    Parameters
+    ----------
+    columns : None or str or list, default = None
+        Columns to produce indicator columns for, if the default of None is supplied all columns in X are used
+        when the transform method is called.
+
+    Attributes
+    ----------
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    """
+
+    polars_compatible = True
+
+    def __init__(
+        self,
+        columns: str | list[str] | None = None,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        super().__init__(columns=columns, **kwargs)
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Create new columns indicating the position of null values for each variable in self.columns.
+
+        Parameters
+        ----------
+        X : FrameT
+            Data to add indicators to.
+
+        """
+        X = super().transform(X, return_native_override=False)
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = X.with_columns(
+            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
+        )
+
+        return X if not self.return_native else X.to_native()
+
+
+# DEPRECATED TRANSFORMERS
+
+
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class NearestMeanResponseImputer(BaseImputer):
     """Class to impute missing values with; the value for which the average response is closest
     to the average response for the unknown levels.
@@ -992,53 +1052,3 @@ class NearestMeanResponseImputer(BaseImputer):
                 )[c].item(index=0)
 
         return self
-
-
-class NullIndicator(BaseTransformer):
-    """Class to create a binary indicator column for null values.
-
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to produce indicator columns for, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-
-    Attributes
-    ----------
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    """
-
-    polars_compatible = True
-
-    def __init__(
-        self,
-        columns: str | list[str] | None = None,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        super().__init__(columns=columns, **kwargs)
-
-    @beartype
-    def transform(self, X: DataFrame) -> DataFrame:
-        """Create new columns indicating the position of null values for each variable in self.columns.
-
-        Parameters
-        ----------
-        X : FrameT
-            Data to add indicators to.
-
-        """
-        X = super().transform(X, return_native_override=False)
-
-        X = _convert_dataframe_to_narwhals(X)
-
-        X = X.with_columns(
-            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
-        )
-
-        return X if not self.return_native else X.to_native()

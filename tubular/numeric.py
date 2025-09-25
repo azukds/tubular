@@ -16,6 +16,7 @@ from sklearn.preprocessing import (
     PolynomialFeatures,
     StandardScaler,
 )
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -120,6 +121,182 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
+    """Transformer that generates a new column based on kmeans algorithm.
+    Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
+    Finally it passes them into the a cut function.
+
+    Parameters
+    ----------
+    column : str
+        Name of the column to discretise.
+
+    new_column_name : str
+        Name given to the new discrete column.
+
+    n_clusters : int, default = 8
+        The number of clusters to form as well as the number of centroids to generate.
+
+    n_init "auto" or int, default="auto"
+        Number of times the k-means algorithm is run with different centroid seeds.
+        The final results is the best output of n_init consecutive runs in terms of inertia.
+        Several runs are recommended for sparse high-dimensional problems (see `Clustering sparse data with k-means <https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#kmeans-sparse-high-dim>`__).
+
+        When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
+        1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
+
+    drop_original : bool, default=False
+        Should the original columns to be transformed be dropped after applying the
+        OneDKmeanstransformer?
+
+    kmeans_kwargs : dict, default = {}
+        A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseTransformer.init().
+
+    Attributes
+    ----------
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    """
+
+    polars_compatible = True
+
+    FITS = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: Union[str, list[str]],
+        new_column_name: str,
+        n_init: Union[str, int] = "auto",
+        n_clusters: int = 8,
+        drop_original: bool = False,
+        kmeans_kwargs: Optional[dict[str, object]] = None,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        if (isinstance(columns, list)) and (len(columns) > 1):
+            msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
+            raise TypeError(msg)
+
+        if kmeans_kwargs is None:
+            kmeans_kwargs = {}
+
+        self.n_clusters = n_clusters
+        self.new_column_name = new_column_name
+        self.n_init = n_init
+        self.kmeans_kwargs = kmeans_kwargs
+
+        if isinstance(columns, str):
+            self.columns = [columns]
+        else:
+            self.columns = columns
+
+        super().__init__(columns=[columns], **kwargs)
+        self.set_drop_original_column(drop_original)
+
+    @nw.narwhalify
+    def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
+        """Fit transformer to input data.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Dataframe with columns to learn scaling values from.
+
+        y : None
+            Required for pipeline.
+
+        """
+
+        super().fit(X, y)
+
+        X = nw.from_native(X)
+
+        # Check that X does not contain Nans and return ValueError.
+        if (
+            X.select(nw.col(self.columns[0]).is_null().any()).to_numpy().ravel()[0]
+            or X.select(nw.col(self.columns[0]).is_nan().any()).to_numpy().ravel()[0]
+        ):
+            msg = f"{self.classname()}: X should not contain missing values."
+            raise ValueError(msg)
+
+        kmeans = KMeans(
+            n_clusters=self.n_clusters,
+            n_init=self.n_init,
+            **self.kmeans_kwargs,
+        )
+
+        native_backend = nw.get_native_namespace(X).__name__
+        groups = kmeans.fit_predict(X.select(self.columns[0]).to_numpy())
+
+        X = X.with_columns(
+            nw.new_series(
+                name="groups",
+                values=np.copy(groups),
+                backend=native_backend,
+            ),
+        )
+
+        self.bins = (
+            X.group_by("groups")
+            .agg(
+                nw.col(self.columns[0]).max(),
+            )
+            .sort(self.columns[0])
+            .select(self.columns[0])
+            .to_numpy()
+            .ravel()
+        )
+        return self
+
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
+        """Generate from input pd/pl.DataFrame (X) bins based on Kmeans results and add this column or columns in X.
+
+        Parameters
+        ----------
+        X : pl/pd.DataFrame
+            Data to transform.
+
+        Returns
+        -------
+        X : pl/pd.DataFrame
+            Input X with additional cluster column added.
+        """
+        X = super().transform(X)
+
+        X = nw.from_native(X)
+        native_backend = nw.get_native_namespace(X).__name__
+
+        groups = np.digitize(
+            X.select(self.columns[0]).to_numpy().ravel(),
+            bins=self.bins,
+            right=True,
+        )
+
+        X = X.with_columns(
+            nw.new_series(
+                name=self.new_column_name,
+                values=groups,
+                backend=native_backend,
+            ),
+        )
+        return self.drop_original_column(X, self.drop_original, self.columns[0])
+
+
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     """Transformer to apply log transformation.
 
@@ -251,6 +428,12 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         return self.drop_original_column(X, self.drop_original, self.columns)
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class CutTransformer(BaseNumericTransformer):
     """Class to bin a column into discrete intervals.
 
@@ -340,6 +523,12 @@ class CutTransformer(BaseNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If aspects of it have been useful to you, please raise an issue
+    for it to be replaced with more specific transformers
+    """,
+)
 class TwoColumnOperatorTransformer(
     NewColumnNameMixin,
     TwoColumnMixin,
@@ -461,6 +650,12 @@ class TwoColumnOperatorTransformer(
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class ScalingTransformer(BaseNumericTransformer):
     """Transformer to perform scaling of numeric columns.
 
@@ -575,6 +770,12 @@ class ScalingTransformer(BaseNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class InteractionTransformer(BaseNumericTransformer):
     """Transformer that generates interaction features.
     Transformer generates a new column  for all combinations from the selected columns up to the maximum degree
@@ -731,6 +932,12 @@ class InteractionTransformer(BaseNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class PCATransformer(BaseNumericTransformer):
     """Transformer that generates variables using Principal component analysis (PCA).
     Linear dimensionality reduction using Singular Value Decomposition of the
@@ -926,172 +1133,3 @@ class PCATransformer(BaseNumericTransformer):
         X[self.feature_names_out] = self.pca.transform(X[self.columns])
 
         return X
-
-
-class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
-    """Transformer that generates a new column based on kmeans algorithm.
-    Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
-    Finally it passes them into the a cut function.
-
-    Parameters
-    ----------
-    column : str
-        Name of the column to discretise.
-
-    new_column_name : str
-        Name given to the new discrete column.
-
-    n_clusters : int, default = 8
-        The number of clusters to form as well as the number of centroids to generate.
-
-    n_init "auto" or int, default="auto"
-        Number of times the k-means algorithm is run with different centroid seeds.
-        The final results is the best output of n_init consecutive runs in terms of inertia.
-        Several runs are recommended for sparse high-dimensional problems (see `Clustering sparse data with k-means <https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#kmeans-sparse-high-dim>`__).
-
-        When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
-        1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
-
-    drop_original : bool, default=False
-        Should the original columns to be transformed be dropped after applying the
-        OneDKmeanstransformer?
-
-    kmeans_kwargs : dict, default = {}
-        A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init().
-
-    Attributes
-    ----------
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    """
-
-    polars_compatible = True
-
-    FITS = True
-
-    @beartype
-    def __init__(
-        self,
-        columns: Union[str, list[str]],
-        new_column_name: str,
-        n_init: Union[str, int] = "auto",
-        n_clusters: int = 8,
-        drop_original: bool = False,
-        kmeans_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        if (isinstance(columns, list)) and (len(columns) > 1):
-            msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
-            raise TypeError(msg)
-
-        if kmeans_kwargs is None:
-            kmeans_kwargs = {}
-
-        self.n_clusters = n_clusters
-        self.new_column_name = new_column_name
-        self.n_init = n_init
-        self.kmeans_kwargs = kmeans_kwargs
-
-        if isinstance(columns, str):
-            self.columns = [columns]
-        else:
-            self.columns = columns
-
-        super().__init__(columns=[columns], **kwargs)
-        self.set_drop_original_column(drop_original)
-
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
-        """Fit transformer to input data.
-
-        Parameters
-        ----------
-        X : pd/pl.DataFrame
-            Dataframe with columns to learn scaling values from.
-
-        y : None
-            Required for pipeline.
-
-        """
-
-        super().fit(X, y)
-
-        X = nw.from_native(X)
-
-        # Check that X does not contain Nans and return ValueError.
-        if (
-            X.select(nw.col(self.columns[0]).is_null().any()).to_numpy().ravel()[0]
-            or X.select(nw.col(self.columns[0]).is_nan().any()).to_numpy().ravel()[0]
-        ):
-            msg = f"{self.classname()}: X should not contain missing values."
-            raise ValueError(msg)
-
-        kmeans = KMeans(
-            n_clusters=self.n_clusters,
-            n_init=self.n_init,
-            **self.kmeans_kwargs,
-        )
-
-        native_backend = nw.get_native_namespace(X).__name__
-        groups = kmeans.fit_predict(X.select(self.columns[0]).to_numpy())
-
-        X = X.with_columns(
-            nw.new_series(
-                name="groups",
-                values=np.copy(groups),
-                backend=native_backend,
-            ),
-        )
-
-        self.bins = (
-            X.group_by("groups")
-            .agg(
-                nw.col(self.columns[0]).max(),
-            )
-            .sort(self.columns[0])
-            .select(self.columns[0])
-            .to_numpy()
-            .ravel()
-        )
-        return self
-
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
-        """Generate from input pd/pl.DataFrame (X) bins based on Kmeans results and add this column or columns in X.
-
-        Parameters
-        ----------
-        X : pl/pd.DataFrame
-            Data to transform.
-
-        Returns
-        -------
-        X : pl/pd.DataFrame
-            Input X with additional cluster column added.
-        """
-        X = super().transform(X)
-
-        X = nw.from_native(X)
-        native_backend = nw.get_native_namespace(X).__name__
-
-        groups = np.digitize(
-            X.select(self.columns[0]).to_numpy().ravel(),
-            bins=self.bins,
-            right=True,
-        )
-
-        X = X.with_columns(
-            nw.new_series(
-                name=self.new_column_name,
-                values=groups,
-                backend=native_backend,
-            ),
-        )
-        return self.drop_original_column(X, self.drop_original, self.columns[0])
