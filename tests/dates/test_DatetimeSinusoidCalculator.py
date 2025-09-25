@@ -1,8 +1,8 @@
 import re
 
+import narwhals as nw
 import numpy as np
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -13,6 +13,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.dates.test_BaseDatetimeTransformer import DatetimeMixinTransformTests
+from tests.utils import assert_frame_equal_dispatch
 from tubular.dates import DatetimeSinusoidCalculator
 
 
@@ -236,148 +237,261 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         cls.transformer_name = "DatetimeSinusoidCalculator"
 
     @pytest.mark.parametrize(
-        "transformer",
+        "columns, method, units, period",
         [
-            DatetimeSinusoidCalculator(
-                "a",
-                "cos",
-                "month",
-                12,
-            ),
-            DatetimeSinusoidCalculator(
-                [
-                    "a",
-                    "b",
-                ],
-                "cos",
-                "month",
-                12,
-            ),
+            (["a", "b"], "cos", "month", 12),
+            (["a"], "cos", "month", 12),
         ],
     )
-    def test_expected_output_single_method(self, transformer):
-        expected = d.create_datediff_test_df()
-        for column in transformer.columns:
-            column_in_desired_unit = expected[column].dt.month
-            cos_argument = column_in_desired_unit * (2.0 * np.pi / 12)
-            new_col_name = "cos_12_month_" + column
-            expected[new_col_name] = cos_argument.apply(np.cos)
-
-        x = transformer
-        actual = x.transform(d.create_datediff_test_df())
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="DatetimeSinusoidCalculator transformer does not produce the expected output",
-        )
-
-    def test_expected_output_both_methods(self):
-        expected = d.create_datediff_test_df()
-        columns = ["a", "b"]
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_single_method(
+        self,
+        columns,
+        method,
+        units,
+        period,
+        library,
+    ):
+        """Test that the transformer produces the expected output for a single method."""
+        expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
-            method=["sin", "cos"],
-            units="month",
-            period=12,
             columns=columns,
+            method=method,
+            units=units,
+            period=period,
         )
 
-        for column in transformer.columns:
-            column_in_desired_unit = expected[column].dt.month
-            method_ready_column = column_in_desired_unit * (2.0 * np.pi / 12)
-            new_cos_col_name = "cos_12_month_" + column
-            new_sin_col_name = "sin_12_month_" + column
-            expected[new_sin_col_name] = method_ready_column.apply(np.sin)
-            expected[new_cos_col_name] = method_ready_column.apply(np.cos)
+        expected = expected_df.clone()
+        native_backend = nw.get_native_namespace(expected)
 
-        df = d.create_datediff_test_df()
+        for column in transformer.columns:
+            new_col_name = f"cos_12_month_{column}"
+            # Get the column in the desired unit
+            sinusoid_col = np.cos(expected[column].dt.month() * (2.0 * np.pi / 12))
+            expected = expected.with_columns(
+                nw.new_series(
+                    name=new_col_name,
+                    values=sinusoid_col,
+                    backend=native_backend.__name__,
+                ),
+            )
+
+        df = nw.from_native(d.create_datediff_test_df(library=library))
         actual = transformer.transform(df)
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="DatetimeSinusoidCalculator transformer does not produce the expected output",
+        assert_frame_equal_dispatch(
+            actual,
+            expected.to_native(),
+        )
+        # also check single rows
+        for i in range(len(df)):
+            actual_row = transformer.transform(df[[i]].to_native())
+            expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                actual_row,
+                expected_row,
+            )
+
+    @pytest.mark.parametrize(
+        "columns, method, units, period",
+        [
+            (["a"], ["sin", "cos"], "month", 12),
+        ],
+    )
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_both_methods_single_column(
+        self,
+        columns,
+        method,
+        units,
+        period,
+        library,
+    ):
+        """Test that the transformer produces the expected output for both methods on a single column."""
+        expected_df = nw.from_native(d.create_datediff_test_df(library=library))
+        transformer = DatetimeSinusoidCalculator(
+            method=method,
+            units=units,
+            period=period,
+            columns=columns,
+        )
+        expected = expected_df.clone()
+        native_backend = nw.get_native_namespace(expected)
+
+        # Create new column names for sin and cos
+        new_cos_col_name = "cos_12_month_a"
+        new_sin_col_name = "sin_12_month_a"
+        # Get the column in the desired unit
+        column_in_desired_unit = expected["a"].dt.month
+
+        expected = expected.with_columns(
+            nw.new_series(
+                name=new_sin_col_name,
+                values=np.sin(column_in_desired_unit() * (2.0 * np.pi / 12)),
+                backend=native_backend.__name__,
+            ),
+            nw.new_series(
+                name=new_cos_col_name,
+                values=np.cos(column_in_desired_unit() * (2.0 * np.pi / 12)),
+                backend=native_backend.__name__,
+            ),
         )
 
-    def test_expected_output_dict_units(self):
-        expected = d.create_datediff_test_df()
-        columns = ["a", "b"]
+        df = nw.from_native(d.create_datediff_test_df(library=library))
+        actual = transformer.transform(df)
+        assert_frame_equal_dispatch(
+            actual,
+            expected.to_native(),
+        )
+
+        # also check single rows
+        for i in range(len(df)):
+            actual_row = transformer.transform(df[[i]].to_native())
+            expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                actual_row,
+                expected_row,
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_dict_units(self, library):
+        """Test that the transformer produces the expected output when units is a dictionary."""
+        expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
-            columns=columns,
+            columns=["a", "b"],
             method=["sin"],
             units={"a": "month", "b": "day"},
             period=12,
         )
 
-        a_in_desired_unit = expected["a"].dt.month
-        b_in_desired_unit = expected["b"].dt.day
-        a_method_ready_column = a_in_desired_unit * (2.0 * np.pi / 12)
-        b_method_ready_column = b_in_desired_unit * (2.0 * np.pi / 12)
-        a_col_name = "sin_12_month_a"
-        b_col_name = "sin_12_day_b"
-        expected[a_col_name] = a_method_ready_column.apply(np.sin)
-        expected[b_col_name] = b_method_ready_column.apply(np.sin)
-        df = d.create_datediff_test_df()
-        actual = transformer.transform(df)
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="DatetimeSinusoidCalculator transformer does not produce the expected output",
+        expected = expected_df.clone()
+        native_backend = nw.get_native_namespace(expected)
+        # Calculate the sine values for the month of column 'a' and day of column 'b'
+        sin_12_month_a = np.sin(expected["a"].dt.month() * (2.0 * np.pi / 12))
+        sin_12_day_b = np.sin(expected["b"].dt.day() * (2.0 * np.pi / 12))
+        # Add the new columns to the expected DataFrame
+        expected = expected.with_columns(
+            nw.new_series(
+                name="sin_12_month_a",
+                values=sin_12_month_a,
+                backend=native_backend.__name__,
+            ),
+            nw.new_series(
+                name="sin_12_day_b",
+                values=sin_12_day_b,
+                backend=native_backend.__name__,
+            ),
         )
 
-    def test_expected_output_dict_period(self):
-        expected = d.create_datediff_test_df()
+        df = nw.from_native(d.create_datediff_test_df(library=library))
 
+        actual = transformer.transform(df)
+        assert_frame_equal_dispatch(
+            actual,
+            expected.to_native(),
+        )
+        # also check single rows
+        for i in range(len(df)):
+            actual_row = transformer.transform(df[[i]].to_native())
+            expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                actual_row,
+                expected_row,
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_dict_period(self, library):
+        """Test that the transformer produces the expected output when period is a dictionary."""
+        expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
-            columns=[
-                "a",
-                "b",
-            ],
+            columns=["a", "b"],
             method=["sin"],
             units="month",
             period={"a": 12, "b": 24},
         )
 
-        a_in_desired_unit = expected["a"].dt.month
-        b_in_desired_unit = expected["b"].dt.month
-        a_method_ready_column = a_in_desired_unit * (2.0 * np.pi / 12)
-        b_method_ready_column = b_in_desired_unit * (2.0 * np.pi / 24)
-        a_col_name = "sin_12_month_a"
-        b_col_name = "sin_24_month_b"
-        expected[a_col_name] = a_method_ready_column.apply(np.sin)
-        expected[b_col_name] = b_method_ready_column.apply(np.sin)
-
-        actual = transformer.transform(d.create_datediff_test_df())
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="DatetimeSinusoidCalculator transformer does not produce the expected output",
+        expected = expected_df.clone()
+        native_backend = nw.get_native_namespace(expected)
+        # Calculate the sine values for the month of column 'a' and 'b'
+        sin_12_month_a = np.sin(expected["a"].dt.month() * (2.0 * np.pi / 12))
+        sin_24_month_b = np.sin(expected["b"].dt.month() * (2.0 * np.pi / 24))
+        # Add the new columns to the expected DataFrame
+        expected = expected.with_columns(
+            nw.new_series(
+                name="sin_12_month_a",
+                values=sin_12_month_a,
+                backend=native_backend.__name__,
+            ),
+            nw.new_series(
+                name="sin_24_month_b",
+                values=sin_24_month_b,
+                backend=native_backend.__name__,
+            ),
         )
 
-    def test_expected_output_dict_both(self):
-        expected = d.create_datediff_test_df()
-        columns = ["a", "b"]
+        df = nw.from_native(d.create_datediff_test_df(library=library))
+        actual = transformer.transform(df)
+        assert_frame_equal_dispatch(
+            actual,
+            expected.to_native(),
+        )
+        # also check single rows
+        for i in range(len(df)):
+            actual_row = transformer.transform(df[[i]].to_native())
+            expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                actual_row,
+                expected_row,
+            )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_dict_units_and_period(self, library):
+        """Test that the transformer produces the expected output when both units and period are dictionaries."""
+        expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
-            columns=columns,
+            columns=["a", "b"],
             method=["sin"],
             units={"a": "month", "b": "day"},
             period={"a": 12, "b": 24},
         )
 
-        a_in_desired_unit = expected["a"].dt.month
-        b_in_desired_unit = expected["b"].dt.day
-        a_method_ready_column = a_in_desired_unit * (2.0 * np.pi / 12)
-        b_method_ready_column = b_in_desired_unit * (2.0 * np.pi / 24)
-        a_col_name = "sin_12_month_a"
-        b_col_name = "sin_24_day_b"
-        expected[a_col_name] = a_method_ready_column.apply(np.sin)
-        expected[b_col_name] = b_method_ready_column.apply(np.sin)
-        df = d.create_datediff_test_df()
-
-        actual = transformer.transform(df)
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="DatetimeSinusoidCalculator transformer does not produce the expected output",
+        expected = expected_df.clone()
+        native_backend = nw.get_native_namespace(expected)
+        # Calculate the sine values for the month of column 'a' and day of column 'b'
+        sin_12_month_a = np.sin(expected["a"].dt.month() * (2.0 * np.pi / 12))
+        sin_24_day_b = np.sin(expected["b"].dt.day() * (2.0 * np.pi / 24))
+        # Add the new columns to the expected DataFrame
+        expected = expected.with_columns(
+            nw.new_series(
+                name="sin_12_month_a",
+                values=sin_12_month_a,
+                backend=native_backend.__name__,
+            ),
+            nw.new_series(
+                name="sin_24_day_b",
+                values=sin_24_day_b,
+                backend=native_backend.__name__,
+            ),
         )
+
+        df = nw.from_native(d.create_datediff_test_df(library=library))
+        actual = transformer.transform(df)
+        assert_frame_equal_dispatch(
+            actual,
+            expected.to_native(),
+        )
+        # also check single rows
+        for i in range(len(df)):
+            actual_row = transformer.transform(df[[i]].to_native())
+            expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                actual_row,
+                expected_row,
+            )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

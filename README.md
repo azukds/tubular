@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/lvgig/tubular/raw/main/logo.png">
+  <img src="https://github.com/azukds/tubular/raw/main/logo.png">
 </p>
 
 Tubular pre-processing for machine learning!
@@ -8,11 +8,11 @@ Tubular pre-processing for machine learning!
 
 ![PyPI](https://img.shields.io/pypi/v/tubular?color=success&style=flat)
 ![Read the Docs](https://img.shields.io/readthedocs/tubular)
-![GitHub](https://img.shields.io/github/license/lvgig/tubular)
-![GitHub last commit](https://img.shields.io/github/last-commit/lvgig/tubular)
-![GitHub issues](https://img.shields.io/github/issues/lvgig/tubular)
-![Build](https://github.com/lvgig/tubular/actions/workflows/python-package.yml/badge.svg?branch=main)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lvgig/tubular/HEAD?labpath=examples)
+![GitHub](https://img.shields.io/github/license/azukds/tubular)
+![GitHub last commit](https://img.shields.io/github/last-commit/azukds/tubular)
+![GitHub issues](https://img.shields.io/github/issues/azukds/tubular)
+![Build](https://github.com/azukds/tubular/actions/workflows/python-package.yml/badge.svg?branch=main)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/azukds/tubular/HEAD?labpath=examples)
 
 `tubular` implements pre-processing steps for tabular data commonly used in machine learning pipelines.
 
@@ -57,17 +57,19 @@ The easiest way to get `tubular` is directly from [pypi](https://pypi.org/projec
 
 The documentation for `tubular` can be found on [readthedocs](https://tubular.readthedocs.io/en/latest/).
 
-Instructions for building the docs locally can be found in [docs/README](https://github.com/lvgig/tubular/blob/main/docs/README.md).
+Instructions for building the docs locally can be found in [docs/README](https://github.com/azukds/tubular/blob/main/docs/README.md).
 
 ## Examples
 
-To help get started there are example notebooks in the [examples](https://github.com/lvgig/tubular/tree/main/examples) folder in the repo that show how to use each transformer.
+Note - We are currently in the process of replacing example notebooks with doctest, as this avoids the issues of example notebooks silently going stale. Where doctests exists, the example notebooks mentioned below have been removed, and example usages can be found in the docstring for the transformer.
 
-To open the example notebooks in [binder](https://mybinder.org/) click [here](https://mybinder.org/v2/gh/lvgig/tubular/HEAD?labpath=examples) or click on the `launch binder` shield above and then click on the directory button in the side bar to the left to navigate to the specific notebook.
+To help get started there are example notebooks in the [examples](https://github.com/azukds/tubular/tree/main/examples) folder in the repo that show how to use each transformer.
+
+To open the example notebooks in [binder](https://mybinder.org/) click [here](https://mybinder.org/v2/gh/azukds/tubular/HEAD?labpath=examples) or click on the `launch binder` shield above and then click on the directory button in the side bar to the left to navigate to the specific notebook.
 
 ## Issues
 
-For bugs and feature requests please open an [issue](https://github.com/lvgig/tubular/issues).
+For bugs and feature requests please open an [issue](https://github.com/azukds/tubular/issues).
 
 ## Build and test
 
@@ -76,7 +78,7 @@ The test framework we are using for this project is [pytest](https://docs.pytest
 First clone the repo and move to the root directory;
 
 ```shell
-git clone https://github.com/lvgig/tubular.git
+git clone https://github.com/azukds/tubular.git
 cd tubular
 ```
 
@@ -96,4 +98,4 @@ pytest
 
 `tubular` is under active development, we're super excited if you're interested in contributing! 
 
-See the [CONTRIBUTING](https://github.com/lvgig/tubular/blob/main/CONTRIBUTING.rst) file for the full details of our working practices.
+See the [CONTRIBUTING](https://github.com/azukds/tubular/blob/main/CONTRIBUTING.rst) file for the full details of our working practices.

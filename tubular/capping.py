@@ -17,6 +17,12 @@ from tubular.numeric import BaseNumericTransformer
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
 
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+)
+from tubular.types import DataFrame, Series
+
 
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     polars_compatible = True
@@ -138,8 +144,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         #             msg = f"{self.classname()}: lower value is greater than or equal to upper value for key {k}"
         #             raise ValueError(msg)
 
+    @beartype
     @nw.narwhalify
-    def fit(self, X: FrameT, y: None = None) -> BaseCappingTransformer:
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -148,37 +155,31 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             A dataframe with required columns to be capped.
 
         y : None
             Required for pipeline.
 
         """
-        if self.weights_column:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
 
         super().fit(X, y)
 
-        self.quantile_capping_values = {}
+        backend = nw.get_native_namespace(X)
 
-        native_backend = nw.get_native_namespace(X)
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=backend.__name__,
+                return_native=False,
+            )
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+
+        self.quantile_capping_values = {}
 
         if self.quantiles is not None:
             for col in self.columns:
-                if self.weights_column is None:
-                    weights_column = "dummy_weights_column"
-                    X = X.with_columns(
-                        nw.new_series(
-                            name="dummy_weights_column",
-                            values=[1] * len(X),
-                            backend=native_backend,
-                        ),
-                    )
-
-                else:
-                    weights_column = self.weights_column
-
                 cap_values = self.prepare_quantiles(
                     X,
                     self.quantiles[col],
@@ -297,7 +298,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         quantiles : None
             Weighted quantiles to calculate. Must all be between 0 and 1.
 
-        values_col: str
+        values_column: str
             name of relevant values column in data
 
         weights_column: str
@@ -310,27 +311,33 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
+        >>> import pandas as pd
         >>> x = CappingTransformer(capping_values={"a": [2, 10]})
+        >>> df=pd.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
         >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3], sample_weight = [1, 1, 1], quantiles = quantiles_to_compute)
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3], sample_weight = [0, 1, 0], quantiles = quantiles_to_compute)
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.5), np.float64(1.8), np.float64(2.1), np.float64(2.4), np.float64(2.7), np.float64(3.0)]
+
+        >>> df=pd.DataFrame({'a': [1,2,3], 'weight': [0,1,0]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3], sample_weight = [1, 1, 0], quantiles = quantiles_to_compute)
+        [np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0)]
+
+        >>> df=pd.DataFrame({'a':[1,2,3], 'weight': [1,1,0]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3, 4, 5], sample_weight = [1, 1, 1, 1, 1], quantiles = quantiles_to_compute)
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.4), np.float64(1.6), np.float64(1.8), np.float64(2.0)]
+
+        >>> df=pd.DataFrame({'a':[1,2,3,4,5], 'weight': [1,1,1,1,1]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
-        >>>
-        >>> computed_quantiles = x.weighted_quantile(values = [1, 2, 3, 4, 5], sample_weight = [1, 0, 1, 0, 1], quantiles = [0, 0.5, 1.0])
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.5), np.float64(2.0), np.float64(2.5), np.float64(3.0), np.float64(3.5), np.float64(4.0), np.float64(4.5), np.float64(5.0)]
+
+        >>> df=pd.DataFrame({'a': [1,2,3,4,5], 'weight': [1,0,1,0,1]})
+        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = [0, 0.5, 1.0])
         >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 2.0, 5.0]
+        [np.float64(1.0), np.float64(2.0), np.float64(5.0)]
 
         """
         quantiles = np.array(quantiles)
@@ -354,8 +361,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return list(np.interp(quantiles, weighted_quantiles, values))
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: Optional[bool] = None,
+    ) -> DataFrame:
         """Apply capping to columns in X.
 
         If cap_value_max is set, any values above cap_value_max will be set to cap_value_max. If cap_value_min
@@ -366,16 +377,23 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X : pd/pl.DataFrame
             Data to apply capping to.
 
+        return_native_override: Optional[bool]
+            Option to override return_native attr in transformer, useful when calling parent
+            methods
+
         Returns
         -------
         X : pd/pl.DataFrame
             Transformed input X with min and max capping applied to the specified columns.
 
         """
-
-        X = nw.from_native(super().transform(X))
-
         self.check_is_fitted(["_replacement_values"])
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        return_native = self._process_return_native(return_native_override)
+
+        X = super().transform(X, return_native_override=False)
 
         dict_attrs = ["_replacement_values"]
 
@@ -395,7 +413,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             if getattr(self, attr_name) == {}:
                 msg = f"{self.classname()}: {attr_name} attribute is an empty dict - perhaps the fit method has not been run yet"
                 raise ValueError(msg)
-
+        exprs = {}
         for col in self.columns:
             cap_value_min = capping_values_for_transform[col][0]
             cap_value_max = capping_values_for_transform[col][1]
@@ -403,33 +421,42 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             replacement_min = self._replacement_values[col][0]
             replacement_max = self._replacement_values[col][1]
 
-            for cap_value, replacement_value, condition in zip(
-                [cap_value_min, cap_value_max],
-                [replacement_min, replacement_max],
-                [nw.col(col) < cap_value_min, nw.col(col) > cap_value_max],
-            ):
-                if cap_value is not None:
-                    X = X.with_columns(
-                        nw.when(
-                            condition,
-                        )
-                        .then(
-                            replacement_value,
-                        )
-                        .otherwise(
-                            nw.col(col),
-                        )
-                        # make sure type is preserved for single row,
-                        # e.g. mapping single row to int could convert
-                        # from float to int
-                        # TODO - look into better ways to achieve this
-                        .cast(
-                            X.get_column(col).dtype,
-                        )
-                        .alias(col),
+            if cap_value_min is not None and cap_value_max is not None:
+                col_expr = (
+                    nw.when(nw.col(col) < cap_value_min)
+                    .then(replacement_min)
+                    .otherwise(
+                        nw.when(nw.col(col) > cap_value_max)
+                        .then(replacement_max)
+                        .otherwise(nw.col(col)),
                     )
+                )
+            elif cap_value_min is not None:
+                col_expr = (
+                    nw.when(nw.col(col) < cap_value_min)
+                    .then(replacement_min)
+                    .otherwise(nw.col(col))
+                )
+            elif cap_value_max is not None:
+                col_expr = (
+                    nw.when(nw.col(col) > cap_value_max)
+                    .then(replacement_max)
+                    .otherwise(nw.col(col))
+                )
+            else:
+                col_expr = nw.col(col)
 
-        return X
+            # make sure type is preserved for single row,
+            #     # e.g. mapping single row to int could convert
+            #     # from float to int
+            #     # TODO - look into better ways to achieve this
+            exprs[col] = col_expr.cast(
+                X[col].dtype,
+            ).alias(col)
+
+        X = X.with_columns(**exprs)
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
 
 class CappingTransformer(BaseCappingTransformer):
@@ -640,8 +667,20 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         """
         super().fit(X=X, y=y)
 
-        if self.weights_column:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        backend = nw.get_native_namespace(X)
+
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=backend.__name__,
+                return_native=False,
+            )
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+
+        # need to overwrite attr for fit method to work
+        original_weights_column = weights_column
+        self.weights_column = weights_column
 
         if self.quantiles:
             BaseCappingTransformer.fit(self, X=X, y=y)
@@ -655,5 +694,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 f"{self.classname()}: quantiles not set so no fitting done in OutOfRangeNullTransformer",
                 stacklevel=2,
             )
+
+        # restore attr
+        self.weights_column = original_weights_column
 
         return self

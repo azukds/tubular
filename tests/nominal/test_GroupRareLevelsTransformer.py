@@ -9,6 +9,7 @@ from test_BaseNominalTransformer import GenericNominalTransformTests
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    DummyWeightColumnMixinTests,
     GenericFitTests,
     OtherBaseBehaviourTests,
     WeightColumnFitMixinTests,
@@ -61,7 +62,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
             GroupRareLevelsTransformer(columns="a", unseen_levels_to_rare=2)
 
 
-class TestFit(GenericFitTests, WeightColumnFitMixinTests):
+class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
     """Tests for GroupRareLevelsTransformer.fit()."""
 
     @classmethod
@@ -188,9 +189,16 @@ class TestTransform(GenericNominalTransformTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        df = nw.from_native(df)
+        # set categories for enum
+        categories = ["e", "c", "a", "rare"]
 
-        return df.with_columns(nw.col("c").cast(nw.Categorical)).to_native()
+        return (
+            nw.from_native(df)
+            .with_columns(
+                nw.col("c").cast(nw.Enum(categories=categories)),
+            )
+            .to_native()
+        )
 
     def expected_df_2(self, library="pandas"):
         """Expected output for test_expected_output_weight."""
@@ -242,7 +250,6 @@ class TestTransform(GenericNominalTransformTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_no_weight(self, library):
         """Test that the output is expected from transform."""
-
         df = d.create_df_5(library=library)
 
         # first handle nulls
@@ -261,7 +268,7 @@ class TestTransform(GenericNominalTransformTests):
 
         df_transformed = x.transform(df)
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_weight(self, library):
@@ -366,7 +373,9 @@ class TestTransform(GenericNominalTransformTests):
 
         output_df = x.transform(df)
 
-        output_categories = nw.from_native(output_df)[column].cat.get_categories()
+        output_categories = (
+            nw.from_native(output_df)[column].cat.get_categories().to_list()
+        )
 
         for cat in expected_removed_cats:
             assert (

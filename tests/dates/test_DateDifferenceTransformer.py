@@ -12,6 +12,7 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
+    ReturnNativeTests,
     TwoColumnListInitTests,
 )
 from tests.dates.test_BaseGenericDateTransformer import (
@@ -43,674 +44,6 @@ class TestInit(
                 units="y",
                 verbose=False,
             )
-
-
-def expected_df_3(library="pandas"):
-    """Expected output for test_expected_output_units_D."""
-
-    df_dict = {
-        "a": [
-            datetime.datetime(
-                1993,
-                9,
-                27,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2000,
-                3,
-                19,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                10,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                12,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                1985,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "b": [
-            datetime.datetime(
-                2020,
-                5,
-                1,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2019,
-                12,
-                25,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                9,
-                10,
-                9,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "D": [
-            9713.042372685186,
-            7219.957627314815,
-            0.0,
-            31.0,
-            -30.083333333333332,
-            -1064.9583333333333,
-            -1125.9583333333333,
-            10957.0,
-        ],
-    }
-
-    return dataframe_init_dispatch(df_dict, library=library)
-
-
-def expected_df_4(library="pandas"):
-    """Expected output for test_expected_output_units_h."""
-
-    df_dict = {
-        "a": [
-            datetime.datetime(
-                1993,
-                9,
-                27,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2000,
-                3,
-                19,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                10,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                12,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                1985,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "b": [
-            datetime.datetime(
-                2020,
-                5,
-                1,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2019,
-                12,
-                25,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                9,
-                10,
-                9,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "h": [
-            233113.01694444445,
-            173278.98305555555,
-            0.0,
-            744.0,
-            -722.0,
-            -25559.0,
-            -27023.0,
-            262968.0,
-        ],
-    }
-
-    return dataframe_init_dispatch(df_dict, library=library)
-
-
-def expected_df_5(library="pandas"):
-    """Expected output for test_expected_output_units_m."""
-
-    df_dict = {
-        "a": [
-            datetime.datetime(
-                1993,
-                9,
-                27,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2000,
-                3,
-                19,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                10,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                12,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                1985,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "b": [
-            datetime.datetime(
-                2020,
-                5,
-                1,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2019,
-                12,
-                25,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                9,
-                10,
-                9,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "m": [
-            13986781.016666668,
-            10396738.983333332,
-            0.0,
-            44640.0,
-            -43320.0,
-            -1533540.0,
-            -1621380.0,
-            15778080.0,
-        ],
-    }
-
-    return dataframe_init_dispatch(df_dict, library=library)
-
-
-def expected_df_6(library="pandas"):
-    """Expected output for test_expected_output_units_s."""
-
-    df_dict = {
-        "a": [
-            datetime.datetime(
-                1993,
-                9,
-                27,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2000,
-                3,
-                19,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                10,
-                10,
-                10,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                12,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                1985,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "b": [
-            datetime.datetime(
-                2020,
-                5,
-                1,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2019,
-                12,
-                25,
-                11,
-                58,
-                58,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2018,
-                9,
-                10,
-                9,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                11,
-                10,
-                12,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-            datetime.datetime(
-                2015,
-                7,
-                23,
-                11,
-                59,
-                59,
-                tzinfo=datetime.timezone.utc,
-            ),
-        ],
-        "s": [
-            839206861.0,
-            623804339.0,
-            0.0,
-            2678400.0,
-            -2599200.0,
-            -92012400.0,
-            -97282800.0,
-            946684800.0,
-        ],
-    }
-
-    return dataframe_init_dispatch(df_dict, library=library)
 
 
 def expected_df_7(library="pandas"):
@@ -893,10 +226,118 @@ def create_datediff_test_nulls_df2(library="pandas"):
     return dataframe_init_dispatch(df_dict, library=library)
 
 
+@pytest.fixture()
+def generic_expected_df():
+    def _expected_df(unit, library="pandas"):
+        a = [
+            datetime.datetime(1993, 9, 27, 11, 58, 58, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2000, 3, 19, 12, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 11, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 10, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 10, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 10, 10, 10, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 12, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(1985, 7, 23, 11, 59, 59, tzinfo=datetime.timezone.utc),
+        ]
+        b = [
+            datetime.datetime(2020, 5, 1, 12, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2019, 12, 25, 11, 58, 58, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 11, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 11, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2018, 9, 10, 9, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2015, 11, 10, 11, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2015, 11, 10, 12, 59, 59, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2015, 7, 23, 11, 59, 59, tzinfo=datetime.timezone.utc),
+        ]
+        values = {
+            "D": [9713.0, 7220.0, 0.0, 31.0, -30.0, -1065.0, -1126.0, 10957.0],
+            "h": [
+                233113.01694444445,
+                173278.98305555555,
+                0.0,
+                744.0,
+                -722.0,
+                -25559.0,
+                -27023.0,
+                262968.0,
+            ],
+            "m": [
+                13986781.016666668,
+                10396738.983333332,
+                0.0,
+                44640.0,
+                -43320.0,
+                -1533540.0,
+                -1621380.0,
+                15778080.0,
+            ],
+            "s": [
+                839206861.0,
+                623804339.0,
+                0.0,
+                2678400.0,
+                -2599200.0,
+                -92012400.0,
+                -97282800.0,
+                946684800.0,
+            ],
+            "week": [
+                1387.571429,
+                1031.428571,
+                0.0,
+                4.428571,
+                -4.285714,
+                -152.142857,
+                -160.857143,
+                1565.285714,
+            ],
+            "fortnight": [
+                693.785714,
+                515.714286,
+                0.0,
+                2.214286,
+                -2.142857,
+                -76.071429,
+                -80.428571,
+                782.642857,
+            ],
+            "lunar_month": [
+                329.254237,
+                244.745763,
+                0.0,
+                1.050847,
+                -1.016949,
+                -36.101695,
+                -38.169492,
+                371.423729,
+            ],
+            "common_year": [
+                26.610958,
+                19.780822,
+                0.0,
+                0.084932,
+                -0.082192,
+                -2.917808,
+                -3.084932,
+                30.019178,
+            ],
+            "custom_days": [388.52, 288.80, 0.0, 1.24, -1.20, -42.60, -45.04, 438.28],
+        }
+        df_dict = {
+            "a": a,
+            "b": b,
+            unit: values[unit],
+        }
+        return dataframe_init_dispatch(df_dict, library=library)
+
+    return _expected_df
+
+
 class TestTransform(
     GenericTransformTests,
     GenericDatesMixinTransformTests,
     DropOriginalTransformMixinTests,
+    ReturnNativeTests,
 ):
     """Tests for DateDifferenceTransformer.transform()."""
 
@@ -905,121 +346,41 @@ class TestTransform(
         cls.transformer_name = "DateDifferenceTransformer"
 
     @pytest.mark.parametrize(
-        ("df", "expected"),
+        "unit",
         [
-            (
-                d.create_datediff_test_df(library="pandas"),
-                expected_df_3(library="pandas"),
-            ),
-            (
-                d.create_datediff_test_df(library="polars"),
-                expected_df_3(library="polars"),
-            ),
+            "D",
+            "h",
+            "m",
+            "s",
+            "week",
+            "fortnight",
+            "lunar_month",
+            "common_year",
+            "custom_days",
         ],
     )
-    def test_expected_output_units_D(self, df, expected):
-        """Test that the output is expected from transform, when units is D.
-
-        This tests positive month gaps, negative month gaps, and missing values.
-
-        """
-        x = DateDifferenceTransformer(
-            columns=["a", "b"],
-            new_column_name="D",
-            units="D",
-            verbose=False,
-        )
-
-        df_transformed = x.transform(df)
-
-        assert_frame_equal_dispatch(expected, df_transformed)
-
     @pytest.mark.parametrize(
-        ("df", "expected"),
+        "library",
         [
-            (
-                d.create_datediff_test_df(library="pandas"),
-                expected_df_4(library="pandas"),
-            ),
-            (
-                d.create_datediff_test_df(library="polars"),
-                expected_df_4(library="polars"),
-            ),
+            "pandas",
+            "polars",
         ],
     )
-    def test_expected_output_units_h(self, df, expected):
-        """Test that the output is expected from transform, when units is h.
+    def test_expected_output_units(self, generic_expected_df, unit, library):
+        """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
-
         """
+        df = d.create_datediff_test_df(library=library)
+        expected = generic_expected_df(unit, library)
+
         x = DateDifferenceTransformer(
             columns=["a", "b"],
-            new_column_name="h",
-            units="h",
+            new_column_name=unit,
+            units=unit,
             verbose=False,
+            custom_days_divider=25 if unit == "custom_days" else None,
         )
-
-        df_transformed = x.transform(df)
-
-        assert_frame_equal_dispatch(expected, df_transformed)
-
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        [
-            (
-                d.create_datediff_test_df(library="pandas"),
-                expected_df_5(library="pandas"),
-            ),
-            (
-                d.create_datediff_test_df(library="polars"),
-                expected_df_5(library="polars"),
-            ),
-        ],
-    )
-    def test_expected_output_units_m(self, df, expected):
-        """Test that the output is expected from transform, when units is m.
-
-        This tests positive month gaps, negative month gaps, and missing values.
-
-        """
-        x = DateDifferenceTransformer(
-            columns=["a", "b"],
-            new_column_name="m",
-            units="m",
-            verbose=False,
-        )
-
-        df_transformed = x.transform(df)
-
-        assert_frame_equal_dispatch(df_transformed, expected)
-
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        [
-            (
-                d.create_datediff_test_df(library="pandas"),
-                expected_df_6(library="pandas"),
-            ),
-            (
-                d.create_datediff_test_df(library="polars"),
-                expected_df_6(library="polars"),
-            ),
-        ],
-    )
-    def test_expected_output_units_s(self, df, expected):
-        """Test that the output is expected from transform, when units is s.
-
-        This tests positive month gaps, negative month gaps, and missing values.
-
-        """
-        x = DateDifferenceTransformer(
-            columns=["a", "b"],
-            new_column_name="s",
-            units="s",
-            verbose=False,
-        )
-
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(expected, df_transformed)
