@@ -21,8 +21,14 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer
 from tubular.mapping import MappingTransformer
-from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
-from tubular.types import DataFrame
+from tubular.mixins import DropOriginalMixin
+from tubular.types import (  # noqa: TCH001
+    DataFrame,
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfThreeStrs,
+    ListOfTwoStrs,
+)
 
 if TYPE_CHECKING:
     from narhwals.typing import FrameT
@@ -31,7 +37,6 @@ TIME_UNITS = ["us", "ns", "ms"]
 
 
 class BaseGenericDateTransformer(
-    NewColumnNameMixin,
     DropOriginalMixin,
     BaseTransformer,
 ):
@@ -68,17 +73,18 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
+        columns: Union[list[str], str],
+        new_column_name: str,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        self.set_drop_original_column(drop_original)
-        self.check_and_set_new_column_name(new_column_name)
+        self.drop_original = drop_original
+        self.new_column_name = new_column_name
 
     @beartype
     def check_columns_are_date_or_datetime(
@@ -220,12 +226,13 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
+        columns: Union[list[str], str],
+        new_column_name: str,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(
             columns=columns,
@@ -267,56 +274,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-class BaseDateTwoColumnTransformer(
-    TwoColumnMixin,
-    BaseGenericDateTransformer,
-):
-
-    """Extends BaseDateTransformer for transformers which accept exactly two columns
-
-    Parameters
-    ----------
-    columns : list
-        Either a list of str values or a string giving which columns in a input pandas.DataFrame the transformer
-        will be applied to.
-
-    new_column_name : str
-        Name for the new year column.
-
-    drop_original : bool
-        Flag for whether to drop the original columns.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    """
-
-    polars_compatible = True
-
-    def __init__(
-        self,
-        columns: list[str],
-        new_column_name: str | None = None,
-        drop_original: bool = False,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        super().__init__(
-            columns=columns,
-            new_column_name=new_column_name,
-            drop_original=drop_original,
-            **kwargs,
-        )
-
-        self.check_two_columns(columns)
-
-
-class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
+class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
     Parameters
@@ -345,10 +303,11 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
+        columns: ListOfTwoStrs,
+        new_column_name: str,
         units: Literal[
             "week",
             "fortnight",
@@ -363,8 +322,8 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         copy: bool = False,
         verbose: bool = False,
         drop_original: bool = False,
-        custom_days_divider: int = None,
-        **kwargs: dict[str, bool],
+        custom_days_divider: Optional[int] = None,
+        **kwargs: bool,
     ) -> None:
         accepted_values_units = [
             "week",
@@ -602,23 +561,16 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
+        columns: ListOfThreeStrs,
         new_column_name: str,
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
         **kwargs: dict[str, bool],
     ) -> None:
-        if type(lower_inclusive) is not bool:
-            msg = f"{self.classname()}: lower_inclusive should be a bool"
-            raise TypeError(msg)
-
-        if type(upper_inclusive) is not bool:
-            msg = f"{self.classname()}: upper_inclusive should be a bool"
-            raise TypeError(msg)
-
         self.lower_inclusive = lower_inclusive
         self.upper_inclusive = upper_inclusive
 
@@ -628,10 +580,6 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
             drop_original=drop_original,
             **kwargs,
         )
-
-        if len(columns) != 3:
-            msg = f"{self.classname()}: This transformer works with three columns only"
-            raise ValueError(msg)
 
         # This attribute is not for use in any method, use 'columns' instead.
         # Here only as a fix to allow string representation of transformer.
@@ -1209,7 +1157,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     "If you prefer this transformer to DateDifferenceTransformer, "
     "let us know through a github issue",
 )
-class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
+class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     """Transformer to calculate the number of years between two dates.
 
     !!! warning "Deprecated"
@@ -1252,11 +1200,12 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
-        missing_replacement: float | str | None = None,
+        columns: ListOfTwoStrs,
+        new_column_name: str,
+        missing_replacement: Optional[Union[float, int, str]] = None,
         drop_original: bool = False,
         **kwargs: dict[str, bool],
     ) -> None:
@@ -1266,12 +1215,6 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
             drop_original=drop_original,
             **kwargs,
         )
-
-        if (missing_replacement) and (
-            type(missing_replacement) not in [int, float, str]
-        ):
-            msg = f"{self.classname()}: if not None, missing_replacement should be an int, float or string"
-            raise TypeError(msg)
 
         self.missing_replacement = missing_replacement
 
@@ -1425,14 +1368,18 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
     polars_compatible = False
 
+    @beartype
     def __init__(
         self,
         new_column_name: str,
         pd_method_name: str,
-        columns: list[str],
-        pd_method_kwargs: dict[str, object] | None = None,
+        columns: Union[
+            ListOfOneStr,
+            str,
+        ],
+        pd_method_kwargs: Optional[GenericKwargs] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(
             columns=columns,
@@ -1441,27 +1388,8 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
             **kwargs,
         )
 
-        if len(self.columns) > 1:
-            msg = rf"{self.classname()}: column should be a str or list of len 1, got {self.columns}"
-            raise ValueError(
-                msg,
-            )
-
-        if type(pd_method_name) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(pd_method_name)}) for pd_method_name, expecting str"
-            raise TypeError(msg)
-
         if pd_method_kwargs is None:
             pd_method_kwargs = {}
-        else:
-            if type(pd_method_kwargs) is not dict:
-                msg = f"{self.classname()}: pd_method_kwargs should be a dict but got type {type(pd_method_kwargs)}"
-                raise TypeError(msg)
-
-            for i, k in enumerate(pd_method_kwargs.keys()):
-                if type(k) is not str:
-                    msg = f"{self.classname()}: unexpected type ({type(k)}) for pd_method_kwargs key in position {i}, must be str"
-                    raise TypeError(msg)
 
         self.pd_method_name = pd_method_name
         self.pd_method_kwargs = pd_method_kwargs
