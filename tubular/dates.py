@@ -274,151 +274,6 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-@deprecated(
-    "This Transformer is deprecated, use DateDifferenceTransformer instead. "
-    "If you prefer this transformer to DateDifferenceTransformer, "
-    "let us know through a github issue",
-)
-class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
-    """Transformer to calculate the number of years between two dates.
-
-    !!! warning "Deprecated"
-        This transformer is now deprecated; use `DateDifferenceTransformer` instead.
-
-    Parameters
-    ----------
-    columns : List[str]
-        List of 2 columns. First column will be subtracted from second.
-
-    new_column_name : str
-        Name for the new year column.
-
-    drop_original : bool
-        Flag for whether to drop the original columns.
-
-    missing_replacement : int/float/str
-        Value to output if either the lower date value or the upper date value are
-        missing. Default value is None.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-    columns : List[str]
-        List of 2 columns. First column will be subtracted from second.
-
-    new_column_name : str, default = None
-        Name given to calculated datediff column. If None then {column_upper}_{column_lower}_datediff
-        will be used.
-
-    drop_original : bool
-        Indicator whether to drop old columns during transform method.
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    """
-
-    polars_compatible = True
-
-    @beartype
-    def __init__(
-        self,
-        columns: ListOfTwoStrs,
-        new_column_name: str,
-        missing_replacement: Optional[Union[float, int, str]] = None,
-        drop_original: bool = False,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        super().__init__(
-            columns=columns,
-            new_column_name=new_column_name,
-            drop_original=drop_original,
-            **kwargs,
-        )
-
-        self.missing_replacement = missing_replacement
-
-        # This attribute is not for use in any method, use 'columns' instead.
-        # Here only as a fix to allow string representation of transformer.
-        self.column_lower = columns[0]
-        self.column_upper = columns[1]
-
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
-        """Calculate year gap between the two provided columns.
-
-        New column is created under the 'new_column_name', and optionally removes the
-        old date columns.
-
-        Parameters
-        ----------
-        X : pd/pl.DataFrame
-            Data containing self.columns
-
-        Returns
-        -------
-        X : pd/pl.DataFrame
-            Data containing self.columns
-
-        """
-
-        X = nw.from_native(super().transform(X))
-
-        # Create a helping column col0 for the first date. This will convert the date into an integer in a format or YYYYMMDD
-        X = X.with_columns(
-            (
-                nw.col(self.columns[0]).cast(nw.Date).dt.year().cast(nw.Int64) * 10000
-                + nw.col(self.columns[0]).cast(nw.Date).dt.month().cast(nw.Int64) * 100
-                + nw.col(self.columns[0]).cast(nw.Date).dt.day().cast(nw.Int64)
-            ).alias("col0"),
-        )
-        # Create a helping column col1 for the second date. This will convert the date into an integer in a format or YYYYMMDD
-        X = X.with_columns(
-            (
-                nw.col(self.columns[1]).cast(nw.Date).dt.year().cast(nw.Int64) * 10000
-                + nw.col(self.columns[1]).cast(nw.Date).dt.month().cast(nw.Int64) * 100
-                + nw.col(self.columns[1]).cast(nw.Date).dt.day().cast(nw.Int64)
-            ).alias("col1"),
-        )
-
-        # Compute difference between integers and if the difference is negative then adjust.
-        # Finally devide by 10000 to get the years.
-        X = X.with_columns(
-            nw.when(nw.col("col1") < nw.col("col0"))
-            .then(((nw.col("col0") - nw.col("col1")) // 10000) * (-1))
-            .otherwise((nw.col("col1") - nw.col("col0")) // 10000)
-            .cast(nw.Int64)
-            .alias(self.new_column_name),
-        ).drop(["col0", "col1"])
-
-        # When we get a missing then replace with missing_replacement otherwise return the above calculation
-        if self.missing_replacement is not None:
-            X = X.with_columns(
-                nw.when(
-                    (nw.col(self.columns[0]).is_null())
-                    | (nw.col(self.columns[1]).is_null()),
-                )
-                .then(
-                    self.missing_replacement,
-                )
-                .otherwise(
-                    nw.col(self.new_column_name),
-                )
-                .cast(nw.Int64)
-                .alias(self.new_column_name),
-            )
-
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            self,
-            X,
-            self.drop_original,
-            self.columns,
-        )
-
-
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
@@ -638,159 +493,6 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
 
         return X.with_columns(
             nw.col(col).str.to_datetime(format=self.time_format) for col in self.columns
-        )
-
-
-class SeriesDtMethodTransformer(BaseDatetimeTransformer):
-    """Tranformer that applies a pandas.Series.dt method.
-
-    Transformer assigns the output of the method to a new column. It is possible to
-    supply other key word arguments to the transform method, which will be passed to the
-    pandas.Series.dt method being called.
-
-    Be aware it is possible to supply incompatible arguments to init that will only be
-    identified when transform is run. This is because there are many combinations of method, input
-    and output sizes. Additionally some methods may only work as expected when called in
-    transform with specific key word arguments.
-
-    Parameters
-    ----------
-    new_column_name : str
-        The name of the column to be assigned to the output of running the pandas method in transform.
-
-    pd_method_name : str
-        The name of the pandas.Series.dt method to call.
-
-    column : str
-        Column to apply the transformer to. If a str is passed this is put into a list. Value passed
-        in columns is saved in the columns attribute on the object. Note this has no default value so
-        the user has to specify the columns when initialising the transformer. This is avoid likely
-        when the user forget to set columns, in this case all columns would be picked up when super
-        transform runs.
-
-    pd_method_kwargs : dict, default = {}
-        A dictionary of keyword arguments to be passed to the pd.Series.dt method when it is called.
-
-    drop_original: bool
-        Indicates whether to drop self.column post transform
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.__init__().
-
-    Attributes
-    ----------
-    column : str
-        Name of column to apply transformer to. This attribute is not for use in any method,
-        use 'columns instead. Here only as a fix to allow string representation of transformer.
-
-    columns : str
-        Column name for transformation.
-
-    new_column_name : str
-        The name of the column or columns to be assigned to the output of running the
-        pandas method in transform.
-
-    pd_method_name : str
-        The name of the pandas.DataFrame method to call.
-
-    pd_method_kwargs : dict
-        Dictionary of keyword arguments to call the pd.Series.dt method with.
-
-    drop_original: bool
-        Indicates whether to drop self.column post transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    """
-
-    polars_compatible = False
-
-    @beartype
-    def __init__(
-        self,
-        new_column_name: str,
-        pd_method_name: str,
-        columns: Union[
-            ListOfOneStr,
-            str,
-        ],
-        pd_method_kwargs: Optional[GenericKwargs] = None,
-        drop_original: bool = False,
-        **kwargs: Optional[bool],
-    ) -> None:
-        super().__init__(
-            columns=columns,
-            new_column_name=new_column_name,
-            drop_original=drop_original,
-            **kwargs,
-        )
-
-        if pd_method_kwargs is None:
-            pd_method_kwargs = {}
-
-        self.pd_method_name = pd_method_name
-        self.pd_method_kwargs = pd_method_kwargs
-
-        try:
-            ser = pd.Series(
-                [datetime.datetime(2020, 12, 21, tzinfo=datetime.timezone.utc)],
-            )
-            getattr(ser.dt, pd_method_name)
-
-        except Exception as err:
-            msg = f'{self.classname()}: error accessing "dt.{pd_method_name}" method on pd.Series object - pd_method_name should be a pd.Series.dt method'
-            raise AttributeError(msg) from err
-
-        if callable(getattr(ser.dt, pd_method_name)):
-            self._callable = True
-
-        else:
-            self._callable = False
-
-        # This attribute is not for use in any method, use 'columns' instead.
-        # Here only as a fix to allow string representation of transformer.
-        self.column = self.columns[0]
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform specific column on input pandas.DataFrame (X) using the given pandas.Series.dt method and
-        assign the output back to column in X.
-
-        Any keyword arguments set in the pd_method_kwargs attribute are passed onto the pd.Series.dt method
-        when calling it.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to transform.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Input X with additional column (self.new_column_name) added. These contain the output of
-            running the pd.Series.dt method.
-
-        """
-        X = super().transform(X)
-
-        if self._callable:
-            X[self.new_column_name] = getattr(
-                X[self.columns[0]].dt,
-                self.pd_method_name,
-            )(**self.pd_method_kwargs)
-
-        else:
-            X[self.new_column_name] = getattr(
-                X[self.columns[0]].dt,
-                self.pd_method_name,
-            )
-
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            self,
-            X,
-            self.drop_original,
-            self.columns,
         )
 
 
@@ -1445,3 +1147,310 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             return_native=False,
         )
         return _return_narwhals_or_native_dataframe(X, return_native)
+
+
+# DEPRECATED TRANSFORMERS
+
+
+@deprecated(
+    "This Transformer is deprecated, use DateDifferenceTransformer instead. "
+    "If you prefer this transformer to DateDifferenceTransformer, "
+    "let us know through a github issue",
+)
+class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
+    """Transformer to calculate the number of years between two dates.
+
+    !!! warning "Deprecated"
+        This transformer is now deprecated; use `DateDifferenceTransformer` instead.
+
+    Parameters
+    ----------
+    columns : List[str]
+        List of 2 columns. First column will be subtracted from second.
+
+    new_column_name : str
+        Name for the new year column.
+
+    drop_original : bool
+        Flag for whether to drop the original columns.
+
+    missing_replacement : int/float/str
+        Value to output if either the lower date value or the upper date value are
+        missing. Default value is None.
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+    Attributes
+    ----------
+    columns : List[str]
+        List of 2 columns. First column will be subtracted from second.
+
+    new_column_name : str, default = None
+        Name given to calculated datediff column. If None then {column_upper}_{column_lower}_datediff
+        will be used.
+
+    drop_original : bool
+        Indicator whether to drop old columns during transform method.
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    """
+
+    polars_compatible = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: ListOfTwoStrs,
+        new_column_name: str,
+        missing_replacement: Optional[Union[float, int, str]] = None,
+        drop_original: bool = False,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        super().__init__(
+            columns=columns,
+            new_column_name=new_column_name,
+            drop_original=drop_original,
+            **kwargs,
+        )
+
+        self.missing_replacement = missing_replacement
+
+        # This attribute is not for use in any method, use 'columns' instead.
+        # Here only as a fix to allow string representation of transformer.
+        self.column_lower = columns[0]
+        self.column_upper = columns[1]
+
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
+        """Calculate year gap between the two provided columns.
+
+        New column is created under the 'new_column_name', and optionally removes the
+        old date columns.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Data containing self.columns
+
+        Returns
+        -------
+        X : pd/pl.DataFrame
+            Data containing self.columns
+
+        """
+
+        X = nw.from_native(super().transform(X))
+
+        # Create a helping column col0 for the first date. This will convert the date into an integer in a format or YYYYMMDD
+        X = X.with_columns(
+            (
+                nw.col(self.columns[0]).cast(nw.Date).dt.year().cast(nw.Int64) * 10000
+                + nw.col(self.columns[0]).cast(nw.Date).dt.month().cast(nw.Int64) * 100
+                + nw.col(self.columns[0]).cast(nw.Date).dt.day().cast(nw.Int64)
+            ).alias("col0"),
+        )
+        # Create a helping column col1 for the second date. This will convert the date into an integer in a format or YYYYMMDD
+        X = X.with_columns(
+            (
+                nw.col(self.columns[1]).cast(nw.Date).dt.year().cast(nw.Int64) * 10000
+                + nw.col(self.columns[1]).cast(nw.Date).dt.month().cast(nw.Int64) * 100
+                + nw.col(self.columns[1]).cast(nw.Date).dt.day().cast(nw.Int64)
+            ).alias("col1"),
+        )
+
+        # Compute difference between integers and if the difference is negative then adjust.
+        # Finally devide by 10000 to get the years.
+        X = X.with_columns(
+            nw.when(nw.col("col1") < nw.col("col0"))
+            .then(((nw.col("col0") - nw.col("col1")) // 10000) * (-1))
+            .otherwise((nw.col("col1") - nw.col("col0")) // 10000)
+            .cast(nw.Int64)
+            .alias(self.new_column_name),
+        ).drop(["col0", "col1"])
+
+        # When we get a missing then replace with missing_replacement otherwise return the above calculation
+        if self.missing_replacement is not None:
+            X = X.with_columns(
+                nw.when(
+                    (nw.col(self.columns[0]).is_null())
+                    | (nw.col(self.columns[1]).is_null()),
+                )
+                .then(
+                    self.missing_replacement,
+                )
+                .otherwise(
+                    nw.col(self.new_column_name),
+                )
+                .cast(nw.Int64)
+                .alias(self.new_column_name),
+            )
+
+        # Drop original columns if self.drop_original is True
+        return DropOriginalMixin.drop_original_column(
+            self,
+            X,
+            self.drop_original,
+            self.columns,
+        )
+
+
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If aspects of it have been useful to you, please raise an issue
+    for it to be replaced with more specific transformers
+    """,
+)
+class SeriesDtMethodTransformer(BaseDatetimeTransformer):
+    """Tranformer that applies a pandas.Series.dt method.
+
+    Transformer assigns the output of the method to a new column. It is possible to
+    supply other key word arguments to the transform method, which will be passed to the
+    pandas.Series.dt method being called.
+
+    Be aware it is possible to supply incompatible arguments to init that will only be
+    identified when transform is run. This is because there are many combinations of method, input
+    and output sizes. Additionally some methods may only work as expected when called in
+    transform with specific key word arguments.
+
+    Parameters
+    ----------
+    new_column_name : str
+        The name of the column to be assigned to the output of running the pandas method in transform.
+
+    pd_method_name : str
+        The name of the pandas.Series.dt method to call.
+
+    column : str
+        Column to apply the transformer to. If a str is passed this is put into a list. Value passed
+        in columns is saved in the columns attribute on the object. Note this has no default value so
+        the user has to specify the columns when initialising the transformer. This is avoid likely
+        when the user forget to set columns, in this case all columns would be picked up when super
+        transform runs.
+
+    pd_method_kwargs : dict, default = {}
+        A dictionary of keyword arguments to be passed to the pd.Series.dt method when it is called.
+
+    drop_original: bool
+        Indicates whether to drop self.column post transform
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseTransformer.__init__().
+
+    Attributes
+    ----------
+    column : str
+        Name of column to apply transformer to. This attribute is not for use in any method,
+        use 'columns instead. Here only as a fix to allow string representation of transformer.
+
+    columns : str
+        Column name for transformation.
+
+    new_column_name : str
+        The name of the column or columns to be assigned to the output of running the
+        pandas method in transform.
+
+    pd_method_name : str
+        The name of the pandas.DataFrame method to call.
+
+    pd_method_kwargs : dict
+        Dictionary of keyword arguments to call the pd.Series.dt method with.
+
+    drop_original: bool
+        Indicates whether to drop self.column post transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    """
+
+    polars_compatible = False
+
+    @beartype
+    def __init__(
+        self,
+        new_column_name: str,
+        pd_method_name: str,
+        columns: Union[
+            ListOfOneStr,
+            str,
+        ],
+        pd_method_kwargs: Optional[GenericKwargs] = None,
+        drop_original: bool = False,
+        **kwargs: Optional[bool],
+    ) -> None:
+        super().__init__(
+            columns=columns,
+            new_column_name=new_column_name,
+            drop_original=drop_original,
+            **kwargs,
+        )
+
+        if pd_method_kwargs is None:
+            pd_method_kwargs = {}
+
+        self.pd_method_name = pd_method_name
+        self.pd_method_kwargs = pd_method_kwargs
+
+        try:
+            ser = pd.Series(
+                [datetime.datetime(2020, 12, 21, tzinfo=datetime.timezone.utc)],
+            )
+            getattr(ser.dt, pd_method_name)
+
+        except Exception as err:
+            msg = f'{self.classname()}: error accessing "dt.{pd_method_name}" method on pd.Series object - pd_method_name should be a pd.Series.dt method'
+            raise AttributeError(msg) from err
+
+        if callable(getattr(ser.dt, pd_method_name)):
+            self._callable = True
+
+        else:
+            self._callable = False
+
+        # This attribute is not for use in any method, use 'columns' instead.
+        # Here only as a fix to allow string representation of transformer.
+        self.column = self.columns[0]
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Transform specific column on input pandas.DataFrame (X) using the given pandas.Series.dt method and
+        assign the output back to column in X.
+
+        Any keyword arguments set in the pd_method_kwargs attribute are passed onto the pd.Series.dt method
+        when calling it.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Data to transform.
+
+        Returns
+        -------
+        X : pd.DataFrame
+            Input X with additional column (self.new_column_name) added. These contain the output of
+            running the pd.Series.dt method.
+
+        """
+        X = super().transform(X)
+
+        if self._callable:
+            X[self.new_column_name] = getattr(
+                X[self.columns[0]].dt,
+                self.pd_method_name,
+            )(**self.pd_method_kwargs)
+
+        else:
+            X[self.new_column_name] = getattr(
+                X[self.columns[0]].dt,
+                self.pd_method_name,
+            )
+
+        # Drop original columns if self.drop_original is True
+        return DropOriginalMixin.drop_original_column(
+            self,
+            X,
+            self.drop_original,
+            self.columns,
+        )

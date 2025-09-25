@@ -13,6 +13,7 @@ import pandas as pd
 import polars as pl
 from beartype import beartype
 from narwhals.typing import IntoDType  # noqa: TCH002
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -491,6 +492,13 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     """BaseMappingTransformer Extension for cross column mapping transformers.
 
@@ -559,6 +567,12 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     """Transformer to adjust values in one column based on the values of another column.
 
@@ -635,6 +649,12 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     """BaseCrossColumnNumericTransformer Extension for cross column numerical mapping transformers.
 
@@ -703,6 +723,12 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     """Transformer to apply a multiplicative adjustment to values in one column based on the values of another column.
 
@@ -776,6 +802,12 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     """Transformer to apply an additive adjustment to values in one column based on the values of another column.
 

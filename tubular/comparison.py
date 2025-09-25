@@ -4,12 +4,20 @@ from typing import Optional
 
 import pandas as pd  # noqa: TCH002
 from beartype import beartype
+from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import ListOfTwoStrs  # noqa: TCH001
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class EqualityChecker(
     DropOriginalMixin,
     BaseTransformer,

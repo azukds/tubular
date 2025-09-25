@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import narwhals as nw
 import pandas as pd
+from typing_extensions import deprecated
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -69,6 +70,13 @@ class SetValueTransformer(BaseTransformer):
         return X.with_columns(set_value_expression)
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class ColumnDtypeSetter(BaseTransformer):
     """Transformer to set transform columns in a dataframe to a dtype.
 

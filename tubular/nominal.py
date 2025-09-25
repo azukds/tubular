@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -128,130 +129,6 @@ class BaseNominalTransformer(BaseTransformer):
         self.check_mappable_rows(X, present_values)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
-
-
-class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMixin):
-    """Transformer to convert columns containing nominal values into integer values.
-
-    The nominal levels that are mapped to integers are not ordered in any way.
-
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to transform, if the default of None is supplied all object and category
-        columns in X are used.
-
-    start_encoding : int, default = 0
-        Value to start the encoding from e.g. if start_encoding = 0 then the encoding would be
-        {'A': 0, 'B': 1, 'C': 3} etc.. or if start_encoding = 5 then the same encoding would be
-        {'A': 5, 'B': 6, 'C': 7}. Can be positive or negative.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-    start_encoding : int
-        Value to start the encoding / mapping of nominal to integer from.
-
-    mappings : dict
-        Created in fit. A dict of key (column names) value (mappings between levels and integers for given
-        column) pairs.
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    """
-
-    polars_compatible = False
-
-    FITS = True
-
-    def __init__(
-        self,
-        columns: str | list[str] | None = None,
-        start_encoding: int = 0,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
-
-        # this transformer shouldn't really be used with huge numbers of levels
-        # so setup to use int8 type
-        # if there are more levels than this, will get a type error
-        self.return_dtypes = {c: "Int8" for c in self.columns}
-
-        if not isinstance(start_encoding, int):
-            msg = f"{self.classname()}: start_encoding should be an integer"
-            raise ValueError(msg)
-
-        self.start_encoding = start_encoding
-
-    def fit(self, X: pd.DataFrame, y: pd.Series | None = None) -> pd.DataFrame:
-        """Creates mapping between nominal levels and integer values for categorical variables.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to fit the transformer on, this sets the nominal levels that can be mapped.
-
-        y : None or pd.DataFrame or pd.Series, default = None
-            Optional argument only required for the transformer to work with sklearn pipelines.
-
-        """
-        BaseNominalTransformer.fit(self, X, y)
-
-        self.mappings = {}
-
-        for c in self.columns:
-            col_values = X[c].unique()
-
-            self.mappings[c] = {
-                k: i for i, k in enumerate(col_values, self.start_encoding)
-            }
-
-            # if more levels than int8 type can handle, then error
-            if len(self.mappings[c]) > 127:
-                msg = f"{self.classname()}: column {c} has too many levels to encode"
-                raise ValueError(
-                    msg,
-                )
-
-        # use BaseMappingTransformer init to process args
-        # extract null_mappings from mappings etc
-        base_mapping_transformer = BaseMappingTransformer(
-            mappings=self.mappings,
-            return_dtypes=self.return_dtypes,
-        )
-
-        self.mappings = base_mapping_transformer.mappings
-        self.mappings_from_null = base_mapping_transformer.mappings_from_null
-        self.return_dtypes = base_mapping_transformer.return_dtypes
-
-        return self
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform method to apply integer encoding stored in the mappings attribute to
-        each column in the columns attribute.
-
-        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
-        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
-        standard pd.Series.map method.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data with nominal columns to transform.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed input X with levels mapped according to mappings dict.
-
-        """
-
-        X = super().transform(X)
-
-        return BaseMappingTransformMixin.transform(self, X)
 
 
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
@@ -596,7 +473,9 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         }
 
         transform_expressions = {
-            c: transform_expressions[c].cast(schema[c])
+            c: transform_expressions[c].cast(
+                nw.Enum(self.non_rare_levels[c] + [self.rare_level_name]),
+            )
             if (schema[c] in [nw.Categorical, nw.Enum])
             else transform_expressions[c]
             for c in self.columns
@@ -1191,180 +1070,6 @@ class MeanResponseTransformer(
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
-class OrdinalEncoderTransformer(
-    BaseNominalTransformer,
-    BaseMappingTransformMixin,
-    WeightColumnMixin,
-):
-    """Transformer to encode categorical variables into ascending rank-ordered integer values variables by mapping
-    it's levels to the target-mean response for that level.
-    Values will be sorted in ascending order only i.e. categorical level with lowest target mean response to
-    be encoded as 1, the next highest value as 2 and so on.
-
-    If a categorical variable contains null values these will not be transformed.
-
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to transform, if the default of None is supplied all object and category
-        columns in X are used.
-
-    weights_column : str or None
-        Weights column to use when calculating the mean response.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-    weights_column : str or None
-        Weights column to use when calculating the mean response.
-
-    mappings : dict
-        Created in fit. Dict of key (column names) value (mapping of categorical levels to numeric,
-        ordinal encoded response values) pairs.
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    """
-
-    polars_compatible = False
-
-    FITS = True
-
-    def __init__(
-        self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
-
-        BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
-
-        # this transformer shouldn't really be used with huge numbers of levels
-        # so setup to use int8 type
-        # if there are more levels than this, will get a type error
-        self.return_dtypes = {c: "Int8" for c in self.columns}
-
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
-        """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
-
-        If the user specified the weights_column arg in when initialising the transformer
-        the weighted mean response will be calculated using that column.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to with catgeorical variable columns to transform and response_column column
-            specified when object was initialised.
-
-        y : pd.Series
-            Response column or target.
-
-        """
-        BaseNominalTransformer.fit(self, X, y)
-
-        self.mappings = {}
-
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
-
-        response_null_count = y.isna().sum()
-
-        if response_null_count > 0:
-            msg = f"{self.classname()}: y has {response_null_count} null values"
-            raise ValueError(msg)
-
-        X_y = self._combine_X_y(X, y)
-        response_column = "_temporary_response"
-
-        for c in self.columns:
-            if self.weights_column is None:
-                # get the indexes of the sorted target mean-encoded dict
-                _idx_target_mean = list(
-                    X_y.groupby([c])[response_column]
-                    .mean()
-                    .sort_values(ascending=True, kind="mergesort")
-                    .index,
-                )
-
-                # create a dictionary whose keys are the levels of the categorical variable
-                # sorted ascending by their target-mean value
-                # and whose values are ascending ordinal integers
-                ordinal_encoded_dict = {
-                    k: _idx_target_mean.index(k) + 1 for k in _idx_target_mean
-                }
-
-                self.mappings[c] = ordinal_encoded_dict
-
-            else:
-                groupby_sum = X_y.groupby([c])[
-                    [response_column, self.weights_column]
-                ].sum()
-
-                # get the indexes of the sorted target mean-encoded dict
-                _idx_target_mean = list(
-                    (groupby_sum[response_column] / groupby_sum[self.weights_column])
-                    .sort_values(ascending=True, kind="mergesort")
-                    .index,
-                )
-
-                # create a dictionary whose keys are the levels of the categorical variable
-                # sorted ascending by their target-mean value
-                # and whose values are ascending ordinal integers
-                ordinal_encoded_dict = {
-                    k: _idx_target_mean.index(k) + 1 for k in _idx_target_mean
-                }
-
-                self.mappings[c] = ordinal_encoded_dict
-
-        for col in self.columns:
-            # if more levels than int8 type can handle, then error
-            if len(self.mappings[col]) > 127:
-                msg = f"{self.classname()}: column {c} has too many levels to encode"
-                raise ValueError(
-                    msg,
-                )
-
-        # use BaseMappingTransformer init to process args
-        # extract null_mappings from mappings etc
-        base_mapping_transformer = BaseMappingTransformer(
-            mappings=self.mappings,
-            return_dtypes=self.return_dtypes,
-        )
-
-        self.mappings = base_mapping_transformer.mappings
-        self.mappings_from_null = base_mapping_transformer.mappings_from_null
-        self.return_dtypes = base_mapping_transformer.return_dtypes
-
-        return self
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform method to apply ordinal encoding stored in the mappings attribute to
-        each column in the columns attribute. This maps categorical levels to rank-ordered integer values by target-mean in ascending order.
-
-        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
-        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
-        standard pd.Series.map method.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to with catgeorical variable columns to transform.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed data with levels mapped to ordinal encoded values for categorical variables.
-
-        """
-        X = super().transform(X)
-
-        return BaseMappingTransformMixin.transform(self, X)
-
-
 class OneHotEncodingTransformer(
     DropOriginalMixin,
     SeparatorColumnMixin,
@@ -1665,3 +1370,316 @@ class OneHotEncodingTransformer(
         )
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
+
+# DEPRECATED TRANSFORMERS
+
+
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
+class OrdinalEncoderTransformer(
+    BaseNominalTransformer,
+    BaseMappingTransformMixin,
+    WeightColumnMixin,
+):
+    """Transformer to encode categorical variables into ascending rank-ordered integer values variables by mapping
+    it's levels to the target-mean response for that level.
+    Values will be sorted in ascending order only i.e. categorical level with lowest target mean response to
+    be encoded as 1, the next highest value as 2 and so on.
+
+    If a categorical variable contains null values these will not be transformed.
+
+    Parameters
+    ----------
+    columns : None or str or list, default = None
+        Columns to transform, if the default of None is supplied all object and category
+        columns in X are used.
+
+    weights_column : str or None
+        Weights column to use when calculating the mean response.
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+    Attributes
+    ----------
+    weights_column : str or None
+        Weights column to use when calculating the mean response.
+
+    mappings : dict
+        Created in fit. Dict of key (column names) value (mapping of categorical levels to numeric,
+        ordinal encoded response values) pairs.
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    """
+
+    polars_compatible = False
+
+    FITS = True
+
+    def __init__(
+        self,
+        columns: str | list[str] | None = None,
+        weights_column: str | None = None,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        WeightColumnMixin.check_and_set_weight(self, weights_column)
+
+        BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
+
+        # this transformer shouldn't really be used with huge numbers of levels
+        # so setup to use int8 type
+        # if there are more levels than this, will get a type error
+        self.return_dtypes = {c: "Int8" for c in self.columns}
+
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+        """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
+
+        If the user specified the weights_column arg in when initialising the transformer
+        the weighted mean response will be calculated using that column.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Data to with catgeorical variable columns to transform and response_column column
+            specified when object was initialised.
+
+        y : pd.Series
+            Response column or target.
+
+        """
+        BaseNominalTransformer.fit(self, X, y)
+
+        self.mappings = {}
+
+        if self.weights_column is not None:
+            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+
+        response_null_count = y.isna().sum()
+
+        if response_null_count > 0:
+            msg = f"{self.classname()}: y has {response_null_count} null values"
+            raise ValueError(msg)
+
+        X_y = self._combine_X_y(X, y)
+        response_column = "_temporary_response"
+
+        for c in self.columns:
+            if self.weights_column is None:
+                # get the indexes of the sorted target mean-encoded dict
+                _idx_target_mean = list(
+                    X_y.groupby([c])[response_column]
+                    .mean()
+                    .sort_values(ascending=True, kind="mergesort")
+                    .index,
+                )
+
+                # create a dictionary whose keys are the levels of the categorical variable
+                # sorted ascending by their target-mean value
+                # and whose values are ascending ordinal integers
+                ordinal_encoded_dict = {
+                    k: _idx_target_mean.index(k) + 1 for k in _idx_target_mean
+                }
+
+                self.mappings[c] = ordinal_encoded_dict
+
+            else:
+                groupby_sum = X_y.groupby([c])[
+                    [response_column, self.weights_column]
+                ].sum()
+
+                # get the indexes of the sorted target mean-encoded dict
+                _idx_target_mean = list(
+                    (groupby_sum[response_column] / groupby_sum[self.weights_column])
+                    .sort_values(ascending=True, kind="mergesort")
+                    .index,
+                )
+
+                # create a dictionary whose keys are the levels of the categorical variable
+                # sorted ascending by their target-mean value
+                # and whose values are ascending ordinal integers
+                ordinal_encoded_dict = {
+                    k: _idx_target_mean.index(k) + 1 for k in _idx_target_mean
+                }
+
+                self.mappings[c] = ordinal_encoded_dict
+
+        for col in self.columns:
+            # if more levels than int8 type can handle, then error
+            if len(self.mappings[col]) > 127:
+                msg = f"{self.classname()}: column {c} has too many levels to encode"
+                raise ValueError(
+                    msg,
+                )
+
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=self.mappings,
+            return_dtypes=self.return_dtypes,
+        )
+
+        self.mappings = base_mapping_transformer.mappings
+        self.mappings_from_null = base_mapping_transformer.mappings_from_null
+        self.return_dtypes = base_mapping_transformer.return_dtypes
+
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Transform method to apply ordinal encoding stored in the mappings attribute to
+        each column in the columns attribute. This maps categorical levels to rank-ordered integer values by target-mean in ascending order.
+
+        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
+        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
+        standard pd.Series.map method.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Data to with catgeorical variable columns to transform.
+
+        Returns
+        -------
+        X : pd.DataFrame
+            Transformed data with levels mapped to ordinal encoded values for categorical variables.
+
+        """
+        X = super().transform(X)
+
+        return BaseMappingTransformMixin.transform(self, X)
+
+
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
+class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMixin):
+    """Transformer to convert columns containing nominal values into integer values.
+
+    The nominal levels that are mapped to integers are not ordered in any way.
+
+    Parameters
+    ----------
+    columns : None or str or list, default = None
+        Columns to transform, if the default of None is supplied all object and category
+        columns in X are used.
+
+    start_encoding : int, default = 0
+        Value to start the encoding from e.g. if start_encoding = 0 then the encoding would be
+        {'A': 0, 'B': 1, 'C': 3} etc.. or if start_encoding = 5 then the same encoding would be
+        {'A': 5, 'B': 6, 'C': 7}. Can be positive or negative.
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+    Attributes
+    ----------
+    start_encoding : int
+        Value to start the encoding / mapping of nominal to integer from.
+
+    mappings : dict
+        Created in fit. A dict of key (column names) value (mappings between levels and integers for given
+        column) pairs.
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    """
+
+    polars_compatible = False
+
+    FITS = True
+
+    def __init__(
+        self,
+        columns: str | list[str] | None = None,
+        start_encoding: int = 0,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
+
+        # this transformer shouldn't really be used with huge numbers of levels
+        # so setup to use int8 type
+        # if there are more levels than this, will get a type error
+        self.return_dtypes = {c: "Int8" for c in self.columns}
+
+        if not isinstance(start_encoding, int):
+            msg = f"{self.classname()}: start_encoding should be an integer"
+            raise ValueError(msg)
+
+        self.start_encoding = start_encoding
+
+    def fit(self, X: pd.DataFrame, y: pd.Series | None = None) -> pd.DataFrame:
+        """Creates mapping between nominal levels and integer values for categorical variables.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Data to fit the transformer on, this sets the nominal levels that can be mapped.
+
+        y : None or pd.DataFrame or pd.Series, default = None
+            Optional argument only required for the transformer to work with sklearn pipelines.
+
+        """
+        BaseNominalTransformer.fit(self, X, y)
+
+        self.mappings = {}
+
+        for c in self.columns:
+            col_values = X[c].unique()
+
+            self.mappings[c] = {
+                k: i for i, k in enumerate(col_values, self.start_encoding)
+            }
+
+            # if more levels than int8 type can handle, then error
+            if len(self.mappings[c]) > 127:
+                msg = f"{self.classname()}: column {c} has too many levels to encode"
+                raise ValueError(
+                    msg,
+                )
+
+        # use BaseMappingTransformer init to process args
+        # extract null_mappings from mappings etc
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=self.mappings,
+            return_dtypes=self.return_dtypes,
+        )
+
+        self.mappings = base_mapping_transformer.mappings
+        self.mappings_from_null = base_mapping_transformer.mappings_from_null
+        self.return_dtypes = base_mapping_transformer.return_dtypes
+
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Transform method to apply integer encoding stored in the mappings attribute to
+        each column in the columns attribute.
+
+        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
+        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
+        standard pd.Series.map method.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Data with nominal columns to transform.
+
+        Returns
+        -------
+        X : pd.DataFrame
+            Transformed input X with levels mapped according to mappings dict.
+
+        """
+
+        X = super().transform(X)
+
+        return BaseMappingTransformMixin.transform(self, X)

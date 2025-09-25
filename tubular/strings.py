@@ -6,12 +6,20 @@ from typing import Optional, Union
 
 import pandas as pd
 from beartype import beartype
+from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import SeparatorColumnMixin
 from tubular.types import GenericKwargs, ListOfOneStr  # noqa: TCH001
 
 
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If aspects of it have been useful to you, please raise an issue
+    for it to be replaced with more specific transformers
+    """,
+)
 class SeriesStrMethodTransformer(BaseTransformer):
     """Tranformer that applies a pandas.Series.str method.
 
@@ -115,6 +123,12 @@ class SeriesStrMethodTransformer(BaseTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
     """Transformer to combine data from specified columns, of mixed datatypes, into a new column containing one string.
 
