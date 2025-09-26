@@ -639,11 +639,19 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         initial_columns_exprs: dict[str, nw.Expr]
             dict containing initial column expressions to build on. Defaults to None,
-            and in this case nw.col(c) is taken as the initial expr for each column c
+            and in this case nw.col(c) is taken as the initial expr for each column c.
+
+            This argument allows the chaining of longer expressions into calculating
+            the mean, so we are not restricted to working with nw.col(c) and
+            could pass e.g. (nw.col(c) * 2) if this was of interest.
 
         initial_weights_expr: nw.Expr
             initial expression for weights column. Defaults to None,
             and in this case nw.col(weights_column) is taken as the initial expr
+
+            This argument allows the chaining of longer expressions into calculating
+            the mean, so we are not restricted to working with nw.col(weights_column)
+            and could pass e.g. (nw.col(weights_column) * 2) if this was of interest.
 
         Returns
         ----------
@@ -652,17 +660,24 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         """
 
+        # if a more complex starting expression for c or weights has been passed,
+        # (e.g. we may be worthing with a version of c that has been mapped)
+        # use this, otherwise proceed with the base case
+        # nw.col(c) and nw.col(weights_column)
         if initial_columns_exprs is None:
             initial_columns_exprs = {c: nw.col(c) for c in columns}
 
         if initial_weights_expr is None:
             initial_weights_expr = nw.col(weights_column)
 
+        # for each col c, calculate total weight where c is non-null
         total_weight_expressions = {
             c: (initial_weights_expr.filter(~initial_columns_exprs[c].is_null()).sum())
             for c in columns
         }
 
+        # for each col c, calculate total weighted c where
+        # c is not null
         total_weighted_col_expressions = {
             c: (
                 (initial_columns_exprs[c] * initial_weights_expr)
@@ -672,6 +687,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             for c in columns
         }
 
+        #  for each col c, take the ratio of these and return as weighted mean
         return {
             c: (total_weighted_col_expressions[c] / total_weight_expressions[c])
             for c in columns
