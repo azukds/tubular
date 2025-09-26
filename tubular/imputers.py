@@ -672,14 +672,18 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
+        self.impute_values_ = defaultdict(lambda: None)
+
         all_null_cols = _get_all_null_columns(X, self.columns)
 
-        for column in all_null_cols:
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            _ = [self.impute_values_[c] for c in all_null_cols]
+
             warnings.warn(
-                f"ModeImputer: The Mode of column {column} is None",
+                f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
                 stacklevel=2,
             )
-            self.impute_values_[column] = None
 
         not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
 

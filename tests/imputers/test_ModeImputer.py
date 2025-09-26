@@ -210,7 +210,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
 
         with pytest.warns(
             UserWarning,
-            match="ModeImputer: The Mode of column a is None",
+            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
         ):
             x.fit(df)
 
@@ -247,7 +247,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
 
         with pytest.warns(
             UserWarning,
-            match="ModeImputer: The Mode of column a is None",
+            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
         ):
             x.fit(df)
 
