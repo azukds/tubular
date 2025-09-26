@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 - bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype
 - chore: deprecated transformers that are not being converted to narwhals, and moved to bottom of their files. `#433 <https://github.com/azukds/tubular/issues/433>_`
 - chore: edited package init to only advertise non-deprecated transformers (and not base classes)
+- feat: created _stats and _checks files to store reusable calculation or data validating functions
 
 1.4.8 (03/09/25)
 ----------------
