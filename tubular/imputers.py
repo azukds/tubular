@@ -584,10 +584,12 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             weights_column,
         )
 
-        results = X.select(**weighted_mean_exprs).to_dict(as_series=False)
+        results_dict = X.select(**weighted_mean_exprs).to_dict(as_series=False)
 
         # results looks like {key: [value]} so extract value from list
-        self.impute_values_ = {key: value[0] for key, value in results.items()}
+        self.impute_values_.update(
+            {col: value[0] for col, value in results_dict.items()},
+        )
 
         return self
 
