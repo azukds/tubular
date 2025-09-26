@@ -505,9 +505,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             ).min()
 
         else:
-            median_expr = initial_column_expr.filter(
-                ~initial_column_expr.is_null(),
-            ).median()
+            median_expr = initial_column_expr.drop_nulls().median()
 
         return median_expr
 
@@ -682,11 +680,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         # for each col c, calculate total weighted c where
         # c is not null
         total_weighted_col_expressions = {
-            c: (
-                (initial_columns_exprs[c] * initial_weights_expr)
-                .filter(~initial_columns_exprs[c].is_null())
-                .sum()
-            )
+            c: ((initial_columns_exprs[c] * initial_weights_expr).drop_nulls().sum())
             for c in columns
         }
 
@@ -902,7 +896,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         for c in results_dict:
             mode_values = results_dict[c]
 
-            mode_values = mode_values.filter(~mode_values.is_null()).sort(
+            mode_values = mode_values.drop_nulls().sort(
                 descending=True,
             )
 
