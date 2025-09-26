@@ -570,8 +570,9 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
                 **median_exprs,
             ).to_dict(as_series=False)
 
-            for c in not_all_null_columns:
-                self.impute_values_[c] = results_dict[c][0]
+            self.impute_values_.update(
+                {col: value[0] for col, value in results_dict.items()},
+            )
 
         return self
 
