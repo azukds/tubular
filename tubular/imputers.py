@@ -486,9 +486,6 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         median_value_exprs: dict[str, nw.Expr]
             dict of format col: expression for calculating median
 
-        all_null_columns: list[str]
-            list of columns which are all null
-
         """
 
         if initial_column_expr is None:
