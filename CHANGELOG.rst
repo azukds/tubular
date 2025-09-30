@@ -33,6 +33,11 @@ Each individual change should have a link to the pull request after the descript
 - bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype
 - chore: deprecated transformers that are not being converted to narwhals, and moved to bottom of their files. `#433 <https://github.com/azukds/tubular/issues/433>_`
 - chore: edited package init to only advertise non-deprecated transformers (and not base classes)
+- chore: added doctests for capping file and deleted stale example notebooks `#501 <https://github.com/azukds/tubular/issues/501>_`
+- chore: added doctests for aggregations file `#500 <https://github.com/azukds/tubular/issues/500>_`
+- chore: doctests for misc module, deleted old/stale example notebooks `#505  <https://github.com/azukds/tubular/issues/505>_`
+- chore: doctests for mapping module, deleted old/stale example notebooks `#504 <https://github.com/azukds/tubular/issues/504>_`
+- chore: doctests for numeric module `#507 <https://github.com/azukds/tubular/issues/507>_`
 
 
 1.4.8 (03/09/25)

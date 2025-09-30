@@ -84,6 +84,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+        Example:
+        --------
+        >>> BaseCappingTransformer(
+        ... capping_values={'a': [10, 20], 'b': [1,3]},
+        ...    )
+        BaseCappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
         """
         if capping_values is None and quantiles is None:
             msg = f"{self.classname()}: both capping_values and quantiles are None, either supply capping values in the capping_values argument or supply quantiles that can be learnt in the fit method"
@@ -134,6 +140,14 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         Returns
         ----------
         None
+
+        Example:
+        --------
+        >>> transformer=BaseCappingTransformer(
+        ... capping_values={'a': [10, 20], 'b': [1,3]},
+        ...    )
+
+        >>> transformer.check_capping_values_dict(transformer.capping_values, 'capping_values')
 
         """
         if type(capping_values_dict) is not dict:
@@ -190,6 +204,19 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         y : None
             Required for pipeline.
 
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=BaseCappingTransformer(
+        ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+        >>> test_target=pl.Series(name='target', values=[5,6,7,8])
+
+        >>> transformer.fit(test_df, test_target)
+        BaseCappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
         """
 
         super().fit(X, y)
@@ -261,6 +288,20 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         -------
         interp_quantiles : list
             List containing computed quantiles.
+
+        Examples
+        --------
+        >>> import polars as pl
+
+        >>> x = BaseCappingTransformer(capping_values={"a": [2, 10]})
+
+        >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
+
+        >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        >>> computed_quantiles = x.prepare_quantiles(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
+        >>> [round(q, 1) for q in computed_quantiles]
+        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.5), np.float64(1.8), np.float64(2.1), np.float64(2.4), np.float64(2.7), np.float64(3.0)]
+
 
         """
         if quantiles[0] is None:
@@ -340,30 +381,30 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
-        >>> import pandas as pd
+        >>> import polars as pl
         >>> x = CappingTransformer(capping_values={"a": [2, 10]})
-        >>> df=pd.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
+        >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
         >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
         [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.5), np.float64(1.8), np.float64(2.1), np.float64(2.4), np.float64(2.7), np.float64(3.0)]
 
-        >>> df=pd.DataFrame({'a': [1,2,3], 'weight': [0,1,0]})
+        >>> df=pl.DataFrame({'a': [1,2,3], 'weight': [0,1,0]})
         >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
         [np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0), np.float64(2.0)]
 
-        >>> df=pd.DataFrame({'a':[1,2,3], 'weight': [1,1,0]})
+        >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,0]})
         >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
         [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.4), np.float64(1.6), np.float64(1.8), np.float64(2.0)]
 
-        >>> df=pd.DataFrame({'a':[1,2,3,4,5], 'weight': [1,1,1,1,1]})
+        >>> df=pl.DataFrame({'a':[1,2,3,4,5], 'weight': [1,1,1,1,1]})
         >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
         >>> [round(q, 1) for q in computed_quantiles]
         [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.5), np.float64(2.0), np.float64(2.5), np.float64(3.0), np.float64(3.5), np.float64(4.0), np.float64(4.5), np.float64(5.0)]
 
-        >>> df=pd.DataFrame({'a': [1,2,3,4,5], 'weight': [1,0,1,0,1]})
+        >>> df=pl.DataFrame({'a': [1,2,3,4,5], 'weight': [1,0,1,0,1]})
         >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = [0, 0.5, 1.0])
         >>> [round(q, 1) for q in computed_quantiles]
         [np.float64(1.0), np.float64(2.0), np.float64(5.0)]
@@ -415,6 +456,28 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X : pd/pl.DataFrame
             Transformed input X with min and max capping applied to the specified columns.
 
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=BaseCappingTransformer(
+        ... capping_values={'a': [10, 20], 'b': [1,3]},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+
+        >>> transformer.transform(test_df)
+        shape: (4, 3)
+        ┌─────┬─────┬─────┐
+        │ a   ┆ b   ┆ c   │
+        │ --- ┆ --- ┆ --- │
+        │ i64 ┆ i64 ┆ i64 │
+        ╞═════╪═════╪═════╡
+        │ 10  ┆ 3   ┆ 1   │
+        │ 15  ┆ 2   ┆ 2   │
+        │ 18  ┆ 3   ┆ 3   │
+        │ 20  ┆ 1   ┆ 4   │
+        └─────┴─────┴─────┘
         """
         self.check_is_fitted(["_replacement_values"])
 
@@ -542,6 +605,29 @@ class CappingTransformer(BaseCappingTransformer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    Example:
+    --------
+    >>> import polars as pl
+
+    >>> transformer=BaseCappingTransformer(
+    ... capping_values={'a': [10, 20], 'b': [1,3]},
+    ...    )
+
+    >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+
+    >>> transformer.transform(test_df)
+    shape: (4, 3)
+    ┌─────┬─────┬─────┐
+    │ a   ┆ b   ┆ c   │
+    │ --- ┆ --- ┆ --- │
+    │ i64 ┆ i64 ┆ i64 │
+    ╞═════╪═════╪═════╡
+    │ 10  ┆ 3   ┆ 1   │
+    │ 15  ┆ 2   ┆ 2   │
+    │ 18  ┆ 3   ┆ 3   │
+    │ 20  ┆ 1   ┆ 4   │
+    └─────┴─────┴─────┘
+
     """
 
     polars_compatible = True
@@ -570,6 +656,20 @@ class CappingTransformer(BaseCappingTransformer):
 
         y : None
             Required for pipeline.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=CappingTransformer(
+        ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+        >>> test_target=pl.Series(name='target', values=[5,6,7,8])
+
+        >>> transformer.fit(test_df, test_target)
+        CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
 
         """
         super().fit(X, y)
@@ -632,6 +732,34 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    Example:
+    --------
+    >>> import polars as pl
+
+    >>> transformer=OutOfRangeNullTransformer(
+    ... capping_values={'a': [10, 20], 'b': [1,3]},
+    ...    )
+    >>> transformer
+    OutOfRangeNullTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+
+    # transform method is inherited so also demo that here
+    >>> test_df=pl.DataFrame()
+
+    >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+
+    >>> transformer.transform(test_df)
+    shape: (4, 3)
+    ┌──────┬──────┬─────┐
+    │ a    ┆ b    ┆ c   │
+    │ ---  ┆ ---  ┆ --- │
+    │ i64  ┆ i64  ┆ i64 │
+    ╞══════╪══════╪═════╡
+    │ null ┆ null ┆ 1   │
+    │ 15   ┆ 2    ┆ 2   │
+    │ 18   ┆ null ┆ 3   │
+    │ null ┆ 1    ┆ 4   │
+    └──────┴──────┴─────┘
+
     """
 
     polars_compatible = True
@@ -661,6 +789,15 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         Keeps the existing keys in the _replacement_values dict and sets all values (except None) in the lists to np.NaN. Any None
         values remain in place.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> capping_values={"a": [0.1, 0.2], "b": [None, 10]}
+
+        >>> OutOfRangeNullTransformer.set_replacement_values(capping_values)
+        {'a': [None, None], 'b': [False, None]}
         """
 
         _replacement_values = {}
@@ -691,12 +828,27 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         y : None
             Required for pipeline.
 
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OutOfRangeNullTransformer(
+        ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+        >>> test_target=pl.Series(name='target', values=[5,6,7,8])
+
+        >>> transformer.fit(test_df, test_target)
+        OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+
         """
         super().fit(X=X, y=y)
 
         backend = nw.get_native_namespace(X)
 
-        weights_column = self.weights_column
+        original_weights_column = self.weights_column
+        weights_column = original_weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
@@ -706,7 +858,6 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
         # need to overwrite attr for fit method to work
-        original_weights_column = weights_column
         self.weights_column = weights_column
 
         if self.quantiles:

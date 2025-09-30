@@ -34,6 +34,14 @@ class SetValueTransformer(BaseTransformer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    Example:
+    --------
+    >>> SetValueTransformer(
+    ... columns='a',
+    ... value=1
+    ...    )
+    SetValueTransformer(columns=['a'], value=1)
+
     """
 
     polars_compatible = True
@@ -62,6 +70,29 @@ class SetValueTransformer(BaseTransformer):
         -------
         X : FrameT
             Transformed input X with columns set to value.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=SetValueTransformer(
+        ... columns='a',
+        ... value=1
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [4,5,6]})
+
+        >>> transformer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i32 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 4   │
+        │ 1   ┆ 5   │
+        │ 1   ┆ 6   │
+        └─────┴─────┘
 
         """
         X = nw.from_native(super().transform(X))

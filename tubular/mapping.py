@@ -56,6 +56,15 @@ class BaseMappingTransformer(BaseTransformer):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    Example:
+    --------
+    >>> BaseMappingTransformer(
+    ...   mappings={'a': {'Y': 1, 'N': 0}},
+    ...   return_dtypes={"a":"Int8"},
+    ...    )
+    BaseMappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                           return_dtypes={'a': 'Int8'})
+
     """
 
     polars_compatible = True
@@ -122,7 +131,13 @@ class BaseMappingTransformer(BaseTransformer):
         mappings: dict[str, dict[str, str | float | int]],
         col: str,
     ) -> str:
-        "infer return_dtypes from provided mappings"
+        """infer return_dtypes from provided mappings
+
+        Example:
+        --------
+        >>> BaseMappingTransformer._infer_return_type({"a": {"Y": 1, "N":0}}, col="a")
+        'Int64'
+        """
 
         return str(pl.Series(mappings[col].values()).dtype)
 
@@ -148,6 +163,28 @@ class BaseMappingTransformer(BaseTransformer):
         X : pd/pl.DataFrame
             Input X, copied if specified by user.
 
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer = BaseMappingTransformer(
+        ...   mappings={'a': {'Y': 1, 'N': 0}},
+        ...   return_dtypes={"a":"Int8"},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': ["Y", "N"], 'b': [3,4]})
+
+        >>> # base class transform has no effect on data
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ str ┆ i64 │
+        ╞═════╪═════╡
+        │ Y   ┆ 3   │
+        │ N   ┆ 4   │
+        └─────┴─────┘
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -211,6 +248,9 @@ class BaseMappingTransformMixin(BaseTransformer):
         Returns
         -------
         Tuple[nw.Expr, nw.Expr]: prepared pair of mapping condition/outcome
+
+        # currently not including doctests for this, as need to look into most meaningful
+        # way to doctest functions which output expressions
         """
         if output_col is None:
             output_col = input_col
@@ -249,6 +289,9 @@ class BaseMappingTransformMixin(BaseTransformer):
         Returns
         -------
         nw.Expr: prepared mapping expression
+
+        # currently not including doctests for this, as need to look into most meaningful
+        # way to doctest functions which output expressions
 
         """
 
@@ -306,6 +349,9 @@ class BaseMappingTransformMixin(BaseTransformer):
         -------
         X : pd/pl.DataFrame
             Transformed input X with levels mapped accoriding to mappings dict.
+
+        #  not currently including doctest for this, as is not intended to be used
+        #  independently (should be inherited as a mixin)
 
         """
         self.check_is_fitted(["mappings", "return_dtypes", "mappings_from_null"])
@@ -431,6 +477,15 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    Example:
+    --------
+    >>> MappingTransformer(
+    ...   mappings={'a': {'Y': 1, 'N': 0}},
+    ...   return_dtypes={"a":"Int8"},
+    ...    )
+    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                       return_dtypes={'a': 'Int8'})
+
     """
 
     polars_compatible = True
@@ -456,6 +511,28 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         -------
         X : pd/pl.DataFrame
             Transformed input X with levels mapped accoriding to mappings dict.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer = MappingTransformer(
+        ...   mappings={'a': {'Y': 1, 'N': 0}},
+        ...   return_dtypes={"a":"Int8"},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': ["Y", "N"], 'b': [3,4]})
+
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i8  ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 0   ┆ 4   │
+        └─────┴─────┘
 
         """
 

@@ -61,6 +61,13 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    Example:
+    --------
+    >>> BaseNumericTransformer(
+    ... columns='a',
+    ...    )
+    BaseNumericTransformer(columns=['a'])
+
     """
 
     polars_compatible = True
@@ -85,6 +92,19 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         y : pd/pl.Series | None
             Required for pipeline.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer = BaseNumericTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> transformer.fit(test_df)
+        BaseNumericTransformer(columns=['a'])
 
         """
 
@@ -115,6 +135,25 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         X : pd/pl.DataFrame
             Validated data
 
+        >>> import polars as pl
+
+        >>> transformer = BaseNumericTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> # base class has no effect on datag
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
         """
         X = _convert_dataframe_to_narwhals(X)
         return_native = self._process_return_native(return_native_override)
@@ -167,6 +206,18 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    Example:
+    --------
+    >>> OneDKmeansTransformer(
+    ... columns='a',
+    ... n_clusters=2,
+    ... new_column_name="new",
+    ... drop_original=False,
+    ... kmeans_kwargs={"random_state": 42},
+    ...    )
+    OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
+                          n_clusters=2, new_column_name='new')
+
     """
 
     polars_compatible = True
@@ -214,6 +265,24 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
         y : None
             Required for pipeline.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="new",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+
+        >>> transformer.fit(test_df)
+        OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
+                              n_clusters=2, new_column_name='new')
 
         """
 
@@ -271,6 +340,34 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         -------
         X : pl/pd.DataFrame
             Input X with additional cluster column added.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="new",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+
+        >>> _=transformer.fit(test_df)
+        >>> transformer.transform(test_df)
+        shape: (4, 3)
+        ┌─────┬─────┬─────┐
+        │ a   ┆ b   ┆ new │
+        │ --- ┆ --- ┆ --- │
+        │ i64 ┆ i64 ┆ i64 │
+        ╞═════╪═════╪═════╡
+        │ 1   ┆ 5   ┆ 0   │
+        │ 2   ┆ 6   ┆ 0   │
+        │ 3   ┆ 7   ┆ 0   │
+        │ 4   ┆ 8   ┆ 1   │
+        └─────┴─────┴─────┘
         """
         X = super().transform(X)
 
