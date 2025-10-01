@@ -4,7 +4,7 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
@@ -16,6 +16,7 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _get_version,
     _return_narwhals_or_native_dataframe,
 )
 from tubular.mixins import DropOriginalMixin
@@ -76,6 +77,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     polars_compatible = True
 
+    jsonable = True
+
+    FITS = True
+
+    _version = _get_version()
+
     def classname(self) -> str:
         """Method that returns the name of the current class when called."""
         return type(self).__name__
@@ -106,6 +113,47 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         self.copy = copy
         self.return_native = return_native
+
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        """
+        return {
+            "tubular_version": self._version,
+            "init": {
+                "columns": self.columns,
+                "copy": self.copy,
+                "verbose": self.verbose,
+                "return_native": self.return_native,
+            },
+            "fit": {},
+        }
+
+    def from_json(cls, json: dict[str, Any]) -> BaseTransformer:
+        """rebuild transformer from json dict, readyfor transform
+
+        Parameters
+        ----------
+        json_dict: dict[str, dict[str, Any]]
+            json-ified transformer
+
+        Returns
+        -------
+        BaseTransformer:
+            reconstructed transformer class, ready for transform
+        """
+        cls.__init__(**json["init"])
+
+        for attr in json["fit"]:
+            setattr(cls, attr, json["fit"][attr])
+
+        return cls
 
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
@@ -413,6 +461,10 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

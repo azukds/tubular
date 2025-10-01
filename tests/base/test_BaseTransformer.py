@@ -9,7 +9,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import _handle_from_json, assert_frame_equal_dispatch
 
 
 class TestInit(ColumnStrListInitTests):
@@ -33,6 +33,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
     def setup_class(cls):
         cls.transformer_name = "BaseTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "return_native",
         [True, False],
@@ -48,6 +49,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         uninitialized_transformers,
         minimal_attribute_dict,
         return_native,
+        from_json,
     ):
         """Test that X is returned from transform."""
         df = minimal_dataframe_lookup[self.transformer_name]
@@ -64,6 +66,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
         df = nw.to_native(df)
         expected = nw.to_native(expected)
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(X=df)
 

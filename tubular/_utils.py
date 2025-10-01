@@ -1,3 +1,5 @@
+from contextlib import suppress
+from importlib.metadata import version
 from typing import Literal, Optional
 
 import narwhals as nw
@@ -172,3 +174,11 @@ def new_narwhals_series_with_optimal_pandas_types(
         series = nw.new_series(name=name, values=values, backend=backend, dtype=dtype)
 
     return series
+
+
+def _get_version() -> str:
+    "dynamically retrieve package version"
+    with suppress(ModuleNotFoundError):
+        return version("tubular")
+
+    return "dev"

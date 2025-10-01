@@ -41,6 +41,8 @@ class BaseNominalTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    jsonable = False
+
     FITS = False
 
     @beartype
@@ -210,6 +212,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -588,6 +592,8 @@ class MeanResponseTransformer(
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -1121,6 +1127,8 @@ class OneHotEncodingTransformer(
 
     polars_compatible = True
 
+    jsonable = False
+
     FITS = True
 
     @beartype
@@ -1427,6 +1435,8 @@ class OrdinalEncoderTransformer(
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = True
 
     def __init__(
@@ -1601,6 +1611,8 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = True
 

@@ -68,6 +68,8 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
+    jsonable = False
+
     FITS = False
 
     def __init__(self, columns: list[str], **kwargs: dict[str, bool]) -> None:
@@ -217,6 +219,8 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -443,6 +447,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = False
 
     def __init__(
@@ -562,6 +568,8 @@ class CutTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = False
 
@@ -685,6 +693,8 @@ class TwoColumnOperatorTransformer(
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = False
 
     def __init__(
@@ -785,6 +795,8 @@ class ScalingTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = True
 
@@ -923,6 +935,8 @@ class InteractionTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = False
 
@@ -1109,6 +1123,8 @@ class PCATransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = True
 

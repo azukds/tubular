@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
 import polars as pl
@@ -42,7 +42,41 @@ class BaseImputer(BaseTransformer):
 
     polars_compatible = True
 
+    jsonable = True
+
     FITS = False
+
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        """
+        self.check_is_fitted("impute_values_")
+
+        json_dict = super().to_json()
+
+        # slightly awkward here as API not fully shared
+        # across classes
+        if isinstance(
+            self,
+            (
+                MeanImputer,
+                MedianImputer,
+                ModeImputer,
+            ),
+        ):
+            json_dict["init"]["weights_column"] = self.weights_column
+        elif isinstance(self, ArbitraryImputer):
+            json_dict["init"]["impute_value"] = self.impute_value
+
+        json_dict["fit"]["impute_values_"] = self.impute_values_
+
+        return json_dict
 
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
         """update input expressions to include imputation.
@@ -133,6 +167,9 @@ class ArbitraryImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    jsonable = True
+
     FITS = False
 
     @beartype
@@ -416,6 +453,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
+    jsonable = True
+
     FITS = True
 
     def __init__(
@@ -513,6 +552,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     polars_compatible = True
 
+    jsonable = True
+
     FITS = True
 
     def __init__(
@@ -604,6 +645,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    jsonable = True
 
     FITS = True
 
@@ -712,6 +755,10 @@ class NullIndicator(BaseTransformer):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = True
+
     def __init__(
         self,
         columns: str | list[str] | None = None,
@@ -773,6 +820,8 @@ class NearestMeanResponseImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 

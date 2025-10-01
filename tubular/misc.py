@@ -46,6 +46,10 @@ class SetValueTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         columns: str | list[str],
@@ -128,6 +132,10 @@ class ColumnDtypeSetter(BaseTransformer):
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

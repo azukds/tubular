@@ -46,6 +46,10 @@ class EqualityChecker(
 
     polars_compatible = False
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         columns: list,

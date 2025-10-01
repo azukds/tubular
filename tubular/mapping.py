@@ -69,6 +69,10 @@ class BaseMappingTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     RETURN_DTYPES = Literal[
         "String",
         "Object",
@@ -213,6 +217,10 @@ class BaseMappingTransformMixin(BaseTransformer):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     @staticmethod
     def _create_mapping_conditions_and_outcomes(
@@ -490,6 +498,10 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     @beartype
     def transform(
         self,
@@ -606,6 +618,10 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
 
     polars_compatible = False
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         adjust_column: str,
@@ -686,6 +702,10 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
 
     polars_compatible = False
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         adjust_column: str,
@@ -761,6 +781,10 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -843,6 +867,10 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
 
     polars_compatible = False
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         adjust_column: str,
@@ -921,6 +949,10 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

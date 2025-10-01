@@ -68,6 +68,10 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         columns: list[str],
@@ -220,6 +224,10 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         columns: list[str],
@@ -299,6 +307,10 @@ class BaseDateTwoColumnTransformer(
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         columns: list[str],
@@ -344,6 +356,10 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -496,6 +512,10 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     @beartype
     def __init__(
         self,
@@ -601,6 +621,10 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -775,6 +799,10 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     DEFAULT_MAPPINGS = {
         DatetimeInfoOptions.TIME_OF_DAY: {
@@ -998,6 +1026,10 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -1252,6 +1284,10 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     def __init__(
         self,
         columns: list[str],
@@ -1424,6 +1460,10 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
