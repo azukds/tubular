@@ -4,6 +4,7 @@ import narwhals as nw
 import pandas as pd
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -35,8 +36,7 @@ class TestInit(
     def test_missing_replacement_type_error(self):
         """Test that an exception is raised if missing_replacement is not the correct type."""
         with pytest.raises(
-            TypeError,
-            match="DateDiffLeapYearTransformer: if not None, missing_replacement should be an int, float or string",
+            BeartypeCallHintParamViolation,
         ):
             DateDiffLeapYearTransformer(
                 columns=["dummy_1", "dummy_2"],

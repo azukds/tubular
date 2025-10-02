@@ -3,6 +3,7 @@ import datetime
 import numpy as np
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -35,8 +36,7 @@ class TestInit(
     def test_units_values_error(self):
         """Test that an exception is raised if the value of inits is not one of accepted_values_units."""
         with pytest.raises(
-            ValueError,
-            match=r"DateDifferenceTransformer: units must be one of \['week', 'fortnight', 'lunar_month', 'common_year', 'custom_days', 'D', 'h', 'm', 's'\], got y",
+            BeartypeCallHintParamViolation,
         ):
             DateDifferenceTransformer(
                 columns=["dummy_1", "dummy_2"],
