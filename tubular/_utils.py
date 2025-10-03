@@ -7,11 +7,11 @@ from beartype import beartype
 from narwhals.typing import IntoDType
 from numpy.typing import ArrayLike
 
-from tubular.types import DataFrame, Series
+from tubular.types import DataFrame, NarwhalsFrame, Series
 
 
 @beartype
-def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.DataFrame:
+def _convert_dataframe_to_narwhals(X: DataFrame) -> NarwhalsFrame:
     """narwhalifies dataframe, if dataframe is not already narwhals
 
     Parameters
@@ -21,10 +21,10 @@ def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.DataFrame:
 
     Returns
     ----------
-    nw.DataFrame: narwhalified dataframe
+    nw.DataFrame/LazyFrame: narwhalified dataframe
     """
 
-    if not isinstance(X, nw.DataFrame):
+    if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
         X = nw.from_native(X)
 
     return X
@@ -68,14 +68,14 @@ def _return_narwhals_or_native_dataframe(
     """
 
     if return_native:
-        if isinstance(X, nw.DataFrame):
+        if isinstance(X, (nw.DataFrame, nw.LazyFrame)):
             return X.to_native()
 
         # type hint and beartype means we don't have to check here,
         # will be pandas or polars  frame
         return X
 
-    if isinstance(X, (pl.DataFrame, pd.DataFrame)):
+    if isinstance(X, (pl.DataFrame, pd.DataFrame, pl.LazyFrame)):
         return nw.from_native(X)
 
     # type hint and beartype means we don't have to check here,

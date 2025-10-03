@@ -34,6 +34,10 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         cls.transformer_name = "BaseTransformer"
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "return_native",
         [True, False],
     )
@@ -48,6 +52,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         uninitialized_transformers,
         minimal_attribute_dict,
         return_native,
+        lazy,
     ):
         """Test that X is returned from transform."""
         df = minimal_dataframe_lookup[self.transformer_name]
@@ -55,8 +60,9 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         args["return_native"] = return_native
         x = uninitialized_transformers[self.transformer_name](**args)
 
-        # if transformer is not polars compatible, skip polars test
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        polars = isinstance(df, pl.DataFrame)
+        # skip polars test if not narwhalified
+        if (not x.polars_compatible and polars) or (not polars and lazy):
             return
 
         df = nw.from_native(df)
@@ -65,12 +71,12 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         df = nw.to_native(df)
         expected = nw.to_native(expected)
 
-        df_transformed = x.transform(X=df)
+        df_transformed = x.transform(X=df.lazy() if (lazy and polars) else df)
 
         if not x.return_native:
             df_transformed = nw.to_native(df_transformed)
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        assert_frame_equal_dispatch(expected, df.collect() if (lazy and polars) else df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

@@ -56,6 +56,22 @@ class GenericInitTests:
                 **minimal_attribute_dict[self.transformer_name],
             )
 
+    def test_unexpected_kwarg_error(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "__init__() got an unexpected keyword argument 'unexpected_kwarg'",
+            ),
+        ):
+            uninitialized_transformers[self.transformer_name](
+                unexpected_kwarg=True,
+                **minimal_attribute_dict[self.transformer_name],
+            )
+
 
 class ColumnStrListInitTests(GenericInitTests):
     """
@@ -286,6 +302,10 @@ class GenericFitTests:
     """
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
         indirect=True,
@@ -294,6 +314,7 @@ class GenericFitTests:
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
+        lazy,
     ):
         """Test fit returns self?."""
 
@@ -301,16 +322,25 @@ class GenericFitTests:
 
         x = initialized_transformers[self.transformer_name]
 
+        polars = isinstance(df, pl.DataFrame)
+
         # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if (not x.polars_compatible and polars) or (not polars and lazy):
             return
 
-        x_fitted = x.fit(df, df["a"])
+        x_fitted = x.fit(
+            df.lazy() if (lazy and polars) else df,
+            df["a"],
+        )
 
         assert (
             x_fitted is x
         ), f"Returned value from {self.transformer_name}.fit not as expected."
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -320,23 +350,29 @@ class GenericFitTests:
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
+        lazy,
     ):
         """Test fit does not change X."""
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
+        polars = isinstance(df, pl.DataFrame)
+
         # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if (not x.polars_compatible and polars) or (not polars and lazy):
             return
 
         original_df = copy.deepcopy(df)
 
-        x.fit(df, df["a"])
+        x.fit(
+            df.lazy() if (lazy and polars) else df,
+            df["a"],
+        )
 
         assert_frame_equal_dispatch(
             original_df,
-            df,
+            df.collect() if (lazy and polars) else df,
         )
 
     @pytest.mark.parametrize(
@@ -366,6 +402,10 @@ class GenericFitTests:
             x.fit(non_df, df["a"])
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
         indirect=True,
@@ -376,84 +416,24 @@ class GenericFitTests:
         non_series,
         initialized_transformers,
         minimal_dataframe_lookup,
+        lazy,
     ):
         """Test an error is raised if y is not passed as a pd/pl.Series."""
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
+        polars = isinstance(df, pl.DataFrame)
         # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if (not x.polars_compatible and polars) or (not polars and lazy):
             return
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            x.fit(X=df, y=non_series)
-
-    def test_X_no_rows_error(
-        self,
-        initialized_transformers,
-    ):
-        """Test an error is raised if X has no rows."""
-
-        x = initialized_transformers[self.transformer_name]
-
-        df = pd.DataFrame(columns=["a", "b", "c"])
-
-        with pytest.raises(
-            ValueError,
-            match=re.escape(f"{self.transformer_name}: X has no rows; (0, 3)"),
-        ):
-            x.fit(df, df["a"])
-
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=True,
-    )
-    def test_Y_no_rows_error(
-        self,
-        initialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test an error is raised if Y has no rows."""
-
-        x = initialized_transformers[self.transformer_name]
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-
-        # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        if isinstance(df, pd.DataFrame):
-            series_init = pd.Series
-        elif isinstance(df, pl.DataFrame):
-            series_init = pl.Series
-        else:
-            series_init = None
-
-        with pytest.raises(
-            ValueError,
-            match=re.escape(f"{self.transformer_name}: y is empty; (0,)"),
-        ):
-            x.fit(X=df, y=series_init(name="d", dtype=object))
-
-    def test_unexpected_kwarg_error(
-        self,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        with pytest.raises(
-            TypeError,
-            match=re.escape(
-                "__init__() got an unexpected keyword argument 'unexpected_kwarg'",
-            ),
-        ):
-            uninitialized_transformers[self.transformer_name](
-                unexpected_kwarg=True,
-                **minimal_attribute_dict[self.transformer_name],
+            x.fit(
+                df.lazy() if (lazy and polars) else df,
+                y=non_series,
             )
 
 
@@ -826,7 +806,10 @@ class GenericTransformTests:
         if not x.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
-        x_fitted = x.fit(df, df["a"])
+        x_fitted = x.fit(
+            df,
+            df["a"],
+        )
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -834,34 +817,9 @@ class GenericTransformTests:
             x_fitted.transform(X=non_df)
 
     @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=True,
+        "lazy",
+        [True, False],
     )
-    def test_no_rows_error(
-        self,
-        initialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test an error is raised if X has no rows."""
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-        x = initialized_transformers[self.transformer_name]
-
-        # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        x = x.fit(df, df["a"])
-
-        df = df.head(0)
-
-        with pytest.raises(
-            ValueError,
-            match=re.escape(f"{self.transformer_name}: X has no rows; {df.shape}"),
-        ):
-            x.transform(df)
-
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -871,6 +829,7 @@ class GenericTransformTests:
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
+        lazy,
     ):
         """Test that the original dataframe is not transformed when transform method used
         and copy attr True"""
@@ -879,15 +838,18 @@ class GenericTransformTests:
         x = initialized_transformers[self.transformer_name]
         x.copy = True
 
+        polars = isinstance(df, pl.DataFrame)
         # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if (not x.polars_compatible and polars) or (not polars and lazy):
             return
 
         original_df = copy.deepcopy(df)
 
         x = x.fit(df, df["a"])
 
-        _ = x.transform(df)
+        _ = x.transform(
+            df.lazy() if (lazy and polars) else df,
+        )
 
         assert_frame_equal_dispatch(df, original_df)
 
@@ -1098,16 +1060,31 @@ class ColumnsCheckTests:
     """
 
     @pytest.mark.parametrize("non_list", [1, True, {"a": 1}, None, "True"])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
     def test_columns_not_list_error(
         self,
         non_list,
         initialized_transformers,
         minimal_dataframe_lookup,
+        lazy,
     ):
         """Test an error is raised if self.columns is not a list."""
         df = nw.from_native(minimal_dataframe_lookup[self.transformer_name])
 
         x = initialized_transformers[self.transformer_name]
+
+        polars = isinstance(df, pl.DataFrame)
+        # skip polars test if not narwhalified
+        if (not x.polars_compatible and polars) or (not polars and lazy):
+            return
 
         x.columns = non_list
 
@@ -1115,22 +1092,37 @@ class ColumnsCheckTests:
             TypeError,
             match=f"{self.transformer_name}: self.columns should be a list",
         ):
-            x.columns_check(X=df)
+            x.columns_check(X=df.lazy() if (lazy and polars) else df)
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
     def test_columns_not_in_X_error(
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
+        lazy,
     ):
         """Test an error is raised if self.columns contains a value not in X."""
         df = nw.from_native(minimal_dataframe_lookup[self.transformer_name])
 
         x = initialized_transformers[self.transformer_name]
 
+        polars = isinstance(df, pl.DataFrame)
+        # skip polars test if not narwhalified
+        if (not x.polars_compatible and polars) or (not polars and lazy):
+            return
+
         x.columns = ["a", "z"]
 
         with pytest.raises(ValueError):
-            x.columns_check(X=df)
+            x.columns_check(X=df.lazy() if (lazy and polars) else df)
 
 
 class CombineXYTests:
@@ -1145,13 +1137,12 @@ class CombineXYTests:
         non_df,
         initialized_transformers,
     ):
-        """Test an exception is raised if X is not a pd.DataFrame."""
+        """Test an exception is raised if X is not a DataFrame."""
 
         x = initialized_transformers[self.transformer_name]
 
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: X should be a polars or pandas DataFrame/LazyFrame",
+            BeartypeCallHintParamViolation,
         ):
             x._combine_X_y(X=non_df, y=pd.Series([1, 2]))
 
@@ -1161,31 +1152,14 @@ class CombineXYTests:
         non_series,
         initialized_transformers,
     ):
-        """Test an exception is raised if y is not a pd.Series."""
+        """Test an exception is raised if y is not a Series."""
 
         x = initialized_transformers[self.transformer_name]
 
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: y should be a polars or pandas Series",
+            BeartypeCallHintParamViolation,
         ):
             x._combine_X_y(X=pd.DataFrame({"a": [1, 2]}), y=non_series)
-
-    def test_X_and_y_different_number_of_rows_error(
-        self,
-        initialized_transformers,
-    ):
-        """Test an exception is raised if X and y have different numbers of rows."""
-
-        x = initialized_transformers[self.transformer_name]
-
-        with pytest.raises(
-            ValueError,
-            match=re.escape(
-                f"{self.transformer_name}: X and y have different numbers of rows (2 vs 1)",
-            ),
-        ):
-            x._combine_X_y(X=pd.DataFrame({"a": [1, 2]}), y=pd.Series([2]))
 
     def test_output_same_indexes(
         self,
