@@ -1,6 +1,7 @@
 import copy
 
 import narwhals as nw
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -43,12 +44,14 @@ class TestAggregateRowsOverColumnTransformerTransform(
     def setup_class(cls):
         cls.transformer_name = "AggregateRowsOverColumnTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_invalid_key_error(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test that an error is raised if the key column is not found."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -59,12 +62,17 @@ class TestAggregateRowsOverColumnTransformerTransform(
         df = create_aggregate_over_rows_test_df(library=library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
         with pytest.raises(
             ValueError,
             match=f"key '{args['key']}' not found in dataframe columns",
         ):
-            transformer.transform(df)
+            transformer.transform(u._convert_to_lazy(df, lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "aggregations, expected_data",
@@ -99,6 +107,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
         expected_data,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test transform method aggregates rows correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -108,9 +117,14 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
         df = create_aggregate_over_rows_test_df(library=library)
 
-        # transformer = transformer_setup(columns, aggregations, key, drop_original)
+        polars = isinstance(df, pl.DataFrame)
+
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformed_df = transformer.transform(df)
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
+        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Create expected DataFrame using the library parameter
         expected_df = u.dataframe_init_dispatch(expected_data, library)
@@ -127,14 +141,19 @@ class TestAggregateRowsOverColumnTransformerTransform(
             ).to_native()
 
         # Compare the transformed DataFrame with the expected DataFrame using the dispatch function
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, polars, lazy),
+            expected_df,
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_single_row(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -149,6 +168,9 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "c": ["A"],
         }
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
+
+        polars = isinstance(single_row_df, pl.DataFrame)
+
         # ensure none column is numeric type
         single_row_df = (
             nw.from_native(single_row_df)
@@ -159,7 +181,11 @@ class TestAggregateRowsOverColumnTransformerTransform(
         )
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformed_df = transformer.transform(single_row_df)
+
+        if u._check_if_skip_test(transformer, single_row_df, lazy):
+            return
+
+        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -202,14 +228,19 @@ class TestAggregateRowsOverColumnTransformerTransform(
                 ],
             ).to_native()
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, polars, lazy),
+            expected_df,
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_with_nulls(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -225,8 +256,14 @@ class TestAggregateRowsOverColumnTransformerTransform(
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
+        polars = isinstance(df_with_nulls, pl.DataFrame)
+
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformed_df = transformer.transform(df_with_nulls)
+
+        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
+            return
+
+        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -259,4 +296,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
                 ],
             ).to_native()
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, polars, lazy),
+            expected_df,
+        )

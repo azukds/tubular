@@ -37,7 +37,9 @@ Each individual change should have a link to the pull request after the descript
 - chore: doctests for numeric module `#507 <https://github.com/azukds/tubular/issues/507>_`
 - chore: doctests for nominal module `#506 <https://github.com/azukds/tubular/issues/506>_`
 - chore: doctests for imputers module `#503 <https://github.com/azukds/tubular/issues/503>_`
-
+- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BaseTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer
+- feat: introduced `lazy_compatible` class attr to all transformers
 
 
 1.4.8 (03/09/25)

@@ -9,7 +9,12 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    assert_frame_equal_dispatch,
+)
 
 
 class TestInit(ColumnStrListInitTests):
@@ -61,8 +66,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         x = uninitialized_transformers[self.transformer_name](**args)
 
         polars = isinstance(df, pl.DataFrame)
-        # skip polars test if not narwhalified
-        if (not x.polars_compatible and polars) or (not polars and lazy):
+
+        if _check_if_skip_test(x, df, lazy):
             return
 
         df = nw.from_native(df)
@@ -71,12 +76,15 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         df = nw.to_native(df)
         expected = nw.to_native(expected)
 
-        df_transformed = x.transform(X=df.lazy() if (lazy and polars) else df)
+        df_transformed = x.transform(X=_convert_to_lazy(df, lazy))
 
         if not x.return_native:
             df_transformed = nw.to_native(df_transformed)
 
-        assert_frame_equal_dispatch(expected, df.collect() if (lazy and polars) else df)
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, polars, lazy),
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

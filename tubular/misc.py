@@ -46,6 +46,8 @@ class SetValueTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     def __init__(
         self,
         columns: str | list[str],
@@ -128,6 +130,8 @@ class ColumnDtypeSetter(BaseTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     def __init__(
         self,

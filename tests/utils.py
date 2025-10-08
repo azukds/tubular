@@ -7,6 +7,8 @@ from polars.testing import assert_frame_equal as assert_polars_frame_equal
 from tubular._utils import (
     _assess_pandas_object_column,  # noqa: PLC2701, purposefully using private method in tests
 )
+from tubular.base import BaseTransformer
+from tubular.types import DataFrame
 
 PANDAS_TO_POLARS_TYPES = {
     "int64": pl.Int64,
@@ -134,3 +136,83 @@ def dataframe_init_dispatch(
         "The library parameter should be either 'pandas' or 'polars'."
     )
     raise ValueError(library_error_message)
+
+
+def _check_if_skip_test(
+    transformer: BaseTransformer,
+    df: DataFrame,
+    lazy: bool,
+) -> bool:
+    """
+    check for conditions under which test can be skipped:
+        - is a polars test on a non polars transformer
+        - is a lazy test on a non lazy transformer
+        - is a lazy test on a pandas dataframe
+
+    Parameters:
+    -----------
+    transformer:
+        transformer being tested
+    df:
+        dataframe being tested
+    lazy:
+        is the test lazy?
+
+    Returns
+    -------
+    bool:
+        True if test can be skipped
+
+    """
+
+    polars = isinstance(df, pl.DataFrame)
+
+    return (
+        (not transformer.polars_compatible and polars)
+        or (not polars and lazy)
+        or (not transformer.lazy_compatible and lazy)
+    )
+
+
+def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
+    """
+    converts dataframe to lazy if dataframe is polars and test is for lazyframes
+
+    Parameters:
+    -----------
+    df:
+        dataframe being tested
+    lazy:
+        is the test lazy?
+
+    Returns
+    -------
+    DataFrame:
+        converted or original dataframe
+    """
+
+    polars = isinstance(df, pl.DataFrame)
+
+    return df.lazy() if (lazy and polars) else df
+
+
+def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
+    """
+    collect lazyframe if type is polars and test is for lazyframes
+
+    Parameters:
+    -----------
+    df:
+        dataframe being tested
+    polars:
+        is the frame polars type?
+    lazy:
+        is the test lazy?
+
+    Returns
+    -------
+    DataFrame:
+        converted or original dataframe
+    """
+
+    return df.collect() if (lazy and polars) else df

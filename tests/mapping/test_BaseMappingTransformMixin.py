@@ -1,8 +1,6 @@
 import copy
-import re
 
 import narwhals as nw
-import pandas as pd
 import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
@@ -369,38 +367,6 @@ class TestTransform(GenericTransformTests):
             BeartypeCallHintParamViolation,
         ):
             x_fitted.transform(X=non_df)
-
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_no_rows_error(self, mapping, library):
-        """Test an error is raised if X has no rows."""
-        df = d.create_df_10(library=library)
-
-        transformer = BaseMappingTransformMixin(columns=["a"])
-
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        return_dtypes = {"a": "String"}
-
-        base_mapping_transformer = BaseMappingTransformer(
-            mappings=mapping,
-            return_dtypes=return_dtypes,
-        )
-
-        transformer.mappings = base_mapping_transformer.mappings
-        transformer.return_dtypes = base_mapping_transformer.return_dtypes
-        transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
-
-        transformer = transformer.fit(df, df["c"])
-
-        df = pd.DataFrame(columns=["a", "b", "c"])
-
-        with pytest.raises(
-            ValueError,
-            match=re.escape("BaseMappingTransformMixin: X has no rows; (0, 3)"),
-        ):
-            transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_original_df_not_updated(self, mapping, library):

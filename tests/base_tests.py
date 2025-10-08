@@ -11,7 +11,11 @@ import pytest
 import sklearn.base as b
 from beartype.roar import BeartypeCallHintParamViolation
 
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _convert_to_lazy,
+    assert_frame_equal_dispatch,
+)
 
 
 class GenericInitTests:
@@ -322,14 +326,11 @@ class GenericFitTests:
 
         x = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
-
-        # skip polars test if not narwhalified
-        if (not x.polars_compatible and polars) or (not polars and lazy):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         x_fitted = x.fit(
-            df.lazy() if (lazy and polars) else df,
+            _convert_to_lazy(df, lazy),
             df["a"],
         )
 
@@ -357,22 +358,19 @@ class GenericFitTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
-
-        # skip polars test if not narwhalified
-        if (not x.polars_compatible and polars) or (not polars and lazy):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         original_df = copy.deepcopy(df)
 
         x.fit(
-            df.lazy() if (lazy and polars) else df,
+            _convert_to_lazy(df, lazy),
             df["a"],
         )
 
         assert_frame_equal_dispatch(
             original_df,
-            df.collect() if (lazy and polars) else df,
+            df,
         )
 
     @pytest.mark.parametrize(
@@ -423,16 +421,15 @@ class GenericFitTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
         # skip polars test if not narwhalified
-        if (not x.polars_compatible and polars) or (not polars and lazy):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             x.fit(
-                df.lazy() if (lazy and polars) else df,
+                _convert_to_lazy(df, lazy),
                 y=non_series,
             )
 
@@ -838,9 +835,7 @@ class GenericTransformTests:
         x = initialized_transformers[self.transformer_name]
         x.copy = True
 
-        polars = isinstance(df, pl.DataFrame)
-        # skip polars test if not narwhalified
-        if (not x.polars_compatible and polars) or (not polars and lazy):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         original_df = copy.deepcopy(df)
@@ -848,7 +843,7 @@ class GenericTransformTests:
         x = x.fit(df, df["a"])
 
         _ = x.transform(
-            df.lazy() if (lazy and polars) else df,
+            _convert_to_lazy(df, lazy),
         )
 
         assert_frame_equal_dispatch(df, original_df)

@@ -46,6 +46,8 @@ class EqualityChecker(
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     def __init__(
         self,
         columns: list,

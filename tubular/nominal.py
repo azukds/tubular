@@ -48,6 +48,8 @@ class BaseNominalTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = False
 
     @beartype
@@ -262,6 +264,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = True
 
@@ -717,6 +721,8 @@ class MeanResponseTransformer(
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = True
 
@@ -1322,6 +1328,8 @@ class OneHotEncodingTransformer(
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = True
 
     @beartype
@@ -1713,6 +1721,8 @@ class OrdinalEncoderTransformer(
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     FITS = True
 
     def __init__(
@@ -1887,6 +1897,8 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = True
 

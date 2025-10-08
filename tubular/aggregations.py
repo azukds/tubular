@@ -95,6 +95,8 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     @beartype
     def __init__(
         self,
@@ -212,6 +214,8 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
 
     @beartype
     def __init__(
@@ -332,6 +336,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
 
     @beartype
     def __init__(

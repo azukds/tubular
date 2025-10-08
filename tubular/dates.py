@@ -68,6 +68,8 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     def __init__(
         self,
         columns: list[str],
@@ -220,6 +222,8 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     def __init__(
         self,
         columns: list[str],
@@ -299,6 +303,8 @@ class BaseDateTwoColumnTransformer(
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     def __init__(
         self,
         columns: list[str],
@@ -344,6 +350,8 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
 
     def __init__(
         self,
@@ -496,6 +504,8 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     @beartype
     def __init__(
         self,
@@ -601,6 +611,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     def __init__(
         self,
@@ -776,6 +788,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     DEFAULT_MAPPINGS = {
         DatetimeInfoOptions.TIME_OF_DAY: {
             **{i: "night" for i in range(6)},  # Midnight - 6am
@@ -828,7 +842,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[DatetimeInfoOptionList] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if include is None:
             include = self.INCLUDE_OPTIONS
@@ -998,6 +1012,8 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     def __init__(
         self,
@@ -1252,6 +1268,8 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     def __init__(
         self,
         columns: list[str],
@@ -1424,6 +1442,8 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     def __init__(
         self,

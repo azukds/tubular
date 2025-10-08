@@ -73,6 +73,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     def classname(self) -> str:
         """Method that returns the name of the current class when called."""
         return type(self).__name__
