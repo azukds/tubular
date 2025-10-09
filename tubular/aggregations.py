@@ -110,7 +110,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         self.aggregations = aggregations
 
-        self.set_drop_original_column(drop_original)
+        self.drop_original = drop_original
 
     @beartype
     def transform(

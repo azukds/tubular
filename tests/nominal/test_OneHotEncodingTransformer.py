@@ -96,7 +96,7 @@ class TestInit(
         ):
             OneHotEncodingTransformer(**args)
 
-    # need to overload the below until beartype pr completes
+    # overload this test until we beartype separator mixin
     @pytest.mark.parametrize(
         "separator",
         [1, True, {"a": 1}, [1, 2], None, np.inf, np.nan],
@@ -111,22 +111,6 @@ class TestInit(
 
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["separator"] = separator
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
-
-    @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
-    def test_drop_column_arg_errors(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        drop_orginal_column,
-    ):
-        """Test that appropriate errors are throwm for non boolean arg."""
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["drop_original"] = drop_orginal_column
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
