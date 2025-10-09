@@ -68,6 +68,8 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = False
 
     def __init__(self, columns: list[str], **kwargs: dict[str, bool]) -> None:
@@ -218,6 +220,8 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = True
 
     @beartype
@@ -229,7 +233,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         n_clusters: int = 8,
         drop_original: bool = False,
         kmeans_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if (isinstance(columns, list)) and (len(columns) > 1):
             msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
@@ -443,6 +447,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     FITS = False
 
     def __init__(
@@ -562,6 +568,8 @@ class CutTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = False
 
@@ -685,6 +693,8 @@ class TwoColumnOperatorTransformer(
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     FITS = False
 
     def __init__(
@@ -785,6 +795,8 @@ class ScalingTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = True
 
@@ -923,6 +935,8 @@ class InteractionTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = False
 
@@ -1109,6 +1123,8 @@ class PCATransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = True
 

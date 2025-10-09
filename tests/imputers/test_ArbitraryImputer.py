@@ -59,6 +59,10 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "ArbitraryImputer"
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("column", "col_type", "impute_value"),
@@ -75,6 +79,7 @@ class TestTransform(
         col_type,
         impute_value,
         library,
+        lazy,
     ):
         """Test that dtypes are preserved after imputation."""
 
@@ -89,6 +94,9 @@ class TestTransform(
         df = nw.to_native(df)
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
 
         if col_type in ["Categorical", "String"]:
             msg_required_impute_value_type = "str"
@@ -113,8 +121,12 @@ class TestTransform(
             TypeError,
             match=msg,
         ):
-            transformer.transform(df)
+            transformer.transform(u._convert_to_lazy(df, lazy))
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("column", "col_type", "impute_value", "expected_values"),
@@ -131,6 +143,7 @@ class TestTransform(
         impute_value,
         expected_values,
         library,
+        lazy,
     ):
         """Test that dtypes are preserved after imputation."""
 
@@ -145,9 +158,19 @@ class TestTransform(
             )
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
-        df_transformed_native = transformer.transform(df_nw.to_native())
 
-        df_transformed_nw = nw.from_native(df_transformed_native)
+        polars = isinstance(df, pl.DataFrame)
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
+        df_transformed_native = transformer.transform(
+            u._convert_to_lazy(df_nw.to_native(), lazy),
+        )
+
+        df_transformed_nw = nw.from_native(
+            u._collect_frame(df_transformed_native, polars, lazy),
+        )
 
         expected_dtype = df_nw[column].dtype
 
@@ -174,13 +197,17 @@ class TestTransform(
 
         u.assert_frame_equal_dispatch(
             expected.to_native(),
-            df_transformed_native,
+            df_transformed_nw.to_native(),
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
             # so this is needed
             check_categorical=False,
         )
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("input_col", "expected_dtype", "impute_value", "expected_values"),
@@ -196,6 +223,7 @@ class TestTransform(
         impute_value,
         expected_values,
         library,
+        lazy,
     ):
         """Test handling for some edge cases:
         - pandas object type
@@ -211,6 +239,11 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
+        polars = isinstance(df, pl.DataFrame)
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
         # for pandas, the all null column is inferred as string type
         # for polars, it is Unknown type, which triggers a warning
         if library == "polars" and input_col == [None, None]:
@@ -218,12 +251,18 @@ class TestTransform(
                 UserWarning,
                 match=f"{self.transformer_name}: X contains all null columns {str({column})}, types for these columns will be inferred as {type(transformer.impute_value)}",
             ):
-                df_transformed_native = transformer.transform(df_nw.to_native())
+                df_transformed_native = transformer.transform(
+                    u._convert_to_lazy(df_nw.to_native(), lazy),
+                )
 
         else:
-            df_transformed_native = transformer.transform(df_nw.to_native())
+            df_transformed_native = transformer.transform(
+                u._convert_to_lazy(df_nw.to_native(), lazy),
+            )
 
-        df_transformed_nw = nw.from_native(df_transformed_native)
+        df_transformed_nw = nw.from_native(
+            u._collect_frame(df_transformed_native, polars, lazy),
+        )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
 
@@ -239,8 +278,15 @@ class TestTransform(
             ),
         )
 
-        u.assert_frame_equal_dispatch(expected.to_native(), df_transformed_native)
+        u.assert_frame_equal_dispatch(
+            expected.to_native(),
+            df_transformed_nw.to_native(),
+        )
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("impute_value", "impute_val_type"),
         [
@@ -249,7 +295,7 @@ class TestTransform(
             (True, "Boolean"),
         ],
     )
-    def test_polars_unknown_type_output(self, impute_value, impute_val_type):
+    def test_polars_unknown_type_output(self, impute_value, impute_val_type, lazy):
         """Test handling of polars Unknown type column (output type should be inferred from impute_value)"""
 
         column = "a"
@@ -262,9 +308,18 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        df_transformed_native = transformer.transform(df_nw.to_native())
+        polars = isinstance(df, pl.DataFrame)
 
-        df_transformed_nw = nw.from_native(df_transformed_native)
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
+        df_transformed_native = transformer.transform(
+            u._convert_to_lazy(df_nw.to_native(), lazy),
+        )
+
+        df_transformed_nw = nw.from_native(
+            u._collect_frame(df_transformed_native, polars, lazy),
+        )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
 
@@ -282,9 +337,16 @@ class TestTransform(
             ).cast(getattr(nw, impute_val_type)),
         )
 
-        u.assert_frame_equal_dispatch(expected.to_native(), df_transformed_native)
+        u.assert_frame_equal_dispatch(
+            expected.to_native(),
+            df_transformed_nw.to_native(),
+        )
 
     # have to overload this one, as has slightly different categorical type handling
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("library", "expected_df_3", "impute_values_dict"),
         [
@@ -299,6 +361,7 @@ class TestTransform(
         expected_df_3,
         initialized_transformers,
         impute_values_dict,
+        lazy,
     ):
         """Test that transform is giving the expected output when applied to object and categorical columns."""
         # Create the DataFrame using the library parameter
@@ -306,6 +369,11 @@ class TestTransform(
 
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
+
+        polars = isinstance(df2, pl.DataFrame)
+
+        if u._check_if_skip_test(transformer, df2, lazy):
+            return
 
         transformer.impute_values_ = impute_values_dict
 
@@ -315,11 +383,11 @@ class TestTransform(
         transformer.columns = ["b", "c"]
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(df2)
+        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
-            df_transformed,
+            u._collect_frame(df_transformed, polars, lazy),
             expected_df_3,
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
@@ -330,11 +398,13 @@ class TestTransform(
         expected_df_3 = nw.from_native(expected_df_3)
 
         for i in range(len(df2)):
-            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                u._convert_to_lazy(df2[[i]].to_native(), lazy),
+            )
             df_expected_row = expected_df_3[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
-                df_transformed_row,
+                u._collect_frame(df_transformed_row, polars, lazy),
                 df_expected_row,
                 # this turns off checks for category metadata like ordering
                 # this transformer will convert an unordered pd categorical to ordered
@@ -342,6 +412,10 @@ class TestTransform(
                 check_categorical=False,
             )
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("library", "expected_df_4", "impute_values_dict"),
         [
@@ -356,6 +430,7 @@ class TestTransform(
         expected_df_4,
         initialized_transformers,
         impute_values_dict,
+        lazy,
     ):
         """Test that transform is giving the expected output when applied to object and categorical columns
         (when we're imputing with a new categorical level, which is only possible for arbitrary imputer).
@@ -366,16 +441,21 @@ class TestTransform(
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
+        polars = isinstance(df2, pl.DataFrame)
+
+        if u._check_if_skip_test(transformer, df2, lazy):
+            return
+
         transformer.impute_values_ = impute_values_dict
         transformer.impute_value = "z"
         transformer.columns = ["b", "c"]
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(df2)
+        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
-            df_transformed,
+            u._collect_frame(df_transformed, polars, lazy),
             expected_df_4,
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
@@ -386,11 +466,13 @@ class TestTransform(
         expected_df_4 = nw.from_native(expected_df_4)
 
         for i in range(len(df2)):
-            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                u._convert_to_lazy(df2[[i]].to_native(), lazy),
+            )
             df_expected_row = expected_df_4[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
-                df_transformed_row,
+                u._collect_frame(df_transformed_row, polars, lazy),
                 df_expected_row,
                 # this turns off checks for category metadata like ordering
                 # this transformer will convert an unordered pd categorical to ordered
@@ -398,6 +480,10 @@ class TestTransform(
                 check_categorical=False,
             )
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "input_values",
@@ -410,6 +496,7 @@ class TestTransform(
         self,
         input_values,
         library,
+        lazy,
     ):
         """Test that unexpected dtypes will hit error"""
 
@@ -420,6 +507,9 @@ class TestTransform(
         df = pd.DataFrame(df_dict) if library == "pandas" else pl.DataFrame(df_dict)
 
         transformer = ArbitraryImputer(impute_value=1, columns=[column])
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
 
         bad_types = dict(nw.from_native(df).select(nw.col(column)).schema.items())
 
@@ -434,7 +524,7 @@ class TestTransform(
             TypeError,
             match=msg,
         ):
-            transformer.transform(df)
+            transformer.transform(u._convert_to_lazy(df, lazy))
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

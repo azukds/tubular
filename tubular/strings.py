@@ -64,6 +64,8 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     def __init__(
         self,
         new_column_name: str,
@@ -161,6 +163,8 @@ class StringConcatenator(NewColumnNameMixin, SeparatorColumnMixin, BaseTransform
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     def __init__(
         self,

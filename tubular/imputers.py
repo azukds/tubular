@@ -47,6 +47,8 @@ class BaseImputer(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
@@ -166,6 +168,9 @@ class ArbitraryImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
+
     FITS = False
 
     @beartype
@@ -474,6 +479,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = True
 
     def __init__(
@@ -594,6 +601,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = True
 
     def __init__(
@@ -708,6 +717,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = True
 
@@ -840,6 +851,8 @@ class NullIndicator(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     def __init__(
         self,
         columns: str | list[str] | None = None,
@@ -917,6 +930,8 @@ class NearestMeanResponseImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = True
 
