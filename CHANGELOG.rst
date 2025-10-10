@@ -22,6 +22,8 @@ Each individual change should have a link to the pull request after the descript
 - chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
 - feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
 - chore: renamed AggregateRowOverColumnsTransformer to AggregateRowsOverColumnTransformer
+- feat: optimisation changes to GroupRareLevelsTransformer fit method
+- placeholder
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
 - chore: turned on doctest
 - chore: deprecated DataFrameMethodTransformer
