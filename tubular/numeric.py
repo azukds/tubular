@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -789,7 +789,7 @@ class ScalingTransformer(BaseNumericTransformer):
     FITS = True
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
-    scaler_options = {
+    scaler_options: ClassVar[dict[str, int]] = {
         "min_max": MinMaxScaler,
         "max_abs": MaxAbsScaler,
         "standard": StandardScaler,
@@ -936,12 +936,12 @@ class InteractionTransformer(BaseNumericTransformer):
         super().__init__(columns=columns, **kwargs)
 
         if len(columns) < 2:
-            msg = f"{self.classname()}: number of columns must be equal or greater than 2, got {str(len(columns))} column."
+            msg = f"{self.classname()}: number of columns must be equal or greater than 2, got {len(columns)} column."
             raise ValueError(msg)
 
         if type(min_degree) is int:
             if min_degree < 2:
-                msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {str(min_degree)}"
+                msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {min_degree}"
                 raise ValueError(msg)
             self.min_degree = min_degree
         else:
@@ -1125,14 +1125,14 @@ class PCATransformer(BaseNumericTransformer):
 
         if type(n_components) is int:
             if n_components < 1:
-                msg = f"{self.classname()}:n_components must be strictly positive got {str(n_components)}"
+                msg = f"{self.classname()}:n_components must be strictly positive got {n_components}"
                 raise ValueError(msg)
             self.n_components = n_components
         elif type(n_components) is float:
             if 0 < n_components < 1:
                 self.n_components = n_components
             else:
-                msg = f"{self.classname()}:n_components must be strictly positive and must be of type int when greater than or equal to 1. Got {str(n_components)}"
+                msg = f"{self.classname()}:n_components must be strictly positive and must be of type int when greater than or equal to 1. Got {n_components}"
                 raise ValueError(msg)
 
         else:

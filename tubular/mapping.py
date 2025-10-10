@@ -93,7 +93,7 @@ class BaseMappingTransformer(BaseTransformer):
             msg = f"{self.classname()}: mappings has no values"
             raise ValueError(msg)
 
-        mappings_from_null = {col: None for col in mappings}
+        mappings_from_null = dict.fromkeys(mappings)
         for col in mappings:
             null_keys = [key for key in mappings[col] if pd.isna(key)]
 

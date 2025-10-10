@@ -7,7 +7,7 @@ from pandas.testing import assert_series_equal as assert_series_equal_pandas
 from polars.testing import assert_series_equal as assert_series_equal_polars
 
 from tubular._utils import (
-    new_narwhals_series_with_optimal_pandas_types,  # noqa: PLC2701, importing from private module to test
+    new_narwhals_series_with_optimal_pandas_types,  # , importing from private module to test
 )
 
 

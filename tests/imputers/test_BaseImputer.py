@@ -301,7 +301,7 @@ class GenericImputerTransformTests:
 
         transformer.columns = [column]
 
-        transformer.impute_values_ = {col: impute_value for col in transformer.columns}
+        transformer.impute_values_ = dict.fromkeys(transformer.columns, impute_value)
 
         expected_df_dict = {
             column: expected,

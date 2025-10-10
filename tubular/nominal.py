@@ -1005,7 +1005,7 @@ class MeanResponseTransformer(
 
         # set this attr up for BaseMappingTransformerMixin
         # this is used to cast the narwhals mapping df, so uses narwhals types
-        self.return_dtypes = {col: self.return_type for col in self.encoded_columns}
+        self.return_dtypes = dict.fromkeys(self.encoded_columns, self.return_type)
 
         # use BaseMappingTransformer init to process args
         # extract null_mappings from mappings etc
@@ -1728,7 +1728,7 @@ class OrdinalEncoderTransformer(
         # this transformer shouldn't really be used with huge numbers of levels
         # so setup to use int8 type
         # if there are more levels than this, will get a type error
-        self.return_dtypes = {c: "Int8" for c in self.columns}
+        self.return_dtypes = dict.fromkeys(self.columns, "Int8")
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
@@ -1901,7 +1901,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         # this transformer shouldn't really be used with huge numbers of levels
         # so setup to use int8 type
         # if there are more levels than this, will get a type error
-        self.return_dtypes = {c: "Int8" for c in self.columns}
+        self.return_dtypes = dict.fromkeys(self.columns, "Int8")
 
         if not isinstance(start_encoding, int):
             msg = f"{self.classname()}: start_encoding should be an integer"

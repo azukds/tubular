@@ -199,7 +199,7 @@ class TestTransform(GenericTransformTests):
 
         x.mappings = base_mapping_transformer.mappings
         x.mappings_from_null = base_mapping_transformer.mappings_from_null
-        x.return_dtypes = {col: "Int8" for col in x.columns}
+        x.return_dtypes = dict.fromkeys(x.columns, "Int8")
 
         df_transformed = x.transform(df)
 

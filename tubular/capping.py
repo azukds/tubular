@@ -314,7 +314,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 weights_column=weights_column,
             )
 
-            results = [None] + results_no_none
+            results = [None, *results_no_none]
 
         elif quantiles[1] is None:
             quantiles = np.array([quantiles[0]])
@@ -326,7 +326,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 weights_column=weights_column,
             )
 
-            results = results_no_none + [None]
+            results = [*results_no_none, None]
 
         else:
             results = self.weighted_quantile(
@@ -494,12 +494,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
             capping_values_for_transform = self.quantile_capping_values
 
-            dict_attrs = dict_attrs + ["quantile_capping_values"]
+            dict_attrs = [*dict_attrs, "quantile_capping_values"]
 
         else:
             capping_values_for_transform = self.capping_values
 
-            dict_attrs = dict_attrs + ["capping_values"]
+            dict_attrs = [*dict_attrs, "capping_values"]
 
         for attr_name in dict_attrs:
             if getattr(self, attr_name) == {}:
