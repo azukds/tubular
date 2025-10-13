@@ -414,7 +414,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
     polars_compatible = False
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         new_column_names: list[str] | str,
         pd_method_name: str,

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-import tubular.base as base
 from tests.test_data import (
     create_aggregate_over_rows_test_df,
     create_is_between_dates_df_1,
@@ -16,6 +15,7 @@ from tests.test_data import (
     create_numeric_df_2,
     create_object_df,
 )
+from tubular import base
 
 if TYPE_CHECKING:
     import pandas as pd

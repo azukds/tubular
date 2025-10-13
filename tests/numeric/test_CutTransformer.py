@@ -17,7 +17,8 @@ class TestInit(BaseNumericTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "CutTransformer"
 
-    def test_new_column_name_type_error(self):
+    @staticmethod
+    def test_new_column_name_type_error():
         """Test that an exception is raised if new_column_name is not a str."""
         with pytest.raises(
             TypeError,
@@ -25,7 +26,8 @@ class TestInit(BaseNumericTransformerInitTests):
         ):
             CutTransformer(column="b", new_column_name=1)
 
-    def test_cut_kwargs_type_error(self):
+    @staticmethod
+    def test_cut_kwargs_type_error():
         """Test that an exception is raised if cut_kwargs is not a dict."""
         with pytest.raises(
             TypeError,
@@ -33,7 +35,8 @@ class TestInit(BaseNumericTransformerInitTests):
         ):
             CutTransformer(column="b", new_column_name="a", cut_kwargs=1)
 
-    def test_cut_kwargs_key_type_error(self):
+    @staticmethod
+    def test_cut_kwargs_key_type_error():
         """Test that an exception is raised if cut_kwargs has keys which are not str."""
         with pytest.raises(
             TypeError,
@@ -88,7 +91,8 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
         x.transform(df)
 
-    def test_output_from_cut_assigned_to_column(self, mocker):
+    @staticmethod
+    def test_output_from_cut_assigned_to_column(mocker):
         """Test that the output from pd.cut is assigned to column with name new_column_name."""
         df = d.create_df_9()
 
@@ -108,7 +112,8 @@ class TestTransform(BaseNumericTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_9(), expected_df_1()),
     )
-    def test_expected_output(self, df, expected):
+    @staticmethod
+    def test_expected_output(df, expected):
         """Test input data is transformed as expected."""
         cut_1 = CutTransformer(
             column="c",

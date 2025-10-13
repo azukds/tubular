@@ -4,6 +4,7 @@ import narwhals as nw
 import pandas as pd
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from dateutil.tz import gettz
 
 import tests.test_data as d
@@ -46,8 +47,7 @@ class TestInit(
 
         param_dict = {param: value}
         with pytest.raises(
-            TypeError,
-            match=f"BetweenDatesTransformer: {param} should be a bool",
+            BeartypeCallHintParamViolation,
         ):
             BetweenDatesTransformer(
                 columns=["a", "b", "c"],
@@ -66,8 +66,7 @@ class TestInit(
         """Test that an exception is raised if too many/too few columns."""
 
         with pytest.raises(
-            ValueError,
-            match="BetweenDatesTransformer: This transformer works with three columns only",
+            BeartypeCallHintParamViolation,
         ):
             BetweenDatesTransformer(
                 columns=columns,

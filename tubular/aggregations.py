@@ -104,9 +104,9 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             ListOfRowsOverColumnsAggregations,
         ],
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
-        super().__init__(columns=columns, verbose=verbose)
+        super().__init__(columns=columns, **kwargs)
 
         self.aggregations = aggregations
 
@@ -220,13 +220,13 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         super().__init__(
             columns=columns,
             aggregations=aggregations,
             drop_original=drop_original,
-            verbose=verbose,
+            **kwargs,
         )
         self.key = key
 
@@ -318,8 +318,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         List of aggregation methods to apply.
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
-    verbose : bool, optional
-        Indicator for verbose output.
 
     Example:
     --------
@@ -339,13 +337,13 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         columns: Union[str, list[str]],
         aggregations: ListOfColumnsOverRowAggregations,
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         super().__init__(
             columns=columns,
             aggregations=aggregations,
             drop_original=drop_original,
-            verbose=verbose,
+            **kwargs,
         )
 
     @beartype

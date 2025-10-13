@@ -88,9 +88,9 @@ class DropOriginalMixin:
 
         self.drop_original = drop_original
 
+    @staticmethod
     @beartype
     def drop_original_column(
-        self,
         X: DataFrame,
         drop_original: bool,
         columns: Optional[Union[list[str], str]],
@@ -157,7 +157,9 @@ class TwoColumnMixin:
             msg = f"{self.classname()}: columns should be list"
             raise TypeError(msg)
 
-        if len(columns) != 2:
+        TWO = 2
+
+        if len(columns) != TWO:
             msg = f"{self.classname()}: This transformer works with two columns only"
             raise ValueError(msg)
 

@@ -22,7 +22,7 @@ from tubular._utils import (
 from tubular.base import BaseTransformer
 from tubular.mapping import MappingTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
-from tubular.types import DataFrame
+from tubular.types import DataFrame, ListOfThreeStrs
 
 if TYPE_CHECKING:
     from narhwals.typing import FrameT
@@ -421,10 +421,6 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         will be used.
     units : str, default = 'D'
         Accepted values are "week", "fortnight", "lunar_month", "common_year", "custom_days", 'D', 'h', 'm', 's'
-    copy : bool, default = False
-        Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
-    verbose: bool, default = False
-        Control level of detail in printouts
     drop_original:
         Boolean flag indicating whether to drop original columns.
     custom_days_divider:
@@ -448,7 +444,7 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         columns: list[str],
         new_column_name: str | None = None,
@@ -463,8 +459,6 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
             "m",
             "s",
         ] = "D",
-        copy: bool = False,
-        verbose: bool = False,
         drop_original: bool = False,
         custom_days_divider: int = None,
         **kwargs: dict[str, bool],
@@ -492,8 +486,6 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
             columns=columns,
             new_column_name=new_column_name,
             drop_original=drop_original,
-            copy=copy,
-            verbose=verbose,
             **kwargs,
         )
 
@@ -771,22 +763,16 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    def __init__(
+    @beartype
+    def __init__(  # noqa: PLR0913
         self,
-        columns: list[str],
+        columns: ListOfThreeStrs,
         new_column_name: str,
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
-        if type(lower_inclusive) is not bool:
-            msg = f"{self.classname()}: lower_inclusive should be a bool"
-            raise TypeError(msg)
-
-        if type(upper_inclusive) is not bool:
-            msg = f"{self.classname()}: upper_inclusive should be a bool"
-            raise TypeError(msg)
 
         self.lower_inclusive = lower_inclusive
         self.upper_inclusive = upper_inclusive
@@ -797,10 +783,6 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
             drop_original=drop_original,
             **kwargs,
         )
-
-        if len(columns) != 3:
-            msg = f"{self.classname()}: This transformer works with three columns only"
-            raise ValueError(msg)
 
         # This attribute is not for use in any method, use 'columns' instead.
         # Here only as a fix to allow string representation of transformer.
@@ -1261,20 +1243,18 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     polars_compatible = True
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         columns: str | list[str],
         method: str | list[str],
         units: str | dict,
         period: float | dict = 2 * np.pi,
-        verbose: bool = False,
         drop_original: bool = False,
     ) -> None:
         super().__init__(
             columns=columns,
             drop_original=drop_original,
             new_column_name="dummy",
-            verbose=verbose,
         )
 
         if not isinstance(method, str) and not isinstance(method, list):
@@ -1333,8 +1313,8 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         method_list = [method] if isinstance(method, str) else method
 
-        for method in method_list:
-            if method not in valid_method_list:
+        for method_value in method_list:
+            if method_value not in valid_method_list:
                 msg = '{}: Invalid method {} supplied, should be "sin", "cos" or a list containing both'.format(
                     self.classname(),
                     method,
@@ -1559,7 +1539,7 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
         )
 
         if (missing_replacement) and (
-            type(missing_replacement) not in [int, float, str]
+            type(missing_replacement) not in {int, float, str}
         ):
             msg = f"{self.classname()}: if not None, missing_replacement should be an int, float or string"
             raise TypeError(msg)
@@ -1716,7 +1696,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
     polars_compatible = False
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         new_column_name: str,
         pd_method_name: str,

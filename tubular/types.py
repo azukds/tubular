@@ -41,3 +41,22 @@ ListOfStrs = Annotated[
 ]
 
 FloatBetweenZeroOne = Annotated[float, Is[lambda i: (i > 0) & (i < 1)]]
+
+PositiveInt = Annotated[int, Is[lambda i: (i > 0)]]
+
+StrictlyPositiveInt = Annotated[int, Is[lambda i: (i > 1)]]
+
+ListOfSingleStr = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) == 1],  # noqa:  PLR2004
+]
+
+ListOfThreeStrs = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) == 3],  # noqa:  PLR2004
+]
+
+ListOfMoreThanOneStrings = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) > 1],  # noqa:  PLR2004
+]

@@ -69,11 +69,10 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
         new_column_name: str,
         pd_method_name: str,
         columns: list,
-        copy: bool = False,
         pd_method_kwargs: dict[str, object] | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        super().__init__(columns=columns, copy=copy, **kwargs)
+        super().__init__(columns=columns, **kwargs)
 
         if len(columns) > 1:
             msg = f"{self.classname()}: columns arg should contain only 1 column name but got {len(columns)}"
@@ -85,10 +84,9 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
 
         if pd_method_kwargs is None:
             pd_method_kwargs = {}
-        else:
-            if type(pd_method_kwargs) is not dict:
-                msg = f"{self.classname()}: pd_method_kwargs should be provided as a dict or defaulted to None"
-                raise TypeError(msg)
+        elif type(pd_method_kwargs) is not dict:
+            msg = f"{self.classname()}: pd_method_kwargs should be provided as a dict or defaulted to None"
+            raise TypeError(msg)
 
         for key in pd_method_kwargs:
             if type(key) is not str:

@@ -163,13 +163,15 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 msg = f"{self.classname()}: each item in {dict_name} should be a list, but got {type(cap_values)} for key {k}"
                 raise TypeError(msg)
 
-            if len(cap_values) != 2:
+            TWO = 2
+
+            if len(cap_values) != TWO:
                 msg = f"{self.classname()}: each item in {dict_name} should be length 2, but got {len(cap_values)} for key {k}"
                 raise ValueError(msg)
 
             for cap_value in cap_values:
                 if cap_value is not None:
-                    if type(cap_value) not in [int, float]:
+                    if type(cap_value) not in {int, float}:
                         msg = f"{self.classname()}: each item in {dict_name} lists must contain numeric values or None, got {type(cap_value)} for key {k}"
                         raise TypeError(msg)
 
@@ -338,9 +340,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return results
 
+    @staticmethod
     @nw.narwhalify
     def weighted_quantile(
-        self,
         X: FrameT,
         quantiles: list[float],
         values_column: str,

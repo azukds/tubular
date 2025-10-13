@@ -104,6 +104,7 @@ select = [
     "UP",
     "W", # pycodestyle warnings
     "YTT",
+    "PLR"
 ]
 
 # Enabled to allow direct type comparisons using is and is not under E721 (see https://docs.astral.sh/ruff/rules/type-comparison/)

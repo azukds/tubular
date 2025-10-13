@@ -165,7 +165,7 @@ def new_narwhals_series_with_optimal_pandas_types(
         # (e.g. int8)
         # but for bool/str values, maybe_convert_types has already
         # cast to improved typing, so avoid further casting for these
-        if dtype not in [nw.String, nw.Object, nw.Boolean]:
+        if dtype not in {nw.String, nw.Object, nw.Boolean}:
             series = series.cast(dtype)
 
     else:

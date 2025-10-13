@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -29,7 +29,13 @@ from tubular.mixins import (
     NewColumnNameMixin,
     TwoColumnMixin,
 )
-from tubular.types import DataFrame
+from tubular.types import (
+    DataFrame,
+    FloatBetweenZeroOne,
+    ListOfMoreThanOneStrings,
+    ListOfSingleStr,
+    StrictlyPositiveInt,
+)
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT, IntoSeriesT
@@ -221,9 +227,9 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     FITS = True
 
     @beartype
-    def __init__(
+    def __init__(  # noqa: PLR0917, PLR0913
         self,
-        columns: Union[str, list[str]],
+        columns: Union[str, ListOfSingleStr],
         new_column_name: str,
         n_init: Union[str, int] = "auto",
         n_clusters: int = 8,
@@ -231,9 +237,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         kmeans_kwargs: Optional[dict[str, object]] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        if (isinstance(columns, list)) and (len(columns) > 1):
-            msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
-            raise TypeError(msg)
 
         if kmeans_kwargs is None:
             kmeans_kwargs = {}
@@ -445,7 +448,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     FITS = False
 
-    def __init__(
+    def __init__(  # noqa: PLR6201, PLR0913
         self,
         columns: str | list[str] | None,
         base: float | None = None,
@@ -582,10 +585,9 @@ class CutTransformer(BaseNumericTransformer):
 
         if cut_kwargs is None:
             cut_kwargs = {}
-        else:
-            if type(cut_kwargs) is not dict:
-                msg = f"{self.classname()}: cut_kwargs should be a dict but got type {type(cut_kwargs)}"
-                raise TypeError(msg)
+        elif type(cut_kwargs) is not dict:
+            msg = f"{self.classname()}: cut_kwargs should be a dict but got type {type(cut_kwargs)}"
+            raise TypeError(msg)
 
         for i, k in enumerate(cut_kwargs.keys()):
             if type(k) is not str:
@@ -702,7 +704,7 @@ class TwoColumnOperatorTransformer(
             if "axis" not in pd_method_kwargs:
                 msg = f'{self.classname()}: pd_method_kwargs must contain an entry "axis" set to 0 or 1'
                 raise ValueError(msg)
-            if pd_method_kwargs["axis"] not in [0, 1]:
+            if pd_method_kwargs["axis"] not in {0, 1}:
                 msg = f"{self.classname()}: pd_method_kwargs 'axis' must be 0 or 1"
                 raise ValueError(msg)
 
@@ -926,43 +928,31 @@ class InteractionTransformer(BaseNumericTransformer):
 
     FITS = False
 
+    MIN_DEGREE_VALUE = 2
+
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None,
+        columns: ListOfMoreThanOneStrings,
         min_degree: int = 2,
         max_degree: int = 2,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if len(columns) < 2:
-            msg = f"{self.classname()}: number of columns must be equal or greater than 2, got {str(len(columns))} column."
+        if min_degree < self.MIN_DEGREE_VALUE:
+            msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {str(min_degree)}"
             raise ValueError(msg)
+        self.min_degree = min_degree
 
-        if type(min_degree) is int:
-            if min_degree < 2:
-                msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {str(min_degree)}"
-                raise ValueError(msg)
-            self.min_degree = min_degree
-        else:
-            msg = f"{self.classname()}: unexpected type ({type(min_degree)}) for min_degree, must be int"
-            raise TypeError(msg)
-        if type(max_degree) is int:
-            if min_degree > max_degree:
-                msg = f"{self.classname()}: max_degree must be equal or greater than min_degree"
-                raise ValueError(msg)
-            self.max_degree = max_degree
-            if max_degree > len(columns):
-                msg = f"{self.classname()}: max_degree must be equal or lower than number of columns"
-                raise ValueError(msg)
-            self.max_degree = max_degree
-            if max_degree > len(columns):
-                msg = f"{self.classname()}: max_degree must be equal or lower than number of columns"
-                raise ValueError(msg)
-            self.max_degree = max_degree
-        else:
-            msg = f"{self.classname()}: unexpected type ({type(max_degree)}) for max_degree, must be int"
-            raise TypeError(msg)
+        if min_degree > max_degree:
+            msg = f"{self.classname()}: max_degree must be equal or greater than min_degree"
+            raise ValueError(msg)
+        self.max_degree = max_degree
+        if max_degree > len(columns):
+            msg = f"{self.classname()}: max_degree must be equal or lower than number of columns"
+            raise ValueError(msg)
+        self.max_degree = max_degree
 
         self.nb_features_to_interact = len(self.columns)
         self.nb_combinations = -1
@@ -1112,63 +1102,32 @@ class PCATransformer(BaseNumericTransformer):
 
     FITS = True
 
-    def __init__(
+    @beartype
+    def __init__(  # noqa: PLR0913
         self,
-        columns: str | list[str] | None,
-        n_components: int = 2,
-        svd_solver: str = "auto",
-        random_state: int | np.random.RandomState = None,
+        columns: Optional[Union[str, list[str]]],
+        n_components: Union[StrictlyPositiveInt, FloatBetweenZeroOne, Literal["mle"]] = 2,
+        svd_solver: Literal["auto", "full", "arpack", "randomized"] = "auto",
+        random_state: Optional[int] = None,
         pca_column_prefix: str = "pca_",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if type(n_components) is int:
-            if n_components < 1:
-                msg = f"{self.classname()}:n_components must be strictly positive got {str(n_components)}"
-                raise ValueError(msg)
-            self.n_components = n_components
-        elif type(n_components) is float:
-            if 0 < n_components < 1:
-                self.n_components = n_components
-            else:
-                msg = f"{self.classname()}:n_components must be strictly positive and must be of type int when greater than or equal to 1. Got {str(n_components)}"
-                raise ValueError(msg)
+        self.n_components = n_components
 
-        else:
-            if n_components == "mle":
-                self.n_components = n_components
-            else:
-                msg = f"{self.classname()}:unexpected type {type(n_components)} for n_components, must be int, float (0-1) or equal to 'mle'."
-                raise TypeError(msg)
+        self.svd_solver = svd_solver
 
-        if type(svd_solver) is str:
-            if svd_solver not in ["auto", "full", "arpack", "randomized"]:
-                msg = f"{self.classname()}:svd_solver {svd_solver} is unknown. Please select among 'auto', 'full', 'arpack', 'randomized'."
-                raise ValueError(msg)
-            self.svd_solver = svd_solver
-        else:
-            msg = f"{self.classname()}:unexpected type {type(svd_solver)} for svd_solver, must be str"
-            raise TypeError(msg)
-
-        if type(random_state) is int or random_state is None:
-            self.random_state = random_state
-        else:
-            msg = f"{self.classname()}:unexpected type {type(random_state)} for random_state, must be int or None."
-            raise TypeError(msg)
+        self.random_state = random_state
 
         if (svd_solver == "arpack") and (n_components == "mle"):
             msg = f"{self.classname()}: n_components='mle' cannot be a string with svd_solver='arpack'"
             raise ValueError(msg)
-        if (svd_solver in ["randomized", "arpack"]) and (type(n_components) is float):
+        if (svd_solver in {"randomized", "arpack"}) and (type(n_components) is float):
             msg = f"{self.classname()}: n_components {n_components} cannot be a float with svd_solver='{svd_solver}'"
             raise TypeError(msg)
 
-        if type(pca_column_prefix) is str:
-            self.pca_column_prefix = pca_column_prefix
-        else:
-            msg = f"{self.classname()}:unexpected type {type(pca_column_prefix)} for pca_column_prefix, must be str"
-            raise TypeError(msg)
+        self.pca_column_prefix = pca_column_prefix
 
         self.pca = PCA(
             n_components=self.n_components,
