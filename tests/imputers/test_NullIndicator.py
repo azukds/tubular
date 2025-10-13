@@ -28,7 +28,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         cls.transformer_name = "NullIndicator"
 
     @pytest.fixture()
-    def expected_df_1(self, request):
+    @staticmethod
+    def expected_df_1(request):
         """Expected output for test_null_indicator_columns_correct."""
         library = request.param
 
@@ -57,7 +58,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         [("pandas", "pandas"), ("polars", "polars")],
         indirect=["expected_df_1"],
     )
-    def test_null_indicator_columns_correct(self, expected_df_1, library):
+    @staticmethod
+    def test_null_indicator_columns_correct(expected_df_1, library):
         """Test that the created indicator column is correct - and unrelated columns are unchanged."""
         df = d.create_df_9(library=library)
 

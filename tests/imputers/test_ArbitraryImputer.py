@@ -90,7 +90,7 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        if col_type in ["Categorical", "String"]:
+        if col_type in {"Categorical", "String"}:
             msg_required_impute_value_type = "str"
             msg_col_type = "Categorical or String"
 
@@ -124,7 +124,7 @@ class TestTransform(
             ("b", "Float32", 1, [1.0, 2.0, 3.0, 4.0, 1.0]),
         ],
     )
-    def test_impute_value_preserve_dtype(
+    def test_impute_value_preserve_dtype(  # noqa: PLR0913
         self,
         column,
         col_type,
@@ -139,7 +139,7 @@ class TestTransform(
         df_nw = nw.from_native(df)
 
         # or just downcast easier types (String comes in correct type so leave)
-        if col_type in ["Float32", "Categorical"]:
+        if col_type in {"Float32", "Categorical"}:
             df_nw = df_nw.with_columns(
                 nw.col(column).cast(getattr(nw, col_type)),
             )
@@ -189,7 +189,7 @@ class TestTransform(
             ([True, False, None], "Boolean", True, [True, False, True]),
         ],
     )
-    def test_edge_cases(
+    def test_edge_cases(  # noqa: PLR0913
         self,
         input_col,
         expected_dtype,

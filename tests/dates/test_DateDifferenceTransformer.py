@@ -32,7 +32,8 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
-    def test_units_values_error(self):
+    @staticmethod
+    def test_units_values_error():
         """Test that an exception is raised if the value of inits is not one of accepted_values_units."""
         with pytest.raises(
             ValueError,
@@ -366,7 +367,8 @@ class TestTransform(
             "polars",
         ],
     )
-    def test_expected_output_units(self, generic_expected_df, unit, library):
+    @staticmethod
+    def test_expected_output_units(generic_expected_df, unit, library):
         """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
@@ -398,7 +400,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls(self, df, expected):
+    @staticmethod
+    def test_expected_output_nulls(df, expected):
         """Test that the output is expected from transform, when columns have nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -424,7 +427,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls2(self, df, expected):
+    @staticmethod
+    def test_expected_output_nulls2(df, expected):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],

@@ -9,8 +9,8 @@ class TestSetDropOriginalColumn:
     "tests for DropOriginalMixin.set_drop_original_column"
 
     @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
+    @staticmethod
     def test_drop_column_arg_errors(
-        self,
         drop_orginal_column,
     ):
         """Test that appropriate errors are throwm for non boolean arg."""
@@ -29,8 +29,8 @@ class TestDropOriginalColumn:
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("drop_original", [True, False])
+    @staticmethod
     def test_drop_original_arg_handling(
-        self,
         library,
         drop_original,
     ):
@@ -59,8 +59,8 @@ class TestDropOriginalColumn:
                 assert col in remaining_cols, "original columns not kept"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @staticmethod
     def test_other_columns_not_modified(
-        self,
         library,
     ):
         """Test transformer does not modify unspecified columns."""

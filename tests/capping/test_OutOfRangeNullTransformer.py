@@ -39,7 +39,7 @@ class TestFit(GenericCappingFitTests):
             ([-1, -5, -10, 20, 40], None, [0.1, None]),
         ],
     )
-    def test_replacement_values_updated(
+    def test_replacement_values_updated(  # noqa: PLR0917, PLR0913
         self,
         values,
         sample_weight,
@@ -84,7 +84,8 @@ class TestTransform(GenericCappingTransformTests):
     def setup_class(cls):
         cls.transformer_name = "OutOfRangeNullTransformer"
 
-    def expected_df_1(self, library="pandas"):
+    @staticmethod
+    def expected_df_1(library="pandas"):
         """Expected output from test_expected_output_min_and_max."""
 
         df_dict = {
@@ -155,8 +156,8 @@ class TestSetReplacementValues:
             ({"a": [None, 0.1]}, {"a": [False, None]}),
         ],
     )
+    @staticmethod
     def test_expected_replacement_values_output(
-        self,
         capping_values,
         expected_replacement_values,
     ):

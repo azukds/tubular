@@ -590,7 +590,7 @@ class WeightColumnFitMixinTests:
             (-1, "weight column must be positive"),
         ],
     )
-    def test_bad_values_in_weights_error(
+    def test_bad_values_in_weights_error(  # noqa: PLR0913
         self,
         bad_weight_value,
         expected_message,

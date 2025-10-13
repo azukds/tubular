@@ -46,7 +46,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_learnt_values(self, library):
+    @staticmethod
+    def test_learnt_values(library):
         """Test that the impute values learnt during fit are expected."""
 
         df_dict = {
@@ -86,7 +87,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_learnt_values_tied(self, library):
+    @staticmethod
+    def test_learnt_values_tied(library):
         """Test that the impute values learnt during fit are expected - when mode is tied."""
 
         df_dict = {
@@ -151,8 +153,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             (["g", "g", "h", None], [2, 2, 4, 1], "h", True),
         ],
     )
+    @staticmethod
     def test_learnt_values_tied_weighted(
-        self,
         library,
         input_col,
         weight_col,
@@ -203,7 +205,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_nan_learnt_values(self, library):
+    @staticmethod
+    def test_nan_learnt_values(library):
         """Test behaviour when learnt value is None."""
         x = ModeImputer(columns=["a"])
 
@@ -225,7 +228,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_nan_learnt_values_weighted(self, library):
+    @staticmethod
+    def test_nan_learnt_values_weighted(library):
         """Test behaviour when learnt value is None - when weights are used."""
         weights_column = "weights_column"
         x = ModeImputer(columns=["a"], weights_column=weights_column)
@@ -275,8 +279,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             (["a", "b", "c", "c", None], [1, 2, 3, 4, 5], "c", True),
         ],
     )
-    def test_learnt_values_weighted_df(
-        self,
+    @staticmethod
+    def test_learnt_values_weighted_df(  # noqa: PLR0913
         library,
         input_col,
         weight_col,

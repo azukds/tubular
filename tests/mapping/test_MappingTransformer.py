@@ -67,7 +67,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         cls.transformer_name = "MappingTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output(self, library):
+    @staticmethod
+    def test_expected_output(library):
         """Test that transform is giving the expected output."""
 
         df = d.create_df_1(library=library)
@@ -100,7 +101,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_non_specified_values_unchanged(self, library):
+    @staticmethod
+    def test_non_specified_values_unchanged(library):
         """Test that values not specified in mappings are left unchanged in transform."""
 
         df = d.create_df_1(library=library)
@@ -152,8 +154,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             ),
         ],
     )
+    @staticmethod
     def test_expected_dtype_conversions(
-        self,
         mapping,
         return_dtypes,
         library,
@@ -169,7 +171,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         ), f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_category_dtype_is_conserved(self, library):
+    @staticmethod
+    def test_category_dtype_is_conserved(library):
         """This is a separate test due to the behaviour of category dtypes.
 
         See documentation of transform method
@@ -196,7 +199,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             ({"b": {"z": "99", "y": "98"}}, "b", {"b": "String"}),
         ],
     )
-    def test_no_applicable_mapping(self, mapping, mapped_col, return_dtypes, library):
+    @staticmethod
+    def test_no_applicable_mapping(mapping, mapped_col, return_dtypes, library):
         df = d.create_df_1(library=library)
 
         x = MappingTransformer(
@@ -219,7 +223,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             ({"b": {"a": "1", "z": "99"}}, "b", {"b": "String"}),
         ],
     )
-    def test_excess_mapping_values(self, mapping, mapped_col, return_dtypes, library):
+    @staticmethod
+    def test_excess_mapping_values(mapping, mapped_col, return_dtypes, library):
         df = d.create_df_1(library=library)
 
         x = MappingTransformer(
@@ -235,7 +240,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             x.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_boolean_with_nulls(self, library):
+    @staticmethod
+    def test_expected_output_boolean_with_nulls(library):
         """Test that output is as expected for tricky bool cases:
         e.g. mapping {True:1, False:0, None: 0}, potential causes of failure:
             - None being cast to False when these values are inserted into bool series
@@ -332,7 +338,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         assert_frame_equal_dispatch(expected, df_transformed)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_warnings_issued_with_verbose_true(self, library):
+    @staticmethod
+    def test_warnings_issued_with_verbose_true(library):
         """Test that warnings are issued when verbose is set to True."""
         df = d.create_df_1(library=library)
 
@@ -358,7 +365,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_warnings_silenced_with_verbose_false(self, library):
+    @staticmethod
+    def test_warnings_silenced_with_verbose_false(library):
         """Test that warnings are silenced when verbose is set to defualt value False."""
         df = d.create_df_1(library=library)
 

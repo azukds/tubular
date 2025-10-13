@@ -302,7 +302,7 @@ class GenericCappingFitTests(
             ([-1, -5, -10, 20, 40], None, [0.1, None], [-10, None]),
         ],
     )
-    def test_fit_values(
+    def test_fit_values(  # noqa: PLR0917, PLR0913
         self,
         values,
         sample_weight,
@@ -367,7 +367,7 @@ class GenericCappingFitTests(
             ([-1, -5, -10, 20, 40], None, [0.1, None]),
         ],
     )
-    def test_replacement_values_updated(
+    def test_replacement_values_updated(  # noqa: PLR0917, PLR0913
         self,
         values,
         sample_weight,
@@ -409,7 +409,8 @@ class GenericCappingTransformTests(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseCappingTransformer"
 
-    def expected_df_2(self, library="pandas"):
+    @staticmethod
+    def expected_df_2(library="pandas"):
         """Expected output from test_expected_output_max."""
 
         df_dict = {
@@ -724,7 +725,8 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.quantiles == transformer2.quantiles
         ), "quantiles attribute modified in transform"
 
-    def expected_df_1(self, library="pandas"):
+    @staticmethod
+    def expected_df_1(library="pandas"):
         """Expected output from test_expected_output_min_and_max."""
         df_dict = {
             "a": [2, 2, 3, 4, 5, 5, None],
@@ -820,8 +822,8 @@ class TestWeightedQuantile:
             ([1, 2, 3, 4, 5], [1, 0, 1, 0, 1], [0, 0.5, 1.0], [1.0, 2.0, 5.0]),
         ],
     )
+    @staticmethod
     def test_expected_output(
-        self,
         values,
         sample_weight,
         quantiles,

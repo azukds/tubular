@@ -69,20 +69,28 @@ target-version = "py39"
 # McCabe complexity (`C901`) by default.
 select = [
     "A",
+    "AIR",
     "ANN",
+    "ARG",
     "ASYNC",
     "B", # bugbear 
     "C4",
     "COM",
+    "DJ",
     "DTZ",
     "E", # pycodestyle
     "EM",
+    "EXE",
     "F", # Pyflakes
     "FA",
+    "FURB",
     "FLY",
+    "G",
     "I",
     "INT",
     "ISC",
+    "ICN",
+    "LOG",
     "NPY",
     "PD",
     "PERF",
@@ -90,6 +98,7 @@ select = [
     "PIE",
     "PLC",
     "PLE",
+    "PLR",
     "PLW",
     "PYI",
     "Q",
@@ -104,7 +113,6 @@ select = [
     "UP",
     "W", # pycodestyle warnings
     "YTT",
-    "PLR"
 ]
 
 # Enabled to allow direct type comparisons using is and is not under E721 (see https://docs.astral.sh/ruff/rules/type-comparison/)

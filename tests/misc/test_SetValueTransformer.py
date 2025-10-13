@@ -58,7 +58,8 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
-    def test_value_set_in_transform(self, library, value):
+    @staticmethod
+    def test_value_set_in_transform(library, value):
         """Test that transform sets the value as expected."""
 
         df = d.create_df_2(library)

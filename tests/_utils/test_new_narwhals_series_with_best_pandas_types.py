@@ -23,7 +23,8 @@ class TestNewNarwhalsSeriesWithOptimalPandasTypes:
             ([True, False, None], "Boolean"),
         ],
     )
-    def test_polars_unaffected(self, values, dtype):
+    @staticmethod
+    def test_polars_unaffected(values, dtype):
         "test that polars Series are initialised as usual"
         name = "a"
         output = new_narwhals_series_with_optimal_pandas_types(
@@ -52,7 +53,8 @@ class TestNewNarwhalsSeriesWithOptimalPandasTypes:
             (["a", "b", "c"], "Categorical", "category"),
         ],
     )
-    def test_pandas_output(self, values, polars_dtype, expected_pandas_dtype):
+    @staticmethod
+    def test_pandas_output(values, polars_dtype, expected_pandas_dtype):
         "test that polars Series are initialised as usual"
         name = "a"
         output = new_narwhals_series_with_optimal_pandas_types(

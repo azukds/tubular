@@ -243,7 +243,7 @@ class TestPriorRegularisation:
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_output2(self, library):
+    def test_output2(library):
         "Test output of method - for category dtypes"
         x = MeanResponseTransformer(columns="a", prior=0)
 
