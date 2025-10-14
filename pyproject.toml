@@ -63,6 +63,7 @@ line-length = 88
 # Assume Python 3.9.
 target-version = "py39"
 
+
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
@@ -104,6 +105,7 @@ select = [
     "Q",
     "RET",
     "RSE",
+    "RUF",
     "S", # Bandit
     "SIM",
     "SLOT",

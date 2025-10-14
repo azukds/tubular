@@ -2,7 +2,6 @@ import re
 
 import narwhals as nw
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import GenericNominalTransformTests
 
@@ -181,17 +180,16 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         df = d.create_df_8(library=library)
 
         expected_training_data_levels = {
-            "b": set(df["b"]),
-            "c": set(df["c"]),
+            "b": sorted(set(df["b"])),
+            "c": sorted(set(df["c"])),
         }
 
         x = GroupRareLevelsTransformer(columns=["b", "c"], unseen_levels_to_rare=False)
         x.fit(df)
-        ta.equality.assert_equal_dispatch(
-            expected=expected_training_data_levels,
-            actual=x.training_data_levels,
-            msg="Training data values not correctly stored when unseen_levels_to_rare is false",
-        )
+
+        assert (
+            expected_training_data_levels == x.training_data_levels
+        ), "Training data values not correctly stored when unseen_levels_to_rare is false"
 
 
 class TestTransform(GenericNominalTransformTests):

@@ -1271,7 +1271,7 @@ class TestTransform(GenericTransformTests):
         x.column_to_encoded_columns = column_to_encoded_columns
         x.response_levels = level
         x.encoded_columns = list(x.mappings.keys())
-        x.return_dtypes = {col: "Float32" for col in x.encoded_columns}
+        x.return_dtypes = dict.fromkeys(x.encoded_columns, "Float32")
 
         df_transformed = x.transform(df)
 

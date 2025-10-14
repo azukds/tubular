@@ -200,7 +200,7 @@ class ArbitraryImputer(BaseImputer):
 
         """
 
-        return expr.cast(nw.Enum(set(categories + [self.impute_value])))
+        return expr.cast(nw.Enum({*categories, self.impute_value}))
 
     def _check_impute_value_type_works_with_columns(  # noqa: PLR0912
         self,

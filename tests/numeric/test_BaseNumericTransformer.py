@@ -183,7 +183,7 @@ class BaseNumericTransformerTransformTests(
         # if the transformer fits, run a working fit before transform
         if x.FITS:
             # create numeric df to fit on
-            df_dict = {col: df["c"] for col in [*x.columns, "c"]}
+            df_dict = dict.fromkeys([*x.columns, "c"], df["c"])
             numeric_df = dataframe_init_dispatch(
                 dataframe_dict=df_dict,
                 library=library,
@@ -256,7 +256,7 @@ class BaseNumericTransformerTransformTests(
 
         if x.FITS:
             # create numeric df to fit on
-            df_dict = {col: df["c"] for col in [*x.columns, "c"]}
+            df_dict = dict.fromkeys([*x.columns, "c"], df["c"])
             numeric_df = dataframe_init_dispatch(
                 dataframe_dict=df_dict,
                 library=library,

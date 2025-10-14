@@ -4,9 +4,7 @@ from narwhals.typing import FrameT
 from pandas.testing import assert_frame_equal as assert_pandas_frame_equal
 from polars.testing import assert_frame_equal as assert_polars_frame_equal
 
-from tubular._utils import (
-    _assess_pandas_object_column,  # noqa: PLC2701, purposefully using private method in tests
-)
+from tubular._utils import _assess_pandas_object_column
 
 PANDAS_TO_POLARS_TYPES = {
     "int64": pl.Int64,

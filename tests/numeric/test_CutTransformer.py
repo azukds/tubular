@@ -86,7 +86,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         x = initialized_transformers[self.transformer_name]
         x.columns = ["a", "b"]
 
-        numeric_df = pd.DataFrame({col: df["c"] for col in [*x.columns, "c"]})
+        numeric_df = pd.DataFrame(dict.fromkeys([*x.columns, "c"], df["c"]))
         x.fit(numeric_df, numeric_df["c"])
 
         x.transform(df)

@@ -132,12 +132,12 @@ class TestInit(
     @pytest.mark.parametrize(
         ("include", "incorrect_datetime_mappings_keys"),
         [
-            (["timeofyear"], {"dayofweek": {i: "day" for i in range(7)}}),
+            (["timeofyear"], {"dayofweek": dict.fromkeys(range(7), "day")}),
             (
                 ["timeofyear"],
                 {
-                    "timeofyear": {i: "month" for i in range(12)},
-                    "timeofday": {i: "hour" for i in range(24)},
+                    "timeofyear": dict.fromkeys(range(12), "month"),
+                    "timeofday": dict.fromkeys(range(24), "hour"),
                 },
             ),
         ],
@@ -162,19 +162,19 @@ class TestInit(
         ("incomplete_mappings", "expected_exception"),
         [
             (
-                {"timeofday": {i: "mapped" for i in range(23)}},
+                {"timeofday": dict.fromkeys(range(23), "mapped")},
                 r"DatetimeInfoExtractor: timeofday mapping dictionary should contain mapping for all values between 0-23. \{23\} are missing",
             ),
             (
-                {"timeofmonth": {i: "mapped" for i in range(1, 31)}},
+                {"timeofmonth": dict.fromkeys(range(1, 31), "mapped")},
                 r"DatetimeInfoExtractor: timeofmonth mapping dictionary should contain mapping for all values between 1-31. \{31\} are missing",
             ),
             (
-                {"timeofyear": {i: "mapped" for i in range(1, 12)}},
+                {"timeofyear": dict.fromkeys(range(1, 12), "mapped")},
                 r"DatetimeInfoExtractor: timeofyear mapping dictionary should contain mapping for all values between 1-12. \{12\} are missing",
             ),
             (
-                {"dayofweek": {i: "mapped" for i in range(6)}},
+                {"dayofweek": dict.fromkeys(range(6), "mapped")},
                 r"DatetimeInfoExtractor: dayofweek mapping dictionary should contain mapping for all values between 1-7. \{6, 7\} are missing",
             ),
         ],
@@ -654,20 +654,20 @@ class TestTransform(
             columns=["a", "b"],
             datetime_mappings={
                 "dayofweek": {
-                    **{i: "weekday" for i in [1, 2, 3, 4, 5]},
-                    **{i: "weekend" for i in [6, 7]},
+                    **dict.fromkeys([1, 2, 3, 4, 5], "weekday"),
+                    **dict.fromkeys([6, 7], "weekend"),
                 },
                 "timeofmonth": {
-                    **{i: "start" for i in range(1, 16)},
-                    **{i: "end" for i in range(16, 32)},
+                    **dict.fromkeys(range(1, 16), "start"),
+                    **dict.fromkeys(range(16, 32), "end"),
                 },
                 "timeofyear": {
-                    **{i: "start" for i in range(1, 7)},
-                    **{i: "end" for i in range(7, 13)},
+                    **dict.fromkeys(range(1, 7), "start"),
+                    **dict.fromkeys(range(7, 13), "end"),
                 },
                 "timeofday": {
-                    **{i: "start" for i in range(12)},
-                    **{i: "end" for i in range(12, 24)},
+                    **dict.fromkeys(range(12), "start"),
+                    **dict.fromkeys(range(12, 24), "end"),
                 },
             },
         )

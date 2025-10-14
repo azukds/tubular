@@ -1,9 +1,7 @@
 import pandas as pd
 import pytest
 
-from tubular._utils import (
-    _assess_pandas_object_column,  # noqa: PLC2701, importing from private module to test
-)
+from tubular._utils import _assess_pandas_object_column
 
 
 class TestAssessPandasObjectColumn:

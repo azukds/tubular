@@ -164,7 +164,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
         df = x.transform(df)
 
-        column = list(mapping.keys())[0]
+        column = next(iter(mapping.keys()))
         actual_dtype = str(nw.from_native(df).get_column(column).dtype)
         assert (
             actual_dtype == return_dtypes[column]

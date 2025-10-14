@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, ClassVar, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -237,7 +237,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         kmeans_kwargs: Optional[dict[str, object]] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-
         if kmeans_kwargs is None:
             kmeans_kwargs = {}
 
@@ -448,7 +447,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     FITS = False
 
-    def __init__(  # noqa: PLR6201, PLR0913
+    def __init__(  # noqa: PLR0913
         self,
         columns: str | list[str] | None,
         base: float | None = None,
@@ -791,7 +790,9 @@ class ScalingTransformer(BaseNumericTransformer):
     FITS = True
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
-    scaler_options = {
+    scaler_options: ClassVar[
+        dict[str, Union[MinMaxScaler, MaxAbsScaler, StandardScaler]]
+    ] = {
         "min_max": MinMaxScaler,
         "max_abs": MaxAbsScaler,
         "standard": StandardScaler,
@@ -941,7 +942,7 @@ class InteractionTransformer(BaseNumericTransformer):
         super().__init__(columns=columns, **kwargs)
 
         if min_degree < self.MIN_DEGREE_VALUE:
-            msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {str(min_degree)}"
+            msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {min_degree}"
             raise ValueError(msg)
         self.min_degree = min_degree
 
@@ -1106,7 +1107,11 @@ class PCATransformer(BaseNumericTransformer):
     def __init__(  # noqa: PLR0913
         self,
         columns: Optional[Union[str, list[str]]],
-        n_components: Union[StrictlyPositiveInt, FloatBetweenZeroOne, Literal["mle"]] = 2,
+        n_components: Union[
+            StrictlyPositiveInt,
+            FloatBetweenZeroOne,
+            Literal["mle"],
+        ] = 2,
         svd_solver: Literal["auto", "full", "arpack", "randomized"] = "auto",
         random_state: Optional[int] = None,
         pca_column_prefix: str = "pca_",
