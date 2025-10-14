@@ -447,7 +447,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     FITS = False
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         columns: str | list[str] | None,
         base: float | None = None,
@@ -1104,7 +1104,7 @@ class PCATransformer(BaseNumericTransformer):
     FITS = True
 
     @beartype
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         columns: Optional[Union[str, list[str]]],
         n_components: Union[

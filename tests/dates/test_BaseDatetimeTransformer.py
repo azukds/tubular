@@ -35,7 +35,7 @@ class DatetimeMixinTransformTests:
             (pd.to_datetime("01/02/2020").date(), "Date"),
         ],
     )
-    def test_non_datetypes_error(  # noqa: PLR0913
+    def test_non_datetypes_error(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,

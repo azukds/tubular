@@ -343,9 +343,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     object_modules = ["tubular.mapping", "tubular.nominal", "tubular.strings"]
     object_transformers = []
     for module in object_modules:
-        object_transformers = object_transformers + [
-            x[0] for x in get_all_classes(wanted_module=module)
-        ]
+        object_transformers += [x[0] for x in get_all_classes(wanted_module=module)]
 
     for transformer in object_transformers:
         min_df_dict[transformer] = object_df

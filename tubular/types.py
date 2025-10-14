@@ -48,7 +48,7 @@ StrictlyPositiveInt = Annotated[int, Is[lambda i: (i > 1)]]
 
 ListOfSingleStr = Annotated[
     list[str],
-    Is[lambda list_arg: len(list_arg) == 1],  # noqa:  PLR2004
+    Is[lambda list_arg: len(list_arg) == 1],
 ]
 
 ListOfThreeStrs = Annotated[
@@ -58,5 +58,5 @@ ListOfThreeStrs = Annotated[
 
 ListOfMoreThanOneStrings = Annotated[
     list[str],
-    Is[lambda list_arg: len(list_arg) > 1],  # noqa:  PLR2004
+    Is[lambda list_arg: len(list_arg) > 1],
 ]

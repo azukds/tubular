@@ -45,7 +45,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             ),
         ],
     )
-    def test_transform_basic_case_outputs(  # noqa: PLR0913
+    def test_transform_basic_case_outputs(
         self,
         library,
         aggregations,

@@ -84,6 +84,7 @@ select = [
     "EXE",
     "F", # Pyflakes
     "FA",
+    "FAST",
     "FURB",
     "FLY",
     "G",
