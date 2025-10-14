@@ -307,9 +307,9 @@ class GenericFitTests:
 
         x_fitted = x.fit(df, df["a"])
 
-        assert (
-            x_fitted is x
-        ), f"Returned value from {self.transformer_name}.fit not as expected."
+        assert x_fitted is x, (
+            f"Returned value from {self.transformer_name}.fit not as expected."
+        )
 
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
@@ -523,9 +523,9 @@ class WeightColumnFitMixinTests:
 
         x_fitted = transformer.fit(df, df["a"])
 
-        assert (
-            x_fitted is transformer
-        ), f"Returned value from {self.transformer_name}.fit not as expected."
+        assert x_fitted is transformer, (
+            f"Returned value from {self.transformer_name}.fit not as expected."
+        )
 
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
@@ -590,7 +590,7 @@ class WeightColumnFitMixinTests:
             (-1, "weight column must be positive"),
         ],
     )
-    def test_bad_values_in_weights_error(  # noqa: PLR0913
+    def test_bad_values_in_weights_error(
         self,
         bad_weight_value,
         expected_message,

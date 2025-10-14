@@ -120,9 +120,9 @@ class GenericImputerTransformTests:
 
         transformer.transform(df1)
 
-        assert (
-            transformer.impute_values_ == impute_values
-        ), "impute_values_ changed in transform"
+        assert transformer.impute_values_ == impute_values, (
+            "impute_values_ changed in transform"
+        )
 
     @pytest.mark.parametrize(
         ("library", "expected_df_1"),
@@ -275,7 +275,7 @@ class GenericImputerTransformTests:
             ("b", 0, [1, 2, 0]),
         ],
     )
-    def test_imputation_with_falsey_values(  # noqa: PLR0913
+    def test_imputation_with_falsey_values(
         self,
         library,
         initialized_transformers,
@@ -421,9 +421,9 @@ class GenericImputerTransformTestsWeight:
         transformer2.fit_transform(df)
 
         # Check if the impute_values_ are the same
-        assert (
-            transformer1.impute_values_ == transformer2.impute_values_
-        ), f"Impute values changed in transform for {self.transformer_name}"
+        assert transformer1.impute_values_ == transformer2.impute_values_, (
+            f"Impute values changed in transform for {self.transformer_name}"
+        )
 
 
 class TestInit(ColumnStrListInitTests):

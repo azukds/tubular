@@ -118,8 +118,9 @@ def learnt_unseen_levels_encoding_dict_mean():
         "b_green": (0.0 + 0.0 + 0.0 + 0.0 + 1.0 + 1.0) / 6,
     }
 
-    for key in return_dict:
-        return_dict[key] = np.float32(return_dict[key])
+    for key, value in return_dict.items():
+        return_dict[key] = np.float32(value)
+
     return return_dict
 
 
@@ -132,8 +133,8 @@ def learnt_unseen_levels_encoding_dict_median():
         "b_green": 0.0,
     }
 
-    for key in return_dict:
-        return_dict[key] = np.float32(return_dict[key])
+    for key, value in return_dict.items():
+        return_dict[key] = np.float32(value)
     return return_dict
 
 
@@ -145,8 +146,8 @@ def learnt_unseen_levels_encoding_dict_highest():
         "b_yellow": 1.0,
         "b_green": 1.0,
     }
-    for key in return_dict:
-        return_dict[key] = np.float32(return_dict[key])
+    for key, value in return_dict.items():
+        return_dict[key] = np.float32(value)
     return return_dict
 
 
@@ -159,8 +160,8 @@ def learnt_unseen_levels_encoding_dict_lowest():
         "b_green": 0.0,
     }
 
-    for key in return_dict:
-        return_dict[key] = np.float32(return_dict[key])
+    for key, value in return_dict.items():
+        return_dict[key] = np.float32(value)
     return return_dict
 
 
@@ -172,8 +173,8 @@ def learnt_unseen_levels_encoding_dict_arbitrary():
         "b_yellow": 22.0,
         "b_green": 22.0,
     }
-    for key in return_dict:
-        return_dict[key] = np.float32(return_dict[key])
+    for key, value in return_dict.items():
+        return_dict[key] = np.float32(value)
     return return_dict
 
 
@@ -237,9 +238,9 @@ class TestPriorRegularisation:
             response_column=response_column,
         )
 
-        assert (
-            output == expected
-        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+        assert output == expected, (
+            f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
@@ -285,9 +286,9 @@ class TestPriorRegularisation:
             response_column=response_column,
         )
 
-        assert (
-            output == expected
-        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+        assert output == expected, (
+            f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas"])
     @staticmethod
@@ -331,9 +332,9 @@ class TestPriorRegularisation:
             response_column=response_column,
         )
 
-        assert (
-            output == expected
-        ), f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+        assert output == expected, (
+            f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
+        )
 
 
 class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
@@ -474,9 +475,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             expected_created_cols = {
                 prefix + "_" + suffix for prefix, suffix in product(columns, level)
             }
-        assert (
-            set(x.encoded_columns) == expected_created_cols
-        ), "Stored encoded columns are not as expected"
+        assert set(x.encoded_columns) == expected_created_cols, (
+            "Stored encoded columns are not as expected"
+        )
 
         for column in x.encoded_columns:
             actual = x.mappings[column]
@@ -588,9 +589,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         )
         x.fit(df, df[target_column])
 
-        assert (
-            unobserved_value not in x.mappings
-        ), "MeanResponseTransformer should ignore unobserved levels"
+        assert unobserved_value not in x.mappings, (
+            "MeanResponseTransformer should ignore unobserved levels"
+        )
 
 
 class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
@@ -709,13 +710,13 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     expected_mappings[key][value],
                 )
 
-        assert (
-            x.global_mean == expected_mean
-        ), f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
+        assert x.global_mean == expected_mean, (
+            f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
+        )
 
-        assert (
-            x.mappings == expected_mappings
-        ), f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
+        assert x.mappings == expected_mappings, (
+            f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
@@ -770,9 +771,9 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
 
         global_mean = x_prior.global_mean
 
-        assert (
-            global_mean == x_no_prior.global_mean
-        ), "global means for transformers with/without priors should match"
+        assert global_mean == x_no_prior.global_mean, (
+            "global means for transformers with/without priors should match"
+        )
 
         for col in prior_mappings:
             for value in prior_mappings[col]:
@@ -782,9 +783,9 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                 prior_mean_dist = np.abs(prior_encoding - global_mean)
                 no_prior_mean_dist = np.abs(no_prior_encoding - global_mean)
 
-                assert (
-                    prior_mean_dist <= no_prior_mean_dist
-                ), "encodings using priors should be closer to the global mean than without"
+                assert prior_mean_dist <= no_prior_mean_dist, (
+                    "encodings using priors should be closer to the global mean than without"
+                )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
@@ -851,9 +852,9 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
 
         global_mean = x_prior.global_mean
 
-        assert (
-            global_mean == x_no_prior.global_mean
-        ), "global means for transformers with/without priors should match"
+        assert global_mean == x_no_prior.global_mean, (
+            "global means for transformers with/without priors should match"
+        )
 
         low_weight_prior_encoding = prior_mappings["f"][False]
         high_weight_prior_encoding = prior_mappings["f"][True]
@@ -875,9 +876,9 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         # that the distance remaining is a smaller proportion of the no prior distance
         low_ratio = low_weight_prior_mean_dist / low_weight_no_prior_mean_dist
         high_ratio = high_weight_prior_mean_dist / high_weight_no_prior_mean_dist
-        assert (
-            low_ratio <= high_ratio
-        ), "encodings for categories with lower weights should be moved closer to the global mean than those with higher weights, for fixed prior"
+        assert low_ratio <= high_ratio, (
+            "encodings for categories with lower weights should be moved closer to the global mean than those with higher weights, for fixed prior"
+        )
 
 
 def expected_df_1(library="pandas"):
@@ -1440,9 +1441,9 @@ class TestTransform(GenericTransformTests):
         for col in expected_created_cols:
             expected_type = x.return_type
             actual_type = str(output_df[col].dtype)
-            assert (
-                actual_type == expected_type
-            ), f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
+            assert actual_type == expected_type, (
+                f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
+            )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
@@ -1460,9 +1461,9 @@ class TestTransform(GenericTransformTests):
 
         x2.transform(df)
 
-        assert (
-            x.mappings == x2.mappings
-        ), "Mean response values not changed in transform"
+        assert x.mappings == x2.mappings, (
+            "Mean response values not changed in transform"
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

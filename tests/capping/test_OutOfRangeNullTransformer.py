@@ -72,9 +72,9 @@ class TestFit(GenericCappingFitTests):
         lower_replacement = None if quantiles[0] else False
         upper_replacement = None if quantiles[1] else False
         expected = [lower_replacement, upper_replacement]
-        assert (
-            transformer._replacement_values["a"] == expected
-        ), f"unexpected value for replacement_values attribute, expected {expected} but got {transformer._replacement_values}"
+        assert transformer._replacement_values["a"] == expected, (
+            f"unexpected value for replacement_values attribute, expected {expected} but got {transformer._replacement_values}"
+        )
 
 
 class TestTransform(GenericCappingTransformTests):
@@ -167,6 +167,6 @@ class TestSetReplacementValues:
             capping_values,
         )
 
-        assert (
-            replacement_values == expected_replacement_values
-        ), f"set_replacement_values output not as expected, expected {expected_replacement_values} but got {replacement_values}"
+        assert replacement_values == expected_replacement_values, (
+            f"set_replacement_values output not as expected, expected {expected_replacement_values} but got {replacement_values}"
+        )

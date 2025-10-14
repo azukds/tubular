@@ -361,7 +361,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """,
 )
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
-
     """Tranformer that applies a pandas.DataFrame method.
 
     Transformer assigns the output of the method to a new column or columns. It is possible to
@@ -414,7 +413,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
     polars_compatible = False
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         new_column_names: list[str] | str,
         pd_method_name: str,

@@ -1,4 +1,5 @@
 """This module contains transformers that apply encodings to nominal columns."""
+
 from __future__ import annotations
 
 import copy
@@ -181,7 +182,6 @@ class BaseNominalTransformer(BaseTransformer):
 
 
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
-
     """Transformer to group together rare levels of nominal variables into a new level,
     labelled 'rare' (by default).
 
@@ -1080,9 +1080,9 @@ class MeanResponseTransformer(
 
                         mean_imputer.fit(group_weights)
 
-                        self.unseen_levels_encoding_dict[
-                            c
-                        ] = mean_imputer.impute_values_[c]
+                        self.unseen_levels_encoding_dict[c] = (
+                            mean_imputer.impute_values_[c]
+                        )
 
                     # else, median
                     else:
@@ -1094,9 +1094,9 @@ class MeanResponseTransformer(
 
                         median_imputer.fit(group_weights)
 
-                        self.unseen_levels_encoding_dict[
-                            c
-                        ] = median_imputer.impute_values_[c]
+                        self.unseen_levels_encoding_dict[c] = (
+                            median_imputer.impute_values_[c]
+                        )
 
                 # else, min or max, which don't care about weights
                 else:
@@ -1393,8 +1393,8 @@ class OneHotEncodingTransformer(
         """
         columns_with_nulls = []
 
-        for c in present_levels:
-            if any(pd.isna(val) for val in present_levels[c]):
+        for c, levels in present_levels.items():
+            if any(pd.isna(val) for val in levels):
                 columns_with_nulls.append(c)
 
             if columns_with_nulls:
@@ -1772,7 +1772,7 @@ class OrdinalEncoderTransformer(
         for c in self.columns:
             if self.weights_column is None:
                 # get the indexes of the sorted target mean-encoded dict
-                _idx_target_mean = list(
+                idx_target_mean = list(
                     X_y.groupby([c])[response_column]
                     .mean()
                     .sort_values(ascending=True, kind="mergesort")
@@ -1783,7 +1783,7 @@ class OrdinalEncoderTransformer(
                 # sorted ascending by their target-mean value
                 # and whose values are ascending ordinal integers
                 ordinal_encoded_dict = {
-                    k: _idx_target_mean.index(k) + 1 for k in _idx_target_mean
+                    k: idx_target_mean.index(k) + 1 for k in idx_target_mean
                 }
 
                 self.mappings[c] = ordinal_encoded_dict
@@ -1794,7 +1794,7 @@ class OrdinalEncoderTransformer(
                 ].sum()
 
                 # get the indexes of the sorted target mean-encoded dict
-                _idx_target_mean = list(
+                idx_target_mean = list(
                     (groupby_sum[response_column] / groupby_sum[self.weights_column])
                     .sort_values(ascending=True, kind="mergesort")
                     .index,
@@ -1804,7 +1804,7 @@ class OrdinalEncoderTransformer(
                 # sorted ascending by their target-mean value
                 # and whose values are ascending ordinal integers
                 ordinal_encoded_dict = {
-                    k: _idx_target_mean.index(k) + 1 for k in _idx_target_mean
+                    k: idx_target_mean.index(k) + 1 for k in idx_target_mean
                 }
 
                 self.mappings[c] = ordinal_encoded_dict

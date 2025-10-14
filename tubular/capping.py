@@ -801,7 +801,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         {'a': [None, None], 'b': [False, None]}
         """
 
-        _replacement_values = {}
+        replacement_values = {}
 
         for k, cap_values_list in capping_values.items():
             null_replacements_list = [
@@ -809,9 +809,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 for replace_value in cap_values_list
             ]
 
-            _replacement_values[k] = null_replacements_list
+            replacement_values[k] = null_replacements_list
 
-        return _replacement_values
+        return replacement_values
 
     @nw.narwhalify
     def fit(self, X: FrameT, y: None = None) -> OutOfRangeNullTransformer:

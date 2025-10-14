@@ -364,7 +364,6 @@ class BaseDateTwoColumnTransformer(
     TwoColumnMixin,
     BaseGenericDateTransformer,
 ):
-
     """Extends BaseDateTransformer for transformers which accept exactly two columns
 
     Parameters
@@ -444,7 +443,7 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         columns: list[str],
         new_column_name: str | None = None,
@@ -764,7 +763,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     polars_compatible = True
 
     @beartype
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         columns: ListOfThreeStrs,
         new_column_name: str,
@@ -1242,7 +1241,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     polars_compatible = True
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         columns: str | list[str],
         method: str | list[str],
@@ -1257,17 +1256,11 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         )
 
         if not isinstance(method, str) and not isinstance(method, list):
-            msg = "{}: method must be a string or list but got {}".format(
-                self.classname(),
-                type(method),
-            )
+            msg = f"{self.classname()}: method must be a string or list but got {type(method)}"
             raise TypeError(msg)
 
         if not isinstance(units, str) and not isinstance(units, dict):
-            msg = "{}: units must be a string or dict but got {}".format(
-                self.classname(),
-                type(units),
-            )
+            msg = f"{self.classname()}: units must be a string or dict but got {type(units)}"
             raise TypeError(msg)
 
         if (
@@ -1275,21 +1268,14 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             and (not isinstance(period, float))
             and (not isinstance(period, dict))
         ) or (isinstance(period, bool)):
-            msg = "{}: period must be an int, float or dict but got {}".format(
-                self.classname(),
-                type(period),
-            )
+            msg = f"{self.classname()}: period must be an int, float or dict but got {type(period)}"
             raise TypeError(msg)
 
         if isinstance(units, dict) and (
             not all(isinstance(item, str) for item in list(units.keys()))
             or not all(isinstance(item, str) for item in list(units.values()))
         ):
-            msg = "{}: units dictionary key value pair must be strings but got keys: {} and values: {}".format(
-                self.classname(),
-                {type(k) for k in units},
-                {type(v) for v in units.values()},
-            )
+            msg = f"{self.classname()}: units dictionary key value pair must be strings but got keys: { ({type(k) for k in units}) } and values: { ({type(v) for v in units.values()}) }"
             raise TypeError(msg)
 
         if isinstance(period, dict) and (
@@ -1300,11 +1286,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             )
             or any(isinstance(item, bool) for item in list(period.values()))
         ):
-            msg = "{}: period dictionary key value pair must be str:int or str:float but got keys: {} and values: {}".format(
-                self.classname(),
-                {type(k) for k in period},
-                {type(v) for v in period.values()},
-            )
+            msg = f"{self.classname()}: period dictionary key value pair must be str:int or str:float but got keys: { ({type(k) for k in period}) } and values: { ({type(v) for v in period.values()}) }"
             raise TypeError(msg)
 
         valid_method_list = ["sin", "cos"]
@@ -1313,10 +1295,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         for method_value in method_list:
             if method_value not in valid_method_list:
-                msg = '{}: Invalid method {} supplied, should be "sin", "cos" or a list containing both'.format(
-                    self.classname(),
-                    method,
-                )
+                msg = f'{self.classname()}: Invalid method {method_value} supplied, should be "sin", "cos" or a list containing both'
                 raise ValueError(msg)
 
         valid_unit_list = [
@@ -1331,17 +1310,10 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         if isinstance(units, dict):
             if not set(units.values()).issubset(valid_unit_list):
-                msg = "{}: units dictionary values must be one of 'year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond' but got {}".format(
-                    self.classname(),
-                    set(units.values()),
-                )
+                msg = f"{self.classname()}: units dictionary values must be one of 'year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond' but got {set(units.values())}"
                 raise ValueError(msg)
         elif units not in valid_unit_list:
-            msg = "{}: Invalid units {} supplied, should be in {}".format(
-                self.classname(),
-                units,
-                valid_unit_list,
-            )
+            msg = f"{self.classname()}: Invalid units {units} supplied, should be in {valid_unit_list}"
             raise ValueError(msg)
 
         self.method = method_list
@@ -1349,17 +1321,11 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         self.period = period
 
         if isinstance(units, dict) and sorted(units.keys()) != sorted(self.columns):
-            msg = "{}: unit dictionary keys must be the same as columns but got {}".format(
-                self.classname(),
-                set(units.keys()),
-            )
+            msg = f"{self.classname()}: unit dictionary keys must be the same as columns but got {set(units.keys())}"
             raise ValueError(msg)
 
         if isinstance(period, dict) and sorted(period.keys()) != sorted(self.columns):
-            msg = "{}: period dictionary keys must be the same as columns but got {}".format(
-                self.classname(),
-                set(period.keys()),
-            )
+            msg = f"{self.classname()}: period dictionary keys must be the same as columns but got {set(period.keys())}"
             raise ValueError(msg)
 
     @beartype
@@ -1694,7 +1660,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
     polars_compatible = False
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         new_column_name: str,
         pd_method_name: str,

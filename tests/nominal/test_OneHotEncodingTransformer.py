@@ -214,9 +214,9 @@ class TestFit(GenericFitTests):
         )
 
         transformer.fit(df)
-        assert (
-            len(recwarn) == 0
-        ), "OneHotEncodingTransformer.fit is raising unexpected warnings"
+        assert len(recwarn) == 0, (
+            "OneHotEncodingTransformer.fit is raising unexpected warnings"
+        )
 
 
 class TestTransform(
@@ -382,9 +382,9 @@ class TestTransform(
 
         transformer.transform(df_test)
 
-        assert (
-            transformer2.categories_ == transformer.categories_
-        ), f"categories_ modified during transform, pre transform had {transformer2.categories_} but post transform has {transformer.categories_}"
+        assert transformer2.categories_ == transformer.categories_, (
+            f"categories_ modified during transform, pre transform had {transformer2.categories_} but post transform has {transformer.categories_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -411,9 +411,9 @@ class TestTransform(
         df_transformed = nw.from_native(df_transformed)
         actual_columns = df_transformed.columns
 
-        assert (
-            set(expected_columns) == set(actual_columns)
-        ), f"renaming columns feature in OneHotEncodingTransformer.transform, expected {expected_columns} but got {actual_columns}"
+        assert set(expected_columns) == set(actual_columns), (
+            f"renaming columns feature in OneHotEncodingTransformer.transform, expected {expected_columns} but got {actual_columns}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -562,6 +562,6 @@ class TestTransform(
         transformer.fit(df_train)
         transformer.transform(df_test)
 
-        assert (
-            len(recwarn) == 0
-        ), "OneHotEncodingTransformer.transform is raising unexpected warnings"
+        assert len(recwarn) == 0, (
+            "OneHotEncodingTransformer.transform is raising unexpected warnings"
+        )

@@ -48,9 +48,9 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             "c": df["c"].mean(),
         }
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_attr not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_attr not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
@@ -67,9 +67,9 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             "b": (10 + 4 + 12 + 10 + 6) / (2 + 1 + 4 + 5 + 6),
         }
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"learnt impute_values_ attr not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"learnt impute_values_ attr not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
 
 class TestTransform(

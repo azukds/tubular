@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-import pandas as pd  # noqa: TCH002
+from typing import TYPE_CHECKING
+
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 # DEPRECATED TRANSFORMERS

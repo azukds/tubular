@@ -5,14 +5,13 @@ from __future__ import annotations
 import warnings
 from collections import OrderedDict
 from functools import reduce
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
 import pandas as pd
 import polars as pl
 from beartype import beartype
-from narwhals.typing import IntoDType  # noqa: TCH002
 from typing_extensions import deprecated
 
 from tubular._utils import (
@@ -21,6 +20,9 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer
 from tubular.types import DataFrame
+
+if TYPE_CHECKING:
+    from narwhals.typing import IntoDType
 
 
 class BaseMappingTransformer(BaseTransformer):
@@ -94,8 +96,8 @@ class BaseMappingTransformer(BaseTransformer):
             raise ValueError(msg)
 
         mappings_from_null = dict.fromkeys(mappings)
-        for col in mappings:
-            null_keys = [key for key in mappings[col] if pd.isna(key)]
+        for col, col_mappings in mappings.items():
+            null_keys = [key for key in col_mappings if pd.isna(key)]
 
             if len(null_keys) > 1:
                 multi_null_map_msg = f"Multiple mappings have been provided for null values in column {col}, transformer is set up to handle nan/None/NA as one"
@@ -105,7 +107,7 @@ class BaseMappingTransformer(BaseTransformer):
 
             # Assign the mapping to the single null key if it exists
             if len(null_keys) != 0:
-                mappings_from_null[col] = mappings[col][null_keys[0]]
+                mappings_from_null[col] = col_mappings[null_keys[0]]
 
         self.mappings = mappings
         self.mappings_from_null = mappings_from_null

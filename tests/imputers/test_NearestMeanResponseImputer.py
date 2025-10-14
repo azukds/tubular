@@ -60,9 +60,9 @@ class TestFit(GenericFitTests):
             transformer.fit(df, df["c"])
 
         expected_impute_values = {"c": None}
-        assert (
-            transformer.impute_values_ == expected_impute_values
-        ), f"impute_values_ attr not as expected, expected {expected_impute_values} but got {transformer.impute_values_}"
+        assert transformer.impute_values_ == expected_impute_values, (
+            f"impute_values_ attr not as expected, expected {expected_impute_values} but got {transformer.impute_values_}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod

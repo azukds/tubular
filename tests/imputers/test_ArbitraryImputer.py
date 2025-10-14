@@ -124,7 +124,7 @@ class TestTransform(
             ("b", "Float32", 1, [1.0, 2.0, 3.0, 4.0, 1.0]),
         ],
     )
-    def test_impute_value_preserve_dtype(  # noqa: PLR0913
+    def test_impute_value_preserve_dtype(
         self,
         column,
         col_type,
@@ -159,9 +159,9 @@ class TestTransform(
 
         actual_dtype = df_transformed_nw[column].dtype
 
-        assert (
-            actual_dtype == expected_dtype
-        ), f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
+        assert actual_dtype == expected_dtype, (
+            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
+        )
 
         # also check full df against expectation
         expected = df_nw.clone()
@@ -189,7 +189,7 @@ class TestTransform(
             ([True, False, None], "Boolean", True, [True, False, True]),
         ],
     )
-    def test_edge_cases(  # noqa: PLR0913
+    def test_edge_cases(
         self,
         input_col,
         expected_dtype,
@@ -216,7 +216,7 @@ class TestTransform(
         if library == "polars" and input_col == [None, None]:
             with pytest.warns(
                 UserWarning,
-                match=f"{self.transformer_name}: X contains all null columns {str({column})}, types for these columns will be inferred as {type(transformer.impute_value)}",
+                match=f"{self.transformer_name}: X contains all null columns { {column}!s}, types for these columns will be inferred as {type(transformer.impute_value)}",
             ):
                 df_transformed_native = transformer.transform(df_nw.to_native())
 
@@ -227,9 +227,9 @@ class TestTransform(
 
         actual_dtype = str(df_transformed_nw[column].dtype)
 
-        assert (
-            actual_dtype == expected_dtype
-        ), f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
+        assert actual_dtype == expected_dtype, (
+            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
+        )
 
         # also check full df against expectation
         expected = df_nw.clone()
@@ -268,9 +268,9 @@ class TestTransform(
 
         actual_dtype = str(df_transformed_nw[column].dtype)
 
-        assert (
-            actual_dtype == impute_val_type
-        ), f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {impute_val_type} but got {actual_dtype}"
+        assert actual_dtype == impute_val_type, (
+            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {impute_val_type} but got {actual_dtype}"
+        )
 
         # also check full df against expectation
         expected = df_nw.clone()

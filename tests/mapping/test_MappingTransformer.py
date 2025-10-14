@@ -166,9 +166,9 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         column = next(iter(mapping.keys()))
         actual_dtype = str(nw.from_native(df).get_column(column).dtype)
-        assert (
-            actual_dtype == return_dtypes[column]
-        ), f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
+        assert actual_dtype == return_dtypes[column], (
+            f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
@@ -187,9 +187,9 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
         df = x.transform(df)
 
-        assert (
-            nw.from_native(df).get_column("b").dtype == nw.Categorical
-        ), "Categorical dtype not preserved for column b"
+        assert nw.from_native(df).get_column("b").dtype == nw.Categorical, (
+            "Categorical dtype not preserved for column b"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(

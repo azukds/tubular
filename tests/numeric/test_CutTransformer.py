@@ -104,9 +104,9 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
         df_transformed = x.transform(df)
 
-        assert (
-            df_transformed["c_new"].tolist() == cut_output
-        ), "unexpected values assigned to c_new column"
+        assert df_transformed["c_new"].tolist() == cut_output, (
+            "unexpected values assigned to c_new column"
+        )
 
     @pytest.mark.parametrize(
         ("df", "expected"),

@@ -22,13 +22,13 @@ class TestAssessPandasObjectColumn:
             column,
         )
 
-        assert (
-            expected_pandas_col_type == actual_pandas_col_type
-        ), f"_assess_pandas_object_column output not as expected for pandas bool type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        assert expected_pandas_col_type == actual_pandas_col_type, (
+            f"_assess_pandas_object_column output not as expected for pandas bool type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        )
 
-        assert (
-            expected_polars_col_type == actual_polars_col_type
-        ), f"_assess_pandas_object_column output not as expected for polars bool type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        assert expected_polars_col_type == actual_polars_col_type, (
+            f"_assess_pandas_object_column output not as expected for polars bool type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        )
 
     @staticmethod
     def test_null_case():
@@ -45,13 +45,13 @@ class TestAssessPandasObjectColumn:
             column,
         )
 
-        assert (
-            expected_pandas_col_type == actual_pandas_col_type
-        ), f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        assert expected_pandas_col_type == actual_pandas_col_type, (
+            f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        )
 
-        assert (
-            expected_polars_col_type == actual_polars_col_type
-        ), f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        assert expected_polars_col_type == actual_polars_col_type, (
+            f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        )
 
     @staticmethod
     def test_object_case():
@@ -68,13 +68,13 @@ class TestAssessPandasObjectColumn:
             column,
         )
 
-        assert (
-            expected_pandas_col_type == actual_pandas_col_type
-        ), f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        assert expected_pandas_col_type == actual_pandas_col_type, (
+            f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        )
 
-        assert (
-            expected_polars_col_type == actual_polars_col_type
-        ), f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        assert expected_polars_col_type == actual_polars_col_type, (
+            f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        )
 
     @pytest.mark.parametrize(
         "values",
