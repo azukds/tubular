@@ -81,12 +81,10 @@ def add_perc_stats_to_dict(
     Returns:
         Dict on subfunction runtime info, with added percentage runtime info
     """
-    for key in stats_dict:
-        stats_dict[key]["percentage_time"] = (
-            stats_dict[key]["time"] / overall_time
-        ) * 100
+    for key, subdict in stats_dict.items():
+        stats_dict[key]["percentage_time"] = (subdict["time"] / overall_time) * 100
         stats_dict[key]["percentage_time_per_call"] = (
-            stats_dict[key]["percentage_time"] / stats_dict[key]["calls"]
+            subdict["percentage_time"] / subdict["calls"]
         )
     return stats_dict
 

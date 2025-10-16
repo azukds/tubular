@@ -4,7 +4,7 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
@@ -16,7 +16,9 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _get_version,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, Series
@@ -60,11 +62,21 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     verbose : bool
         Print statements to show which methods are being run or not.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -75,6 +87,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """
 
     polars_compatible = True
+
+    jsonable = True
+
+    FITS = True
+
+    _version = _get_version()
 
     def classname(self) -> str:
         """Method that returns the name of the current class when called."""
@@ -107,6 +125,93 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         self.copy = copy
         self.return_native = return_native
 
+        self.built_from_json = False
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+
+        >>> transformer=BaseTransformer(columns=['a', 'b'])
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        """
+        if not self.jsonable:
+            msg = (
+                "This transformer has not yet had to/from json functionality developed"
+            )
+            raise RuntimeError(
+                msg,
+            )
+
+        return {
+            "tubular_version": self._version,
+            "classname": self.classname(),
+            "init": {
+                "columns": self.columns,
+                "copy": self.copy,
+                "verbose": self.verbose,
+                "return_native": self.return_native,
+            },
+            "fit": {},
+        }
+
+    @classmethod
+    def from_json(cls, json: dict[str, Any]) -> BaseTransformer:
+        """rebuild transformer from json dict, readyfor transform
+
+        Parameters
+        ----------
+        json_dict: dict[str, dict[str, Any]]
+            json-ified transformer
+
+        Returns
+        -------
+        BaseTransformer:
+            reconstructed transformer class, ready for transform
+
+        Examples
+        --------
+
+        >>> json_dict={
+        ... 'init': {
+        ...         'columns' :['a','b']
+        ...         },
+        ... 'fit': {}
+        ... }
+
+        >>> BaseTransformer.from_json(json=json_dict)
+        BaseTransformer(columns=['a', 'b'])
+        """
+
+        if not cls.jsonable:
+            msg = (
+                "This transformer has not yet had to/from json functionality developed"
+            )
+            raise RuntimeError(
+                msg,
+            )
+
+        instance = cls(**json["init"])
+
+        for attr in json["fit"]:
+            setattr(instance, attr, json["fit"][attr])
+
+        instance.built_from_json = True
+
+        return instance
+
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
         """Base transformer fit method, checks X and y types. Currently only pandas DataFrames are allowed for X
@@ -150,6 +255,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         return self
 
+    @block_from_json
     @nw.narwhalify
     def _combine_X_y(self, X: FrameT, y: nw.Series) -> FrameT:
         """Combine X and y by adding a new column with the values of y to a copy of X.
@@ -361,7 +467,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """,
 )
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
-
     """Tranformer that applies a pandas.DataFrame method.
 
     Transformer assigns the output of the method to a new column or columns. It is possible to
@@ -407,12 +512,26 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     pd_method_name : str
         The name of the pandas.DataFrame method to call.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

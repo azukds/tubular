@@ -90,9 +90,9 @@ def test_type_alignment():
 
     polars_output = dataframe_init_dispatch(library="polars", dataframe_dict=df_dict)
 
-    assert (
-        set(polars_output.columns) == set(pandas_output.columns)
-    ), "dataframe_init_dispatch: polars and pandas output should have same columns for same input dataframe_dict"
+    assert set(polars_output.columns) == set(pandas_output.columns), (
+        "dataframe_init_dispatch: polars and pandas output should have same columns for same input dataframe_dict"
+    )
 
     for col in pandas_output:
         assert pandas_output[col].dtype == expected_pandas_types[col]

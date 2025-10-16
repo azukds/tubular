@@ -31,12 +31,34 @@ class SetValueTransformer(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> SetValueTransformer(
+    ... columns='a',
+    ... value=1
+    ...    )
+    SetValueTransformer(columns=['a'], value=1)
 
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -62,6 +84,29 @@ class SetValueTransformer(BaseTransformer):
         -------
         X : FrameT
             Transformed input X with columns set to value.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=SetValueTransformer(
+        ... columns='a',
+        ... value=1
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [4,5,6]})
+
+        >>> transformer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i32 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 4   │
+        │ 1   ┆ 5   │
+        │ 1   ┆ 6   │
+        └─────┴─────┘
 
         """
         X = nw.from_native(super().transform(X))
@@ -92,11 +137,25 @@ class ColumnDtypeSetter(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

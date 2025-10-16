@@ -57,12 +57,24 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
     pd_method_name : str
         The name of the pd.Series.str method to call.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -156,11 +168,24 @@ class StringConcatenator(NewColumnNameMixin, SeparatorColumnMixin, BaseTransform
 
     Attributes
     ----------
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     def __init__(
         self,

@@ -1,9 +1,7 @@
 import pandas as pd
 import pytest
 
-from tubular._utils import (
-    _assess_pandas_object_column,  # noqa: PLC2701, importing from private module to test
-)
+from tubular._utils import _assess_pandas_object_column
 
 
 class TestAssessPandasObjectColumn:
@@ -23,13 +21,13 @@ class TestAssessPandasObjectColumn:
             column,
         )
 
-        assert (
-            expected_pandas_col_type == actual_pandas_col_type
-        ), f"_assess_pandas_object_column output not as expected for pandas bool type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        assert expected_pandas_col_type == actual_pandas_col_type, (
+            f"_assess_pandas_object_column output not as expected for pandas bool type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        )
 
-        assert (
-            expected_polars_col_type == actual_polars_col_type
-        ), f"_assess_pandas_object_column output not as expected for polars bool type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        assert expected_polars_col_type == actual_polars_col_type, (
+            f"_assess_pandas_object_column output not as expected for polars bool type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        )
 
     def test_null_case(self):
         "test function output for null column"
@@ -45,13 +43,13 @@ class TestAssessPandasObjectColumn:
             column,
         )
 
-        assert (
-            expected_pandas_col_type == actual_pandas_col_type
-        ), f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        assert expected_pandas_col_type == actual_pandas_col_type, (
+            f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        )
 
-        assert (
-            expected_polars_col_type == actual_polars_col_type
-        ), f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        assert expected_polars_col_type == actual_polars_col_type, (
+            f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        )
 
     def test_object_case(self):
         "test function output for object column (not one of our more specific subcases)"
@@ -67,13 +65,13 @@ class TestAssessPandasObjectColumn:
             column,
         )
 
-        assert (
-            expected_pandas_col_type == actual_pandas_col_type
-        ), f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        assert expected_pandas_col_type == actual_pandas_col_type, (
+            f"_assess_pandas_object_column output not as expected for pandas null type, expected {expected_pandas_col_type} but got {actual_pandas_col_type}"
+        )
 
-        assert (
-            expected_polars_col_type == actual_polars_col_type
-        ), f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        assert expected_polars_col_type == actual_polars_col_type, (
+            f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
+        )
 
     @pytest.mark.parametrize(
         "values",

@@ -47,7 +47,7 @@ dev = [
     "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
     "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
-    "ruff==0.2.2",
+    "ruff>=0.2.2",
     ]
 
 [project.urls]
@@ -62,6 +62,7 @@ line-length = 88
 
 # Assume Python 3.9.
 target-version = "py39"
+
 
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
@@ -95,6 +96,7 @@ select = [
     "Q",
     "RET",
     "RSE",
+    "RUF",
     "S", # Bandit
     "SIM",
     "SLOT",

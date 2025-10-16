@@ -79,7 +79,7 @@ class TestInit(
         """Test and exception is raised if a non pd.Series.dt method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
-            match="""SeriesDtMethodTransformer: error accessing "dt.b" method on pd.Series object - pd_method_name should be a pd.Series.dt method""",
+            match=r"""SeriesDtMethodTransformer: error accessing "dt.b" method on pd.Series object - pd_method_name should be a pd.Series.dt method""",
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",

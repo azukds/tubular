@@ -61,7 +61,7 @@ pytz==2025.2
     # via pandas
 pyyaml==6.0.2
     # via pre-commit
-ruff==0.2.2
+ruff==0.14.0
     # via tubular (pyproject.toml)
 scikit-learn==1.6.1
     # via tubular (pyproject.toml)

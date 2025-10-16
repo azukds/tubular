@@ -328,9 +328,9 @@ class TestTransform(GenericTransformTests):
 
         transformer.transform(df)
 
-        assert (
-            mapping == transformer.mappings
-        ), f"BaseMappingTransformer.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
+        assert mapping == transformer.mappings, (
+            f"BaseMappingTransformer.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("non_df", [1, True, "a", [1, 2], {"a": 1}, None])

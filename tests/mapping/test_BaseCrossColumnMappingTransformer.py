@@ -56,9 +56,9 @@ class BaseCrossColumnMappingTransformerInitTests(BaseMappingTransformerInitTests
 
         actual = transformer.return_dtypes
 
-        assert (
-            actual == expected
-        ), f"return_dtypes attr not inferred as expected, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"return_dtypes attr not inferred as expected, expected {expected} but got {actual}"
+        )
 
 
 class BaseCrossColumnMappingTransformerTransformTests(

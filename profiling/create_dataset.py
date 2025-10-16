@@ -29,8 +29,8 @@ def create_standard_pandas_dataset() -> pd.DataFrame:
 
     for i in range(1, 8):
         str_i = str(i)
-        cali_df[
-            ["HouseAge_" + str_i, "AveOccup_" + str_i, "Population_" + str_i]
-        ] = cali_df[["HouseAge", "AveOccup", "Population"]].copy()
+        cali_df[["HouseAge_" + str_i, "AveOccup_" + str_i, "Population_" + str_i]] = (
+            cali_df[["HouseAge", "AveOccup", "Population"]].copy()
+        )
 
     return cali_df

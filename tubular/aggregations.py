@@ -75,22 +75,50 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     Attributes
     ----------
-    columns : list[str]
+    columns : Union[str, list[str]]
         Columns to apply the transformations to.
+
     aggregations : list[str]
         Aggregation methods to apply.
+
     drop_original : bool
         Indicator for dropping original columns.
+
     verbose : bool
         Indicator for verbose output.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible: bool
+        Indicates if transformer will work with polars frames
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> BaseAggregationTransformer(
+    ... columns='a',
+    ... aggregations=['min', 'max'],
+    ...    )
+    BaseAggregationTransformer(aggregations=['min', 'max'], columns=['a'])
     """
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     @beartype
     def __init__(
         self,
-        columns: list[str],
+        columns: Union[str, list[str]],
         aggregations: Union[
             ListOfColumnsOverRowAggregations,
             ListOfRowsOverColumnsAggregations,
@@ -130,6 +158,29 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         ------
         ValueError
             If columns are non-numeric.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=BaseAggregationTransformer(
+        ... columns='a',
+        ... aggregations=['min', 'max'],
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> # base transformers have no effect on data
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
         """
 
         return_native = self._process_return_native(return_native_override)
@@ -160,22 +211,52 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     Attributes
     ----------
-    columns : list[str]
+    columns : Union[str, list[str]]
         List of column names to apply the aggregation transformations to.
+
     aggregations : list[str]
         List of aggregation methods to apply.
+
     key : str
         Column name to group by for aggregation.
+
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible: bool
+        Indicates if transformer will work with polars frames
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> AggregateRowsOverColumnTransformer(
+    ... columns='a',
+    ... aggregations=['min', 'max'],
+    ... key='b',
+    ... )
+    AggregateRowsOverColumnTransformer(aggregations=['min', 'max'], columns=['a'],
+                                       key='b')
     """
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     @beartype
     def __init__(
         self,
-        columns: list[str],
+        columns: Union[str, list[str]],
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
@@ -210,6 +291,30 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         ------
         ValueError
             If the key column is not found in the DataFrame.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=AggregateRowsOverColumnTransformer(
+        ... columns='a',
+        ... aggregations=['min', 'max'],
+        ... key='b',
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [1,1,2], 'c':[1,2,3]})
+
+        >>> transformer.transform(test_df)
+        shape: (3, 5)
+        ┌─────┬─────┬─────┬───────┬───────┐
+        │ a   ┆ b   ┆ c   ┆ a_min ┆ a_max │
+        │ --- ┆ --- ┆ --- ┆ ---   ┆ ---   │
+        │ i64 ┆ i64 ┆ i64 ┆ i64   ┆ i64   │
+        ╞═════╪═════╪═════╪═══════╪═══════╡
+        │ 1   ┆ 1   ┆ 1   ┆ 1     ┆ 2     │
+        │ 2   ┆ 1   ┆ 2   ┆ 1     ┆ 2     │
+        │ 3   ┆ 2   ┆ 3   ┆ 3     ┆ 3     │
+        └─────┴─────┴─────┴───────┴───────┘
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -247,22 +352,51 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     Attributes
     ----------
-    columns : list[str]
+    columns : Union[str,list[str]]
         List of column names to apply the aggregation transformations to.
+
     aggregations : list[str]
         List of aggregation methods to apply.
+
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
+
     verbose : bool, optional
         Indicator for verbose output.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible: bool
+        Indicates if transformer will work with polars frames
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> AggregateColumnsOverRowTransformer(
+    ... columns=['a', 'b'],
+    ... aggregations=['min', 'max'],
+    ... )
+    AggregateColumnsOverRowTransformer(aggregations=['min', 'max'],
+                                       columns=['a', 'b'])
     """
 
     polars_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     @beartype
     def __init__(
         self,
-        columns: list[str],
+        columns: Union[str, list[str]],
         aggregations: ListOfColumnsOverRowAggregations,
         drop_original: bool = False,
         verbose: bool = False,
@@ -291,6 +425,27 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         pd.DataFrame or pl.DataFrame
             Transformed DataFrame with aggregated columns.
 
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer = AggregateColumnsOverRowTransformer(
+        ... columns=['a', 'b'],
+        ... aggregations=['min', 'max'],
+        ... )
+
+        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4], 'c':[5,6]})
+
+        >>> transformer.transform(test_df)
+        shape: (2, 5)
+        ┌─────┬─────┬─────┬─────────┬─────────┐
+        │ a   ┆ b   ┆ c   ┆ a_b_min ┆ a_b_max │
+        │ --- ┆ --- ┆ --- ┆ ---     ┆ ---     │
+        │ i64 ┆ i64 ┆ i64 ┆ i64     ┆ i64     │
+        ╞═════╪═════╪═════╪═════════╪═════════╡
+        │ 1   ┆ 3   ┆ 5   ┆ 1       ┆ 3       │
+        │ 2   ┆ 4   ┆ 6   ┆ 2       ┆ 4       │
+        └─────┴─────┴─────┴─────────┴─────────┘
         """
 
         X = _convert_dataframe_to_narwhals(X)

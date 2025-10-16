@@ -39,3 +39,5 @@ ListOfStrs = Annotated[
     list,
     Is[lambda list_arg: all(isinstance(l_value, str) for l_value in list_arg)],
 ]
+
+FloatBetweenZeroOne = Annotated[float, Is[lambda i: (i > 0) & (i < 1)]]

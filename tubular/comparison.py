@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-import pandas as pd  # noqa: TCH002
+from typing import TYPE_CHECKING
+
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 # DEPRECATED TRANSFORMERS
@@ -39,12 +43,26 @@ class EqualityChecker(
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
