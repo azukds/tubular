@@ -6,7 +6,7 @@ import copy
 import datetime
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, ClassVar, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -395,6 +395,26 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+class DateDifferenceUnitsOptions(str, Enum):
+    __slots__ = ()
+
+    WEEK = "week"
+    FORTNIGHT = "fortnight"
+    LUNAR_MONTH = "lunar_month"
+    COMMON_YEAR = "common_year"
+    CUSTOM_DAYS = "custom_days"
+    DAYS = "D"
+    HOURS = "h"
+    MINUTES = "m"
+    SECONDS = "s"
+
+
+DateDifferenceUnitsOptionsStr = Annotated[
+    str,
+    Is[lambda s: s in DateDifferenceUnitsOptions._value2member_map_],
+]
+
+
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
@@ -453,39 +473,13 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         self,
         columns: ListOfTwoStrs,
         new_column_name: str,
-        units: Literal[
-            "week",
-            "fortnight",
-            "lunar_month",
-            "common_year",
-            "custom_days",
-            "D",
-            "h",
-            "m",
-            "s",
-        ] = "D",
+        units: DateDifferenceUnitsOptionsStr = "D",
         copy: bool = False,
         verbose: bool = False,
         drop_original: bool = False,
         custom_days_divider: Optional[int] = None,
         **kwargs: bool,
     ) -> None:
-        accepted_values_units = [
-            "week",
-            "fortnight",
-            "lunar_month",
-            "common_year",
-            "custom_days",
-            "D",
-            "h",
-            "m",
-            "s",
-        ]
-
-        if units not in accepted_values_units:
-            msg = f"{self.classname()}: units must be one of {accepted_values_units}, got {units}"
-            raise ValueError(msg)
-
         self.units = units
         self.custom_days_divider = custom_days_divider
 
@@ -1240,6 +1234,54 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+class DatetimeSinusoidUnitsOptions(str, Enum):
+    __slots__ = ()
+
+    YEAR = "year"
+    MONTH = "month"
+    DAY = "day"
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+    MICROSECOND = "microsecond"
+
+
+DatetimeSinusoidUnitsOptionStr = Annotated[
+    str,
+    Is[lambda s: s in DatetimeSinusoidUnitsOptions._value2member_map_],
+]
+
+
+class MethodOptions(str, Enum):
+    __slots__ = ()
+
+    SIN = "sin"
+    COS = "cos"
+
+
+MethodOptionStr = Annotated[
+    str,
+    Is[lambda s: s in MethodOptions._value2member_map_],
+]
+
+MethodOptionList = Annotated[
+    list,
+    Is[
+        lambda list_value: all(
+            entry in MethodOptions._value2member_map_ for entry in list_value
+        )
+    ],
+]
+
+NumberNotBool = Annotated[
+    Union[int, float],
+    Is[
+        # exclude bools which would pass isinstance(..., (float, int))
+        lambda value: type(value) in [int, float]
+    ],
+]
+
+
 class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """Transformer to derive a feature in a dataframe by calculating the
     sine or cosine of a datetime column in a given unit (e.g hour), with the option to scale
@@ -1308,12 +1350,16 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        method: str | list[str],
-        units: str | dict,
-        period: float | dict = 2 * np.pi,
+        columns: Union[str, list[str]],
+        method: Union[MethodOptionStr, MethodOptionList],
+        units: Union[
+            DatetimeSinusoidUnitsOptionStr,
+            dict[str, DatetimeSinusoidUnitsOptionStr],
+        ],
+        period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
         verbose: bool = False,
         drop_original: bool = False,
     ) -> None:
@@ -1324,66 +1370,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             verbose=verbose,
         )
 
-        if not isinstance(method, str) and not isinstance(method, list):
-            msg = f"{self.classname()}: method must be a string or list but got {type(method)}"
-            raise TypeError(msg)
-
-        if not isinstance(units, str) and not isinstance(units, dict):
-            msg = f"{self.classname()}: units must be a string or dict but got {type(units)}"
-            raise TypeError(msg)
-
-        if (
-            (not isinstance(period, int))
-            and (not isinstance(period, float))
-            and (not isinstance(period, dict))
-        ) or (isinstance(period, bool)):
-            msg = f"{self.classname()}: period must be an int, float or dict but got {type(period)}"
-            raise TypeError(msg)
-
-        if isinstance(units, dict) and (
-            not all(isinstance(item, str) for item in list(units.keys()))
-            or not all(isinstance(item, str) for item in list(units.values()))
-        ):
-            msg = f"{self.classname()}: units dictionary key value pair must be strings but got keys: { ({type(k) for k in units}) } and values: { ({type(v) for v in units.values()}) }"
-            raise TypeError(msg)
-
-        if isinstance(period, dict) and (
-            not all(isinstance(item, str) for item in list(period.keys()))
-            or (
-                not all(isinstance(item, int) for item in list(period.values()))
-                and not all(isinstance(item, float) for item in list(period.values()))
-            )
-            or any(isinstance(item, bool) for item in list(period.values()))
-        ):
-            msg = f"{self.classname()}: period dictionary key value pair must be str:int or str:float but got keys: { ({type(k) for k in period}) } and values: { ({type(v) for v in period.values()}) }"
-            raise TypeError(msg)
-
-        valid_method_list = ["sin", "cos"]
-
         method_list = [method] if isinstance(method, str) else method
-
-        for method in method_list:
-            if method not in valid_method_list:
-                msg = f'{self.classname()}: Invalid method {method} supplied, should be "sin", "cos" or a list containing both'
-                raise ValueError(msg)
-
-        valid_unit_list = [
-            "year",
-            "month",
-            "day",
-            "hour",
-            "minute",
-            "second",
-            "microsecond",
-        ]
-
-        if isinstance(units, dict):
-            if not set(units.values()).issubset(valid_unit_list):
-                msg = f"{self.classname()}: units dictionary values must be one of 'year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond' but got {set(units.values())}"
-                raise ValueError(msg)
-        elif units not in valid_unit_list:
-            msg = f"{self.classname()}: Invalid units {units} supplied, should be in {valid_unit_list}"
-            raise ValueError(msg)
 
         self.method = method_list
         self.units = units
