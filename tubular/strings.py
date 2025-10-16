@@ -3,11 +3,76 @@
 from __future__ import annotations
 
 import pandas as pd
+import narwhals as nw
 from typing_extensions import deprecated
+from typing import Union, Optional
+from beartype import beartype
+from functools import partial
 
 from tubular.base import BaseTransformer
 from tubular.mixins import NewColumnNameMixin, SeparatorColumnMixin
+from tubular.types import DataFrame, Series
+from tubular._utils import _convert_dataframe_to_narwhals, _return_narwhals_or_native_dataframe
 
+import warnings
+from importlib.util import find_spec
+
+if find_spec('spacy') is not None:
+    from tubular._nlp import SpacyLemmatizer as Lemmatizer
+else:
+    warnings.warn(
+        """spacy not present in environment, so defaulting to mock
+        lemmatizer object
+        """,
+        stacklevel=2,
+    )
+    from tubular._nlp import (
+        MockLemmatizer as Lemmatizer
+    )
+
+class LemmatizationTransformer(BaseTransformer):
+
+    # toggle this on when transformer is loaded
+    # in for production, where we do not want to
+    # initialize with each transform call
+    STORE_LEMMATIZER=False
+
+    @beartype
+    def __init__(self, columns: Union[str, list[str]]):
+
+        super().__init__(columns=columns)
+
+        self.lemmatizer_type=Lemmatizer().classname()
+
+        self.lemmatizer=None
+        if not self.STORE_LEMMATIZER:
+            self.lemmatizer=Lemmatizer()
+        
+    @beartype
+    def transform(self, X: DataFrame, y: Optional[Series]=None):
+
+        X=_convert_dataframe_to_narwhals(X)
+
+        X=super().transform(X, return_native_override=False)
+
+        lemmatizer=self.lemmatizer if self.lemmatizer else Lemmatizer()
+        
+        null_mask_exprs={c: nw.col(c).is_null() for c in self.columns}
+        filled_null_exprs={c: nw.col(c).fill_null('') for c in self.columns}
+        lemmatized_exprs={
+            c: nw.when(
+                ~null_mask_exprs[c]
+                ).then(
+                    filled_null_exprs[c].map_batches(partial(lemmatizer.lemmatize_batch, column=c))
+                ).otherwise(
+                    nw.lit(None)
+                )
+                for c in self.columns
+        }
+
+        X=X.with_columns(**lemmatized_exprs)
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 # DEPRECATED TRANSFORMERS
 @deprecated(
