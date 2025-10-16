@@ -5,14 +5,13 @@ from __future__ import annotations
 import warnings
 from collections import OrderedDict
 from functools import reduce
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
 import pandas as pd
 import polars as pl
 from beartype import beartype
-from narwhals.typing import IntoDType  # noqa: TCH002
 from typing_extensions import deprecated
 
 from tubular._utils import (
@@ -21,6 +20,9 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer
 from tubular.types import DataFrame
+
+if TYPE_CHECKING:
+    from narwhals.typing import IntoDType
 
 
 class BaseMappingTransformer(BaseTransformer):
@@ -53,8 +55,18 @@ class BaseMappingTransformer(BaseTransformer):
     return_dtypes: dict[str, RETURN_DTYPES]
         Dictionary of col:dtype for returned columns
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -68,6 +80,10 @@ class BaseMappingTransformer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     RETURN_DTYPES = Literal[
         "String",
@@ -93,9 +109,9 @@ class BaseMappingTransformer(BaseTransformer):
             msg = f"{self.classname()}: mappings has no values"
             raise ValueError(msg)
 
-        mappings_from_null = {col: None for col in mappings}
-        for col in mappings:
-            null_keys = [key for key in mappings[col] if pd.isna(key)]
+        mappings_from_null = dict.fromkeys(mappings)
+        for col, col_mappings in mappings.items():
+            null_keys = [key for key in col_mappings if pd.isna(key)]
 
             if len(null_keys) > 1:
                 multi_null_map_msg = f"Multiple mappings have been provided for null values in column {col}, transformer is set up to handle nan/None/NA as one"
@@ -105,7 +121,7 @@ class BaseMappingTransformer(BaseTransformer):
 
             # Assign the mapping to the single null key if it exists
             if len(null_keys) != 0:
-                mappings_from_null[col] = mappings[col][null_keys[0]]
+                mappings_from_null[col] = col_mappings[null_keys[0]]
 
         self.mappings = mappings
         self.mappings_from_null = mappings_from_null
@@ -207,12 +223,26 @@ class BaseMappingTransformMixin(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     @staticmethod
     def _create_mapping_conditions_and_outcomes(
@@ -474,8 +504,18 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     return_dtypes: dict[str, RETURN_DTYPES]
         Dictionary of col:dtype for returned columns
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -489,6 +529,10 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     """
 
     polars_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     @beartype
     def transform(
@@ -599,12 +643,26 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
         Dictionary of mappings for each column individually to be applied to the adjust_column.
         The dict passed to mappings in init is set to the mappings attribute.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -679,12 +737,26 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
         Dictionary of mappings for each column individually to be applied to the adjust_column.
         The dict passed to mappings in init is set to the mappings attribute.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -755,12 +827,26 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
         Dictionary of mappings for each column individually to be applied to the adjust_column.
         The dict passed to mappings in init is set to the mappings attribute.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -835,13 +921,26 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
         Dictionary of multiplicative adjustments for each column individually to be applied to the adjust_column.
         The dict passed to mappings in init is set to the mappings attribute.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -914,13 +1013,26 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
         Dictionary of additive adjustments for each column individually to be applied to the adjust_column.
         The dict passed to mappings in init is set to the mappings attribute.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

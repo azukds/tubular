@@ -75,7 +75,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         x = initialized_transformers[self.transformer_name]
         x.columns = ["a", "b"]
 
-        numeric_df = pd.DataFrame({col: df["c"] for col in [*x.columns, "c"]})
+        numeric_df = pd.DataFrame(dict.fromkeys([*x.columns, "c"], df["c"]))
         x.fit(numeric_df, numeric_df["c"])
 
         x.transform(df)
@@ -92,9 +92,9 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
         df_transformed = x.transform(df)
 
-        assert (
-            df_transformed["c_new"].tolist() == cut_output
-        ), "unexpected values assigned to c_new column"
+        assert df_transformed["c_new"].tolist() == cut_output, (
+            "unexpected values assigned to c_new column"
+        )
 
     @pytest.mark.parametrize(
         ("df", "expected"),

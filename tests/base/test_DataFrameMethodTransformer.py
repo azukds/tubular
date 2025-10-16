@@ -69,7 +69,7 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
         """Test an exception is raised if a non pd.DataFrame method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
-            match="""DataFrameMethodTransformer: error accessing "b" method on pd.DataFrame object - pd_method_name should be a pd.DataFrame method""",
+            match=r"""DataFrameMethodTransformer: error accessing "b" method on pd.DataFrame object - pd_method_name should be a pd.DataFrame method""",
         ):
             DataFrameMethodTransformer(
                 new_column_names="a",

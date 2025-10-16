@@ -57,7 +57,7 @@ class TestInit(ColumnStrListInitTests, NewColumnNameInitMixintests):
         """Test and exception is raised if a non pd.Series.str method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
-            match="""SeriesStrMethodTransformer: error accessing "str.b" method on pd.Series object - pd_method_name should be a pd.Series.str method""",
+            match=r"""SeriesStrMethodTransformer: error accessing "str.b" method on pd.Series object - pd_method_name should be a pd.Series.str method""",
         ):
             SeriesStrMethodTransformer(
                 new_column_name="a",

@@ -10,7 +10,7 @@ from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import SeparatorColumnMixin
-from tubular.types import GenericKwargs, ListOfOneStr  # noqa: TCH001
+from tubular.types import GenericKwargs, ListOfOneStr
 
 
 # DEPRECATED TRANSFORMERS
@@ -61,12 +61,24 @@ class SeriesStrMethodTransformer(BaseTransformer):
     pd_method_name : str
         The name of the pd.Series.str method to call.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     @beartype
     def __init__(
@@ -143,11 +155,24 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
 
     Attributes
     ----------
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     @beartype
     def __init__(
