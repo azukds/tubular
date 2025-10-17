@@ -3,6 +3,7 @@ from itertools import product
 import narwhals as nw
 import numpy as np
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.base_tests import (
     ColumnStrListInitTests,
@@ -191,7 +192,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
 
     def test_prior_not_positive_int_error(self):
         """Test that an exception is raised if prior is not a positive int."""
-        with pytest.raises(ValueError, match="prior should be positive int"):
+        with pytest.raises(BeartypeCallHintParamViolation):
             MeanResponseTransformer(prior=-1)
 
 

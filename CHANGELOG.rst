@@ -32,7 +32,10 @@ Each individual change should have a link to the pull request after the descript
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
+- feat: optimisation changes to MeanResponseTransformer
 - feat: created _stats and _checks files to store reusable calculation or data validating functions
+- feat: - feat: converted DropOriginalMixin and associated transformers to beartype
+- feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
 
 2.0.0 (16/10/2025)
 ------------------
@@ -61,7 +64,6 @@ Each individual change should have a link to the pull request after the descript
 - chore: doctests for dates module `#502 <https://github.com/azukds/tubular/issues/502>_`
 - chore: doctests for nominal module `#506 <https://github.com/azukds/tubular/issues/506>_`
 - chore: doctests for imputers module `#503 <https://github.com/azukds/tubular/issues/503>_`
-
 
 1.4.8 (03/09/25)
 ----------------

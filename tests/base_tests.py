@@ -142,8 +142,7 @@ class DropOriginalInitMixinTests:
         args["drop_original"] = drop_orginal_column
 
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: drop_original should be bool",
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -1376,9 +1375,52 @@ class ToFromJsonTests:
             transformer.from_json({})
 
 
+class GetFeatureNamesOutTests:
+    """
+    Tests for the BaseTransformer.get_feature_names_out method.
+    Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
+    """
+
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=["minimal_dataframe_lookup"],
+    )
+    def test_get_feature_names_out_matches_new_features(
+        self,
+        minimal_dataframe_lookup,
+        initialized_transformers,
+    ):
+        """Test that the expected newly created features (if any) are indeed contained
+        in the output df"""
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+
+        x = initialized_transformers[self.transformer_name]
+
+        # skip polars test if not narwhalified
+        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+            return
+
+        if x.FITS:
+            x.fit(df, df["a"])
+
+        output = x.transform(df)
+
+        output_columns = set(output.columns)
+
+        expected_new_columns = set(x.get_feature_names_out())
+
+        # are expected columns in the data
+        assert expected_new_columns.intersection(output_columns), (
+            f"{x.classname()}: get_feature_names_out does not agree with output of .transform, expected {expected_new_columns} but got {output_columns}"
+        )
+
+
 class OtherBaseBehaviourTests(
     ColumnsCheckTests,
     CombineXYTests,
+    GetFeatureNamesOutTests,
     ToFromJsonTests,
 ):
     """

@@ -145,6 +145,36 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
+    # overload test as class needs special  handling to run
+    @pytest.mark.parametrize(
+        "library",
+        ["pandas", "polars"],
+    )
+    def test_get_feature_names_out_matches_new_features(
+        self,
+        library,
+        initialized_transformers,
+    ):
+        """Test that the expected newly created features (if any) are indeed contained
+        in the output df"""
+
+        df = d.create_df_1(library=library)
+
+        x = initialized_transformers[self.transformer_name]
+
+        x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
+
+        output = x.transform(df)
+
+        output_columns = set(output.columns)
+
+        expected_new_columns = set(x.get_feature_names_out())
+
+        # are expected columns in the data
+        assert expected_new_columns.intersection(output_columns), (
+            f"{x.classname()}: get_feature_names_out does not agree with output of .transform, expected {expected_new_columns} but got {output_columns}"
+        )
+
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseNominalTransformer"

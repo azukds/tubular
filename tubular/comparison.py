@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
+from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
@@ -64,18 +65,43 @@ class EqualityChecker(
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        columns: list,
+        columns: Union[list[str], str],
         new_column_name: str,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
+        self.drop_original = drop_original
+
         self.check_two_columns(columns)
-        self.set_drop_original_column(drop_original)
         self.check_and_set_new_column_name(new_column_name)
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> # base classes just return inputs
+        >>> transformer  = EqualityChecker(
+        ... columns=['a',  'b'],
+        ... new_column_name='bla',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['bla']
+        """
+
+        return [self.new_column_name]
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Create a column which is populated by the boolean
