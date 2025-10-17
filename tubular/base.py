@@ -21,7 +21,12 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.mixins import DropOriginalMixin
-from tubular.types import DataFrame, GenericKwargs, Series
+from tubular.types import (
+    DataFrame,
+    GenericKwargs,
+    NonEmptyListOfStrs,
+    Series,
+)
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -101,7 +106,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
         copy: bool = False,
         verbose: bool = False,
         return_native: bool = True,
@@ -116,10 +124,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             self.columns = [columns]
 
         elif isinstance(columns, list):
-            if not len(columns) > 0:
-                msg = f"{self.classname()}: columns has no values"
-                raise ValueError(msg)
-
             self.columns = columns
 
         self.copy = copy

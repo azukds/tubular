@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Optional, Union
+
 import pandas as pd
+from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
-from tubular.mixins import NewColumnNameMixin, SeparatorColumnMixin
+from tubular.mixins import SeparatorColumnMixin
+from tubular.types import GenericKwargs, ListOfOneStr
 
 
 # DEPRECATED TRANSFORMERS
@@ -16,7 +20,7 @@ from tubular.mixins import NewColumnNameMixin, SeparatorColumnMixin
     for it to be replaced with more specific transformers
     """,
 )
-class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
+class SeriesStrMethodTransformer(BaseTransformer):
     """Tranformer that applies a pandas.Series.str method.
 
     Transformer assigns the output of the method to a new column. It is possible to
@@ -76,39 +80,22 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
         new_column_name: str,
         pd_method_name: str,
-        columns: list,
+        columns: ListOfOneStr,
         copy: bool = False,
-        pd_method_kwargs: dict[str, object] | None = None,
-        **kwargs: dict[str, bool],
+        pd_method_kwargs: Optional[GenericKwargs] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, copy=copy, **kwargs)
 
-        if len(columns) > 1:
-            msg = f"{self.classname()}: columns arg should contain only 1 column name but got {len(columns)}"
-            raise ValueError(msg)
-
-        if type(pd_method_name) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(pd_method_name)}) for pd_method_name, expecting str"
-            raise TypeError(msg)
-
         if pd_method_kwargs is None:
             pd_method_kwargs = {}
-        else:
-            if type(pd_method_kwargs) is not dict:
-                msg = f"{self.classname()}: pd_method_kwargs should be provided as a dict or defaulted to None"
-                raise TypeError(msg)
 
-        for key in pd_method_kwargs:
-            if type(key) is not str:
-                msg = f"{self.classname()}: all keys in pd_method_kwargs must be a string value"
-                raise TypeError(msg)
-
-        self.check_and_set_new_column_name(new_column_name)
-
+        self.new_column_name = new_column_name
         self.pd_method_name = pd_method_name
         self.pd_method_kwargs = pd_method_kwargs
 
@@ -154,7 +141,7 @@ class SeriesStrMethodTransformer(NewColumnNameMixin, BaseTransformer):
     for it to be modernised
     """,
 )
-class StringConcatenator(NewColumnNameMixin, SeparatorColumnMixin, BaseTransformer):
+class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
     """Transformer to combine data from specified columns, of mixed datatypes, into a new column containing one string.
 
     Parameters
@@ -187,16 +174,17 @@ class StringConcatenator(NewColumnNameMixin, SeparatorColumnMixin, BaseTransform
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
+        columns: Union[str, list[str]],
         new_column_name: str = "new_column",
         separator: str = " ",
         **kwargs: dict[str, bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        self.check_and_set_new_column_name(new_column_name)
+        self.new_column_name = new_column_name
         self.check_and_set_separator_column(separator)
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:

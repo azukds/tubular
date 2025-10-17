@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Annotated, Union
 
 import narwhals as nw
@@ -40,6 +41,8 @@ ListOfStrs = Annotated[
     Is[lambda list_arg: all(isinstance(l_value, str) for l_value in list_arg)],
 ]
 
+NonEmptyListOfStrs = Annotated[list[str], Is[lambda list_arg: len(list_arg) > 0]]
+
 ListOfOneStr = Annotated[
     list[str],
     Is[lambda list_arg: len(list_arg) == 1],
@@ -48,6 +51,11 @@ ListOfOneStr = Annotated[
 ListOfTwoStrs = Annotated[
     list[str],
     Is[lambda list_arg: len(list_arg) == 2],
+]
+
+ListOfThreeStrs = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) == 3],
 ]
 
 PositiveNumber = Annotated[
@@ -60,11 +68,19 @@ PositiveInt = Annotated[int, Is[lambda i: i >= 0]]
 FloatBetweenZeroOne = Annotated[float, Is[lambda i: (i > 0) & (i < 1)]]
 
 GenericKwargs = Annotated[
-    dict,
-    Is[
-        lambda d: all(
-            isinstance(key, str) and isinstance(value, (str, int, float))
-            for key, value in d.items()
-        )
-    ],
+    dict[str, Union[int, float, str, list[int], list[str], list[float]]],
+    Is[lambda dict_arg: all(isinstance(key, str) for key in dict_arg)],
+]
+
+
+class TimeUnitsOptions(str, Enum):
+    DAYS = "D"
+    HOURS = "h"
+    MINUTES = "m"
+    SECONDS = "s"
+
+
+TimeUnitsOptionsStr = Annotated[
+    str,
+    Is[lambda s: s in TimeUnitsOptions._value2member_map_],
 ]

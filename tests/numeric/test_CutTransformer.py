@@ -1,8 +1,10 @@
 import pandas as pd
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
+from tests.base_tests import NewColumnNameInitMixintests
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -10,34 +12,24 @@ from tests.numeric.test_BaseNumericTransformer import (
 from tubular.numeric import CutTransformer
 
 
-class TestInit(BaseNumericTransformerInitTests):
+class TestInit(BaseNumericTransformerInitTests, NewColumnNameInitMixintests):
     """Tests for CutTransformer.init()."""
 
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "CutTransformer"
 
-    def test_new_column_name_type_error(self):
-        """Test that an exception is raised if new_column_name is not a str."""
-        with pytest.raises(
-            TypeError,
-            match="CutTransformer: new_column_name must be a str",
-        ):
-            CutTransformer(column="b", new_column_name=1)
-
     def test_cut_kwargs_type_error(self):
         """Test that an exception is raised if cut_kwargs is not a dict."""
         with pytest.raises(
-            TypeError,
-            match=r"""cut_kwargs should be a dict but got type \<class 'int'\>""",
+            BeartypeCallHintParamViolation,
         ):
             CutTransformer(column="b", new_column_name="a", cut_kwargs=1)
 
     def test_cut_kwargs_key_type_error(self):
         """Test that an exception is raised if cut_kwargs has keys which are not str."""
         with pytest.raises(
-            TypeError,
-            match=r"""CutTransformer: unexpected type \(\<class 'int'\>\) for cut_kwargs key in position 1, must be str""",
+            BeartypeCallHintParamViolation,
         ):
             CutTransformer(
                 new_column_name="a",
