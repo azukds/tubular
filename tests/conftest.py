@@ -303,6 +303,13 @@ def minimal_attribute_dict():
             "aggregations": ["min", "max"],
             "drop_original": False,
         },
+        "DifferenceTransformer": {
+            "columns": ["a", "b"],
+        },
+        "RatioTransformer": {
+            "columns": ["a", "b"],
+            "return_dtype": "Float32",  # Default dtype for the resulting column
+        },
     }
 
 
