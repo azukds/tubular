@@ -18,13 +18,14 @@ from tests.base_tests import (
     ReturnNativeTests,
 )
 from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
-from tests.utils import dataframe_init_dispatch
+from tests.utils import _handle_from_json, dataframe_init_dispatch
 from tubular.dates import TIME_UNITS
 
 
 class GenericDatesMixinTransformTests:
     """Generic tests for Dates Transformers"""
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -45,6 +46,7 @@ class GenericDatesMixinTransformTests:
         minimal_dataframe_lookup,
         bad_value,
         bad_type,
+        from_json,
     ):
         "Test that transform raises an error if columns contains non date types"
 
@@ -54,6 +56,8 @@ class GenericDatesMixinTransformTests:
         transformer = uninitialized_transformers[self.transformer_name](
             **args,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = copy.deepcopy(minimal_dataframe_lookup[self.transformer_name])
 
@@ -77,6 +81,7 @@ class GenericDatesMixinTransformTests:
 
             assert msg in str(exc_info.value)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("columns, datetime_col"),
@@ -92,6 +97,7 @@ class GenericDatesMixinTransformTests:
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        from_json,
     ):
         "Test that transform raises an error if one column is a date and one is datetime"
         args = minimal_attribute_dict[self.transformer_name].copy()
@@ -100,6 +106,8 @@ class GenericDatesMixinTransformTests:
         transformer = uninitialized_transformers[self.transformer_name](
             **args,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = create_date_diff_different_dtypes(library=library)
 
@@ -132,6 +140,7 @@ class GenericDatesMixinTransformTests:
 
         assert msg in str(exc_info.value)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas"])
     @pytest.mark.parametrize(
         "bad_timezone",
@@ -146,6 +155,7 @@ class GenericDatesMixinTransformTests:
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        from_json,
     ):
         """Test that transform raises an error if
         datetime columns have non-accepted timezones
@@ -161,6 +171,8 @@ class GenericDatesMixinTransformTests:
         transformer = uninitialized_transformers[self.transformer_name](
             **args,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df_dict = {
             "a": [
@@ -188,12 +200,14 @@ class GenericDatesMixinTransformTests:
 
         assert msg in str(exc_info.value)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_only_typechecks_self_columns(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        from_json,
     ):
         "Test that type checks are only performed on self.columns"
         args = minimal_attribute_dict[self.transformer_name].copy()
@@ -201,6 +215,8 @@ class GenericDatesMixinTransformTests:
         transformer = uninitialized_transformers[self.transformer_name](
             **args,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = create_date_test_df(library=library)
 
