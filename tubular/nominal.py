@@ -810,6 +810,75 @@ class MeanResponseTransformer(
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> import polars as pl
+
+        >>> transformer = MeanResponseTransformer(
+        ... columns='a',
+        ... prior=1,
+        ... unseen_level_handling='mean',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a']
+
+        >>> transformer = MeanResponseTransformer(
+        ... columns='a',
+        ... prior=1,
+        ... level=['x', 'y'],
+        ... unseen_level_handling='mean',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_x', 'a_y']
+
+        >>> transformer = MeanResponseTransformer(
+        ... columns='a',
+        ... prior=1,
+        ... level='all',
+        ... unseen_level_handling='mean',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        Traceback (most recent call last):
+        ...
+        sklearn.exceptions.NotFittedError: ...
+
+        >>> test_df=pl.DataFrame({'a': ['x', 'y', 'x'], 'b': ['cat', 'dog', 'rat']})
+
+        >>> _ = transformer.fit(test_df, test_df['b'])
+
+        >>> transformer.get_feature_names_out()
+        ['a_cat', 'a_dog', 'a_rat']
+        """
+
+        # if level is specified as 'all', this function
+        # depends on fit having been called
+        if self.level == "all":
+            self.check_is_fitted("encoded_columns")
+
+            return self.encoded_columns
+
+        return (
+            self.columns
+            if not self.MULTI_LEVEL
+            else [
+                column + "_" + str(level)
+                for column in self.columns
+                for level in self.level
+            ]
+        )
+
     @nw.narwhalify
     def _prior_regularisation(
         self,
@@ -1047,6 +1116,7 @@ class MeanResponseTransformer(
             for column in self.columns
             for value in self.column_to_encoded_columns[column]
         ]
+        self.encoded_columns.sort()
 
         # set this attr up for BaseMappingTransformerMixin
         # this is used to cast the narwhals mapping df, so uses narwhals types
@@ -1401,6 +1471,61 @@ class OneHotEncodingTransformer(
         self.wanted_values = wanted_values
         self.drop_original = drop_original
         self.check_and_set_separator_column(separator)
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> import polars as pl
+
+        >>> transformer = OneHotEncodingTransformer(
+        ... columns='a',
+        ... wanted_values={'a': ['cat', 'dog']},
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a_cat', 'a_dog']
+
+        >>> transformer = OneHotEncodingTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        Traceback (most recent call last):
+        ...
+        sklearn.exceptions.NotFittedError: ...
+
+        >>> test_df=pl.DataFrame({'a': ['cat', 'dog', 'rat']})
+
+        >>> _ = transformer.fit(test_df)
+
+        >>> transformer.get_feature_names_out()
+        ['a_cat', 'a_dog', 'a_rat']
+        """
+
+        # if wanted values is not provided, this function
+        # depends on fit having been called
+        if not self.wanted_values:
+            self.check_is_fitted("categories_")
+
+            return [
+                output_column
+                for column in self.columns
+                for output_column in self._get_feature_names(column)
+            ]
+
+        return [
+            column + self.separator + str(level)
+            for column in self.columns
+            for level in self.wanted_values[column]
+        ]
 
     @beartype
     def _check_for_nulls(self, present_levels: dict[str, Any]) -> None:

@@ -77,6 +77,29 @@ class EqualityChecker(
         self.drop_original = drop_original
         self.new_column_name = new_column_name
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> # base classes just return inputs
+        >>> transformer  = EqualityChecker(
+        ... columns=['a',  'b'],
+        ... new_column_name='bla',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['bla']
+        """
+
+        return [self.new_column_name]
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Create a column which is populated by the boolean
         matching between two columns iterated over rows.

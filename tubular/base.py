@@ -131,6 +131,30 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         self.built_from_json = False
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer.
+
+        Child classes will need to overload this method if their behaviour is
+        more complex than just returning the input columns.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = BaseTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a']
+        """
+
+        return self.columns
+
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
         """dump transformer to json dict

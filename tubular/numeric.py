@@ -274,6 +274,33 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
         super().__init__(columns=[columns], **kwargs)
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer = OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="kmeans_column",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...  )
+
+        >>> transformer.get_feature_names_out()
+        ['kmeans_column']
+        """
+
+        return [
+            self.new_column_name,
+        ]
+
     @nw.narwhalify
     def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
         """Fit transformer to input data.

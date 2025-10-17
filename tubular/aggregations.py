@@ -270,6 +270,29 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         )
         self.key = key
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = AggregateRowsOverColumnTransformer(
+        ... columns='a',
+        ... aggregations=['min', 'max'],
+        ... key='b',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_min', 'a_max']
+        """
+
+        return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
+
     @beartype
     def transform(
         self,
@@ -407,6 +430,28 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
             drop_original=drop_original,
             verbose=verbose,
         )
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = AggregateColumnsOverRowTransformer(
+        ... columns=['a', 'b'],
+        ... aggregations=['min', 'max'],
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_b_min', 'a_b_max']
+        """
+
+        return ["_".join(self.columns) + "_" + agg for agg in self.aggregations]
 
     @beartype
     def transform(

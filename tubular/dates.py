@@ -107,6 +107,47 @@ class BaseGenericDateTransformer(
         self.drop_original = drop_original
         self.new_column_name = new_column_name
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> # base classes just return inputs
+        >>> transformer  = BaseGenericDateTransformer(
+        ... columns=['a',  'b'],
+        ... new_column_name='bla',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a', 'b']
+
+        >>> # other classes return new columns
+        >>> transformer  = DateDifferenceTransformer(
+        ... columns=['a',  'b'],
+        ... new_column_name='bla',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['bla']
+        """
+
+        # base classes just return columns, so need special handling
+        return (
+            [*self.columns]
+            if type(self)
+            in [
+                BaseGenericDateTransformer,
+                BaseDatetimeTransformer,
+            ]
+            else [self.new_column_name]
+        )
+
     @beartype
     def check_columns_are_date_or_datetime(
         self,
@@ -596,7 +637,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
-class ToDatetimeTransformer(BaseGenericDateTransformer):
+class ToDatetimeTransformer(BaseTransformer):
     """Class to transform convert specified columns to datetime.
 
     Class simply uses the pd.to_datetime method on the specified columns.
@@ -660,8 +701,6 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
 
         super().__init__(
             columns=columns,
-            # new_column_name is not actually used
-            new_column_name="dummy",
             **kwargs,
         )
 
@@ -678,7 +717,7 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
         --------
         >>> import polars as pl
 
-        >>> transformer=ToDatetimeTransformer(
+        >>> transformer = ToDatetimeTransformer(
         ... columns='a',
         ... time_format='%d/%m/%Y',
         ...    )
@@ -696,9 +735,7 @@ class ToDatetimeTransformer(BaseGenericDateTransformer):
         │ 1996-12-10 00:00:00 ┆ 2   │
         └─────────────────────┴─────┘
         """
-        # purposely avoid BaseDateTransformer method, as uniquely for this transformer columns
-        # are not yet date/datetime
-        X = nw.from_native(BaseTransformer.transform(self, X))
+        X = nw.from_native(super().transform(X))
 
         return X.with_columns(
             nw.col(col).str.to_datetime(format=self.time_format) for col in self.columns
@@ -1103,6 +1140,32 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             },
         )
 
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = DatetimeInfoExtractor(
+        ... columns=['a', 'b'],
+        ... include=['timeofday', 'timeofmonth'],
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a_timeofday', 'a_timeofmonth', 'b_timeofday', 'b_timeofmonth']
+        """
+
+        return [
+            col + "_" + include_option
+            for col in self.columns
+            for include_option in self.include
+        ]
+
     def _process_provided_mappings(
         self,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]],
@@ -1383,6 +1446,33 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         if isinstance(period, dict) and sorted(period.keys()) != sorted(self.columns):
             msg = f"{self.classname()}: period dictionary keys must be the same as columns but got {set(period.keys())}"
             raise ValueError(msg)
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer = DatetimeSinusoidCalculator(
+        ... columns='a',
+        ... method='sin',
+        ... units='month',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['sin_6.283185307179586_month_a']
+        """
+
+        return [
+            f"{method}_{self.period if not isinstance(self.period, dict) else self.period[column]}_{self.units if not isinstance(self.units, dict) else self.units[column]}_{column}"
+            for column in self.columns
+            for method in self.method
+        ]
 
     @beartype
     def transform(
