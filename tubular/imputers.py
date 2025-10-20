@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import warnings
-from collections import defaultdict
 from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
@@ -652,13 +651,15 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         super().fit(X, y)
 
-        self.impute_values_ = defaultdict(lambda: None)
+        self.impute_values_ = {}
 
         all_null_cols = _get_all_null_columns(X, self.columns)
 
         if all_null_cols:
             # touch the dict entry for each all null col so that they are recorded
-            _ = [self.impute_values_[c] for c in all_null_cols]
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
+            )
 
             warnings.warn(
                 f"{self.classname()}: The Median of columns {all_null_cols} will be None",
@@ -972,13 +973,15 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-        self.impute_values_ = defaultdict(lambda: None)
+        self.impute_values_ = {}
 
         all_null_cols = _get_all_null_columns(X, self.columns)
 
         if all_null_cols:
             # touch the dict entry for each all null col so that they are recorded
-            _ = [self.impute_values_[c] for c in all_null_cols]
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
+            )
 
             warnings.warn(
                 f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
