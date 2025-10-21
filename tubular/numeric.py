@@ -522,7 +522,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 

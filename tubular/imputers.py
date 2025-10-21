@@ -264,6 +264,8 @@ class ArbitraryImputer(BaseImputer):
 
     lazy_compatible = True
 
+    jsonable = True
+
     FITS = False
 
     @beartype

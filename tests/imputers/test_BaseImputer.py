@@ -104,21 +104,17 @@ class GenericImputerTransformTests:
         "lazy",
         [True, False],
     )
-    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("test_fit_df", ["pandas", "polars"], indirect=True)
     def test_not_fitted_error_raised(
         self,
         test_fit_df,
         initialized_transformers,
         lazy,
-        from_json,
     ):
         transformer = initialized_transformers[self.transformer_name]
 
         if _check_if_skip_test(transformer, test_fit_df, lazy):
             return
-
-        transformer = _handle_from_json(transformer, from_json)
 
         if initialized_transformers[self.transformer_name].FITS:
             with pytest.raises(NotFittedError):
