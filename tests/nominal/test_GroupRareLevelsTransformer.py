@@ -2,7 +2,6 @@ import re
 
 import narwhals as nw
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import GenericNominalTransformTests
 
@@ -100,9 +99,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
 
         expected = {"b": ["a"], "c": ["a", "c", "e"]}
         actual = x.non_rare_levels
-        assert (
-            actual == expected
-        ), f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight(self, library):
@@ -123,9 +122,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
 
         expected = {"b": ["a"]}
         actual = x.non_rare_levels
-        assert (
-            actual == expected
-        ), f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight_2(self, library):
@@ -146,9 +145,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
 
         expected = {"c": ["f", "g"]}
         actual = x.non_rare_levels
-        assert (
-            actual == expected
-        ), f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("col", ["a", "c"])
@@ -171,16 +170,15 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         df = d.create_df_8(library=library)
 
         expected_training_data_levels = {
-            "b": set(df["b"]),
-            "c": set(df["c"]),
+            "b": sorted(set(df["b"])),
+            "c": sorted(set(df["c"])),
         }
 
         x = GroupRareLevelsTransformer(columns=["b", "c"], unseen_levels_to_rare=False)
         x.fit(df)
-        ta.equality.assert_equal_dispatch(
-            expected=expected_training_data_levels,
-            actual=x.training_data_levels,
-            msg="Training data values not correctly stored when unseen_levels_to_rare is false",
+
+        assert expected_training_data_levels == x.training_data_levels, (
+            "Training data values not correctly stored when unseen_levels_to_rare is false"
         )
 
 
@@ -256,9 +254,9 @@ class TestTransform(GenericNominalTransformTests):
         actual = x2.non_rare_levels
         expected = x.non_rare_levels
 
-        assert (
-            actual == expected
-        ), f"non_rare_levels attr modified in transform, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"non_rare_levels attr modified in transform, expected {expected} but got {actual}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_no_weight(self, library):
@@ -363,9 +361,9 @@ class TestTransform(GenericNominalTransformTests):
 
         actual = list(df_transformed["b"])
 
-        assert (
-            actual == expected
-        ), f"unseen level handling not working as expected, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"unseen level handling not working as expected, expected {expected} but got {actual}"
+        )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_rare_categories_forgotten(self, library):
@@ -391,9 +389,9 @@ class TestTransform(GenericNominalTransformTests):
         )
 
         for cat in expected_removed_cats:
-            assert (
-                cat not in output_categories
-            ), f"{x.classname} output columns should forget rare encoded categories, expected {cat} to be forgotten from column {column}"
+            assert cat not in output_categories, (
+                f"{x.classname} output columns should forget rare encoded categories, expected {cat} to be forgotten from column {column}"
+            )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
@@ -405,4 +403,4 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "BaseNominalTransformer"
+        cls.transformer_name = "GroupRareLevelsTransformer"

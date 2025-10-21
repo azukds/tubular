@@ -339,6 +339,6 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(df)
 
-        assert (
-            type(df_transformed) is pd.DataFrame
-        ), "unexpected output type from transform"
+        assert type(df_transformed) is pd.DataFrame, (
+            "unexpected output type from transform"
+        )

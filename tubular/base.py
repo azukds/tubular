@@ -4,7 +4,7 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
@@ -16,10 +16,12 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _get_version,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.mixins import DropOriginalMixin
-from tubular.types import DataFrame, Series
+from tubular.types import DataFrame, GenericKwargs, Series
 
 pd.options.mode.copy_on_write = True
 
@@ -57,11 +59,21 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     verbose : bool
         Print statements to show which methods are being run or not.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -74,6 +86,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     polars_compatible = True
 
     lazy_compatible = True
+
+    jsonable = True
+
+    FITS = True
+
+    _version = _get_version()
 
     def classname(self) -> str:
         """Method that returns the name of the current class when called."""
@@ -106,6 +124,117 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         self.copy = copy
         self.return_native = return_native
 
+        self.built_from_json = False
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer.
+
+        Child classes will need to overload this method if their behaviour is
+        more complex than just returning the input columns.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = BaseTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a']
+        """
+
+        return self.columns
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+
+        >>> transformer=BaseTransformer(columns=['a', 'b'])
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        """
+        if not self.jsonable:
+            msg = (
+                "This transformer has not yet had to/from json functionality developed"
+            )
+            raise RuntimeError(
+                msg,
+            )
+
+        return {
+            "tubular_version": self._version,
+            "classname": self.classname(),
+            "init": {
+                "columns": self.columns,
+                "copy": self.copy,
+                "verbose": self.verbose,
+                "return_native": self.return_native,
+            },
+            "fit": {},
+        }
+
+    @classmethod
+    def from_json(cls, json: dict[str, Any]) -> BaseTransformer:
+        """rebuild transformer from json dict, readyfor transform
+
+        Parameters
+        ----------
+        json_dict: dict[str, dict[str, Any]]
+            json-ified transformer
+
+        Returns
+        -------
+        BaseTransformer:
+            reconstructed transformer class, ready for transform
+
+        Examples
+        --------
+
+        >>> json_dict={
+        ... 'init': {
+        ...         'columns' :['a','b']
+        ...         },
+        ... 'fit': {}
+        ... }
+
+        >>> BaseTransformer.from_json(json=json_dict)
+        BaseTransformer(columns=['a', 'b'])
+        """
+
+        if not cls.jsonable:
+            msg = (
+                "This transformer has not yet had to/from json functionality developed"
+            )
+            raise RuntimeError(
+                msg,
+            )
+
+        instance = cls(**json["init"])
+
+        for attr in json["fit"]:
+            setattr(instance, attr, json["fit"][attr])
+
+        instance.built_from_json = True
+
+        return instance
+
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
         """Base transformer fit method, checks X and y types. Currently only pandas DataFrames are allowed for X
@@ -141,6 +270,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         return self
 
+    @block_from_json
     @nw.narwhalify
     def _combine_X_y(self, X: DataFrame, y: nw.Series) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
@@ -340,7 +470,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """,
 )
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
-
     """Tranformer that applies a pandas.DataFrame method.
 
     Transformer assigns the output of the method to a new column or columns. It is possible to
@@ -386,55 +515,46 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     pd_method_name : str
         The name of the pandas.DataFrame method to call.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
 
+    FITS = False
+
+    jsonable = False
+
+    @beartype
     def __init__(
         self,
-        new_column_names: list[str] | str,
+        new_column_names: Union[list[str], str],
         pd_method_name: str,
-        columns: list[str] | str | None,
-        pd_method_kwargs: dict[str, object] | None = None,
+        columns: Optional[Union[list[str], str]],
+        pd_method_kwargs: Optional[GenericKwargs] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if type(new_column_names) is list:
-            for i, item in enumerate(new_column_names):
-                if type(item) is not str:
-                    msg = f"{self.classname()}: if new_column_names is a list, all elements must be strings but got {type(item)} in position {i}"
-                    raise TypeError(msg)
-
-        elif type(new_column_names) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(new_column_names)}) for new_column_names, must be str or list of strings"
-            raise TypeError(msg)
-
-        if type(pd_method_name) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(pd_method_name)}) for pd_method_name, expecting str"
-            raise TypeError(msg)
-
         if pd_method_kwargs is None:
             pd_method_kwargs = {}
-        else:
-            if type(pd_method_kwargs) is not dict:
-                msg = f"{self.classname()}: pd_method_kwargs should be a dict but got type {type(pd_method_kwargs)}"
-                raise TypeError(msg)
-
-            for i, k in enumerate(pd_method_kwargs.keys()):
-                if type(k) is not str:
-                    msg = f"{self.classname()}: unexpected type ({type(k)}) for pd_method_kwargs key in position {i}, must be str"
-                    raise TypeError(msg)
 
         self.new_column_names = new_column_names
         self.pd_method_name = pd_method_name
         self.pd_method_kwargs = pd_method_kwargs
-
-        DropOriginalMixin.set_drop_original_column(self, drop_original)
+        self.drop_original = drop_original
 
         try:
             df = pd.DataFrame()

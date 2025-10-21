@@ -13,6 +13,7 @@ from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
     _convert_to_lazy,
+    _handle_from_json,
     assert_frame_equal_dispatch,
 )
 
@@ -38,6 +39,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
     def setup_class(cls):
         cls.transformer_name = "BaseTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -58,6 +60,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         minimal_attribute_dict,
         return_native,
         lazy,
+        from_json,
     ):
         """Test that X is returned from transform."""
         df = minimal_dataframe_lookup[self.transformer_name]
@@ -75,6 +78,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
         df = nw.to_native(df)
         expected = nw.to_native(expected)
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(X=_convert_to_lazy(df, lazy))
 

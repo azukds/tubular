@@ -77,12 +77,28 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     ----------
     columns : Union[str, list[str]]
         Columns to apply the transformations to.
+
     aggregations : list[str]
         Aggregation methods to apply.
+
     drop_original : bool
         Indicator for dropping original columns.
+
     verbose : bool
         Indicator for verbose output.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible: bool
+        Indicates if transformer will work with polars frames
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -96,6 +112,10 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     polars_compatible = True
 
     lazy_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     @beartype
     def __init__(
@@ -112,7 +132,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         self.aggregations = aggregations
 
-        self.set_drop_original_column(drop_original)
+        self.drop_original = drop_original
 
     @beartype
     def transform(
@@ -195,12 +215,28 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     ----------
     columns : Union[str, list[str]]
         List of column names to apply the aggregation transformations to.
+
     aggregations : list[str]
         List of aggregation methods to apply.
+
     key : str
         Column name to group by for aggregation.
+
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible: bool
+        Indicates if transformer will work with polars frames
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -216,6 +252,10 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     polars_compatible = True
 
     lazy_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     @beartype
     def __init__(
@@ -233,6 +273,29 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             verbose=verbose,
         )
         self.key = key
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = AggregateRowsOverColumnTransformer(
+        ... columns='a',
+        ... aggregations=['min', 'max'],
+        ... key='b',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_min', 'a_max']
+        """
+
+        return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
 
     @beartype
     def transform(
@@ -318,12 +381,28 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     ----------
     columns : Union[str,list[str]]
         List of column names to apply the aggregation transformations to.
+
     aggregations : list[str]
         List of aggregation methods to apply.
+
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
+
     verbose : bool, optional
         Indicator for verbose output.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible: bool
+        Indicates if transformer will work with polars frames
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -339,6 +418,10 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     lazy_compatible = True
 
+    FITS = False
+
+    jsonable = False
+
     @beartype
     def __init__(
         self,
@@ -353,6 +436,28 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
             drop_original=drop_original,
             verbose=verbose,
         )
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer  = AggregateColumnsOverRowTransformer(
+        ... columns=['a', 'b'],
+        ... aggregations=['min', 'max'],
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_b_min', 'a_b_max']
+        """
+
+        return ["_".join(self.columns) + "_" + agg for agg in self.aggregations]
 
     @beartype
     def transform(

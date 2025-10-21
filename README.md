@@ -69,11 +69,7 @@ Instructions for building the docs locally can be found in [docs/README](https:/
 
 ## Examples
 
-Note - We are currently in the process of replacing example notebooks with doctest, as this avoids the issues of example notebooks silently going stale. Where doctests exists, the example notebooks mentioned below have been removed, and example usages can be found in the docstring for the transformer.
-
-To help get started there are example notebooks in the [examples](https://github.com/azukds/tubular/tree/main/examples) folder in the repo that show how to use each transformer.
-
-To open the example notebooks in [binder](https://mybinder.org/) click [here](https://mybinder.org/v2/gh/azukds/tubular/HEAD?labpath=examples) or click on the `launch binder` shield above and then click on the directory button in the side bar to the left to navigate to the specific notebook.
+We utilise [doctest](https://docs.python.org/3/library/doctest.html) to keep valid usage examples in the docstrings of transformers in the package, so please see these for getting started!
 
 ## Issues
 

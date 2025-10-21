@@ -31,8 +31,18 @@ class SetValueTransformer(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -47,6 +57,10 @@ class SetValueTransformer(BaseTransformer):
     polars_compatible = True
 
     lazy_compatible = True
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,
@@ -125,13 +139,27 @@ class ColumnDtypeSetter(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
     """
 
     polars_compatible = False
 
     lazy_compatible = False
+
+    FITS = False
+
+    jsonable = False
 
     def __init__(
         self,

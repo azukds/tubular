@@ -3,6 +3,7 @@ import re
 import numpy as np
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -29,6 +30,27 @@ class TestInit(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "SeriesDtMethodTransformer"
+
+    # overload until we beartype the new_column_name mixin
+    @pytest.mark.parametrize(
+        "new_column_type",
+        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
+    )
+    def test_new_column_name_type_error(
+        self,
+        new_column_type,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test an error is raised if any type other than str passed to new_column_name"""
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["new_column_name"] = new_column_type
+
+        with pytest.raises(
+            BeartypeCallHintParamViolation,
+        ):
+            uninitialized_transformers[self.transformer_name](**args)
 
     def test_invalid_input_type_errors(self):
         """Test that an exceptions are raised for invalid input types."""
@@ -79,7 +101,7 @@ class TestInit(
         """Test and exception is raised if a non pd.Series.dt method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
-            match="""SeriesDtMethodTransformer: error accessing "dt.b" method on pd.Series object - pd_method_name should be a pd.Series.dt method""",
+            match=r"""SeriesDtMethodTransformer: error accessing "dt.b" method on pd.Series object - pd_method_name should be a pd.Series.dt method""",
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",

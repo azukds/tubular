@@ -5,7 +5,7 @@ from pandas.testing import assert_frame_equal as assert_pandas_frame_equal
 from polars.testing import assert_frame_equal as assert_polars_frame_equal
 
 from tubular._utils import (
-    _assess_pandas_object_column,  # noqa: PLC2701, purposefully using private method in tests
+    _assess_pandas_object_column,
 )
 from tubular.base import BaseTransformer
 from tubular.types import DataFrame
@@ -216,3 +216,31 @@ def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
     """
 
     return df.collect() if (lazy and polars) else df
+
+
+def _handle_from_json(
+    transformer: BaseTransformer,
+    from_json: bool,
+) -> BaseTransformer:
+    """handle converting transformer to/from json pre-testing (or just
+    passes transformer through unchanged if not from_json)
+
+    Parameters
+    ----------
+    transformer: BaseTransformer
+        transformer being  tested
+
+    from_json: bool
+        whether to dump to and reconstruct from json pre test
+
+    Returns
+    -------
+    BaseTransformer:
+        transformer ready for test
+    """
+
+    return (
+        transformer.from_json(transformer.to_json())
+        if (from_json and transformer.jsonable)
+        else transformer
+    )

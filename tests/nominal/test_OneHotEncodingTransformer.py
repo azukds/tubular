@@ -96,7 +96,7 @@ class TestInit(
         ):
             OneHotEncodingTransformer(**args)
 
-    # need to overload the below until beartype pr completes
+    # overload this test until we beartype separator mixin
     @pytest.mark.parametrize(
         "separator",
         [1, True, {"a": 1}, [1, 2], None, np.inf, np.nan],
@@ -111,22 +111,6 @@ class TestInit(
 
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["separator"] = separator
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
-
-    @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
-    def test_drop_column_arg_errors(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        drop_orginal_column,
-    ):
-        """Test that appropriate errors are throwm for non boolean arg."""
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["drop_original"] = drop_orginal_column
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -210,9 +194,9 @@ class TestFit(GenericFitTests):
         )
 
         transformer.fit(df)
-        assert (
-            len(recwarn) == 0
-        ), "OneHotEncodingTransformer.fit is raising unexpected warnings"
+        assert len(recwarn) == 0, (
+            "OneHotEncodingTransformer.fit is raising unexpected warnings"
+        )
 
 
 class TestTransform(
@@ -374,9 +358,9 @@ class TestTransform(
 
         transformer.transform(df_test)
 
-        assert (
-            transformer2.categories_ == transformer.categories_
-        ), f"categories_ modified during transform, pre transform had {transformer2.categories_} but post transform has {transformer.categories_}"
+        assert transformer2.categories_ == transformer.categories_, (
+            f"categories_ modified during transform, pre transform had {transformer2.categories_} but post transform has {transformer.categories_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -402,9 +386,9 @@ class TestTransform(
         df_transformed = nw.from_native(df_transformed)
         actual_columns = df_transformed.columns
 
-        assert (
-            set(expected_columns) == set(actual_columns)
-        ), f"renaming columns feature in OneHotEncodingTransformer.transform, expected {expected_columns} but got {actual_columns}"
+        assert set(expected_columns) == set(actual_columns), (
+            f"renaming columns feature in OneHotEncodingTransformer.transform, expected {expected_columns} but got {actual_columns}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -549,6 +533,6 @@ class TestTransform(
         transformer.fit(df_train)
         transformer.transform(df_test)
 
-        assert (
-            len(recwarn) == 0
-        ), "OneHotEncodingTransformer.transform is raising unexpected warnings"
+        assert len(recwarn) == 0, (
+            "OneHotEncodingTransformer.transform is raising unexpected warnings"
+        )

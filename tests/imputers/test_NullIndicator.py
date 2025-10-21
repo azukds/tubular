@@ -3,12 +3,19 @@ import polars as pl
 import pytest
 
 import tests.test_data as d
-from tests import utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
     ReturnNativeTests,
+)
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
 )
 from tubular.imputers import NullIndicator
 
@@ -41,7 +48,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
             "c_nulls": [0, 0, 0, 0, 0, 0],
         }
 
-        df1 = u.dataframe_init_dispatch(dataframe_dict=df_dict1, library=library)
+        df1 = dataframe_init_dispatch(dataframe_dict=df_dict1, library=library)
 
         narwhals_df = nw.from_native(df1)
 
@@ -53,6 +60,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
         return narwhals_df.to_native()
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -62,7 +70,13 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         [("pandas", "pandas"), ("polars", "polars")],
         indirect=["expected_df_1"],
     )
-    def test_null_indicator_columns_correct(self, expected_df_1, library, lazy):
+    def test_null_indicator_columns_correct(
+        self,
+        expected_df_1,
+        library,
+        lazy,
+        from_json,
+    ):
         """Test that the created indicator column is correct - and unrelated columns are unchanged."""
         df = d.create_df_9(library=library)
 
@@ -70,15 +84,18 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         transformer = NullIndicator(columns=columns)
 
         polars = isinstance(df, pl.DataFrame)
+        transformer = _handle_from_json(transformer, from_json)
 
-        if u._check_if_skip_test(transformer, df, lazy):
+        df_transformed = transformer.transform(df)
+
+        if _check_if_skip_test(transformer, df, lazy):
             return
 
-        df_transformed = transformer.transform(u._convert_to_lazy(df, lazy))
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
         # Check whole dataframes
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(df_transformed, polars, lazy),
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, polars, lazy),
             expected_df_1,
         )
 
@@ -87,12 +104,12 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         expected_df_1 = nw.from_native(expected_df_1)
         for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                u._convert_to_lazy(df[[i]].to_native(), lazy),
+                _convert_to_lazy(df[[i]].to_native(), lazy),
             )
             df_expected_row = expected_df_1[[i]].to_native()
 
-            u.assert_frame_equal_dispatch(
-                u._collect_frame(df_transformed_row, polars, lazy),
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, polars, lazy),
                 df_expected_row,
             )
 

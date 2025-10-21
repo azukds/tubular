@@ -1,27 +1,49 @@
 Changelog
 =========
 
+Notes on Versioning Approach
+---------------------------
+
 This changelog follows the great advice from https://keepachangelog.com/.
 
 Each section will have a title of the format ``X.Y.Z (YYYY-MM-DD)`` giving the version of the package and the date of release of that version. Unreleased changes i.e. those that have been merged into `main` (e.g. with a .dev suffix) but which are not yet in a new release (on pypi) are added to the changelog but with the title ``X.Y.Z (unreleased)``. Unreleased sections can be combined when they are released and the date of release added to the title.
 
-Subsections for each version can be one of the following;
+Prior to version 2.*, tubular versioning practices were not consistent. Going forwards, we would like developers to stick to semantic versioning rules, described below.
 
-- ``Added`` for new features.
-- ``Changed`` for changes in existing functionality.
-- ``Deprecated`` for soon-to-be removed features.
-- ``Removed`` for now removed features.
-- ``Fixed`` for any bug fixes.
-- ``Security`` in case of vulnerabilities.
+Semantic versioning follows a pattern of MAJOR.MINOR.PATCH where each part represents a specific type of change:
+
+- MAJOR: Incremented for incompatible API changes.
+
+- MINOR: Incremented for added functionality in a backward-compatible manner.
+
+- PATCH: Incremented for backward-compatible bug fixes.
+
+This structure allows developers and users to understand the potential impact of updating to a new version at a glance.
+
+We use the tags:
+- feat: new or improved functionality
+- bug: fix to existing functionality
+- chore: minor improvements to repo health
 
 Each individual change should have a link to the pull request after the description of the change.
 
-1.4.9 (unreleased)
+2.1.0 (unreleased)
+------------------
+
+- feat: converted DropOriginalMixin and associated transformers to beartype
+- feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
+- feat: added `to_json` method for BaseGenericDateTransformer `#540 <https://github.com/azukds/tubular/issues/540>_`
+- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BaseTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer
+- feat: introduced `lazy_compatible` class attr to all transformers
+
+2.0.0 (16/10/2025)
 ------------------
 
 - chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
 - feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
 - chore: renamed AggregateRowOverColumnsTransformer to AggregateRowsOverColumnTransformer
+- feat: optimisation changes to GroupRareLevelsTransformer fit method
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
 - chore: turned on doctest
 - chore: deprecated DataFrameMethodTransformer
@@ -35,12 +57,13 @@ Each individual change should have a link to the pull request after the descript
 - chore: doctests for misc module, deleted old/stale example notebooks `#505  <https://github.com/azukds/tubular/issues/505>_`
 - chore: doctests for mapping module, deleted old/stale example notebooks `#504 <https://github.com/azukds/tubular/issues/504>_`
 - chore: doctests for numeric module `#507 <https://github.com/azukds/tubular/issues/507>_`
+- feat: added to/from json functionality for BaseTransfomer and imputers file. 
+- feat: introduced `jsonable` class attribute across package to control whether json tests run for given class
+- feat: introduced _version class attribute that stores package version
+- feat: introduced block_from_json decorator to block non-transform related methods for transformers which have been rebuilt from json
+- chore: doctests for dates module `#502 <https://github.com/azukds/tubular/issues/502>_`
 - chore: doctests for nominal module `#506 <https://github.com/azukds/tubular/issues/506>_`
 - chore: doctests for imputers module `#503 <https://github.com/azukds/tubular/issues/503>_`
-- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
-- feat: added lazyframe testing for BaseTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer
-- feat: introduced `lazy_compatible` class attr to all transformers
-
 
 1.4.8 (03/09/25)
 ----------------

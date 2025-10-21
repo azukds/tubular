@@ -67,9 +67,9 @@ class BaseMappingTransformerInitTests(GenericInitTests):
 
         actual = transformer.return_dtypes
 
-        assert (
-            actual == expected
-        ), f"return_dtypes attr not inferred as expected, expected {expected} but got {actual}"
+        assert actual == expected, (
+            f"return_dtypes attr not inferred as expected, expected {expected} but got {actual}"
+        )
 
     @pytest.mark.parametrize(
         "mappings",
@@ -140,9 +140,9 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
 
         transformer.transform(_convert_to_lazy(df, lazy))
 
-        assert (
-            mapping == transformer.mappings
-        ), f"{self.transformer_name}.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
+        assert mapping == transformer.mappings, (
+            f"{self.transformer_name}.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
+        )
 
 
 class TestInit(BaseMappingTransformerInitTests):

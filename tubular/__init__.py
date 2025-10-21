@@ -1,6 +1,4 @@
-from contextlib import suppress
-from importlib.metadata import version
-
+from tubular._utils import _get_version
 from tubular.aggregations import (
     AggregateColumnsOverRowTransformer,
     AggregateRowsOverColumnTransformer,
@@ -32,25 +30,24 @@ from tubular.numeric import OneDKmeansTransformer
 __all__ = [
     "AggregateColumnsOverRowTransformer",
     "AggregateRowsOverColumnTransformer",
-    "CappingTransformer",
-    "OutOfRangeNullTransformer",
-    "DateDifferenceTransformer",
-    "ToDatetimeTransformer",
+    "ArbitraryImputer",
     "BetweenDatesTransformer",
+    "CappingTransformer",
+    "DateDifferenceTransformer",
     "DatetimeInfoExtractor",
     "DatetimeSinusoidCalculator",
-    "ArbitraryImputer",
-    "MeanImputer",
-    "ModeImputer",
-    "MedianImputer",
-    "NullIndicator",
-    "MappingTransformer",
-    "SetValueTransformer",
     "GroupRareLevelsTransformer",
+    "MappingTransformer",
+    "MeanImputer",
     "MeanResponseTransformer",
-    "OneHotEncodingTransformer",
+    "MedianImputer",
+    "ModeImputer",
+    "NullIndicator",
     "OneDKmeansTransformer",
+    "OneHotEncodingTransformer",
+    "OutOfRangeNullTransformer",
+    "SetValueTransformer",
+    "ToDatetimeTransformer",
 ]
 
-with suppress(ModuleNotFoundError):
-    __version__ = version("tubular")
+__version__ = _get_version()

@@ -351,9 +351,9 @@ class GenericCappingFitTests(
                 actuals_dict[name] = value
 
         for name, value in zip(names, expected_quantiles):
-            assert (
-                actuals_dict[name] == value
-            ), f"unexpected replacement values fit, for {name} value expected {value} but got {actuals_dict[name]}"
+            assert actuals_dict[name] == value, (
+                f"unexpected replacement values fit, for {name} value expected {value} but got {actuals_dict[name]}"
+            )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
@@ -397,9 +397,9 @@ class GenericCappingFitTests(
 
         transformer.fit(df)
 
-        assert (
-            transformer._replacement_values == transformer.quantile_capping_values
-        ), f"unexpected value for replacement_values attribute, expected {transformer.quantile_capping_values} but got {transformer.replacement_values_}"
+        assert transformer._replacement_values == transformer.quantile_capping_values, (
+            f"unexpected value for replacement_values attribute, expected {transformer.quantile_capping_values} but got {transformer.replacement_values_}"
+        )
 
 
 class GenericCappingTransformTests(GenericTransformTests):
@@ -498,18 +498,18 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         new_learnt_values = getattr(transformer, fit_value)
 
-        assert (
-            learnt_values == new_learnt_values
-        ), f"learnt_value {fit_value} changed by transform, expected {learnt_values} but got {new_learnt_values}"
+        assert learnt_values == new_learnt_values, (
+            f"learnt_value {fit_value} changed by transform, expected {learnt_values} but got {new_learnt_values}"
+        )
 
         # Check outcomes for single rows
         df = nw.from_native(df)
         for i in range(len(df)):
             transformer.transform(df[[i]].to_native())
 
-            assert (
-                learnt_values == new_learnt_values
-            ), f"learnt_value {fit_value} changed by transform, expected {learnt_values} but got {new_learnt_values}"
+            assert learnt_values == new_learnt_values, (
+                f"learnt_value {fit_value} changed by transform, expected {learnt_values} but got {new_learnt_values}"
+            )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_non_numeric_column_error(
@@ -717,12 +717,12 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer2.transform(df)
 
-        assert (
-            transformer.weights_column == transformer2.weights_column
-        ), "weights_column attribute modified in transform"
-        assert (
-            transformer.quantiles == transformer2.quantiles
-        ), "quantiles attribute modified in transform"
+        assert transformer.weights_column == transformer2.weights_column, (
+            "weights_column attribute modified in transform"
+        )
+        assert transformer.quantiles == transformer2.quantiles, (
+            "quantiles attribute modified in transform"
+        )
 
     def expected_df_1(self, library="pandas"):
         """Expected output from test_expected_output_min_and_max."""
@@ -850,6 +850,6 @@ class TestWeightedQuantile:
         # round to 1dp to avoid mismatches due to numerical precision
         actual_rounded_1_dp = list(np.round(actual, 1))
 
-        assert (
-            actual_rounded_1_dp == expected_quantiles
-        ), "unexpected weighted quantiles calculated"
+        assert actual_rounded_1_dp == expected_quantiles, (
+            "unexpected weighted quantiles calculated"
+        )
