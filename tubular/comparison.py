@@ -61,6 +61,8 @@ class EqualityChecker(
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     FITS = False
 
     jsonable = False

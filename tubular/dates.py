@@ -86,6 +86,8 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = True
@@ -377,6 +379,8 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = False
@@ -498,6 +502,8 @@ class BaseDateTwoColumnTransformer(
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = False
@@ -567,6 +573,8 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
 
     FITS = False
 
@@ -768,6 +776,8 @@ class ToDatetimeTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = False
@@ -915,6 +925,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = False
 
@@ -1141,6 +1153,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = False
@@ -1197,7 +1211,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if include is None:
             include = self.INCLUDE_OPTIONS
@@ -1459,6 +1473,8 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = False
 
@@ -1749,6 +1765,8 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = False
 
     jsonable = False
@@ -1935,6 +1953,8 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = False
 

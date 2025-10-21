@@ -18,7 +18,13 @@ from tests.base_tests import (
 from tests.dates.test_BaseGenericDateTransformer import (
     GenericDatesMixinTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import DateDifferenceTransformer
 
 
@@ -368,6 +374,10 @@ class TestTransform(
         cls.transformer_name = "DateDifferenceTransformer"
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "unit",
         [
             "D",
@@ -388,7 +398,7 @@ class TestTransform(
             "polars",
         ],
     )
-    def test_expected_output_units(self, generic_expected_df, unit, library):
+    def test_expected_output_units(self, generic_expected_df, unit, library, lazy):
         """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
@@ -403,10 +413,23 @@ class TestTransform(
             verbose=False,
             custom_days_divider=25 if unit == "custom_days" else None,
         )
-        df_transformed = x.transform(df)
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        polars = isinstance(df, pl.DataFrame)
 
+        if _check_if_skip_test(x, df, lazy):
+            return
+
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, polars, lazy),
+        )
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -420,7 +443,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls(self, df, expected):
+    def test_expected_output_nulls(self, df, expected, lazy):
         """Test that the output is expected from transform, when columns have nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -429,10 +452,22 @@ class TestTransform(
             verbose=False,
         )
 
-        df_transformed = x.transform(df)
+        polars = isinstance(df, pl.DataFrame)
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        if _check_if_skip_test(x, df, lazy):
+            return
 
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, polars, lazy),
+        )
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -446,7 +481,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls2(self, df, expected):
+    def test_expected_output_nulls2(self, df, expected, lazy):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -455,9 +490,17 @@ class TestTransform(
             verbose=False,
         )
 
-        df_transformed = x.transform(df)
+        polars = isinstance(df, pl.DataFrame)
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        if _check_if_skip_test(x, df, lazy):
+            return
+
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, polars, lazy),
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

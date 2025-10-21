@@ -65,7 +65,7 @@ class BaseNominalTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    jsonable = False
+    lazy_compatible = False
 
     FITS = False
 
@@ -290,6 +290,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -764,6 +766,8 @@ class MeanResponseTransformer(
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -1447,6 +1451,8 @@ class OneHotEncodingTransformer(
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = True
@@ -1903,6 +1909,8 @@ class OrdinalEncoderTransformer(
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = True
@@ -2089,6 +2097,8 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 

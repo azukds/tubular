@@ -4,7 +4,7 @@ from. These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
@@ -22,9 +22,6 @@ from tubular._utils import (
 )
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, GenericKwargs, Series
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
 
 pd.options.mode.copy_on_write = True
 
@@ -87,6 +84,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
 
     jsonable = True
 
@@ -269,19 +268,11 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         self.columns_check(X)
 
-        if not X.shape[0] > 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
-
-        if (y is not None) and (not y.shape[0] > 0):
-            msg = f"{self.classname()}: y is empty; {y.shape}"
-            raise ValueError(msg)
-
         return self
 
     @block_from_json
     @nw.narwhalify
-    def _combine_X_y(self, X: FrameT, y: nw.Series) -> FrameT:
+    def _combine_X_y(self, X: DataFrame, y: nw.Series) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
@@ -316,17 +307,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         │ 2   ┆ 4   ┆ 2                   │
         └─────┴─────┴─────────────────────┘
         """
-        if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
-            msg = f"{self.classname()}: X should be a polars or pandas DataFrame/LazyFrame"
-            raise TypeError(msg)
 
-        if not isinstance(y, nw.Series):
-            msg = f"{self.classname()}: y should be a polars or pandas Series"
-            raise TypeError(msg)
-
-        if X.shape[0] != y.shape[0]:
-            msg = f"{self.classname()}: X and y have different numbers of rows ({X.shape[0]} vs {y.shape[0]})"
-            raise ValueError(msg)
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
 
         return X.with_columns(_temporary_response=y)
 
@@ -410,7 +393,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        if self.copy:
+        if self.copy and not isinstance(X, nw.LazyFrame):
             # to prevent overwriting original dataframe
             X = X.clone()
 
@@ -418,10 +401,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         if self.verbose:
             print("BaseTransformer.transform() called")
-
-        if not len(X) > 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

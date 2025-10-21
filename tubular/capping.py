@@ -26,6 +26,8 @@ from tubular.types import DataFrame, Series
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = True
 
     jsonable = False
@@ -656,6 +658,8 @@ class CappingTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     FITS = True
 
     jsonable = False
@@ -800,6 +804,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = True
 

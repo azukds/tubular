@@ -81,6 +81,8 @@ class BaseMappingTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = False
@@ -239,6 +241,8 @@ class BaseMappingTransformMixin(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     FITS = False
 
@@ -530,9 +534,9 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     polars_compatible = True
 
-    FITS = False
+    lazy_compatible = False
 
-    jsonable = False
+    FITS = False
 
     @beartype
     def transform(
@@ -660,6 +664,8 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     FITS = False
 
     jsonable = False
@@ -754,9 +760,9 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
 
     polars_compatible = False
 
-    FITS = False
+    lazy_compatible = False
 
-    jsonable = False
+    FITS = False
 
     def __init__(
         self,
@@ -843,6 +849,8 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = False
 
@@ -938,6 +946,8 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     FITS = False
 
     jsonable = False
@@ -1029,6 +1039,8 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     FITS = False
 

@@ -58,6 +58,8 @@ class BaseImputer(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     # this class is not by itself jsonable, as needs attrs
     # which are set in the child classes
     jsonable = False
@@ -259,6 +261,8 @@ class ArbitraryImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = True
 
     jsonable = True
 
@@ -594,6 +598,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     jsonable = True
 
     FITS = True
@@ -741,6 +747,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     jsonable = True
 
     FITS = True
@@ -882,6 +890,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     jsonable = True
 
@@ -1035,6 +1045,8 @@ class NullIndicator(BaseTransformer):
 
     polars_compatible = True
 
+    lazy_compatible = True
+
     FITS = False
 
     jsonable = True
@@ -1126,6 +1138,8 @@ class NearestMeanResponseImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     jsonable = False
 

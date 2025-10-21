@@ -83,6 +83,8 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = False
@@ -172,7 +174,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         return_native = self._process_return_native(return_native_override)
         X = super().transform(X, return_native_override=False)
 
-        CheckNumericMixin.check_numeric_columns(self, X[self.columns])
+        CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
@@ -243,6 +245,8 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = True
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = True
@@ -259,7 +263,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         n_clusters: int = 8,
         drop_original: bool = False,
         kmeans_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if kmeans_kwargs is None:
             kmeans_kwargs = {}
@@ -504,6 +508,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = False
@@ -516,7 +522,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
@@ -618,7 +624,7 @@ class CutTransformer(BaseNumericTransformer):
 
     polars_compatible = False
 
-    jsonable = False
+    lazy_compatible = False
 
     FITS = False
 
@@ -750,6 +756,8 @@ class TwoColumnOperatorTransformer(
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = False
@@ -860,6 +868,8 @@ class ScalingTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -1016,6 +1026,8 @@ class InteractionTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -1215,6 +1227,8 @@ class PCATransformer(BaseNumericTransformer):
 
     polars_compatible = False
 
+    lazy_compatible = False
+
     jsonable = False
 
     FITS = True
@@ -1358,8 +1372,12 @@ class DifferenceTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = True
+
     FITS = False
+
     jsonable = True
+
+    lazy_compatible = True
 
     @beartype
     def __init__(
@@ -1462,8 +1480,12 @@ class RatioTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = True
+
     FITS = False
+
     jsonable = True
+
+    lazy_compatible = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
