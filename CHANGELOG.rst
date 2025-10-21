@@ -34,7 +34,7 @@ Each individual change should have a link to the pull request after the descript
 - feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
 - feat: added `to_json` method for BaseGenericDateTransformer `#540 <https://github.com/azukds/tubular/issues/540>_`
 - feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
-- feat: added lazyframe testing for BaseTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer
+- feat: added lazyframe testing for BaseTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer, DifferenceTransformer, RatioTransformer
 - feat: introduced `lazy_compatible` class attr to all transformers
 
 2.0.0 (16/10/2025)

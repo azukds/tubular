@@ -174,7 +174,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         return_native = self._process_return_native(return_native_override)
         X = super().transform(X, return_native_override=False)
 
-        CheckNumericMixin.check_numeric_columns(self, X[self.columns])
+        CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
@@ -1372,8 +1372,12 @@ class DifferenceTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = True
+
     FITS = False
+
     jsonable = True
+
+    lazy_compatible = True
 
     @beartype
     def __init__(
@@ -1476,8 +1480,12 @@ class RatioTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = True
+
     FITS = False
+
     jsonable = True
+
+    lazy_compatible = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
