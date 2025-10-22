@@ -1,4 +1,5 @@
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 import tests.utils as u
@@ -21,10 +22,6 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "OneDKmeansTransformer"
 
-    # Those checks are replaced with @beartype so they can be skipped
-    def test_drop_column_arg_errors(self):
-        pass
-
     def test_clone(self):
         pass
 
@@ -32,8 +29,7 @@ class TestInit(
     def test_acolumns_type_error_if_not_str_or_len1_list():
         """Test that an exception is raised if kmeans_kwargs is not a dict."""
         with pytest.raises(
-            TypeError,
-            match=r"""OneDKmeansTransformer: columns arg should be a single str or a list length 1 giving the column to group.""",
+            BeartypeCallHintParamViolation,
         ):
             OneDKmeansTransformer(columns=["b", "c"], new_column_name="a")
 

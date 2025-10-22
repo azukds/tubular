@@ -1,9 +1,8 @@
-import re
-
 import numpy as np
 import pandas as pd
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -26,8 +25,7 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
         """Test an exception is raised if pd_method_kwargs not a dict"""
 
         with pytest.raises(
-            TypeError,
-            match=f"DataFrameMethodTransformer: pd_method_kwargs should be a dict but got type {type(not_dictionary)}",
+            BeartypeCallHintParamViolation,
         ):
             DataFrameMethodTransformer(
                 new_column_names="a",
@@ -47,14 +45,11 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
         }
 
         with pytest.raises(
-            TypeError,
-            match=re.escape(
-                f"DataFrameMethodTransformer: unexpected type ({type(not_string)}) for pd_method_kwargs key in position {1}, must be str",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             DataFrameMethodTransformer(
                 new_column_names="a",
-                pd_method_name="b",
+                pd_method_name="max",
                 columns=["b", "c"],
                 pd_method_kwargs=pd_method_kwargs,
             )
@@ -65,10 +60,7 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
         """Test an exception is raised if pd_method_name is not a string"""
 
         with pytest.raises(
-            TypeError,
-            match=re.escape(
-                f"DataFrameMethodTransformer: unexpected type ({type(not_string)}) for pd_method_name, expecting str",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             DataFrameMethodTransformer(
                 new_column_names="a",

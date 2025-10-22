@@ -41,8 +41,18 @@ class BaseNominalTransformer(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -54,6 +64,8 @@ class BaseNominalTransformer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = False
 
@@ -253,8 +265,18 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         Dictionary containing the set of values present in the training data for each column in self.columns. It
         will only exist in if unseen_levels_to_rare is set to False.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -268,6 +290,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -716,8 +740,18 @@ class MeanResponseTransformer(
     cast_method: Literal[np.float32, np,float64]
         Store the casting method associated to return_type
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -730,6 +764,8 @@ class MeanResponseTransformer(
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -752,7 +788,7 @@ class MeanResponseTransformer(
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
         self.return_type = return_type
-        DropOriginalMixin.set_drop_original_column(self, drop_original=drop_original)
+        self.drop_original = drop_original
 
         self.MULTI_LEVEL = False
 
@@ -773,6 +809,75 @@ class MeanResponseTransformer(
             self.cast_method = np.float32
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> import polars as pl
+
+        >>> transformer = MeanResponseTransformer(
+        ... columns='a',
+        ... prior=1,
+        ... unseen_level_handling='mean',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a']
+
+        >>> transformer = MeanResponseTransformer(
+        ... columns='a',
+        ... prior=1,
+        ... level=['x', 'y'],
+        ... unseen_level_handling='mean',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_x', 'a_y']
+
+        >>> transformer = MeanResponseTransformer(
+        ... columns='a',
+        ... prior=1,
+        ... level='all',
+        ... unseen_level_handling='mean',
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        Traceback (most recent call last):
+        ...
+        sklearn.exceptions.NotFittedError: ...
+
+        >>> test_df=pl.DataFrame({'a': ['x', 'y', 'x'], 'b': ['cat', 'dog', 'rat']})
+
+        >>> _ = transformer.fit(test_df, test_df['b'])
+
+        >>> transformer.get_feature_names_out()
+        ['a_cat', 'a_dog', 'a_rat']
+        """
+
+        # if level is specified as 'all', this function
+        # depends on fit having been called
+        if self.level == "all":
+            self.check_is_fitted("encoded_columns")
+
+            return self.encoded_columns
+
+        return (
+            self.columns
+            if not self.MULTI_LEVEL
+            else [
+                column + "_" + str(level)
+                for column in self.columns
+                for level in self.level
+            ]
+        )
 
     @nw.narwhalify
     def _prior_regularisation(
@@ -1011,6 +1116,7 @@ class MeanResponseTransformer(
             for column in self.columns
             for value in self.column_to_encoded_columns[column]
         ]
+        self.encoded_columns.sort()
 
         # set this attr up for BaseMappingTransformerMixin
         # this is used to cast the narwhals mapping df, so uses narwhals types
@@ -1318,8 +1424,18 @@ class OneHotEncodingTransformer(
     drop_original : bool
         Should original columns be dropped after creating dummy fields?
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     Example:
     --------
@@ -1330,6 +1446,8 @@ class OneHotEncodingTransformer(
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -1351,8 +1469,63 @@ class OneHotEncodingTransformer(
         )
 
         self.wanted_values = wanted_values
-        self.set_drop_original_column(drop_original)
+        self.drop_original = drop_original
         self.check_and_set_separator_column(separator)
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> import polars as pl
+
+        >>> transformer = OneHotEncodingTransformer(
+        ... columns='a',
+        ... wanted_values={'a': ['cat', 'dog']},
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a_cat', 'a_dog']
+
+        >>> transformer = OneHotEncodingTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        Traceback (most recent call last):
+        ...
+        sklearn.exceptions.NotFittedError: ...
+
+        >>> test_df=pl.DataFrame({'a': ['cat', 'dog', 'rat']})
+
+        >>> _ = transformer.fit(test_df)
+
+        >>> transformer.get_feature_names_out()
+        ['a_cat', 'a_dog', 'a_rat']
+        """
+
+        # if wanted values is not provided, this function
+        # depends on fit having been called
+        if not self.wanted_values:
+            self.check_is_fitted("categories_")
+
+            return [
+                output_column
+                for column in self.columns
+                for output_column in self._get_feature_names(column)
+            ]
+
+        return [
+            column + self.separator + str(level)
+            for column in self.columns
+            for level in self.wanted_values[column]
+        ]
 
     @beartype
     def _check_for_nulls(self, present_levels: dict[str, Any]) -> None:
@@ -1713,12 +1886,24 @@ class OrdinalEncoderTransformer(
         Created in fit. Dict of key (column names) value (mapping of categorical levels to numeric,
         ordinal encoded response values) pairs.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = True
 
@@ -1888,12 +2073,24 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         Created in fit. A dict of key (column names) value (mappings between levels and integers for given
         column) pairs.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
 
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = True
 

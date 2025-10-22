@@ -419,4 +419,4 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "BaseNominalTransformer"
+        cls.transformer_name = "GroupRareLevelsTransformer"

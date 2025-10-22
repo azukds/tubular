@@ -175,3 +175,6 @@ fail_under = 80
 
 # Additional Options (AddOpts) for pytest
 addopts = '--doctest-modules'
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
