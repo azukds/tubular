@@ -17,6 +17,7 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
@@ -1407,12 +1408,6 @@ class OneHotEncodingTransformer(
     drop_original : bool, default = False
         Should original columns be dropped after creating dummy fields?
 
-    copy : bool, default = False
-        Should X be copied prior to transform? Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
-
-    verbose : bool, default = True
-        Should warnings/checkmarks get displayed?
-
     **kwargs
         Arbitrary keyword arguments passed onto sklearn OneHotEncoder.init method.
 
@@ -1439,15 +1434,30 @@ class OneHotEncodingTransformer(
 
     Example:
     --------
-    >>> OneHotEncodingTransformer(
+    >>> import polars as pl
+
+    >>> transformer = OneHotEncodingTransformer(
     ... columns='a',
     ...    )
+    >>> transformer
+    OneHotEncodingTransformer(columns=['a'])
+
+    >>> test_df=pl.DataFrame({'a':['x', 'y'], 'b': ['w', 'z']})
+
+    >>> _ = transformer.fit(test_df)
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+
+    >>> OneHotEncodingTransformer.from_json(json_dump)
     OneHotEncodingTransformer(columns=['a'])
     """
 
     polars_compatible = True
 
-    jsonable = False
+    jsonable = True
 
     FITS = True
 
@@ -1458,19 +1468,63 @@ class OneHotEncodingTransformer(
         wanted_values: Optional[dict[str, ListOfStrs]] = None,
         separator: str = "_",
         drop_original: bool = False,
-        copy: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         BaseTransformer.__init__(
             self,
             columns=columns,
-            verbose=verbose,
-            copy=copy,
+            **kwargs,
         )
 
         self.wanted_values = wanted_values
         self.drop_original = drop_original
         self.check_and_set_separator_column(separator)
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OneHotEncodingTransformer(columns=['a'])
+
+        >>> test_df=pl.DataFrame({'a':['x', 'y'], 'b': ['w', 'z']})
+
+        >>> _ = transformer.fit(test_df)
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+
+        """
+
+        self.check_is_fitted(["categories_", "new_feature_names_"])
+
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "wanted_values": self.wanted_values,
+                "separator": self.separator,
+                "drop_original": self.drop_original,
+            },
+        )
+        json_dict["fit"].update(
+            {
+                "categories_": self.categories_,
+                "new_feature_names_": self.new_feature_names_,
+            },
+        )
+
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer
@@ -1574,6 +1628,7 @@ class OneHotEncodingTransformer(
                 msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
                 raise ValueError(msg)
 
+    @block_from_json
     @beartype
     def fit(
         self,
@@ -1701,6 +1756,7 @@ class OneHotEncodingTransformer(
 
         return missing_levels
 
+    @block_from_json
     @beartype
     def _get_feature_names(
         self,
@@ -1784,7 +1840,7 @@ class OneHotEncodingTransformer(
         return_native = self._process_return_native(return_native_override)
 
         # Check that transformer has been fit before calling transform
-        self.check_is_fitted(["categories_"])
+        self.check_is_fitted(["categories_", "new_feature_names_"])
 
         X = _convert_dataframe_to_narwhals(X)
         X = BaseTransformer.transform(self, X, return_native_override=False)
