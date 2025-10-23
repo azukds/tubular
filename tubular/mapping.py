@@ -123,7 +123,12 @@ class BaseMappingTransformer(BaseTransformer):
             if len(null_keys) != 0:
                 mappings_from_null[col] = col_mappings[null_keys[0]]
 
-        self.mappings = mappings
+        # make sure mappings dict is sorted for consistent repr
+        self.mappings = {
+            key: {value: mappings[key][value] for value in sorted(mappings[key])}
+            for key in sorted(mappings)
+        }
+
         self.mappings_from_null = mappings_from_null
 
         columns = list(mappings.keys())
