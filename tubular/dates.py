@@ -21,7 +21,6 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer
-from tubular.mapping import MappingTransformer
 from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
 from tubular.types import DataFrame
 
@@ -1392,18 +1391,11 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             for include_option in self.include
         }
 
-        mapping_transformer = MappingTransformer(
-            mappings={
-                col + "_" + include_option: final_datetime_mappings[include_option]
-                for col in self.columns
-                for include_option in self.include
-            },
-            return_dtypes={
-                col + "_" + include_option: "Categorical"
-                for col in self.columns
-                for include_option in self.include
-            },
-        )
+        mappings_dict = {
+            col + "_" + include_option: final_datetime_mappings[include_option]
+            for col in self.columns
+            for include_option in self.include
+        }
 
         transform_dict = {
             col + "_" + include_option: (
@@ -1411,7 +1403,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                     nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
                 )().replace_strict(
-                    mapping_transformer.mappings[col + "_" + include_option],
+                    mappings_dict[col + "_" + include_option],
                 )
             )
             for col in self.columns
