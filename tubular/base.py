@@ -246,7 +246,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             raise RuntimeError(
                 msg,
             )
-
         instance = cls(**json["init"])
 
         for attr in json["fit"]:
