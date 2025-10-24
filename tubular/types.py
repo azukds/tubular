@@ -1,3 +1,5 @@
+"""Generic typehints used throughout package."""
+
 from enum import Enum
 from typing import Annotated, Union
 
@@ -74,6 +76,8 @@ GenericKwargs = Annotated[
 
 
 class TimeUnitsOptions(str, Enum):
+    """Enumeration of time unit options."""
+
     DAYS = "D"
     HOURS = "h"
     MINUTES = "m"
@@ -83,4 +87,22 @@ class TimeUnitsOptions(str, Enum):
 TimeUnitsOptionsStr = Annotated[
     str,
     Is[lambda s: s in TimeUnitsOptions._value2member_map_],
+]
+
+ListOfTwoStrs = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) == 2],
+]
+
+
+class FloatTypeOptions(Enum):
+    """Options for float dtypes."""
+
+    Float32 = "Float32"
+    Float64 = "Float64"
+
+
+FloatTypeAnnotated = Annotated[
+    str,
+    Is[lambda dtype: dtype in FloatTypeOptions._value2member_map_],
 ]

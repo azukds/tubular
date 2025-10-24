@@ -6,7 +6,7 @@ import copy
 import datetime
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -18,6 +18,7 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.mapping import MappingTransformer
@@ -31,7 +32,7 @@ from tubular.types import (
 )
 
 if TYPE_CHECKING:
-    from narhwals.typing import FrameT
+    from narwhals.typing import FrameT
 
 TIME_UNITS = ["us", "ns", "ms"]
 
@@ -92,7 +93,7 @@ class BaseGenericDateTransformer(
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -106,6 +107,31 @@ class BaseGenericDateTransformer(
 
         self.drop_original = drop_original
         self.new_column_name = new_column_name
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer=BaseGenericDateTransformer(columns=['a', 'b'], new_column_name='bla')
+
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+
+        json_dict["init"]["new_column_name"] = self.new_column_name
+        json_dict["init"]["drop_original"] = self.drop_original
+
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer

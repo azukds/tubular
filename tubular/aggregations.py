@@ -1,3 +1,5 @@
+"""Contains transformers for performing data aggregations."""
+
 from enum import Enum
 from typing import Union
 
@@ -16,6 +18,8 @@ from tubular.types import DataFrame, NumericTypes
 
 
 class ColumnsOverRowAggregationOptions(str, Enum):
+    """Aggregation options fo ColumnsOverRowAggregationTransformer."""
+
     MIN = "min"
     MAX = "max"
     MEAN = "mean"
@@ -25,6 +29,8 @@ class ColumnsOverRowAggregationOptions(str, Enum):
 
 
 class RowsOverColumnsAggregationOptions(str, Enum):
+    """Aggregation options fo RowsOverColumnAggregationTransformer."""
+
     MIN = "min"
     MAX = "max"
     MEAN = "mean"
@@ -61,19 +67,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     handling common setup tasks such as validating aggregation methods and
     managing column specifications.
 
-    Parameters
-    ----------
-    columns : list[str]
-        List of column names to apply the aggregation transformations to.
-    aggregations : list[str]
-        List of aggregation methods to apply. Valid methods include 'min', 'max',
-        'mean', 'median', and 'count'.
-    drop_original : bool, optional
-        Whether to drop the original columns after transformation. Default is False.
-    verbose : bool, optional
-        If True, enables verbose output for debugging purposes. Default is False.
-
-    Attributes
+    Attributes:
     ----------
     columns : Union[str, list[str]]
         Columns to apply the transformations to.
@@ -101,12 +95,13 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         class attribute, indicates whether transform requires fit to be run first
 
     Example:
-    --------
+    -------
     >>> BaseAggregationTransformer(
     ... columns='a',
     ... aggregations=['min', 'max'],
     ...    )
     BaseAggregationTransformer(aggregations=['min', 'max'], columns=['a'])
+
     """
 
     polars_compatible = True
@@ -126,6 +121,21 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         drop_original: bool = False,
         verbose: bool = False,
     ) -> None:
+        """Initialise class.
+
+        Parameters
+        ----------
+        columns : list[str]
+            List of column names to apply the aggregation transformations to.
+        aggregations : list[str]
+            List of aggregation methods to apply. Valid methods include 'min', 'max',
+            'mean', 'median', and 'count'.
+        drop_original : bool, optional
+            Whether to drop the original columns after transformation. Default is False.
+        verbose : bool, optional
+            If True, enables verbose output for debugging purposes. Default is False.
+
+        """
         super().__init__(columns=columns, verbose=verbose)
 
         self.aggregations = aggregations
@@ -138,7 +148,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         X: DataFrame,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
-        """Performs pre-transform safety checks.
+        """Perform pre-transform safety checks.
 
         Parameters
         ----------
@@ -156,33 +166,32 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         Raises
         ------
-        ValueError
-            If columns are non-numeric.
+        TypeError: If columns are non-numeric.
 
-        Example:
+        Examples
         --------
-        >>> import polars as pl
+            >>> import polars as pl
 
-        >>> transformer=BaseAggregationTransformer(
-        ... columns='a',
-        ... aggregations=['min', 'max'],
-        ...    )
+            >>> transformer=BaseAggregationTransformer(
+            ... columns='a',
+            ... aggregations=['min', 'max'],
+            ...    )
 
-        >>> test_df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+            >>> test_df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
 
-        >>> # base transformers have no effect on data
-        >>> transformer.transform(test_df)
-        shape: (2, 2)
-        ┌─────┬─────┐
-        │ a   ┆ b   │
-        │ --- ┆ --- │
-        │ i64 ┆ i64 │
-        ╞═════╪═════╡
-        │ 1   ┆ 3   │
-        │ 2   ┆ 4   │
-        └─────┴─────┘
+            >>> # base transformers have no effect on data
+            >>> transformer.transform(test_df)
+            shape: (2, 2)
+            ┌─────┬─────┐
+            │ a   ┆ b   │
+            │ --- ┆ --- │
+            │ i64 ┆ i64 │
+            ╞═════╪═════╡
+            │ 1   ┆ 3   │
+            │ 2   ┆ 4   │
+            └─────┴─────┘
+
         """
-
         return_native = self._process_return_native(return_native_override)
 
         X = _convert_dataframe_to_narwhals(X)
@@ -206,10 +215,9 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
 
 class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
-    """Transformer that aggregates rows over specified columns, where rows are grouped
-    by provided key column.
+    """Aggregate rows over specified columns, where rows are grouped by provided key column.
 
-    Attributes
+    Attributes:
     ----------
     columns : Union[str, list[str]]
         List of column names to apply the aggregation transformations to.
@@ -237,14 +245,15 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         class attribute, indicates whether transform requires fit to be run first
 
     Example:
-    --------
-    >>> AggregateRowsOverColumnTransformer(
-    ... columns='a',
-    ... aggregations=['min', 'max'],
-    ... key='b',
-    ... )
-    AggregateRowsOverColumnTransformer(aggregations=['min', 'max'], columns=['a'],
-                                       key='b')
+    -------
+        >>> AggregateRowsOverColumnTransformer(
+        ... columns='a',
+        ... aggregations=['min', 'max'],
+        ... key='b',
+        ... )
+        AggregateRowsOverColumnTransformer(aggregations=['min', 'max'], columns=['a'],
+                                           key='b')
+
     """
 
     polars_compatible = True
@@ -262,6 +271,26 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         drop_original: bool = False,
         verbose: bool = False,
     ) -> None:
+        """Initialise class.
+
+        Parameters
+        ----------
+        columns : Union[str, list[str]]
+            List of column names to apply the aggregation transformations to.
+
+        aggregations : list[str]
+            List of aggregation methods to apply.
+
+        key : str
+            Column name to group by for aggregation.
+
+        drop_original : bool, optional
+            Whether to drop the original columns after transformation. Default is False.
+
+        verbose: bool
+            Controls verbosity of transformer
+
+        """
         super().__init__(
             columns=columns,
             aggregations=aggregations,
@@ -271,7 +300,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         self.key = key
 
     def get_feature_names_out(self) -> list[str]:
-        """list features modified/created by the transformer
+        """List features modified/created by the transformer.
 
         Returns
         -------
@@ -280,7 +309,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         Examples
         --------
-
         >>> transformer  = AggregateRowsOverColumnTransformer(
         ... columns='a',
         ... aggregations=['min', 'max'],
@@ -289,8 +317,8 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         >>> transformer.get_feature_names_out()
         ['a_min', 'a_max']
-        """
 
+        """
         return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
 
     @beartype
@@ -298,7 +326,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         self,
         X: DataFrame,
     ) -> DataFrame:
-        """Transforms the dataframe by aggregating rows over specified columns.
+        """Transform the dataframe by aggregating rows over specified columns.
 
         Parameters
         ----------
@@ -307,39 +335,39 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
-            Transformed DataFrame with aggregated columns.
+            pd.DataFrame or pl.DataFrame
+                Transformed DataFrame with aggregated columns.
 
         Raises
         ------
         ValueError
             If the key column is not found in the DataFrame.
 
-        Example:
+        Examples
         --------
-        >>> import polars as pl
+            >>> import polars as pl
 
-        >>> transformer=AggregateRowsOverColumnTransformer(
-        ... columns='a',
-        ... aggregations=['min', 'max'],
-        ... key='b',
-        ...    )
+            >>> transformer=AggregateRowsOverColumnTransformer(
+            ... columns='a',
+            ... aggregations=['min', 'max'],
+            ... key='b',
+            ...    )
 
-        >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [1,1,2], 'c':[1,2,3]})
+            >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [1,1,2], 'c':[1,2,3]})
 
-        >>> transformer.transform(test_df)
-        shape: (3, 5)
-        ┌─────┬─────┬─────┬───────┬───────┐
-        │ a   ┆ b   ┆ c   ┆ a_min ┆ a_max │
-        │ --- ┆ --- ┆ --- ┆ ---   ┆ ---   │
-        │ i64 ┆ i64 ┆ i64 ┆ i64   ┆ i64   │
-        ╞═════╪═════╪═════╪═══════╪═══════╡
-        │ 1   ┆ 1   ┆ 1   ┆ 1     ┆ 2     │
-        │ 2   ┆ 1   ┆ 2   ┆ 1     ┆ 2     │
-        │ 3   ┆ 2   ┆ 3   ┆ 3     ┆ 3     │
-        └─────┴─────┴─────┴───────┴───────┘
+            >>> transformer.transform(test_df)
+            shape: (3, 5)
+            ┌─────┬─────┬─────┬───────┬───────┐
+            │ a   ┆ b   ┆ c   ┆ a_min ┆ a_max │
+            │ --- ┆ --- ┆ --- ┆ ---   ┆ ---   │
+            │ i64 ┆ i64 ┆ i64 ┆ i64   ┆ i64   │
+            ╞═════╪═════╪═════╪═══════╪═══════╡
+            │ 1   ┆ 1   ┆ 1   ┆ 1     ┆ 2     │
+            │ 2   ┆ 1   ┆ 2   ┆ 1     ┆ 2     │
+            │ 3   ┆ 2   ┆ 3   ┆ 3     ┆ 3     │
+            └─────┴─────┴─────┴───────┴───────┘
+
         """
-
         X = _convert_dataframe_to_narwhals(X)
 
         X = super().transform(X, return_native_override=False)
@@ -368,12 +396,12 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
 
 class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
-    """Transformer that aggregates provided columns over each row
+    """Aggregate provided columns over each row.
 
     This transformer aggregates data within specified columns
     and can optionally drop the original columns post-transformation.
 
-    Attributes
+    Attributes:
     ----------
     columns : Union[str,list[str]]
         List of column names to apply the aggregation transformations to.
@@ -401,13 +429,14 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         class attribute, indicates whether transform requires fit to be run first
 
     Example:
-    --------
+    -------
     >>> AggregateColumnsOverRowTransformer(
     ... columns=['a', 'b'],
     ... aggregations=['min', 'max'],
     ... )
     AggregateColumnsOverRowTransformer(aggregations=['min', 'max'],
                                        columns=['a', 'b'])
+
     """
 
     polars_compatible = True
@@ -424,6 +453,23 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         drop_original: bool = False,
         verbose: bool = False,
     ) -> None:
+        """Initialise class.
+
+        Parameters
+        ----------
+        columns : Union[str,list[str]]
+            List of column names to apply the aggregation transformations to.
+
+        aggregations : list[str]
+            List of aggregation methods to apply.
+
+        drop_original : bool, optional
+            Whether to drop the original columns after transformation. Default is False.
+
+        verbose: bool
+            Controls  verbosity  of transformer
+
+        """
         super().__init__(
             columns=columns,
             aggregations=aggregations,
@@ -432,7 +478,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         )
 
     def get_feature_names_out(self) -> list[str]:
-        """list features modified/created by the transformer
+        """List features modified/created by the transformer.
 
         Returns
         -------
@@ -441,7 +487,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         Examples
         --------
-
         >>> transformer  = AggregateColumnsOverRowTransformer(
         ... columns=['a', 'b'],
         ... aggregations=['min', 'max'],
@@ -449,8 +494,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         >>> transformer.get_feature_names_out()
         ['a_b_min', 'a_b_max']
-        """
 
+        """
         return ["_".join(self.columns) + "_" + agg for agg in self.aggregations]
 
     @beartype
@@ -458,7 +503,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         self,
         X: DataFrame,
     ) -> DataFrame:
-        """Transforms the dataframe by aggregating provided columns over each row
+        """Transform the dataframe by aggregating provided columns over each row.
 
         Parameters
         ----------
@@ -491,8 +536,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         │ 1   ┆ 3   ┆ 5   ┆ 1       ┆ 3       │
         │ 2   ┆ 4   ┆ 6   ┆ 2       ┆ 4       │
         └─────┴─────┴─────┴─────────┴─────────┘
-        """
 
+        """
         X = _convert_dataframe_to_narwhals(X)
 
         X = super().transform(X, return_native_override=False)

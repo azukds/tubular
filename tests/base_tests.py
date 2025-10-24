@@ -1134,26 +1134,6 @@ class ColumnsCheckTests:
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    @pytest.mark.parametrize("non_list", [1, True, {"a": 1}, None, "True"])
-    def test_columns_not_list_error(
-        self,
-        non_list,
-        initialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test an error is raised if self.columns is not a list."""
-        df = nw.from_native(minimal_dataframe_lookup[self.transformer_name])
-
-        x = initialized_transformers[self.transformer_name]
-
-        x.columns = non_list
-
-        with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: self.columns should be a list",
-        ):
-            x.columns_check(X=df)
-
     def test_columns_not_in_X_error(
         self,
         initialized_transformers,

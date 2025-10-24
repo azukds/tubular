@@ -1,3 +1,5 @@
+"""Initialise classes exposed by package."""
+
 from tubular._utils import _get_version
 from tubular.aggregations import (
     AggregateColumnsOverRowTransformer,
