@@ -73,7 +73,7 @@ class ColumnStrListInitTests(GenericInitTests):
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["columns"] = []
 
-        with pytest.raises(ValueError):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
     @pytest.mark.parametrize(
@@ -169,10 +169,7 @@ class NewColumnNameInitMixintests:
         args["new_column_name"] = new_column_type
 
         with pytest.raises(
-            TypeError,
-            match=re.escape(
-                f"{self.transformer_name}: new_column_name should be str",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -250,10 +247,7 @@ class TwoColumnListInitTests(ColumnStrListInitTests):
         args["columns"] = non_list
 
         with pytest.raises(
-            TypeError,
-            match=re.escape(
-                f"{self.transformer_name}: columns should be list",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
@@ -270,10 +264,7 @@ class TwoColumnListInitTests(ColumnStrListInitTests):
         args["columns"] = list_length
 
         with pytest.raises(
-            ValueError,
-            match=re.escape(
-                f"{self.transformer_name}: This transformer works with two columns only",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             uninitialized_transformers[self.transformer_name](**args)
 

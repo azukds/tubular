@@ -1,5 +1,3 @@
-import re
-
 import numpy as np
 import pytest
 import test_aide as ta
@@ -31,33 +29,11 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "SeriesDtMethodTransformer"
 
-    # overload until we beartype the new_column_name mixin
-    @pytest.mark.parametrize(
-        "new_column_type",
-        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
-    )
-    def test_new_column_name_type_error(
-        self,
-        new_column_type,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if any type other than str passed to new_column_name"""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["new_column_name"] = new_column_type
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
-
     def test_invalid_input_type_errors(self):
         """Test that an exceptions are raised for invalid input types."""
         bad_columns = ["b", "c"]
         with pytest.raises(
-            ValueError,
-            match=rf"SeriesDtMethodTransformer: column should be a str or list of len 1, got {re.escape(str(bad_columns))}",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -66,8 +42,7 @@ class TestInit(
             )
 
         with pytest.raises(
-            TypeError,
-            match=r"SeriesDtMethodTransformer: unexpected type \(\<class 'int'\>\) for pd_method_name, expecting str",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -76,8 +51,7 @@ class TestInit(
             )
 
         with pytest.raises(
-            TypeError,
-            match=r"""SeriesDtMethodTransformer: pd_method_kwargs should be a dict but got type \<class 'int'\>""",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -87,8 +61,7 @@ class TestInit(
             )
 
         with pytest.raises(
-            TypeError,
-            match=r"""SeriesDtMethodTransformer: unexpected type \(\<class 'int'\>\) for pd_method_kwargs key in position 1, must be str""",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",

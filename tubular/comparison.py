@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
-from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
+from tubular.mixins import DropOriginalMixin
+from tubular.types import ListOfTwoStrs
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -23,8 +24,6 @@ if TYPE_CHECKING:
 )
 class EqualityChecker(
     DropOriginalMixin,
-    NewColumnNameMixin,
-    TwoColumnMixin,
     BaseTransformer,
 ):
     """Transformer to check if two columns are equal.
@@ -55,7 +54,7 @@ class EqualityChecker(
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: ListOfTwoStrs,
         new_column_name: str,
         drop_original: bool = False,
         **kwargs: Optional[bool],
@@ -80,9 +79,7 @@ class EqualityChecker(
         super().__init__(columns=columns, **kwargs)
 
         self.drop_original = drop_original
-
-        self.check_two_columns(columns)
-        self.check_and_set_new_column_name(new_column_name)
+        self.new_column_name = new_column_name
 
     def get_feature_names_out(self) -> list[str]:
         """Get list of features modified/created by the transformer.
