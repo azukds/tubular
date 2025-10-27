@@ -1,8 +1,7 @@
-import re
-
 import narwhals as nw
 import numpy as np
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -36,8 +35,7 @@ class TestInit(
     def test_method_type_error(self, incorrect_type_method):
         """Test that an exception is raised if method is not a str or a list."""
         with pytest.raises(
-            TypeError,
-            match=f"method must be a string or list but got {type(incorrect_type_method)}",
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -50,8 +48,7 @@ class TestInit(
     def test_units_type_error(self, incorrect_type_units):
         """Test that an exception is raised if units is not a str or a dict."""
         with pytest.raises(
-            TypeError,
-            match=f"units must be a string or dict but got {type(incorrect_type_units)}",
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -64,8 +61,7 @@ class TestInit(
     def test_period_type_error(self, incorrect_type_period):
         """Test that an error is raised if period is not an int or a float or a dictionary."""
         with pytest.raises(
-            TypeError,
-            match=f"period must be an int, float or dict but got {type(incorrect_type_period)}",
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -81,8 +77,7 @@ class TestInit(
     def test_period_dict_type_error(self, incorrect_dict_types_period):
         """Test that an error is raised if period dict is not a str:int or str:float kv pair."""
         with pytest.raises(
-            TypeError,
-            match=f"period dictionary key value pair must be str:int or str:float but got keys: { ({type(k) for k in incorrect_dict_types_period}) } and values: { ({type(v) for v in incorrect_dict_types_period.values()}) }",
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -105,8 +100,7 @@ class TestInit(
     def test_units_dict_type_error(self, incorrect_dict_types_units):
         """Test that an error is raised if units dict is not a str:str kv pair."""
         with pytest.raises(
-            TypeError,
-            match=f"units dictionary key value pair must be strings but got keys: { ({type(k) for k in incorrect_dict_types_units}) } and values: { ({type(v) for v in incorrect_dict_types_units.values()}) }",
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -119,8 +113,7 @@ class TestInit(
     def test_units_dict_value_error(self, incorrect_dict_units):
         """Test that an error is raised if units dict value is not from the valid units list."""
         with pytest.raises(
-            ValueError,
-            match=f"units dictionary values must be one of 'year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond' but got {set(incorrect_dict_units.values())}",
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -168,8 +161,7 @@ class TestInit(
         method = "tan"
 
         with pytest.raises(
-            ValueError,
-            match=f'Invalid method {method} supplied, should be "sin", "cos" or a list containing both',
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
@@ -181,21 +173,9 @@ class TestInit(
     def test_valid_units_value_error(self):
         """Test that a value error is raised if the unit supplied is not in the valid units list."""
         units = "five"
-        valid_unit_list = [
-            "year",
-            "month",
-            "day",
-            "hour",
-            "minute",
-            "second",
-            "microsecond",
-        ]
 
         with pytest.raises(
-            ValueError,
-            match=re.escape(
-                f"Invalid units {units} supplied, should be in {valid_unit_list}",
-            ),
+            BeartypeCallHintParamViolation,
         ):
             DatetimeSinusoidCalculator(
                 "a",
