@@ -5,13 +5,16 @@ import pandas as pd
 
 
 def get_stats_dict(profile_results: list) -> list[dict[str, float]]:
-    """extract dict of results from CProfile
+    """Extract dict of results from CProfile.
 
     Args:
+    ----
         profile_results: List of CProfile results
 
     Returns:
+    -------
         Dict containing profiling info
+
     """
     stats_dicts = []
     for profile_result in profile_results:
@@ -54,14 +57,17 @@ def get_stats_dict(profile_results: list) -> list[dict[str, float]]:
 
 
 def display_results(stats_dict: dict[str, float], stat: str) -> pd.Series:
-    """produce sorted series of runtime info for given runtime statistic
+    """Produce sorted series of runtime info for given runtime statistic.
 
     Args:
+    ----
         stats_dict: dict of subfunction runtime info
         stat: runtime stat to look at, e.g. 'time'
 
     Returns:
+    -------
         pd.Series: sorted series containing requested subfunction runtime info
+
     """
     stat_dict = {key: stats_dict[key][stat] for key in stats_dict}
     stat_series = pd.Series(stat_dict)
@@ -72,14 +78,17 @@ def add_perc_stats_to_dict(
     stats_dict: dict[str, float],
     overall_time: float,
 ) -> dict[str, float]:
-    """add info on percentage runtime to profiling dict
+    """Add info on percentage runtime to profiling dict.
 
     Args:
+    ----
         stats_dict: dict of stats on subfunction runtime info
         overall_time: overall runtime
 
     Returns:
+    -------
         Dict on subfunction runtime info, with added percentage runtime info
+
     """
     for key, subdict in stats_dict.items():
         stats_dict[key]["percentage_time"] = (subdict["time"] / overall_time) * 100
@@ -90,13 +99,14 @@ def add_perc_stats_to_dict(
 
 
 def profiling_wrapper(profile_results: list, display_rows: int = 10) -> None:
-    """wrapper function to display key profiling info
+    """Wrapper function to display key profiling info.
 
     Args:
+    ----
         profile_results: CProfile results
         display_rows: Top n slowest subfunctions to display. Defaults to 10.
-    """
 
+    """
     stats_dict = get_stats_dict(profile_results)
 
     cumulative_time_series = display_results(stats_dict, "time")

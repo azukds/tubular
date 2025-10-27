@@ -27,12 +27,11 @@ from tubular.base import BaseTransformer, DataFrameMethodTransformer
 from tubular.mixins import (
     CheckNumericMixin,
     DropOriginalMixin,
-    NewColumnNameMixin,
-    TwoColumnMixin,
 )
 from tubular.types import (
     DataFrame,
     FloatTypeAnnotated,
+    GenericKwargs,
     ListOfOneStr,
     ListOfTwoStrs,
     PositiveNumber,
@@ -622,32 +621,16 @@ class CutTransformer(BaseNumericTransformer):
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
         column: str,
         new_column_name: str,
-        cut_kwargs: dict[str, object] | None = None,
+        cut_kwargs: Optional[GenericKwargs] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        if type(column) is not str:
-            msg = f"{self.classname()}: column arg (name of column) should be a single str giving the column to discretise"
-            raise TypeError(msg)
-
-        if type(new_column_name) is not str:
-            msg = f"{self.classname()}: new_column_name must be a str"
-            raise TypeError(msg)
-
         if cut_kwargs is None:
             cut_kwargs = {}
-        else:
-            if type(cut_kwargs) is not dict:
-                msg = f"{self.classname()}: cut_kwargs should be a dict but got type {type(cut_kwargs)}"
-                raise TypeError(msg)
-
-        for i, k in enumerate(cut_kwargs.keys()):
-            if type(k) is not str:
-                msg = f"{self.classname()}: unexpected type ({type(k)}) for cut_kwargs key in position {i}, must be str"
-                raise TypeError(msg)
 
         self.cut_kwargs = cut_kwargs
         self.new_column_name = new_column_name
@@ -684,8 +667,6 @@ class CutTransformer(BaseNumericTransformer):
     """,
 )
 class TwoColumnOperatorTransformer(
-    NewColumnNameMixin,
-    TwoColumnMixin,
     DataFrameMethodTransformer,
     BaseNumericTransformer,
 ):
@@ -754,13 +735,14 @@ class TwoColumnOperatorTransformer(
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
         pd_method_name: str,
-        columns: list[str],
+        columns: ListOfTwoStrs,
         new_column_name: str,
-        pd_method_kwargs: dict[str, object] | None = None,
-        **kwargs: dict[str, bool],
+        pd_method_kwargs: Optional[dict[str, object]] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         """Performs input checks not done in either DataFrameMethodTransformer.__init__ or BaseTransformer.__init__."""
         if pd_method_kwargs is None:
@@ -773,9 +755,7 @@ class TwoColumnOperatorTransformer(
                 msg = f"{self.classname()}: pd_method_kwargs 'axis' must be 0 or 1"
                 raise ValueError(msg)
 
-        # check_and_set_new_column_name function needs to be called before calling DataFrameMethodTransformer.__init__
-        # DFTransformer uses 'new_column_names' not 'new_column_name' so generic tests fail on regex if not ordered in this way
-        self.check_and_set_new_column_name(new_column_name)
+        self.new_column_name = new_column_name
 
         # call DataFrameMethodTransformer.__init__
         # This class will inherit all the below attributes from DataFrameMethodTransformer
@@ -787,7 +767,6 @@ class TwoColumnOperatorTransformer(
             **kwargs,
         )
 
-        self.check_two_columns(columns)
         self.column1_name = columns[0]
         self.column2_name = columns[1]
 

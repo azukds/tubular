@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
-from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.base_tests import (
     ColumnStrListInitTests,
@@ -94,27 +93,6 @@ class TestInit(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
-
-    # overload until we beartype the new_column_name mixin
-    @pytest.mark.parametrize(
-        "new_column_type",
-        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
-    )
-    def test_new_column_name_type_error(
-        self,
-        new_column_type,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if any type other than str passed to new_column_name"""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["new_column_name"] = new_column_type
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
 
 
 class TestFit(GenericFitTests):
