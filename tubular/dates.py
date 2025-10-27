@@ -520,11 +520,22 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     Example:
     --------
-    >>> DateDifferenceTransformer(
+    >>> transformer = DateDifferenceTransformer(
     ... columns=['a',  'b'],
     ... new_column_name='bla',
     ... units='common_year',
     ...    )
+    >>> transformer
+    DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
+                              units='common_year')
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False, 'units': 'common_year', 'custom_days_divider': None}, 'fit': {}}
+
+    >>> DateDifferenceTransformer.from_json(json_dump)
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
                               units='common_year')
     """
@@ -533,7 +544,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -541,8 +552,6 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         columns: ListOfTwoStrs,
         new_column_name: str,
         units: DateDifferenceUnitsOptionsStr = "D",
-        copy: bool = False,
-        verbose: bool = False,
         drop_original: bool = False,
         custom_days_divider: Optional[int] = None,
         **kwargs: bool,
@@ -554,8 +563,6 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
             columns=columns,
             new_column_name=new_column_name,
             drop_original=drop_original,
-            copy=copy,
-            verbose=verbose,
             **kwargs,
         )
 
@@ -563,6 +570,39 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         # Here only as a fix to allow string representation of transformer.
         self.column_lower = columns[0]
         self.column_upper = columns[1]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+
+        >>> transformer=DateDifferenceTransformer(columns=['a', 'b'], new_column_name='a_diff_b')
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'drop_original': False, 'units': 'D', 'custom_days_divider': None}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "new_column_name": self.new_column_name,
+                "units": self.units,
+                "drop_original": self.drop_original,
+                "custom_days_divider": self.custom_days_divider,
+            },
+        )
+
+        return json_dict
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:

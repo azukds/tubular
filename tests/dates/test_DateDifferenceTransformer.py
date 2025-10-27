@@ -18,7 +18,11 @@ from tests.base_tests import (
 from tests.dates.test_BaseGenericDateTransformer import (
     GenericDatesMixinTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import DateDifferenceTransformer
 
 
@@ -345,6 +349,7 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "unit",
         [
@@ -366,7 +371,7 @@ class TestTransform(
             "polars",
         ],
     )
-    def test_expected_output_units(self, generic_expected_df, unit, library):
+    def test_expected_output_units(self, generic_expected_df, unit, library, from_json):
         """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
@@ -381,10 +386,14 @@ class TestTransform(
             verbose=False,
             custom_days_divider=25 if unit == "custom_days" else None,
         )
+
+        x = _handle_from_json(x, from_json)
+
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(expected, df_transformed)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -398,7 +407,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls(self, df, expected):
+    def test_expected_output_nulls(self, df, expected, from_json):
         """Test that the output is expected from transform, when columns have nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -407,10 +416,13 @@ class TestTransform(
             verbose=False,
         )
 
+        x = _handle_from_json(x, from_json)
+
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -424,7 +436,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls2(self, df, expected):
+    def test_expected_output_nulls2(self, df, expected, from_json):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -432,6 +444,8 @@ class TestTransform(
             units="D",
             verbose=False,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
