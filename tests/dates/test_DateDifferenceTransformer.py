@@ -438,9 +438,9 @@ class TestTransform(
             verbose=False,
         )
 
-        df_transformed = x.transform(df)
-
         x = _handle_from_json(x, from_json)
+
+        df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
@@ -467,9 +467,9 @@ class TestTransform(
             verbose=False,
         )
 
-        df_transformed = x.transform(df)
-
         x = _handle_from_json(x, from_json)
+
+        df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
