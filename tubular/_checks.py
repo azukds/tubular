@@ -7,7 +7,7 @@ def _get_all_null_columns(
     X: DataFrame,
     columns: list[str],
 ) -> list[str]:
-    """find columns in provided dataframe which are all null
+    """Find columns in provided dataframe which are all null.
 
     Parameters
     ----------

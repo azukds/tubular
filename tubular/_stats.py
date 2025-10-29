@@ -1,21 +1,20 @@
 from typing import Optional
-from beartype import beartype
 
 import narwhals as nw
+from beartype import beartype
 
 
 @beartype
 def _get_median_calculation_expression(
     column: str,
-    weights_column: str,
+    weights_column: Optional[str] = None,
     initial_column_expr: Optional[nw.Expr] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> nw.Expr:
-    """produce expressions for calculating medians in provided dataframe
+    """Produce expressions for calculating medians in provided dataframe.
 
     Parameters
     ----------
-
     column: list[str]
         column to find median for
 
@@ -31,12 +30,11 @@ def _get_median_calculation_expression(
         and in this case nw.col(weights_column) is taken as the initial expr
 
     Returns
-    ----------
+    -------
     median_value_exprs: dict[str, nw.Expr]
         dict of format col: expression for calculating median
 
     """
-
     if initial_column_expr is None:
         initial_column_expr = nw.col(column)
 
@@ -63,11 +61,10 @@ def _get_mean_calculation_expressions(
     initial_columns_exprs: Optional[list[nw.Expr]] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
-    """produce expressions for calculating means in provided dataframe
+    """Produce expressions for calculating means in provided dataframe.
 
     Parameters
     ----------
-
     columns: list[str]
         list of columns to find means for
 
@@ -91,12 +88,11 @@ def _get_mean_calculation_expressions(
         and could pass e.g. (nw.col(weights_column) * 2) if this was of interest.
 
     Returns
-    ----------
+    -------
     mean_value_exprs: dict[str, nw.Expr]
         dict of format col: expression for calculating means
 
     """
-
     # if a more complex starting expression for c or weights has been passed,
     # (e.g. we may be working with a version of c that has been mapped)
     # use this, otherwise proceed with the base case
@@ -134,11 +130,10 @@ def _get_mode_calculation_expressions(
     initial_columns_exprs: Optional[list[nw.Expr]] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
-    """produce expressions for calculating modes in provided dataframe
+    """Produce expressions for calculating modes in provided dataframe.
 
     Parameters
     ----------
-
     columns: list[str]
         list of columns to find modes for
 
@@ -154,12 +149,11 @@ def _get_mode_calculation_expressions(
         and in this case nw.col(weights_column) is taken as the initial expr
 
     Returns
-    ----------
+    -------
     mode_value_exprs: dict[str, nw.Expr]
         dict of format col: expression for calculating modes
 
     """
-
     if initial_columns_exprs is None:
         initial_columns_exprs = {c: nw.col(c) for c in columns}
 
