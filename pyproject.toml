@@ -18,8 +18,8 @@ dynamic = ["version"]
 dependencies = [
     "pandas>=1.5.0",
     "scikit-learn>=1.2.0",
-    "narwhals >= 1.31.0",
-    "polars < 1.32.0",
+    "narwhals >= 1.42.1",
+    "polars >= 1.9.0",
     "beartype >= 0.19.0",
     "typing-extensions>=4.5.0",
 ]
@@ -47,7 +47,7 @@ dev = [
     "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
     "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
-    "ruff==0.2.2",
+    "ruff>=0.2.2",
     ]
 
 [project.urls]
@@ -63,6 +63,7 @@ line-length = 88
 # Assume Python 3.9.
 target-version = "py39"
 
+
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
@@ -74,6 +75,8 @@ select = [
     "B", # bugbear 
     "C4",
     "COM",
+    "D",
+    "DOC",
     "DTZ",
     "E", # pycodestyle
     "EM",
@@ -95,6 +98,7 @@ select = [
     "Q",
     "RET",
     "RSE",
+    "RUF",
     "S", # Bandit
     "SIM",
     "SLOT",
@@ -133,10 +137,21 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 "tests/*" = [
+    "D",
+    "DOC",
     "ANN",
     "S101",
     "PLC2701" # complains about private imports, which we test
     ]
+"profiling/*"=["D", "DOC"]
+# too much to turn on D/DOC lints in one go,
+# will tackle individual modules at a time
+"numeric.py"=["D", "DOC"]
+"nominal.py"=["D", "DOC"]
+"mixins.py"=["D", "DOC"]
+"mapping.py"=["D", "DOC"]
+"imputers.py"=["D", "DOC"]
+"dates.py"=["D", "DOC"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true
@@ -155,3 +170,14 @@ omit = [
 show_missing = true
 
 fail_under = 80
+
+# Pytest Configs
+# Allows users to pass arguments in to pytest without needing to provide them as cmd options everytime
+# https://docs.pytest.org/en/7.1.x/reference/customize.html
+[tool.pytest.ini_options]
+
+# Additional Options (AddOpts) for pytest
+addopts = '--doctest-modules'
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

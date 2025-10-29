@@ -3,17 +3,25 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
 import polars as pl
 from beartype import beartype
+from typing_extensions import deprecated
 
+from tubular._checks import _get_all_null_columns
+from tubular._stats import (
+    _get_mean_calculation_expressions,
+    _get_median_calculation_expression,
+    _get_mode_calculation_expressions,
+)
 from tubular._utils import (
     _assess_pandas_object_column,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.mixins import WeightColumnMixin
@@ -31,17 +39,95 @@ class BaseImputer(BaseTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> BaseImputer(columns=["a", "b"])
+    BaseImputer(columns=['a', 'b'])
+
     """
 
     polars_compatible = True
 
+    # this class is not by itself jsonable, as needs attrs
+    # which are set in the child classes
+    jsonable = False
+
     FITS = False
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+
+        >>> arbitrary_imputer=ArbitraryImputer(columns=['a', 'b'], impute_value=1)
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> arbitrary_imputer.to_json()
+        {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 1}, 'fit': {'impute_values_': {'a': 1, 'b': 1}}}
+
+        >>> mean_imputer=MeanImputer(columns=['a', 'b'])
+
+        >>> test_df=pl.DataFrame({'a': [1, None],  'b': [None, 2]})
+
+        >>> _ = mean_imputer.fit(test_df)
+
+        >>> mean_imputer.to_json()
+        {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 1.0, 'b': 2.0}}}
+
+        """
+        if not self.jsonable:
+            msg = (
+                "This transformer has not yet had to/from json functionality developed"
+            )
+            raise RuntimeError(
+                msg,
+            )
+
+        self.check_is_fitted("impute_values_")
+
+        json_dict = super().to_json()
+
+        # slightly awkward here as API not fully shared
+        # across classes
+        if isinstance(
+            self,
+            (
+                MeanImputer,
+                MedianImputer,
+                ModeImputer,
+            ),
+        ):
+            json_dict["init"]["weights_column"] = self.weights_column
+        elif isinstance(self, ArbitraryImputer):
+            json_dict["init"]["impute_value"] = self.impute_value
+
+        json_dict["fit"]["impute_values_"] = self.impute_values_
+
+        return json_dict
 
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
         """update input expressions to include imputation.
@@ -65,32 +151,6 @@ class BaseImputer(BaseTransformer):
             else expr
         )
 
-    @staticmethod
-    def _get_all_null_columns(
-        X: DataFrame,
-        columns: list[str],
-    ) -> list[str]:
-        """find columns in provided dataframe which are all null
-
-        Parameters
-        ----------
-        X : DataFrame
-            dataframe to check
-
-        columns: list[str]
-            list of columns in dataframe to check
-
-        Returns
-        -------
-        list[str]: list of all null columns
-
-        """
-        null_exprs = {c: nw.col(c).is_null().all() for c in columns}
-
-        null_results = X.select(**null_exprs).to_dict(as_series=False)
-
-        return [col for col in columns if null_results[col][0] is True]
-
     @beartype
     def transform(
         self,
@@ -113,6 +173,27 @@ class BaseImputer(BaseTransformer):
         X : FrameT
             Transformed input X with nulls imputed with the median value for the specified columns.
 
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> imputer = BaseImputer(columns=["a", "b"])
+
+        >>> imputer.impute_values_= {"a":2, "b":3.5}
+
+        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+
+        >>> imputer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ f64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3.0 │
+        │ 2   ┆ 3.5 │
+        │ 2   ┆ 4.0 │
+        └─────┴─────┘
         """
         self.check_is_fitted("impute_values_")
 
@@ -150,14 +231,43 @@ class ArbitraryImputer(BaseImputer):
     impute_value : int or float or str or bool
         Value to impute nulls with.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Examples:
+    --------
+    >>> arbitrary_imputer = ArbitraryImputer(
+    ... columns=["a", "b"], impute_value= 5
+    ... )
+    >>> arbitrary_imputer
+    ArbitraryImputer(columns=['a', 'b'], impute_value=5)
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump=arbitrary_imputer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 5}, 'fit': {'impute_values_': {'a': 5, 'b': 5}}}
+
+    >>> ArbitraryImputer.from_json(json_dump)
+    ArbitraryImputer(columns=['a', 'b'], impute_value=5)
     """
 
     polars_compatible = True
+
+    jsonable = True
+
     FITS = False
 
     @beartype
@@ -192,7 +302,7 @@ class ArbitraryImputer(BaseImputer):
 
         """
 
-        return expr.cast(nw.Enum(set(categories + [self.impute_value])))
+        return expr.cast(nw.Enum({*categories, self.impute_value}))
 
     def _check_impute_value_type_works_with_columns(
         self,
@@ -346,6 +456,25 @@ class ArbitraryImputer(BaseImputer):
         -------
         X : FrameT
             Transformed input X with nulls imputed with the specified impute_value, for the specified columns.
+
+        Example:
+        --------
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> imputer = ArbitraryImputer(columns=["a", "b"], impute_value= 5)
+        >>> imputer= imputer.fit(test_df)
+        >>> imputer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 5   ┆ 5   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
+
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -431,15 +560,47 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         Created during fit method. Dictionary of float / int (median) values of columns
         in the columns attribute. Keys of impute_values_ give the column names.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> median_imputer = MedianImputer(
+    ... columns=["a", "b"],
+    ... )
+    >>> median_imputer
+    MedianImputer(columns=['a', 'b'])
+
+    >>> # once fit, transformer can also be dumped to json and reinitialised
+
+    >>> test_df=pl.DataFrame({'a': [0, None], 'b': [None, 1]})
+
+    >>> _ = median_imputer.fit(test_df)
+
+    >>> json_dump=median_imputer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+
+    >>> MedianImputer.from_json(json_dump)
+    MedianImputer(columns=['a', 'b'])
     """
 
     polars_compatible = True
+
+    jsonable = True
 
     FITS = True
 
@@ -453,62 +614,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
-    @staticmethod
-    def _get_median_calculation_expression(
-        column: list[str],
-        weights_column: str,
-        initial_column_expr: Optional[list[nw.Expr]] = None,
-        initial_weights_expr: Optional[nw.Expr] = None,
-    ) -> tuple[dict[str, nw.Expr], list[str]]:
-        """produce expressions for calculating medians in provided dataframe
-
-        Parameters
-        ----------
-
-        column: list[str]
-            column to find median for
-
-        weights_column: str
-            name of weights column
-
-        initial_column_expr: nw.Expr
-            initial column expressions to build on. Defaults to None,
-            and in this case nw.col(column) is taken as the initial expr
-
-        initial_weights_expr: nw.Expr
-            initial expression for weights column. Defaults to None,
-            and in this case nw.col(weights_column) is taken as the initial expr
-
-        Returns
-        ----------
-        median_value_exprs: dict[str, nw.Expr]
-            dict of format col: expression for calculating median
-
-        all_null_columns: list[str]
-            list of columns which are all null
-
-        """
-
-        if initial_column_expr is None:
-            initial_column_expr = nw.col(column)
-
-        if initial_weights_expr is None:
-            initial_weights_expr = nw.col(weights_column)
-
-        if weights_column is not None:
-            cumsum_weights_expr = initial_weights_expr.cum_sum()
-
-            median_expr = initial_column_expr.filter(
-                cumsum_weights_expr >= (initial_weights_expr.sum() / 2.0),
-            ).min()
-
-        else:
-            median_expr = initial_column_expr.filter(
-                ~initial_column_expr.is_null(),
-            ).median()
-
-        return median_expr
-
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> MedianImputer:
         """Calculate median values to impute with from X.
@@ -521,6 +627,23 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         y : None or pd/pl.Series, default = None
             Not required.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> imputer = MedianImputer(columns=["a", "b"])
+        >>> imputer= imputer.fit(test_df)
+        >>> imputer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ f64 ┆ f64 │
+        ╞═════╪═════╡
+        │ 1.0 ┆ 3.0 │
+        │ 1.5 ┆ 3.5 │
+        │ 2.0 ┆ 4.0 │
+        └─────┴─────┘
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -530,13 +653,16 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        all_null_cols = self._get_all_null_columns(X, self.columns)
+        all_null_cols = _get_all_null_columns(X, self.columns)
 
-        for column in all_null_cols:
-            self.impute_values_[column] = None
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
+            )
 
             warnings.warn(
-                f"{self.classname()}: The Median of column {column} is None",
+                f"{self.classname()}: The Median of columns {all_null_cols} will be None",
                 stacklevel=2,
             )
 
@@ -552,7 +678,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             for c in not_all_null_columns:
                 X = X.sort(c).filter(~nw.col(c).is_null())
 
-                median_expr = self._get_median_calculation_expression(
+                median_expr = _get_median_calculation_expression(
                     c,
                     self.weights_column,
                 )
@@ -562,15 +688,16 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         else:
             median_exprs = {
-                c: self._get_median_calculation_expression(c, None)
+                c: _get_median_calculation_expression(c, None)
                 for c in not_all_null_columns
             }
             results_dict = X.select(
                 **median_exprs,
             ).to_dict(as_series=False)
 
-            for c in not_all_null_columns:
-                self.impute_values_[c] = results_dict[c][0]
+            self.impute_values_.update(
+                {col: value[0] for col, value in results_dict.items()},
+            )
 
         return self
 
@@ -596,15 +723,47 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         Created during fit method. Dictionary of float / int (mean) values of columns
         in the columns attribute. Keys of impute_values_ give the column names.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> mean_imputer = MeanImputer(
+    ... columns=["a", "b"],
+    ... )
+    >>> mean_imputer
+    MeanImputer(columns=['a', 'b'])
+
+    >>> # once fit, transformer can also be dumped to json and reinitialised
+
+    >>> test_df=pl.DataFrame({'a': [0, None], 'b': [None, 1]})
+
+    >>> _ = mean_imputer.fit(test_df)
+
+    >>> json_dump=mean_imputer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+
+    >>> MeanImputer.from_json(json_dump)
+    MeanImputer(columns=['a', 'b'])
     """
 
     polars_compatible = True
+
+    jsonable = True
 
     FITS = True
 
@@ -618,64 +777,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
-    @staticmethod
-    def _get_mean_calculation_expressions(
-        columns: list[str],
-        weights_column: str,
-        initial_columns_exprs: Optional[list[nw.Expr]] = None,
-        initial_weights_expr: Optional[nw.Expr] = None,
-    ) -> dict[str, nw.Expr]:
-        """produce expressions for calculating means in provided dataframe
-
-        Parameters
-        ----------
-
-        columns: list[str]
-            list of columns to find means for
-
-        weights_column: str
-            name of weights column
-
-        initial_columns_exprs: dict[str, nw.Expr]
-            dict containing initial column expressions to build on. Defaults to None,
-            and in this case nw.col(c) is taken as the initial expr for each column c
-
-        initial_weights_expr: nw.Expr
-            initial expression for weights column. Defaults to None,
-            and in this case nw.col(weights_column) is taken as the initial expr
-
-        Returns
-        ----------
-        mean_value_exprs: dict[str, nw.Expr]
-            dict of format col: expression for calculating means
-
-        """
-
-        if initial_columns_exprs is None:
-            initial_columns_exprs = {c: nw.col(c) for c in columns}
-
-        if initial_weights_expr is None:
-            initial_weights_expr = nw.col(weights_column)
-
-        total_weight_expressions = {
-            c: (initial_weights_expr.filter(~initial_columns_exprs[c].is_null()).sum())
-            for c in columns
-        }
-
-        total_weighted_col_expressions = {
-            c: (
-                (initial_columns_exprs[c] * initial_weights_expr)
-                .filter(~initial_columns_exprs[c].is_null())
-                .sum()
-            )
-            for c in columns
-        }
-
-        return {
-            c: (total_weighted_col_expressions[c] / total_weight_expressions[c])
-            for c in columns
-        }
-
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> MeanImputer:
         """Calculate mean values to impute with from X.
@@ -688,6 +790,23 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         y : None or pd.DataFrame or pd.Series, default = None
             Not required.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> imputer = MeanImputer(columns=["a", "b"])
+        >>> imputer= imputer.fit(test_df)
+        >>> imputer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ f64 ┆ f64 │
+        ╞═════╪═════╡
+        │ 1.0 ┆ 3.0 │
+        │ 1.5 ┆ 3.5 │
+        │ 2.0 ┆ 4.0 │
+        └─────┴─────┘
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -709,15 +828,17 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-        weighted_mean_exprs = self._get_mean_calculation_expressions(
+        weighted_mean_exprs = _get_mean_calculation_expressions(
             self.columns,
             weights_column,
         )
 
-        results = X.select(**weighted_mean_exprs).to_dict(as_series=False)
+        results_dict = X.select(**weighted_mean_exprs).to_dict(as_series=False)
 
         # results looks like {key: [value]} so extract value from list
-        self.impute_values_ = {key: value[0] for key, value in results.items()}
+        self.impute_values_.update(
+            {col: value[0] for col, value in results_dict.items()},
+        )
 
         return self
 
@@ -746,15 +867,47 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         Created during fit method. Dictionary of float / int (mode) values of columns
         in the columns attribute. Keys of impute_values_ give the column names.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> mode_imputer = ModeImputer(
+    ... columns=["a", "b"],
+    ... )
+    >>> mode_imputer
+    ModeImputer(columns=['a', 'b'])
+
+    >>> # once fit, transformer can also be dumped to json and reinitialised
+
+    >>> test_df=pl.DataFrame({'a': [0, None], 'b': [None, 1]})
+
+    >>> _ = mode_imputer.fit(test_df)
+
+    >>> json_dump=mode_imputer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'ModeImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0, 'b': 1}}}
+
+    >>> ModeImputer.from_json(json_dump)
+    ModeImputer(columns=['a', 'b'])
     """
 
     polars_compatible = True
+
+    jsonable = True
 
     FITS = True
 
@@ -768,65 +921,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
 
-    @staticmethod
-    def _get_mode_calculation_expressions(
-        columns: list[str],
-        weights_column: str,
-        initial_columns_exprs: Optional[list[nw.Expr]] = None,
-        initial_weights_expr: Optional[nw.Expr] = None,
-    ) -> tuple[dict[str, nw.Expr], list[str]]:
-        """produce expressions for calculating modes in provided dataframe
-
-        Parameters
-        ----------
-
-        columns: list[str]
-            list of columns to find modes for
-
-        weights_column: str
-            name of weights column
-
-        initial_columns_exprs: dict[str, nw.Expr]
-            dict containing initial column expressions to build on. Defaults to None,
-            and in this case nw.col(c) is taken as the initial expr for each column c
-
-        initial_weights_expr: nw.Expr
-            initial expression for weights column. Defaults to None,
-            and in this case nw.col(weights_column) is taken as the initial expr
-
-        Returns
-        ----------
-        mode_value_exprs: dict[str, nw.Expr]
-            dict of format col: expression for calculating modes
-
-        """
-
-        if initial_columns_exprs is None:
-            initial_columns_exprs = {c: nw.col(c) for c in columns}
-
-        if initial_weights_expr is None:
-            initial_weights_expr = nw.col(weights_column)
-
-        level_weights_exprs = {
-            c: (
-                nw.when(~initial_columns_exprs[c].is_null())
-                .then(initial_weights_expr)
-                .otherwise(None)
-                .sum()
-                .over(c)
-            )
-            for c in columns
-        }
-
-        return {
-            c: (
-                nw.when(level_weights_exprs[c] == level_weights_exprs[c].max())
-                .then(nw.col(c))
-                .otherwise(None)
-            )
-            for c in columns
-        }
-
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:
         """Calculate mode values to impute with from X - in the event of a tie,
@@ -840,6 +935,23 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         y : None or pd/pl.DataFrame or pd/pl.Series, default = None
             Not required.
 
+        Example:
+        --------
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> imputer = ModeImputer(columns=["a", "b"])
+        >>> imputer= imputer.fit(test_df)
+        >>> imputer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
         """
 
         X = _convert_dataframe_to_narwhals(X)
@@ -861,18 +973,24 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-        all_null_cols = self._get_all_null_columns(X, self.columns)
+        self.impute_values_ = {}
 
-        for column in all_null_cols:
+        all_null_cols = _get_all_null_columns(X, self.columns)
+
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
+            )
+
             warnings.warn(
-                f"ModeImputer: The Mode of column {column} is None",
+                f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
                 stacklevel=2,
             )
-            self.impute_values_[column] = None
 
         not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
 
-        mode_value_exprs = self._get_mode_calculation_expressions(
+        mode_value_exprs = _get_mode_calculation_expressions(
             not_all_null_columns,
             weights_column,
         )
@@ -882,7 +1000,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         for c in results_dict:
             mode_values = results_dict[c]
 
-            mode_values = mode_values.filter(~mode_values.is_null()).sort(
+            mode_values = mode_values.drop_nulls().sort(
                 descending=True,
             )
 
@@ -899,6 +1017,110 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         return self
 
 
+class NullIndicator(BaseTransformer):
+    """Class to create a binary indicator column for null values.
+
+    Parameters
+    ----------
+    columns : None or str or list, default = None
+        Columns to produce indicator columns for, if the default of None is supplied all columns in X are used
+        when the transform method is called.
+
+    Attributes
+    ----------
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> null_indicator = NullIndicator(
+    ... columns=["a", "b"],
+    ... )
+    >>> null_indicator
+    NullIndicator(columns=['a', 'b'])
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump=null_indicator.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'NullIndicator', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+
+    >>> NullIndicator.from_json(json_dump)
+    NullIndicator(columns=['a', 'b'])
+    """
+
+    polars_compatible = True
+
+    FITS = False
+
+    jsonable = True
+
+    def __init__(
+        self,
+        columns: str | list[str] | None = None,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        super().__init__(columns=columns, **kwargs)
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Create new columns indicating the position of null values for each variable in self.columns.
+
+        Parameters
+        ----------
+        X : FrameT
+            Data to add indicators to.
+
+        Example:
+        --------
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> imputer = NullIndicator(columns=["a", "b"])
+        >>> imputer.transform(test_df)
+        shape: (3, 4)
+        ┌──────┬──────┬─────────┬─────────┐
+        │ a    ┆ b    ┆ a_nulls ┆ b_nulls │
+        │ ---  ┆ ---  ┆ ---     ┆ ---     │
+        │ i64  ┆ i64  ┆ bool    ┆ bool    │
+        ╞══════╪══════╪═════════╪═════════╡
+        │ 1    ┆ 3    ┆ false   ┆ false   │
+        │ null ┆ null ┆ true    ┆ true    │
+        │ 2    ┆ 4    ┆ false   ┆ false   │
+        └──────┴──────┴─────────┴─────────┘
+        """
+        X = super().transform(X, return_native_override=False)
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = X.with_columns(
+            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
+        )
+
+        return X if not self.return_native else X.to_native()
+
+
+# DEPRECATED TRANSFORMERS
+
+
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class NearestMeanResponseImputer(BaseImputer):
     """Class to impute missing values with; the value for which the average response is closest
     to the average response for the unknown levels.
@@ -913,15 +1135,27 @@ class NearestMeanResponseImputer(BaseImputer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = True
 
@@ -992,53 +1226,3 @@ class NearestMeanResponseImputer(BaseImputer):
                 )[c].item(index=0)
 
         return self
-
-
-class NullIndicator(BaseTransformer):
-    """Class to create a binary indicator column for null values.
-
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to produce indicator columns for, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-
-    Attributes
-    ----------
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    """
-
-    polars_compatible = True
-
-    def __init__(
-        self,
-        columns: str | list[str] | None = None,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        super().__init__(columns=columns, **kwargs)
-
-    @beartype
-    def transform(self, X: DataFrame) -> DataFrame:
-        """Create new columns indicating the position of null values for each variable in self.columns.
-
-        Parameters
-        ----------
-        X : FrameT
-            Data to add indicators to.
-
-        """
-        X = super().transform(X, return_native_override=False)
-
-        X = _convert_dataframe_to_narwhals(X)
-
-        X = X.with_columns(
-            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
-        )
-
-        return X if not self.return_native else X.to_native()

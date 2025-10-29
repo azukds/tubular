@@ -1,8 +1,7 @@
-import re
-
 import numpy as np
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -34,8 +33,7 @@ class TestInit(
         """Test that an exceptions are raised for invalid input types."""
         bad_columns = ["b", "c"]
         with pytest.raises(
-            ValueError,
-            match=rf"SeriesDtMethodTransformer: column should be a str or list of len 1, got {re.escape(str(bad_columns))}",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -44,8 +42,7 @@ class TestInit(
             )
 
         with pytest.raises(
-            TypeError,
-            match=r"SeriesDtMethodTransformer: unexpected type \(\<class 'int'\>\) for pd_method_name, expecting str",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -54,8 +51,7 @@ class TestInit(
             )
 
         with pytest.raises(
-            TypeError,
-            match=r"""SeriesDtMethodTransformer: pd_method_kwargs should be a dict but got type \<class 'int'\>""",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -65,8 +61,7 @@ class TestInit(
             )
 
         with pytest.raises(
-            TypeError,
-            match=r"""SeriesDtMethodTransformer: unexpected type \(\<class 'int'\>\) for pd_method_kwargs key in position 1, must be str""",
+            BeartypeCallHintParamViolation,
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",
@@ -79,7 +74,7 @@ class TestInit(
         """Test and exception is raised if a non pd.Series.dt method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
-            match="""SeriesDtMethodTransformer: error accessing "dt.b" method on pd.Series object - pd_method_name should be a pd.Series.dt method""",
+            match=r"""SeriesDtMethodTransformer: error accessing "dt.b" method on pd.Series object - pd_method_name should be a pd.Series.dt method""",
         ):
             SeriesDtMethodTransformer(
                 new_column_name="a",

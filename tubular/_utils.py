@@ -1,3 +1,6 @@
+from contextlib import suppress
+from functools import wraps
+from importlib.metadata import version
 from typing import Literal, Optional
 
 import narwhals as nw
@@ -12,7 +15,7 @@ from tubular.types import DataFrame, Series
 
 @beartype
 def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.DataFrame:
-    """narwhalifies dataframe, if dataframe is not already narwhals
+    """Narwhalifies dataframe, if dataframe is not already narwhals.
 
     Parameters
     ----------
@@ -20,10 +23,10 @@ def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.DataFrame:
         DataFrame to narwhalify if pd/pl type
 
     Returns
-    ----------
+    -------
     nw.DataFrame: narwhalified dataframe
-    """
 
+    """
     if not isinstance(X, nw.DataFrame):
         X = nw.from_native(X)
 
@@ -32,7 +35,7 @@ def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.DataFrame:
 
 @beartype
 def _convert_series_to_narwhals(y: Optional[Series] = None) -> Optional[nw.Series]:
-    """narwhalifies series, if series is not already narwhals
+    """Narwhalifies series, if series is not already narwhals.
 
     Parameters
     ----------
@@ -40,10 +43,10 @@ def _convert_series_to_narwhals(y: Optional[Series] = None) -> Optional[nw.Serie
         series to narwhalify if pd/pl type
 
     Returns
-    ----------
+    -------
     nw.Series: narwhalified series
-    """
 
+    """
     if y is not None and not isinstance(y, nw.Series):
         y = nw.from_native(y, allow_series=True)
 
@@ -55,18 +58,21 @@ def _return_narwhals_or_native_dataframe(
     X: DataFrame,
     return_native: bool,
 ) -> DataFrame:
-    """narwhalifies series, if series is not already narwhals
+    """Narwhalifies series, if series is not already narwhals.
 
     Parameters
     ----------
     X: pd/pl/nw.DataFrame
         DataFrame to process and return
 
-    Returns
-    ----------
-    DataFrame: processed dataframe in correct type
-    """
+    return_native: bool
+        whether to return narwhals or native dataframe/lazyframe
 
+    Returns
+    -------
+    DataFrame: processed dataframe in correct type
+
+    """
     if return_native:
         if isinstance(X, nw.DataFrame):
             return X.to_native()
@@ -84,7 +90,7 @@ def _return_narwhals_or_native_dataframe(
 
 
 def _assess_pandas_object_column(pandas_df: pd.DataFrame, col: str) -> tuple[str, str]:
-    """tries to determine less generic type for object columns
+    """Determine less generic type for object columns.
 
     Parameters
     ----------
@@ -95,14 +101,18 @@ def _assess_pandas_object_column(pandas_df: pd.DataFrame, col: str) -> tuple[str
         column to assess
 
     Returns
-    ----------
+    -------
     pandas_col_type: str
         deduced pandas col type
 
     polars_col_type: str
         deduced polars col type
-    """
 
+    Raises
+    ------
+    TypeError: if provided column is not object type
+
+    """
     if pandas_df[col].dtype.name != "object":
         msg = "_assess_pandas_object_column only works with object dtype columns"
         raise TypeError(
@@ -136,8 +146,7 @@ def new_narwhals_series_with_optimal_pandas_types(
     backend: Literal["pandas", "polars"],
     dtype: IntoDType,
 ) -> nw.Series:
-    """wraps around nw.new_series to ensure that pandas doesn't default to non-nullable
-    types
+    """Wrap around nw.new_series to ensure that pandas doesn't default to non-nullable types.
 
     Parameters
     ----------
@@ -154,10 +163,10 @@ def new_narwhals_series_with_optimal_pandas_types(
         wanted narwhals dtype for output
 
     Returns
-    ----------
+    -------
     nw.Series: new narwhals series
-    """
 
+    """
     if backend == "pandas":
         series = pd.Series(name=name, data=values)
         series = nw.maybe_convert_dtypes(nw.from_native(series, allow_series=True))
@@ -172,3 +181,41 @@ def new_narwhals_series_with_optimal_pandas_types(
         series = nw.new_series(name=name, values=values, backend=backend, dtype=dtype)
 
     return series
+
+
+def _get_version() -> str:
+    """Dynamically retrieve package version.
+
+    Returns
+    -------
+        str: package version
+
+    """
+    with suppress(ModuleNotFoundError):
+        return version("tubular")
+
+    return "dev"
+
+
+def block_from_json(method):  # noqa: ANN202, ANN001,  no annotations for generic decorator
+    """Intercept method and raise a runtime error if the transformer has been initialised from_json.
+
+    i.e. if the built_from_json attr is True.
+
+    Returns
+    -------
+        Callable: wrapped method
+
+    """
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN202, no annotations for generic decorator
+        if self.built_from_json:
+            msg = "Transformers that are reconstructed from json only support .transform functionality, reinitialise a new transformer to use this method"
+            raise RuntimeError(
+                msg,
+            )
+
+        return method(self, *args, **kwargs)
+
+    return wrapper

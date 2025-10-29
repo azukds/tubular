@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -16,19 +16,26 @@ from sklearn.preprocessing import (
     PolynomialFeatures,
     StandardScaler,
 )
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer, DataFrameMethodTransformer
 from tubular.mixins import (
     CheckNumericMixin,
     DropOriginalMixin,
-    NewColumnNameMixin,
-    TwoColumnMixin,
 )
-from tubular.types import DataFrame
+from tubular.types import (
+    DataFrame,
+    FloatTypeAnnotated,
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfTwoStrs,
+    PositiveNumber,
+)
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT, IntoSeriesT
@@ -51,14 +58,31 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     columns : List[str]
         List of columns to be operated on
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    Example:
+    --------
+    >>> BaseNumericTransformer(
+    ... columns='a',
+    ...    )
+    BaseNumericTransformer(columns=['a'])
 
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     FITS = False
 
@@ -80,6 +104,19 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         y : pd/pl.Series | None
             Required for pipeline.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer = BaseNumericTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> transformer.fit(test_df)
+        BaseNumericTransformer(columns=['a'])
 
         """
 
@@ -110,6 +147,25 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         X : pd/pl.DataFrame
             Validated data
 
+        >>> import polars as pl
+
+        >>> transformer = BaseNumericTransformer(
+        ... columns='a',
+        ...    )
+
+        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4]})
+
+        >>> # base class has no effect on datag
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
         """
         X = _convert_dataframe_to_narwhals(X)
         return_native = self._process_return_native(return_native_override)
@@ -120,6 +176,276 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
+    """Transformer that generates a new column based on kmeans algorithm.
+    Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
+    Finally it passes them into the a cut function.
+
+    Parameters
+    ----------
+    column : str
+        Name of the column to discretise.
+
+    new_column_name : str
+        Name given to the new discrete column.
+
+    n_clusters : int, default = 8
+        The number of clusters to form as well as the number of centroids to generate.
+
+    n_init "auto" or int, default="auto"
+        Number of times the k-means algorithm is run with different centroid seeds.
+        The final results is the best output of n_init consecutive runs in terms of inertia.
+        Several runs are recommended for sparse high-dimensional problems (see `Clustering sparse data with k-means <https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#kmeans-sparse-high-dim>`__).
+
+        When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
+        1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
+
+    drop_original : bool, default=False
+        Should the original columns to be transformed be dropped after applying the
+        OneDKmeanstransformer?
+
+    kmeans_kwargs : dict, default = {}
+        A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseTransformer.init().
+
+    Attributes
+    ----------
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    Example:
+    --------
+    >>> OneDKmeansTransformer(
+    ... columns='a',
+    ... n_clusters=2,
+    ... new_column_name="new",
+    ... drop_original=False,
+    ... kmeans_kwargs={"random_state": 42},
+    ...    )
+    OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
+                          n_clusters=2, new_column_name='new')
+
+    """
+
+    polars_compatible = True
+
+    jsonable = False
+
+    FITS = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: Union[
+            str,
+            ListOfOneStr,
+        ],
+        new_column_name: str,
+        n_init: Union[str, int] = "auto",
+        n_clusters: int = 8,
+        drop_original: bool = False,
+        kmeans_kwargs: Optional[dict[str, object]] = None,
+        **kwargs: dict[str, bool],
+    ) -> None:
+        if kmeans_kwargs is None:
+            kmeans_kwargs = {}
+
+        self.n_clusters = n_clusters
+        self.new_column_name = new_column_name
+        self.n_init = n_init
+        self.kmeans_kwargs = kmeans_kwargs
+        self.drop_original = drop_original
+
+        if isinstance(columns, str):
+            self.columns = [columns]
+        else:
+            self.columns = columns
+
+        super().__init__(columns=[columns], **kwargs)
+
+    def get_feature_names_out(self) -> list[str]:
+        """list features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+
+        >>> transformer = OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="kmeans_column",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...  )
+
+        >>> transformer.get_feature_names_out()
+        ['kmeans_column']
+        """
+
+        return [
+            self.new_column_name,
+        ]
+
+    @nw.narwhalify
+    def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
+        """Fit transformer to input data.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Dataframe with columns to learn scaling values from.
+
+        y : None
+            Required for pipeline.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="new",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+
+        >>> transformer.fit(test_df)
+        OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
+                              n_clusters=2, new_column_name='new')
+
+        """
+
+        super().fit(X, y)
+
+        X = nw.from_native(X)
+
+        # Check that X does not contain Nans and return ValueError.
+        if (
+            X.select(nw.col(self.columns[0]).is_null().any()).to_numpy().ravel()[0]
+            or X.select(nw.col(self.columns[0]).is_nan().any()).to_numpy().ravel()[0]
+        ):
+            msg = f"{self.classname()}: X should not contain missing values."
+            raise ValueError(msg)
+
+        kmeans = KMeans(
+            n_clusters=self.n_clusters,
+            n_init=self.n_init,
+            **self.kmeans_kwargs,
+        )
+
+        native_backend = nw.get_native_namespace(X).__name__
+        groups = kmeans.fit_predict(X.select(self.columns[0]).to_numpy())
+
+        X = X.with_columns(
+            nw.new_series(
+                name="groups",
+                values=np.copy(groups),
+                backend=native_backend,
+            ),
+        )
+
+        self.bins = (
+            X.group_by("groups")
+            .agg(
+                nw.col(self.columns[0]).max(),
+            )
+            .sort(self.columns[0])
+            .select(self.columns[0])
+            .to_numpy()
+            .ravel()
+        )
+        return self
+
+    @nw.narwhalify
+    def transform(self, X: FrameT) -> FrameT:
+        """Generate from input pd/pl.DataFrame (X) bins based on Kmeans results and add this column or columns in X.
+
+        Parameters
+        ----------
+        X : pl/pd.DataFrame
+            Data to transform.
+
+        Returns
+        -------
+        X : pl/pd.DataFrame
+            Input X with additional cluster column added.
+
+        Example:
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="new",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+
+        >>> _=transformer.fit(test_df)
+        >>> transformer.transform(test_df)
+        shape: (4, 3)
+        ┌─────┬─────┬─────┐
+        │ a   ┆ b   ┆ new │
+        │ --- ┆ --- ┆ --- │
+        │ i64 ┆ i64 ┆ i64 │
+        ╞═════╪═════╪═════╡
+        │ 1   ┆ 5   ┆ 0   │
+        │ 2   ┆ 6   ┆ 0   │
+        │ 3   ┆ 7   ┆ 0   │
+        │ 4   ┆ 8   ┆ 1   │
+        └─────┴─────┴─────┘
+        """
+        X = super().transform(X)
+
+        X = nw.from_native(X)
+        native_backend = nw.get_native_namespace(X).__name__
+
+        groups = np.digitize(
+            X.select(self.columns[0]).to_numpy().ravel(),
+            bins=self.bins,
+            right=True,
+        )
+
+        X = X.with_columns(
+            nw.new_series(
+                name=self.new_column_name,
+                values=groups,
+                backend=native_backend,
+            ),
+        )
+        return self.drop_original_column(X, self.drop_original, self.columns[0])
+
+
+# DEPRECATED TRANSFORMERS
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     """Transformer to apply log transformation.
 
@@ -160,21 +486,32 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     suffix : str
         The suffix to add onto the end of column names for new columns.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
 
     """
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = False
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None,
-        base: float | None = None,
+        columns: Optional[Union[str, list[str]]],
+        base: Optional[PositiveNumber] = None,
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
@@ -182,24 +519,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
-        if not isinstance(add_1, bool):
-            add_1_error_msg = f"{self.classname()}: add_1 should be bool"
-            raise TypeError(add_1_error_msg)
-
-        if not isinstance(suffix, str):
-            suffix_error_msg = f"{self.classname()}: suffix should be str"
-            raise TypeError(suffix_error_msg)
-
-        if base is not None:
-            if not isinstance(base, (int, float)):
-                msg = f"{self.classname()}: base should be numeric or None"
-                raise ValueError(msg)
-            if not base > 0:
-                msg = f"{self.classname()}: base should be strictly positive"
-                raise ValueError(msg)
-
-        self.set_drop_original_column(drop_original)
-
+        self.drop_original = drop_original
         self.base = base
         self.add_1 = add_1
         self.suffix = suffix
@@ -251,6 +571,12 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         return self.drop_original_column(X, self.drop_original, self.columns)
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class CutTransformer(BaseNumericTransformer):
     """Class to bin a column into discrete intervals.
 
@@ -274,43 +600,37 @@ class CutTransformer(BaseNumericTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
 
     """
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = False
 
+    @beartype
     def __init__(
         self,
         column: str,
         new_column_name: str,
-        cut_kwargs: dict[str, object] | None = None,
+        cut_kwargs: Optional[GenericKwargs] = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        if type(column) is not str:
-            msg = f"{self.classname()}: column arg (name of column) should be a single str giving the column to discretise"
-            raise TypeError(msg)
-
-        if type(new_column_name) is not str:
-            msg = f"{self.classname()}: new_column_name must be a str"
-            raise TypeError(msg)
-
         if cut_kwargs is None:
             cut_kwargs = {}
-        else:
-            if type(cut_kwargs) is not dict:
-                msg = f"{self.classname()}: cut_kwargs should be a dict but got type {type(cut_kwargs)}"
-                raise TypeError(msg)
-
-        for i, k in enumerate(cut_kwargs.keys()):
-            if type(k) is not str:
-                msg = f"{self.classname()}: unexpected type ({type(k)}) for cut_kwargs key in position {i}, must be str"
-                raise TypeError(msg)
 
         self.cut_kwargs = cut_kwargs
         self.new_column_name = new_column_name
@@ -340,9 +660,13 @@ class CutTransformer(BaseNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If aspects of it have been useful to you, please raise an issue
+    for it to be replaced with more specific transformers
+    """,
+)
 class TwoColumnOperatorTransformer(
-    NewColumnNameMixin,
-    TwoColumnMixin,
     DataFrameMethodTransformer,
     BaseNumericTransformer,
 ):
@@ -390,24 +714,35 @@ class TwoColumnOperatorTransformer(
     pd_method_kwargs : dict
         Dictionary of method kwargs to be passed to pandas.DataFrame method.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
 
     """
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = False
 
+    @beartype
     def __init__(
         self,
         pd_method_name: str,
-        columns: list[str],
+        columns: ListOfTwoStrs,
         new_column_name: str,
-        pd_method_kwargs: dict[str, object] | None = None,
-        **kwargs: dict[str, bool],
+        pd_method_kwargs: Optional[dict[str, object]] = None,
+        **kwargs: Optional[bool],
     ) -> None:
         """Performs input checks not done in either DataFrameMethodTransformer.__init__ or BaseTransformer.__init__."""
         if pd_method_kwargs is None:
@@ -420,9 +755,7 @@ class TwoColumnOperatorTransformer(
                 msg = f"{self.classname()}: pd_method_kwargs 'axis' must be 0 or 1"
                 raise ValueError(msg)
 
-        # check_and_set_new_column_name function needs to be called before calling DataFrameMethodTransformer.__init__
-        # DFTransformer uses 'new_column_names' not 'new_column_name' so generic tests fail on regex if not ordered in this way
-        self.check_and_set_new_column_name(new_column_name)
+        self.new_column_name = new_column_name
 
         # call DataFrameMethodTransformer.__init__
         # This class will inherit all the below attributes from DataFrameMethodTransformer
@@ -434,7 +767,6 @@ class TwoColumnOperatorTransformer(
             **kwargs,
         )
 
-        self.check_two_columns(columns)
         self.column1_name = columns[0]
         self.column2_name = columns[1]
 
@@ -461,6 +793,12 @@ class TwoColumnOperatorTransformer(
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class ScalingTransformer(BaseNumericTransformer):
     """Transformer to perform scaling of numeric columns.
 
@@ -485,19 +823,31 @@ class ScalingTransformer(BaseNumericTransformer):
     Attributes
     ----------
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
 
     """
 
     polars_compatible = False
 
+    jsonable = False
+
     FITS = True
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
-    scaler_options = {
+    scaler_options: ClassVar[
+        dict[str, Union[MinMaxScaler, MaxAbsScaler, StandardScaler]]
+    ] = {
         "min_max": MinMaxScaler,
         "max_abs": MaxAbsScaler,
         "standard": StandardScaler,
@@ -575,6 +925,12 @@ class ScalingTransformer(BaseNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class InteractionTransformer(BaseNumericTransformer):
     """Transformer that generates interaction features.
     Transformer generates a new column  for all combinations from the selected columns up to the maximum degree
@@ -606,25 +962,41 @@ class InteractionTransformer(BaseNumericTransformer):
     ----------
         min_degree : int
             minimum degree of interaction features to be considered
+
         max_degree : int
             maximum degree of interaction features to be considered
+
         nb_features_to_interact : int
             number of selected columns from which interactions should be computed. (=len(columns))
+
         nb_combinations : int
             number of new interaction features
+
         interaction_colname : list
             names of each new interaction feature. The name of an interaction feature is the combinations of previous
             column names joined with a whitespace. Interaction feature of ["col1","col2","col3] would be "col1 col2 col3".
+
         nb_feature_out : int
             number of total columns of transformed dataset, including new interaction features
+
+        built_from_json: bool
+            indicates if transformer was reconstructed from json, which limits it's supported
+            functionality to .transform
+
         polars_compatible : bool
             class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
         FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
+            class attribute, indicates whether transform requires fit to be run first
+
+        jsonable: bool
+            class attribute, indicates if transformer supports to/from_json methods
 
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = False
 
@@ -638,12 +1010,12 @@ class InteractionTransformer(BaseNumericTransformer):
         super().__init__(columns=columns, **kwargs)
 
         if len(columns) < 2:
-            msg = f"{self.classname()}: number of columns must be equal or greater than 2, got {str(len(columns))} column."
+            msg = f"{self.classname()}: number of columns must be equal or greater than 2, got {len(columns)} column."
             raise ValueError(msg)
 
         if type(min_degree) is int:
             if min_degree < 2:
-                msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {str(min_degree)}"
+                msg = f"{self.classname()}: min_degree must be equal or greater than 2, got {min_degree}"
                 raise ValueError(msg)
             self.min_degree = min_degree
         else:
@@ -731,6 +1103,12 @@ class InteractionTransformer(BaseNumericTransformer):
         return X
 
 
+@deprecated(
+    """This transformer has not been selected for conversion to polars/narwhals,
+    and so has been deprecated. If it is useful to you, please raise an issue
+    for it to be modernised
+    """,
+)
 class PCATransformer(BaseNumericTransformer):
     """Transformer that generates variables using Principal component analysis (PCA).
     Linear dimensionality reduction using Singular Value Decomposition of the
@@ -788,23 +1166,35 @@ class PCATransformer(BaseNumericTransformer):
     Attributes
     ----------
     pca : PCA class from sklearn.decomposition
+
     n_components_ : int
         The estimated number of components. When n_components is set
         to 'mle' or a number between 0 and 1 (with svd_solver == 'full') this
         number is estimated from input data. Otherwise it equals the parameter
         n_components, or the lesser value of n_features and n_samples
         if n_components is None.
+
     feature_names_out: list or None
         list of feature name representing the new dimensions.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
     polars_compatible : bool
         class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
 
     """
 
     polars_compatible = False
+
+    jsonable = False
 
     FITS = True
 
@@ -821,14 +1211,14 @@ class PCATransformer(BaseNumericTransformer):
 
         if type(n_components) is int:
             if n_components < 1:
-                msg = f"{self.classname()}:n_components must be strictly positive got {str(n_components)}"
+                msg = f"{self.classname()}:n_components must be strictly positive got {n_components}"
                 raise ValueError(msg)
             self.n_components = n_components
         elif type(n_components) is float:
             if 0 < n_components < 1:
                 self.n_components = n_components
             else:
-                msg = f"{self.classname()}:n_components must be strictly positive and must be of type int when greater than or equal to 1. Got {str(n_components)}"
+                msg = f"{self.classname()}:n_components must be strictly positive and must be of type int when greater than or equal to 1. Got {n_components}"
                 raise ValueError(msg)
 
         else:
@@ -928,170 +1318,231 @@ class PCATransformer(BaseNumericTransformer):
         return X
 
 
-class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
-    """Transformer that generates a new column based on kmeans algorithm.
-    Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
-    Finally it passes them into the a cut function.
+class DifferenceTransformer(BaseNumericTransformer):
+    """Transformer that performs subtraction operation between two columns.
 
-    Parameters
-    ----------
-    column : str
-        Name of the column to discretise.
-
-    new_column_name : str
-        Name given to the new discrete column.
-
-    n_clusters : int, default = 8
-        The number of clusters to form as well as the number of centroids to generate.
-
-    n_init "auto" or int, default="auto"
-        Number of times the k-means algorithm is run with different centroid seeds.
-        The final results is the best output of n_init consecutive runs in terms of inertia.
-        Several runs are recommended for sparse high-dimensional problems (see `Clustering sparse data with k-means <https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#kmeans-sparse-high-dim>`__).
-
-        When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
-        1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
-
-    drop_original : bool, default=False
-        Should the original columns to be transformed be dropped after applying the
-        OneDKmeanstransformer?
-
-    kmeans_kwargs : dict, default = {}
-        A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init().
+    This transformer allows performing subtraction between two columns in a DataFrame
+    and stores the result in a new column.
 
     Attributes
     ----------
+    columns : ListOfTwoStrs
+        List of exactly two column names to operate on. The second column is subtracted from the first.
 
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
+    Example
+    -------
+    >>> transformer = DifferenceTransformer(columns=['a', 'b'])
+    >>> transformer.columns
+    ['a', 'b']
     """
 
     polars_compatible = True
-
-    FITS = True
+    FITS = False
+    jsonable = True
 
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        new_column_name: str,
-        n_init: Union[str, int] = "auto",
-        n_clusters: int = 8,
-        drop_original: bool = False,
-        kmeans_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: dict[str, bool],
+        columns: ListOfTwoStrs,
+        **kwargs: Optional[bool],
     ) -> None:
-        if (isinstance(columns, list)) and (len(columns) > 1):
-            msg = f"{self.classname()}: columns arg should be a single str or a list length 1 giving the column to group."
-            raise TypeError(msg)
-
-        if kmeans_kwargs is None:
-            kmeans_kwargs = {}
-
-        self.n_clusters = n_clusters
-        self.new_column_name = new_column_name
-        self.n_init = n_init
-        self.kmeans_kwargs = kmeans_kwargs
-
-        if isinstance(columns, str):
-            self.columns = [columns]
-        else:
-            self.columns = columns
-
-        super().__init__(columns=[columns], **kwargs)
-        self.set_drop_original_column(drop_original)
-
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
-        """Fit transformer to input data.
+        """Initialize the DifferenceTransformer.
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
-            Dataframe with columns to learn scaling values from.
-
-        y : None
-            Required for pipeline.
-
+        columns : ListOfTwoStrs
+            List of exactly two column names to operate on. The second column is subtracted from the first.
+        verbose : bool, default=False
+            Whether to print verbose output during transformation.
         """
+        super().__init__(columns=columns, **kwargs)
 
-        super().fit(X, y)
+        # Set new_column_name or generate a default one
+        self.new_column_name = f"{columns[0]}_minus_{columns[1]}"
 
-        X = nw.from_native(X)
-
-        # Check that X does not contain Nans and return ValueError.
-        if (
-            X.select(nw.col(self.columns[0]).is_null().any()).to_numpy().ravel()[0]
-            or X.select(nw.col(self.columns[0]).is_nan().any()).to_numpy().ravel()[0]
-        ):
-            msg = f"{self.classname()}: X should not contain missing values."
-            raise ValueError(msg)
-
-        kmeans = KMeans(
-            n_clusters=self.n_clusters,
-            n_init=self.n_init,
-            **self.kmeans_kwargs,
-        )
-
-        native_backend = nw.get_native_namespace(X).__name__
-        groups = kmeans.fit_predict(X.select(self.columns[0]).to_numpy())
-
-        X = X.with_columns(
-            nw.new_series(
-                name="groups",
-                values=np.copy(groups),
-                backend=native_backend,
-            ),
-        )
-
-        self.bins = (
-            X.group_by("groups")
-            .agg(
-                nw.col(self.columns[0]).max(),
-            )
-            .sort(self.columns[0])
-            .select(self.columns[0])
-            .to_numpy()
-            .ravel()
-        )
-        return self
-
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
-        """Generate from input pd/pl.DataFrame (X) bins based on Kmeans results and add this column or columns in X.
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+    ) -> DataFrame:
+        """Transform the DataFrame by applying the subtraction operation between two columns.
 
         Parameters
         ----------
-        X : pl/pd.DataFrame
-            Data to transform.
+        X : pd.DataFrame or pl.DataFrame
+            DataFrame containing the columns to operate on.
 
         Returns
         -------
-        X : pl/pd.DataFrame
-            Input X with additional cluster column added.
+        pd.DataFrame or pl.DataFrame
+            Transformed DataFrame with the new column containing the subtraction results.
+
+
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer = DifferenceTransformer(columns=['a', 'b'])
+        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
+        >>> transformer.transform(test_df)
+        shape: (3, 3)
+        ┌─────┬─────┬───────────┐
+        │ a   ┆ b   ┆ a_minus_b │
+        │ --- ┆ --- ┆ ---       │
+        │ i64 ┆ i64 ┆ i64       │
+        ╞═════╪═════╪═══════════╡
+        │ 100 ┆ 80  ┆ 20        │
+        │ 200 ┆ 150 ┆ 50        │
+        │ 300 ┆ 200 ┆ 100       │
+        └─────┴─────┴───────────┘
         """
-        X = super().transform(X)
+        X = _convert_dataframe_to_narwhals(X)
 
-        X = nw.from_native(X)
-        native_backend = nw.get_native_namespace(X).__name__
+        X = super().transform(X, return_native_override=False)
 
-        groups = np.digitize(
-            X.select(self.columns[0]).to_numpy().ravel(),
-            bins=self.bins,
-            right=True,
+        # Create the subtraction expression
+        expr = nw.col(self.columns[0]) - nw.col(self.columns[1])
+
+        X = X.with_columns(expr.alias(self.new_column_name))
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+    def get_feature_names_out(self) -> list[str]:
+        """Get the names of the output features.
+
+        Returns
+        -------
+        list[str]
+            List containing the name of the new column created by the transformation.
+        """
+        return [f"{self.columns[0]}_minus_{self.columns[1]}"]
+
+
+class RatioTransformer(BaseNumericTransformer):
+    """Transformer that performs division operation between two columns.
+
+    This transformer allows performing division between two columns in a DataFrame
+    and stores the result in a new column.
+
+    Attributes
+    ----------
+    columns : ListOfTwoStrs
+        List of exactly two column names to operate on. The first column is the numerator,
+        and the second column is the denominator.
+    return_dtype : str
+        The dtype of the resulting column, either 'Float32' or 'Float64'.
+
+    Example
+    -------
+    >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+    >>> transformer.columns
+    ['a', 'b']
+    >>> transformer.return_dtype
+    'Float32'
+    """
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Serialize the transformer to a JSON-compatible dictionary.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            JSON representation of the transformer, including init parameters.
+
+        Examples
+        --------
+        >>> ratio_transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+        >>> ratio_transformer.to_json()
+        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+        json_dict["init"]["return_dtype"] = self.return_dtype
+
+        return json_dict
+
+    @beartype
+    def __init__(
+        self,
+        columns: ListOfTwoStrs,
+        return_dtype: FloatTypeAnnotated = "Float32",
+        **kwargs: Optional[bool],
+    ) -> None:
+        """Initialize the RatioTransformer.
+
+        Parameters
+        ----------
+        columns : ListOfTwoStrs
+            List of exactly two column names to operate on. The first column is the numerator,
+            and the second column is the denominator.
+        return_dtype : str, default='Float32'
+            The dtype of the resulting column, either 'Float32' or 'Float64'.
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        self.return_dtype = return_dtype
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+    ) -> DataFrame:
+        """Transform the DataFrame by applying the division operation between two columns.
+
+        Parameters
+        ----------
+        X : pd.DataFrame or pl.DataFrame
+            DataFrame containing the columns to operate on.
+
+        Returns
+        -------
+        pd.DataFrame or pl.DataFrame
+            Transformed DataFrame with the new column containing the division results.
+
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
+        >>> transformer.transform(test_df)
+        shape: (3, 3)
+        ┌─────┬─────┬────────────────┐
+        │ a   ┆ b   ┆ a_divided_by_b │
+        │ --- ┆ --- ┆ ---            │
+        │ i64 ┆ i64 ┆ f32            │
+        ╞═════╪═════╪════════════════╡
+        │ 100 ┆ 80  ┆ 1.25           │
+        │ 200 ┆ 150 ┆ 1.333333       │
+        │ 300 ┆ 200 ┆ 1.5            │
+        └─────┴─────┴────────────────┘
+        """
+        X = _convert_dataframe_to_narwhals(X)
+        X = super().transform(X, return_native_override=False)
+
+        # Create the division expression
+        expr = (
+            nw.when(nw.col(self.columns[1]) != 0)
+            .then(nw.col(self.columns[0]) / nw.col(self.columns[1]))
+            .otherwise(None)
+            .cast(getattr(nw, self.return_dtype))
         )
 
-        X = X.with_columns(
-            nw.new_series(
-                name=self.new_column_name,
-                values=groups,
-                backend=native_backend,
-            ),
-        )
-        return self.drop_original_column(X, self.drop_original, self.columns[0])
+        # Add the new column
+        new_column_name = f"{self.columns[0]}_divided_by_{self.columns[1]}"
+        X = X.with_columns(expr.alias(new_column_name))
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+    def get_feature_names_out(self) -> list[str]:
+        """Get the names of the output features.
+
+        Returns
+        -------
+        list[str]
+            List containing the name of the new column created by the transformation.
+        """
+        return [f"{self.columns[0]}_divided_by_{self.columns[1]}"]

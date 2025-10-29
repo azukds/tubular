@@ -78,9 +78,9 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             "bool_col": True,
         }
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -130,9 +130,9 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             msg = f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
             assert msg in warnings
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -194,9 +194,9 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             msg = f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
             assert msg in warnings
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -210,15 +210,15 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
 
         with pytest.warns(
             UserWarning,
-            match="ModeImputer: The Mode of column a is None",
+            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
         ):
             x.fit(df)
 
         expected_impute_values = {"a": None}
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -247,15 +247,15 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
 
         with pytest.warns(
             UserWarning,
-            match="ModeImputer: The Mode of column a is None",
+            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
         ):
             x.fit(df)
 
         expected_impute_values = {"a": None}
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
     @pytest.mark.parametrize(
         "library",
@@ -304,9 +304,9 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             "col": learnt_value,
         }
 
-        assert (
-            x.impute_values_ == expected_impute_values
-        ), f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        assert x.impute_values_ == expected_impute_values, (
+            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
+        )
 
 
 class TestTransform(

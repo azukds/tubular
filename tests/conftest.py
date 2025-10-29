@@ -119,10 +119,6 @@ def minimal_attribute_dict():
             "columns": ["a"],
             "new_column_name": "bla",
         },
-        "BaseDateTwoColumnTransformer": {
-            "columns": ["a", "b"],
-            "new_column_name": "bla",
-        },
         "BaseImputer": {
             "columns": ["b"],
         },
@@ -302,6 +298,13 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
             "drop_original": False,
+        },
+        "DifferenceTransformer": {
+            "columns": ["a", "b"],
+        },
+        "RatioTransformer": {
+            "columns": ["a", "b"],
+            "return_dtype": "Float32",  # Default dtype for the resulting column
         },
     }
 
