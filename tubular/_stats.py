@@ -95,7 +95,7 @@ def _get_mean_calculation_expressions(
     """
 
     # if a more complex starting expression for c or weights has been passed,
-    # (e.g. we may be worthing with a version of c that has been mapped)
+    # (e.g. we may be working with a version of c that has been mapped)
     # use this, otherwise proceed with the base case
     # nw.col(c) and nw.col(weights_column)
     if initial_columns_exprs is None:
