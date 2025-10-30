@@ -322,6 +322,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
+            # correct usage
             >>> import polars as pl
             >>> transformer=BaseTransformer(
             ... columns='a',
@@ -339,6 +340,14 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             │ 2   ┆ 4   ┆ 2                   │
             └─────┴─────┴─────────────────────┘
 
+            # example error from mismatched X/y
+            >>> X=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+            >>> y=pl.Series(name='a', values=[1])
+            >>> transformer._combine_X_y(X, y)
+            Traceback (most recent call last):
+            ...
+            narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
+            ...
         """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
