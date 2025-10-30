@@ -931,7 +931,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         self.lower_inclusive = lower_inclusive
         self.upper_inclusive = upper_inclusive
@@ -1760,7 +1760,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         new_column_name: str,
         missing_replacement: Optional[Union[float, int, str]] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(
             columns=columns,
