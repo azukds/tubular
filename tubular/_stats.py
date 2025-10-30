@@ -13,6 +13,17 @@ def _get_median_calculation_expression(
 ) -> nw.Expr:
     """Produce expressions for calculating medians in provided dataframe.
 
+    Note, this function supports either operating on raw columns or chained expressions,
+    this is to enable chaining together longer expressions across transformers. For
+    example, we may wish to find the mode of a column that has already been mapped,
+    in which case (in pseudocode) we would do something like:
+
+    mapped_expr=nw.col('c').map_batches(...)
+    mode_expr=_get_mode_calculation_expressions(
+                columns='c',
+                initial_columns_exprs=mapped_expr
+                )
+
     Parameters
     ----------
     column: list[str]
@@ -62,6 +73,17 @@ def _get_mean_calculation_expressions(
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating means in provided dataframe.
+
+    Note, this function supports either operating on raw columns or chained expressions,
+    this is to enable chaining together longer expressions across transformers. For
+    example, we may wish to find the mean of a column that has already been mapped,
+    in which case (in pseudocode) we would do something like:
+
+    mapped_expr=nw.col('c').map_batches(...)
+    mean_expr=_get_mean_calculation_expressions(
+                columns=['c'],
+                initial_columns_exprs={'c': mapped_expr}
+                )
 
     Parameters
     ----------
@@ -131,6 +153,17 @@ def _get_mode_calculation_expressions(
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating modes in provided dataframe.
+
+    Note, this function supports either operating on raw columns or chained expressions,
+    this is to enable chaining together longer expressions across transformers. For
+    example, we may wish to find the mode of a column that has already been mapped,
+    in which case (in pseudocode) we would do something like:
+
+    mapped_expr=nw.col('c').map_batches(...)
+    mode_expr=_get_mode_calculation_expressions(
+                columns=['c'],
+                initial_columns_exprs={'c': mapped_expr}
+                )
 
     Parameters
     ----------
