@@ -49,6 +49,9 @@ class BaseImputer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseImputer(columns=["a", "b"])
@@ -242,6 +245,9 @@ class ArbitraryImputer(BaseImputer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Examples:
     --------
@@ -574,6 +580,9 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> median_imputer = MedianImputer(
@@ -723,6 +732,9 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> mean_imputer = MeanImputer(
@@ -866,6 +878,9 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     --------
@@ -1026,6 +1041,9 @@ class NullIndicator(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> null_indicator = NullIndicator(
@@ -1134,6 +1152,9 @@ class NearestMeanResponseImputer(BaseImputer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 

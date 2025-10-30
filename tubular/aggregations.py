@@ -94,6 +94,9 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> BaseAggregationTransformer(
@@ -245,6 +248,9 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------
@@ -431,6 +437,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------

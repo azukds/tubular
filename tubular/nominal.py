@@ -54,6 +54,9 @@ class BaseNominalTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseNominalTransformer(
@@ -277,6 +280,9 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     --------
@@ -754,6 +760,9 @@ class MeanResponseTransformer(
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     --------
@@ -1441,6 +1450,9 @@ class OneHotEncodingTransformer(
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> OneHotEncodingTransformer(
@@ -1905,6 +1917,9 @@ class OrdinalEncoderTransformer(
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -2093,6 +2108,9 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 

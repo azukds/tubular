@@ -66,6 +66,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> BaseTransformer(
@@ -534,6 +537,9 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 

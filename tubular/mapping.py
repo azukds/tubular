@@ -69,6 +69,9 @@ class BaseMappingTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseMappingTransformer(
@@ -265,6 +268,9 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 
@@ -549,6 +555,9 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> transformer = MappingTransformer(
@@ -700,6 +709,9 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -796,6 +808,9 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -885,6 +900,9 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 
@@ -982,6 +1000,9 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -1075,6 +1096,9 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 

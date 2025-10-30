@@ -57,6 +57,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
@@ -625,6 +628,9 @@ class CappingTransformer(BaseCappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> import polars as pl
@@ -774,6 +780,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------

@@ -71,6 +71,9 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseNumericTransformer(
@@ -227,6 +230,9 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     --------
@@ -454,6 +460,22 @@ class DifferenceTransformer(BaseNumericTransformer):
     columns : ListOfTwoStrs
         List of exactly two column names to operate on. The second column is subtracted from the first.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example
     -------
     >>> transformer = DifferenceTransformer(columns=['a', 'b'])
@@ -559,6 +581,22 @@ class RatioTransformer(BaseNumericTransformer):
         and the second column is the denominator.
     return_dtype : str
         The dtype of the resulting column, either 'Float32' or 'Float64'.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example
     -------
@@ -741,6 +779,9 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -857,6 +898,9 @@ class CutTransformer(BaseNumericTransformer):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -971,6 +1015,9 @@ class TwoColumnOperatorTransformer(
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -1081,6 +1128,9 @@ class ScalingTransformer(BaseNumericTransformer):
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 
@@ -1239,6 +1289,9 @@ class InteractionTransformer(BaseNumericTransformer):
 
         jsonable: bool
             class attribute, indicates if transformer supports to/from_json methods
+
+        lazyframe_compatible: bool
+            class attribute, indicates whether transformer works with lazyframes
 
     """
 
@@ -1439,6 +1492,9 @@ class PCATransformer(BaseNumericTransformer):
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 
