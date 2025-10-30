@@ -9,7 +9,13 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
-from tests.utils import _handle_from_json, assert_frame_equal_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+)
 
 
 class TestInit(ColumnStrListInitTests):
@@ -35,6 +41,10 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "return_native",
         [True, False],
     )
@@ -49,6 +59,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         uninitialized_transformers,
         minimal_attribute_dict,
         return_native,
+        lazy,
         from_json,
     ):
         """Test that X is returned from transform."""
@@ -57,8 +68,9 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         args["return_native"] = return_native
         x = uninitialized_transformers[self.transformer_name](**args)
 
-        # if transformer is not polars compatible, skip polars test
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        polars = isinstance(df, pl.DataFrame)
+
+        if _check_if_skip_test(x, df, lazy):
             return
 
         df = nw.from_native(df)
@@ -69,12 +81,15 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
         x = _handle_from_json(x, from_json)
 
-        df_transformed = x.transform(X=df)
+        df_transformed = x.transform(X=_convert_to_lazy(df, lazy))
 
         if not x.return_native:
             df_transformed = nw.to_native(df_transformed)
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, polars, lazy),
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

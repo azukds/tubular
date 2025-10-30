@@ -71,6 +71,9 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseNumericTransformer(
@@ -81,6 +84,8 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -171,7 +176,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         return_native = self._process_return_native(return_native_override)
         X = super().transform(X, return_native_override=False)
 
-        CheckNumericMixin.check_numeric_columns(self, X[self.columns])
+        CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
@@ -226,6 +231,9 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> OneDKmeansTransformer(
@@ -241,6 +249,8 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     """
 
     polars_compatible = True
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -258,7 +268,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         n_clusters: int = 8,
         drop_original: bool = False,
         kmeans_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if kmeans_kwargs is None:
             kmeans_kwargs = {}
@@ -450,6 +460,22 @@ class DifferenceTransformer(BaseNumericTransformer):
     columns : ListOfTwoStrs
         List of exactly two column names to operate on. The second column is subtracted from the first.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example
     -------
     >>> transformer = DifferenceTransformer(columns=['a', 'b'])
@@ -458,8 +484,12 @@ class DifferenceTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = True
+
     FITS = False
+
     jsonable = True
+
+    lazy_compatible = True
 
     @beartype
     def __init__(
@@ -552,6 +582,22 @@ class RatioTransformer(BaseNumericTransformer):
     return_dtype : str
         The dtype of the resulting column, either 'Float32' or 'Float64'.
 
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example
     -------
     >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
@@ -562,8 +608,12 @@ class RatioTransformer(BaseNumericTransformer):
     """
 
     polars_compatible = True
+
     FITS = False
+
     jsonable = True
+
+    lazy_compatible = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -729,9 +779,14 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -745,7 +800,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
@@ -843,11 +898,14 @@ class CutTransformer(BaseNumericTransformer):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
 
-    jsonable = False
+    lazy_compatible = False
 
     FITS = False
 
@@ -857,7 +915,7 @@ class CutTransformer(BaseNumericTransformer):
         column: str,
         new_column_name: str,
         cut_kwargs: Optional[GenericKwargs] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if cut_kwargs is None:
             cut_kwargs = {}
@@ -957,9 +1015,14 @@ class TwoColumnOperatorTransformer(
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -1066,9 +1129,14 @@ class ScalingTransformer(BaseNumericTransformer):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -1222,9 +1290,14 @@ class InteractionTransformer(BaseNumericTransformer):
         jsonable: bool
             class attribute, indicates if transformer supports to/from_json methods
 
+        lazyframe_compatible: bool
+            class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 
@@ -1420,9 +1493,14 @@ class PCATransformer(BaseNumericTransformer):
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazy_compatible = False
 
     jsonable = False
 

@@ -39,6 +39,9 @@ Each individual change should have a link to the pull request after the descript
 - feat: removed TwoColumnMixin and BaseDateTwoColumnTransformer and replaced with beartype
 - feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
 - feat: added `to_json` method for BaseGenericDateTransformer `#540 <https://github.com/azukds/tubular/issues/540>_`
+- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BasesTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer, DifferenceTransformer, RatioTransformer
+- feat: introduced `lazy_compatible` class attr to all transformers
 - feat: added `to_json` method for DateDifferenceTransformer `#552 <https://github.com/azukds/tubular/issues/552>_`
 - feat: added `to_json` method for BaseMappingTransformer, MappingTransformer `#541 <https://github.com/azukds/tubular/issues/541>_`
 
@@ -51,7 +54,7 @@ Each individual change should have a link to the pull request after the descript
 - feat: optimisation changes to GroupRareLevelsTransformer fit method
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
 - chore: turned on doctest
-- chore: deprecated DataFrameMethodTransformer
+- chore: deprecateds DataFrameMethodTransformer
 - chore: added doctest examples for BaseTransfomer
 - chore: deleted stale example notebooks for BaseTransfomer (replaced by doctest) and DataFrameMethodTransformer (deprecated)
 - bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype
