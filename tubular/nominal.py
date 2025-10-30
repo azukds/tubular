@@ -17,6 +17,7 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
@@ -291,7 +292,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
     polars_compatible = True
 
-    jsonable = False
+    jsonable = True
 
     FITS = True
 
@@ -317,6 +318,35 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         self.record_rare_levels = record_rare_levels
 
         self.unseen_levels_to_rare = unseen_levels_to_rare
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer=GroupRareLevelsTransformer(columns='a', cut_off_percent=0.02,rare_level_name='rare_level')
+
+        >>> transformer.to_json()
+         {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.02, 'weights_column': None, 'rare_level_name': 'rare_level', 'record_rare_levels': True, 'unseen_levels_to_rare': True}, 'fit': {'non_rare_levels': {}, 'training_data_levels': {}}}
+        """
+        self.check_is_fitted(["non_rare_levels", "training_data_levels"])
+        json_dict = super().to_json()
+
+        json_dict["init"]["cut_off_percent"] = self.cut_off_percent
+        json_dict["init"]["weights_column"] = self.weights_column
+        json_dict["init"]["rare_level_name"] = self.rare_level_name
+        json_dict["init"]["record_rare_levels"] = self.record_rare_levels
+        json_dict["init"]["unseen_levels_to_rare"] = self.unseen_levels_to_rare
+        json_dict["fit"]["non_rare_levels"] = self.non_rare_levels
+        json_dict["fit"]["training_data_levels"] = self.training_data_levels
+        return json_dict
 
     @beartype
     def _check_str_like_columns(self, schema: nw.Schema) -> None:
