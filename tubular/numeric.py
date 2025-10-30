@@ -633,7 +633,7 @@ class CutTransformer(BaseNumericTransformer):
         column: str,
         new_column_name: str,
         cut_kwargs: Optional[GenericKwargs] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if cut_kwargs is None:
             cut_kwargs = {}

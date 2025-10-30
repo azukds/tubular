@@ -194,7 +194,7 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
         columns: Union[str, list[str]],
         new_column_name: str = "new_column",
         separator: str = " ",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
