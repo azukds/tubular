@@ -1167,8 +1167,7 @@ class CombineXYTests:
         x = initialized_transformers[self.transformer_name]
 
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: X should be a polars or pandas DataFrame/LazyFrame",
+            BeartypeCallHintParamViolation,
         ):
             x._combine_X_y(X=non_df, y=pd.Series([1, 2]))
 
@@ -1183,8 +1182,7 @@ class CombineXYTests:
         x = initialized_transformers[self.transformer_name]
 
         with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: y should be a polars or pandas Series",
+            BeartypeCallHintParamViolation,
         ):
             x._combine_X_y(X=pd.DataFrame({"a": [1, 2]}), y=non_series)
 

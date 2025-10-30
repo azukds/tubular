@@ -69,7 +69,7 @@ def _get_median_calculation_expression(
 def _get_mean_calculation_expressions(
     columns: list[str],
     weights_column: str,
-    initial_columns_exprs: Optional[list[nw.Expr]] = None,
+    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating means in provided dataframe.
@@ -149,7 +149,7 @@ def _get_mean_calculation_expressions(
 def _get_mode_calculation_expressions(
     columns: list[str],
     weights_column: str,
-    initial_columns_exprs: Optional[list[nw.Expr]] = None,
+    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating modes in provided dataframe.

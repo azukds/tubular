@@ -5,9 +5,8 @@ These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
-import narwhals as nw
 import pandas as pd
 from beartype import beartype
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -28,9 +27,6 @@ from tubular.types import (
     NonEmptyListOfStrs,
     Series,
 )
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
 
 pd.options.mode.copy_on_write = True
 
@@ -309,8 +305,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         return self
 
     @block_from_json
-    @nw.narwhalify
-    def _combine_X_y(self, X: FrameT, y: nw.Series) -> FrameT:
+    @beartype
+    def _combine_X_y(
+        self,
+        X: DataFrame,
+        y: Series,
+        return_native_override: bool = True,
+    ) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
@@ -326,10 +327,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y : pd/pl.Series
             Response variable.
 
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
+
         Raises
         ------
-            TypeError: incorrect types passed for X,y
-
             ValueError: shape of X/y do not match
 
         Returns
@@ -356,19 +359,20 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             └─────┴─────┴─────────────────────┘
 
         """
-        if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
-            msg = f"{self.classname()}: X should be a polars or pandas DataFrame/LazyFrame"
-            raise TypeError(msg)
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
 
-        if not isinstance(y, nw.Series):
-            msg = f"{self.classname()}: y should be a polars or pandas Series"
-            raise TypeError(msg)
+        return_native = self._process_return_native(return_native_override)
 
-        if X.shape[0] != y.shape[0]:
-            msg = f"{self.classname()}: X and y have different numbers of rows ({X.shape[0]} vs {y.shape[0]})"
+        len_X = len(X)
+        len_y = len(y)
+        if len_X != len_y:
+            msg = f"{self.classname()}: X and y have different numbers of rows ({len_X} vs {len_y})"
             raise ValueError(msg)
 
-        return X.with_columns(_temporary_response=y)
+        X = X.with_columns(_temporary_response=y)
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
     @beartype
     def _process_return_native(self, return_native_override: Optional[bool]) -> bool:
