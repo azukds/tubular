@@ -43,6 +43,10 @@ Changed
 Changed
 ^^^^^^^
 
+- feat: optimisation changes to fit methods in imputers file
+- feat: optimisation changes to transform method of NullIndicator
+- feat: optimisation changes to MeanResponseTransformer
+- feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
 - feat: removed TwoColumnMixin and BaseDateTwoColumnTransformer and replaced with beartype
