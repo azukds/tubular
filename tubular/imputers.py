@@ -10,6 +10,12 @@ import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
 
+from tubular._checks import _get_all_null_columns
+from tubular._stats import (
+    _get_mean_calculation_expressions,
+    _get_median_calculation_expression,
+    _get_mode_calculation_expressions,
+)
 from tubular._utils import (
     _assess_pandas_object_column,
     _convert_dataframe_to_narwhals,
@@ -647,35 +653,51 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        for c in self.columns:
-            # filter out null rows so their weight doesn't influence calc
-            filtered = X.filter(~nw.col(c).is_null())
+        all_null_cols = _get_all_null_columns(X, self.columns)
 
-            # if column is only nulls, then median is None
-            if len(filtered) <= 0:
-                self.impute_values_[c] = None
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
+            )
 
-            elif self.weights_column is not None:
-                WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+            warnings.warn(
+                f"{self.classname()}: The Median of columns {all_null_cols} will be None",
+                stacklevel=2,
+            )
 
-                # first sort df by column to be imputed (order of weight column shouldn't matter for median)
-                filtered = filtered.sort(c)
+        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
 
-                # next calculate cumulative weight sums
-                cumsum = filtered[self.weights_column].cum_sum()
+        # as median depends on data ordering, it is less amenable to writing in
+        # pure expression form, so implementation here is still
+        # slightly pandas-like
+        # also, the weighted median approach is genuinely different to the unweighted
+        # approach, so have left as two separate logic flows
+        if self.weights_column is not None:
+            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+            for c in not_all_null_columns:
+                X = X.sort(c).filter(~nw.col(c).is_null())
 
-                # find midpoint
-                cutoff = filtered[self.weights_column].sum() / 2.0
-
-                # find first value >= this point
-                median = filtered.filter(cumsum >= cutoff).select(c)[0].item()
+                median_expr = _get_median_calculation_expression(
+                    c,
+                    self.weights_column,
+                )
 
                 # impute value is weighted median
-                self.impute_values_[c] = median
+                self.impute_values_[c] = X.select(median_expr).item(0, 0)
 
-            else:
-                # impute value is median without considering weight
-                self.impute_values_[c] = X.select(nw.col(c).median()).item()
+        else:
+            median_exprs = {
+                c: _get_median_calculation_expression(c, None)
+                for c in not_all_null_columns
+            }
+            results_dict = X.select(
+                **median_exprs,
+            ).to_dict(as_series=False)
+
+            self.impute_values_.update(
+                {col: value[0] for col, value in results_dict.items()},
+            )
 
         return self
 
@@ -794,27 +816,29 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         self.impute_values_ = {}
 
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        native_backend = nw.get_native_namespace(X)
 
-            for c in self.columns:
-                # filter out null rows so they don't count towards total weight
-                filtered = X.filter(~nw.col(c).is_null())
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=native_backend.__name__,
+                return_native=False,
+            )
 
-                # calculate total weight and total of weighted col
-                total_weight = filtered.select(nw.col(self.weights_column).sum()).item()
-                total_weighted_col = filtered.select(
-                    (nw.col(c) * nw.col(self.weights_column)).sum(),
-                ).item()
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-                # find weighted mean and add to dict
-                weighted_mean = total_weighted_col / total_weight
+        weighted_mean_exprs = _get_mean_calculation_expressions(
+            self.columns,
+            weights_column,
+        )
 
-                self.impute_values_[c] = weighted_mean
+        results_dict = X.select(**weighted_mean_exprs).to_dict(as_series=False)
 
-        else:
-            for c in self.columns:
-                self.impute_values_[c] = X.select(nw.col(c).mean()).item()
+        # results looks like {key: [value]} so extract value from list
+        self.impute_values_.update(
+            {col: value[0] for col, value in results_dict.items()},
+        )
 
         return self
 
@@ -937,53 +961,58 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        if self.weights_column:
-            # pull this out of loop to only check weights once
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
-            weights_column = self.weights_column
+        backend = nw.get_native_namespace(X)
 
-        else:
-            weights_column = "dummy_unit_weights"
-            native_backend = nw.get_native_namespace(X)
-            X = X.with_columns(
-                nw.new_series(
-                    name=weights_column,
-                    values=[1] * len(X),
-                    backend=native_backend.__name__,
-                ),
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=backend.__name__,
+                return_native=False,
             )
 
-        for c in self.columns:
-            level_weights = (
-                X.filter(~nw.col(c).is_null())
-                .group_by(c)
-                .agg(
-                    nw.col(weights_column).sum(),
-                )
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+
+        self.impute_values_ = {}
+
+        all_null_cols = _get_all_null_columns(X, self.columns)
+
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
             )
 
-            if level_weights.is_empty():
-                self.impute_values_[c] = None
+            warnings.warn(
+                f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
+                stacklevel=2,
+            )
 
+        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
+
+        mode_value_exprs = _get_mode_calculation_expressions(
+            not_all_null_columns,
+            weights_column,
+        )
+
+        results_dict = X.select(**mode_value_exprs).to_dict(as_series=True)
+
+        for c in results_dict:
+            mode_values = results_dict[c]
+
+            mode_values = mode_values.drop_nulls().sort(
+                descending=True,
+            )
+
+            n_mode_vals = len(mode_values)
+
+            if n_mode_vals > 1:
                 warnings.warn(
-                    f"ModeImputer: The Mode of column {c} is None",
+                    f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
                     stacklevel=2,
                 )
 
-            else:
-                max_weight = level_weights.select(nw.col(weights_column).max()).item()
-
-                mode_values = level_weights.filter(
-                    nw.col(weights_column) == max_weight,
-                ).sort(by=c, descending=True)
-
-                if len(mode_values) > 1:
-                    warnings.warn(
-                        f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
-                        stacklevel=2,
-                    )
-
-                self.impute_values_[c] = mode_values.item(row=0, column=0)
+            self.impute_values_[c] = mode_values.item(0)
 
         return self
 
@@ -1072,14 +1101,13 @@ class NullIndicator(BaseTransformer):
         │ 2    ┆ 4    ┆ false   ┆ false   │
         └──────┴──────┴─────────┴─────────┘
         """
-        super().transform(X)
+        X = super().transform(X, return_native_override=False)
 
         X = _convert_dataframe_to_narwhals(X)
 
-        for c in self.columns:
-            X = X.with_columns(
-                (nw.col(c).is_null()).alias(f"{c}_nulls"),
-            )
+        X = X.with_columns(
+            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
+        )
 
         return X if not self.return_native else X.to_native()
 
