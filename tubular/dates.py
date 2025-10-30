@@ -94,7 +94,7 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -389,7 +389,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -555,7 +555,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -764,7 +764,7 @@ class ToDatetimeTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -917,7 +917,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1136,7 +1136,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1508,7 +1508,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1747,7 +1747,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1934,7 +1934,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 

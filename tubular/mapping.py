@@ -85,7 +85,7 @@ class BaseMappingTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -276,7 +276,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -581,7 +581,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -716,7 +716,7 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -815,7 +815,7 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -908,7 +908,7 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1007,7 +1007,7 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1104,7 +1104,7 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 

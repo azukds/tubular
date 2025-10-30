@@ -1,5 +1,4 @@
 import narwhals as nw
-import polars as pl
 import pytest
 
 import tests.test_data as d
@@ -10,9 +9,6 @@ from tests.base_tests import (
     ReturnNativeTests,
 )
 from tests.utils import (
-    _check_if_skip_test,
-    _collect_frame,
-    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -62,56 +58,40 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize(
         ("library", "expected_df_1"),
         [("pandas", "pandas"), ("polars", "polars")],
         indirect=["expected_df_1"],
     )
-    def test_null_indicator_columns_correct(
-        self,
-        expected_df_1,
-        library,
-        lazy,
-        from_json,
-    ):
+    def test_null_indicator_columns_correct(self, expected_df_1, library, from_json):
         """Test that the created indicator column is correct - and unrelated columns are unchanged."""
         df = d.create_df_9(library=library)
 
         columns = ["b", "c"]
         transformer = NullIndicator(columns=columns)
 
-        polars = isinstance(df, pl.DataFrame)
         transformer = _handle_from_json(transformer, from_json)
 
         df_transformed = transformer.transform(df)
 
-        if _check_if_skip_test(transformer, df, lazy):
-            return
+        # Convert both DataFrames to a common format using Narwhals
+        df_transformed_common = nw.from_native(df_transformed)
+        expected_df_1_common = nw.from_native(expected_df_1)
 
-        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
+        # Check outcomes for single rows
+        for i in range(len(df_transformed_common)):
+            df_transformed_row = df_transformed_common[[i]].to_native()
+            df_expected_row = expected_df_1_common[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+            )
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, polars, lazy),
-            expected_df_1,
+            df_transformed_common.to_native(),
+            expected_df_1_common.to_native(),
         )
-
-        # Check outcomes for single rows
-        df = nw.from_native(df)
-        expected_df_1 = nw.from_native(expected_df_1)
-        for i in range(len(df)):
-            df_transformed_row = transformer.transform(
-                _convert_to_lazy(df[[i]].to_native(), lazy),
-            )
-            df_expected_row = expected_df_1[[i]].to_native()
-
-            assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
-                df_expected_row,
-            )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

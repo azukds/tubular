@@ -50,7 +50,7 @@ class EqualityChecker(
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 

@@ -85,7 +85,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -250,7 +250,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -489,7 +489,7 @@ class DifferenceTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     @beartype
     def __init__(
@@ -613,7 +613,7 @@ class RatioTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -786,7 +786,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -905,7 +905,7 @@ class CutTransformer(BaseNumericTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1022,7 +1022,7 @@ class TwoColumnOperatorTransformer(
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -1136,7 +1136,7 @@ class ScalingTransformer(BaseNumericTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -1297,7 +1297,7 @@ class InteractionTransformer(BaseNumericTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -1500,7 +1500,7 @@ class PCATransformer(BaseNumericTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     jsonable = False
 

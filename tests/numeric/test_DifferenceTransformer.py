@@ -1,7 +1,6 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -50,7 +49,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "DifferenceTransformer"
 
-    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_transform_basic_case_outputs(
@@ -59,7 +57,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         from_json,
-        lazy,
     ):
         """Test transform method performs subtraction correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -67,15 +64,9 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
 
         df = create_difference_test_df(library=library)
 
-        polars = isinstance(df, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if u._check_if_skip_test(transformer, df, lazy):
-            return
-
         transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
+        transformed_df = transformer.transform(df)
 
         # Expected output for basic subtraction
         expected_data = {
@@ -85,12 +76,8 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
-            expected_df,
-        )
+        u.assert_frame_equal_dispatch(transformed_df, expected_df)
 
-    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
@@ -112,7 +99,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         a_values,
         b_values,
         expected_value,
-        lazy,
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -125,8 +111,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
 
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
 
-        polars = isinstance(single_row_df, pl.DataFrame)
-
         single_row_df = (
             nw.from_native(single_row_df)
             .with_columns(
@@ -137,12 +121,8 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         )
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if u._check_if_skip_test(transformer, single_row_df, lazy):
-            return
-
         transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
+        transformed_df = transformer.transform(single_row_df)
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -161,12 +141,8 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
             .to_native()
         )
 
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
-            expected_df,
-        )
+        u.assert_frame_equal_dispatch(transformed_df, expected_df)
 
-    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_with_nulls(
@@ -175,7 +151,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         from_json,
-        lazy,
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -188,15 +163,9 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
-        polars = isinstance(df_with_nulls, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
-            return
-
         transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
+        transformed_df = transformer.transform(df_with_nulls)
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -206,7 +175,4 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
-            expected_df,
-        )
+        u.assert_frame_equal_dispatch(transformed_df, expected_df)

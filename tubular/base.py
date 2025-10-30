@@ -80,7 +80,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = True
 
     jsonable = True
 

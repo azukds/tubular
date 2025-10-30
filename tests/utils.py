@@ -170,7 +170,7 @@ def _check_if_skip_test(
     return (
         (not transformer.polars_compatible and polars)
         or (not polars and lazy)
-        or (not transformer.lazy_compatible and lazy)
+        or (not transformer.lazyframe_compatible and lazy)
     )
 
 

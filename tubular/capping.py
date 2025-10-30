@@ -64,7 +64,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = True
 
@@ -658,7 +658,7 @@ class CappingTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = True
 
@@ -816,7 +816,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = True
 

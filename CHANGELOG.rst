@@ -34,8 +34,8 @@ Changed
 ^^^^^^^
 
 - feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
-- feat: added lazyframe testing for BasesTransfomer, SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer, DifferenceTransformer, RatioTransformer
-- feat: introduced `lazy_compatible` class attr to all transformers
+- feat: added lazyframe testing for BaseTransfomer
+- feat: introduced `lazyframe_compatible` class attr to all transformers
 
 2.1.0 (30/10/25)
 ------------------

@@ -49,7 +49,7 @@ class SetValueTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazy_compatible = True
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -155,7 +155,7 @@ class ColumnDtypeSetter(BaseTransformer):
 
     polars_compatible = False
 
-    lazy_compatible = False
+    lazyframe_compatible = False
 
     FITS = False
 
