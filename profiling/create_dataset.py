@@ -3,8 +3,7 @@ from sklearn.datasets import fetch_california_housing
 
 
 def create_standard_pandas_dataset() -> pd.DataFrame:
-    "Function to create the california housing dataset and alter it so that it can be transformed on by every transformer in fubular"
-
+    """Function to create the california housing dataset and alter it so that it can be transformed on by every transformer in fubular."""
     # Load dataset
     cali = fetch_california_housing()
     cali_df = pd.DataFrame(cali["data"], columns=cali["feature_names"])

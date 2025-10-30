@@ -22,6 +22,7 @@ from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
     _convert_to_lazy,
+    _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
@@ -42,8 +43,7 @@ class TestInit(
     def test_units_values_error(self):
         """Test that an exception is raised if the value of inits is not one of accepted_values_units."""
         with pytest.raises(
-            ValueError,
-            match=r"DateDifferenceTransformer: units must be one of \['week', 'fortnight', 'lunar_month', 'common_year', 'custom_days', 'D', 'h', 'm', 's'\], got y",
+            BeartypeCallHintParamViolation,
         ):
             DateDifferenceTransformer(
                 columns=["dummy_1", "dummy_2"],
@@ -51,27 +51,6 @@ class TestInit(
                 units="y",
                 verbose=False,
             )
-
-    # overload until we beartype the new_column_name mixin
-    @pytest.mark.parametrize(
-        "new_column_type",
-        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
-    )
-    def test_new_column_name_type_error(
-        self,
-        new_column_type,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if any type other than str passed to new_column_name"""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["new_column_name"] = new_column_type
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
 
 
 def expected_df_7(library="pandas"):
@@ -373,6 +352,7 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -398,7 +378,14 @@ class TestTransform(
             "polars",
         ],
     )
-    def test_expected_output_units(self, generic_expected_df, unit, library, lazy):
+    def test_expected_output_units(
+        self,
+        generic_expected_df,
+        unit,
+        library,
+        from_json,
+        lazy,
+    ):
         """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
@@ -414,6 +401,8 @@ class TestTransform(
             custom_days_divider=25 if unit == "custom_days" else None,
         )
 
+        x = _handle_from_json(x, from_json)
+
         polars = isinstance(df, pl.DataFrame)
 
         if _check_if_skip_test(x, df, lazy):
@@ -430,6 +419,7 @@ class TestTransform(
         "lazy",
         [True, False],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -443,7 +433,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls(self, df, expected, lazy):
+    def test_expected_output_nulls(self, df, expected, from_json, lazy):
         """Test that the output is expected from transform, when columns have nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -453,6 +443,8 @@ class TestTransform(
         )
 
         polars = isinstance(df, pl.DataFrame)
+
+        x = _handle_from_json(x, from_json)
 
         if _check_if_skip_test(x, df, lazy):
             return
@@ -468,6 +460,7 @@ class TestTransform(
         "lazy",
         [True, False],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -481,7 +474,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls2(self, df, expected, lazy):
+    def test_expected_output_nulls2(self, df, expected, from_json, lazy):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -491,6 +484,7 @@ class TestTransform(
         )
 
         polars = isinstance(df, pl.DataFrame)
+        x = _handle_from_json(x, from_json)
 
         if _check_if_skip_test(x, df, lazy):
             return

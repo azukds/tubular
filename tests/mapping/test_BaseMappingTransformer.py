@@ -11,7 +11,12 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import _check_if_skip_test, _collect_frame, _convert_to_lazy
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+)
 from tubular.mapping import BaseMappingTransformer
 
 
@@ -113,6 +118,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         "lazy",
         [True, False],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_mappings_unchanged(
         self,
@@ -120,6 +126,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         uninitialized_transformers,
         library,
         lazy,
+        from_json,
     ):
         """Test that mappings is unchanged in transform."""
         df = d.create_df_3(library=library)
@@ -137,6 +144,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
 
         if _check_if_skip_test(transformer, df, lazy):
             return
+        transformer = _handle_from_json(transformer, from_json)
 
         transformer.transform(_convert_to_lazy(df, lazy))
 
