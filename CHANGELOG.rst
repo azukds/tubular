@@ -27,8 +27,19 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.1.0 (unreleased)
+2.2.0 (unreleased)
 ------------------
+
+Changed
+^^^^^^^
+
+- placeholder
+
+2.1.0 (30/10/25)
+------------------
+
+Changed
+^^^^^^^
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
@@ -44,6 +55,9 @@ Each individual change should have a link to the pull request after the descript
 
 2.0.0 (16/10/2025)
 ------------------
+
+Changed
+^^^^^^^
 
 - chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
 - feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
@@ -72,6 +86,9 @@ Each individual change should have a link to the pull request after the descript
 
 1.4.8 (03/09/25)
 ----------------
+
+Changed
+^^^^^^^
 
 - feat: optimisation changes to OneHotEncodingTransformer
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 https://github.com/azukds/tubular/issues/465>_`
