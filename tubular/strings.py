@@ -54,9 +54,14 @@ class SeriesStrMethodTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -178,9 +183,14 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -190,7 +200,7 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
         columns: Union[str, list[str]],
         new_column_name: str = "new_column",
         separator: str = " ",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
