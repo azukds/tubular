@@ -579,9 +579,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 col_expr = nw.col(col)
 
             # make sure type is preserved for single row,
-            #     # e.g. mapping single row to int could convert
-            #     # from float to int
-            #     # TODO - look into better ways to achieve this
+            # e.g. mapping single row to int could convert
+            # from float to int
+            # TODO - look into better ways to achieve this
             exprs[col] = col_expr.cast(
                 X[col].dtype,
             ).alias(col)

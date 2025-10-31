@@ -13,8 +13,8 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.utils import (
     _check_if_skip_test,
-    _convert_to_lazy,
     _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
 )
@@ -438,7 +438,7 @@ class GenericFitTests:
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
-        lazy
+        lazy,
     ):
         "test that method is blocked once transformer has been through to/from json"
 
@@ -813,6 +813,7 @@ class GenericTransformTests:
     Generic tests for transformer.transform().
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
+
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
@@ -831,6 +832,9 @@ class GenericTransformTests:
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
+
+        if _check_if_skip_test(x, df, False):
+            return
 
         x = x.fit(df, df["a"])
 
@@ -911,7 +915,7 @@ class GenericTransformTests:
         assert all(
             df.index == original_df.index,
         ), "pandas index has been altered by transform"
-        
+
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
@@ -933,28 +937,29 @@ class GenericTransformTests:
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
-        x.copy = True
 
-        polars=isinstance(df, pl.DataFrame)
+        polars = isinstance(df, pl.DataFrame)
 
         if _check_if_skip_test(x, df, lazy):
             return
 
         x = x.fit(df, df["a"])
 
-        df=nw.from_native(df)
+        df = nw.from_native(df)
         # take 0 rows from df
-        df=df.head(0).to_native()
+        df = df.head(0).to_native()
 
         x = _handle_from_json(x, from_json)
 
         output = x.transform(
             _convert_to_lazy(df, lazy),
         )
-        
-        output=nw.from_native(output)
 
-        assert _collect_frame(output, polars, lazy).shape[0]==0, "expected empty frame transform to return empty frame"
+        output = nw.from_native(output)
+
+        assert _collect_frame(output, polars, lazy).shape[0] == 0, (
+            "expected empty frame transform to return empty frame"
+        )
 
 
 class ReturnNativeTests:

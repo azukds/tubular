@@ -439,6 +439,47 @@ class TestTransform(GenericTransformTests):
 
         assert_frame_equal_dispatch(df, original_df)
 
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_empty_in_empty_out(
+        self,
+        initialized_transformers,
+        minimal_dataframe_lookup,
+        mapping,
+    ):
+        """Test transforming empty frame returns empty frame"""
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        x = initialized_transformers[self.transformer_name]
+
+        return_dtypes = {"a": "String", "b": "String"}
+
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=mapping,
+            return_dtypes=return_dtypes,
+        )
+
+        x.mappings = base_mapping_transformer.mappings
+        x.return_dtypes = base_mapping_transformer.return_dtypes
+        x.mappings_from_null = base_mapping_transformer.mappings_from_null
+
+        df = nw.from_native(df)
+        # take 0 rows from df
+        df = df.head(0).to_native()
+
+        output = x.transform(
+            df,
+        )
+
+        output = nw.from_native(output)
+
+        assert output.shape[0] == 0, (
+            "expected empty frame transform to return empty frame"
+        )
+
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
