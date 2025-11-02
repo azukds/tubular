@@ -9,7 +9,10 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.misc import SetValueTransformer
 
 
@@ -58,12 +61,16 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
-    def test_value_set_in_transform(self, library, value):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_value_set_in_transform(self, library, value, from_json):
         """Test that transform sets the value as expected."""
 
         df = d.create_df_2(library)
 
         x = SetValueTransformer(columns=["a", "b"], value=value)
+
+        if from_json:
+            x = SetValueTransformer.from_json(x.to_json())
 
         df_transformed = x.transform(df)
 
@@ -73,6 +80,28 @@ class TestTransform(GenericTransformTests):
             df1=df_transformed,
             df2=expected,
         )
+
+    @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
+    def test_to_json_returns_correct_dict(self, value):
+        """Test that to_json is working as expected."""
+        transformer = SetValueTransformer(columns="a", value=value)
+
+        actual = transformer.to_json()
+
+        expected = {
+            "tubular_version": "dev",
+            "classname": "SetValueTransformer",
+            "init": {
+                "columns": ["a"],
+                "copy": False,
+                "verbose": False,
+                "return_native": True,
+                "value": value,
+            },
+            "fit": {},
+        }
+
+        assert actual == expected, "to_json does not return the expected dictionary"
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
