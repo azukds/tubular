@@ -262,8 +262,9 @@ class TestTransform(GenericNominalTransformTests):
             f"non_rare_levels attr modified in transform, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_no_weight(self, library):
+    def test_expected_output_no_weight(self, library, from_json):
         """Test that the output is expected from transform."""
         df = d.create_df_5(library=library)
 
@@ -280,13 +281,14 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
-
+        _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_weight(self, library):
+    def test_expected_output_weight(self, library, from_json):
         """Test that the output is expected from transform, when weights are used."""
 
         df = d.create_df_6(library=library)
@@ -305,12 +307,12 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mapping dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"]}
-
+        x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize("from_json", ["True", "False"])
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_column_strlike_error(self, library, from_json):
         """Test that checks error is raised if transform is run on non-strlike columns."""
@@ -336,7 +338,7 @@ class TestTransform(GenericNominalTransformTests):
         ):
             x.transform(df)
 
-    @pytest.mark.parametrize("from_json", ["True", "False"])
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_unseen_levels_not_encoded(self, library, from_json):
         """Test that unseen levels are not encoded when unseen_levels_to_rare is false"""

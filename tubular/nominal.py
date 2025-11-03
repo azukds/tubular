@@ -347,16 +347,19 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         self.check_is_fitted(["non_rare_levels"])
         json_dict = super().to_json()
 
-        json_dict["init"]["cut_off_percent"] = self.cut_off_percent
-        json_dict["init"]["weights_column"] = self.weights_column
-        json_dict["init"]["rare_level_name"] = self.rare_level_name
-        json_dict["init"]["record_rare_levels"] = self.record_rare_levels
-        json_dict["init"]["unseen_levels_to_rare"] = self.unseen_levels_to_rare
+        json_dict["init"].update(
+            {
+                "cut_off_percent": self.cut_off_percent,
+                "weights_column": self.weights_column,
+                "rare_level_name": self.rare_level_name,
+                "record_rare_levels": self.record_rare_levels,
+                "unseen_levels_to_rare": self.unseen_levels_to_rare,
+            },
+        )
         json_dict["fit"]["non_rare_levels"] = self.non_rare_levels
         if not self.unseen_levels_to_rare:
             self.check_is_fitted(["training_data_levels"])
             json_dict["fit"]["training_data_levels"] = self.training_data_levels
-
         return json_dict
 
     @beartype
@@ -461,6 +464,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
             raise ValueError(msg)
 
+    @block_from_json
     @beartype
     def fit(
         self,
