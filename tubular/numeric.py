@@ -439,6 +439,236 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         return self.drop_original_column(X, self.drop_original, self.columns[0])
 
 
+class DifferenceTransformer(BaseNumericTransformer):
+    """Transformer that performs subtraction operation between two columns.
+
+    This transformer allows performing subtraction between two columns in a DataFrame
+    and stores the result in a new column.
+
+    Attributes
+    ----------
+    columns : ListOfTwoStrs
+        List of exactly two column names to operate on. The second column is subtracted from the first.
+
+    Example
+    -------
+    >>> transformer = DifferenceTransformer(columns=['a', 'b'])
+    >>> transformer.columns
+    ['a', 'b']
+    """
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: ListOfTwoStrs,
+        **kwargs: Optional[bool],
+    ) -> None:
+        """Initialize the DifferenceTransformer.
+
+        Parameters
+        ----------
+        columns : ListOfTwoStrs
+            List of exactly two column names to operate on. The second column is subtracted from the first.
+        verbose : bool, default=False
+            Whether to print verbose output during transformation.
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        # Set new_column_name or generate a default one
+        self.new_column_name = f"{columns[0]}_minus_{columns[1]}"
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+    ) -> DataFrame:
+        """Transform the DataFrame by applying the subtraction operation between two columns.
+
+        Parameters
+        ----------
+        X : pd.DataFrame or pl.DataFrame
+            DataFrame containing the columns to operate on.
+
+        Returns
+        -------
+        pd.DataFrame or pl.DataFrame
+            Transformed DataFrame with the new column containing the subtraction results.
+
+
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer = DifferenceTransformer(columns=['a', 'b'])
+        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
+        >>> transformer.transform(test_df)
+        shape: (3, 3)
+        ┌─────┬─────┬───────────┐
+        │ a   ┆ b   ┆ a_minus_b │
+        │ --- ┆ --- ┆ ---       │
+        │ i64 ┆ i64 ┆ i64       │
+        ╞═════╪═════╪═══════════╡
+        │ 100 ┆ 80  ┆ 20        │
+        │ 200 ┆ 150 ┆ 50        │
+        │ 300 ┆ 200 ┆ 100       │
+        └─────┴─────┴───────────┘
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
+
+        # Create the subtraction expression
+        expr = nw.col(self.columns[0]) - nw.col(self.columns[1])
+
+        X = X.with_columns(expr.alias(self.new_column_name))
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+    def get_feature_names_out(self) -> list[str]:
+        """Get the names of the output features.
+
+        Returns
+        -------
+        list[str]
+            List containing the name of the new column created by the transformation.
+        """
+        return [f"{self.columns[0]}_minus_{self.columns[1]}"]
+
+
+class RatioTransformer(BaseNumericTransformer):
+    """Transformer that performs division operation between two columns.
+
+    This transformer allows performing division between two columns in a DataFrame
+    and stores the result in a new column.
+
+    Attributes
+    ----------
+    columns : ListOfTwoStrs
+        List of exactly two column names to operate on. The first column is the numerator,
+        and the second column is the denominator.
+    return_dtype : str
+        The dtype of the resulting column, either 'Float32' or 'Float64'.
+
+    Example
+    -------
+    >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+    >>> transformer.columns
+    ['a', 'b']
+    >>> transformer.return_dtype
+    'Float32'
+    """
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Serialize the transformer to a JSON-compatible dictionary.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            JSON representation of the transformer, including init parameters.
+
+        Examples
+        --------
+        >>> ratio_transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+        >>> ratio_transformer.to_json()
+        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+        json_dict["init"]["return_dtype"] = self.return_dtype
+
+        return json_dict
+
+    @beartype
+    def __init__(
+        self,
+        columns: ListOfTwoStrs,
+        return_dtype: FloatTypeAnnotated = "Float32",
+        **kwargs: Optional[bool],
+    ) -> None:
+        """Initialize the RatioTransformer.
+
+        Parameters
+        ----------
+        columns : ListOfTwoStrs
+            List of exactly two column names to operate on. The first column is the numerator,
+            and the second column is the denominator.
+        return_dtype : str, default='Float32'
+            The dtype of the resulting column, either 'Float32' or 'Float64'.
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        self.return_dtype = return_dtype
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+    ) -> DataFrame:
+        """Transform the DataFrame by applying the division operation between two columns.
+
+        Parameters
+        ----------
+        X : pd.DataFrame or pl.DataFrame
+            DataFrame containing the columns to operate on.
+
+        Returns
+        -------
+        pd.DataFrame or pl.DataFrame
+            Transformed DataFrame with the new column containing the division results.
+
+        Example:
+        --------
+        >>> import polars as pl
+        >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
+        >>> transformer.transform(test_df)
+        shape: (3, 3)
+        ┌─────┬─────┬────────────────┐
+        │ a   ┆ b   ┆ a_divided_by_b │
+        │ --- ┆ --- ┆ ---            │
+        │ i64 ┆ i64 ┆ f32            │
+        ╞═════╪═════╪════════════════╡
+        │ 100 ┆ 80  ┆ 1.25           │
+        │ 200 ┆ 150 ┆ 1.333333       │
+        │ 300 ┆ 200 ┆ 1.5            │
+        └─────┴─────┴────────────────┘
+        """
+        X = _convert_dataframe_to_narwhals(X)
+        X = super().transform(X, return_native_override=False)
+
+        # Create the division expression
+        expr = (
+            nw.when(nw.col(self.columns[1]) != 0)
+            .then(nw.col(self.columns[0]) / nw.col(self.columns[1]))
+            .otherwise(None)
+            .cast(getattr(nw, self.return_dtype))
+        )
+
+        # Add the new column
+        new_column_name = f"{self.columns[0]}_divided_by_{self.columns[1]}"
+        X = X.with_columns(expr.alias(new_column_name))
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+    def get_feature_names_out(self) -> list[str]:
+        """Get the names of the output features.
+
+        Returns
+        -------
+        list[str]
+            List containing the name of the new column created by the transformation.
+        """
+        return [f"{self.columns[0]}_divided_by_{self.columns[1]}"]
+
+
 # DEPRECATED TRANSFORMERS
 @deprecated(
     """This transformer has not been selected for conversion to polars/narwhals,
@@ -1316,233 +1546,3 @@ class PCATransformer(BaseNumericTransformer):
         X[self.feature_names_out] = self.pca.transform(X[self.columns])
 
         return X
-
-
-class DifferenceTransformer(BaseNumericTransformer):
-    """Transformer that performs subtraction operation between two columns.
-
-    This transformer allows performing subtraction between two columns in a DataFrame
-    and stores the result in a new column.
-
-    Attributes
-    ----------
-    columns : ListOfTwoStrs
-        List of exactly two column names to operate on. The second column is subtracted from the first.
-
-    Example
-    -------
-    >>> transformer = DifferenceTransformer(columns=['a', 'b'])
-    >>> transformer.columns
-    ['a', 'b']
-    """
-
-    polars_compatible = True
-    FITS = False
-    jsonable = True
-
-    @beartype
-    def __init__(
-        self,
-        columns: ListOfTwoStrs,
-        **kwargs: Optional[bool],
-    ) -> None:
-        """Initialize the DifferenceTransformer.
-
-        Parameters
-        ----------
-        columns : ListOfTwoStrs
-            List of exactly two column names to operate on. The second column is subtracted from the first.
-        verbose : bool, default=False
-            Whether to print verbose output during transformation.
-        """
-        super().__init__(columns=columns, **kwargs)
-
-        # Set new_column_name or generate a default one
-        self.new_column_name = f"{columns[0]}_minus_{columns[1]}"
-
-    @beartype
-    def transform(
-        self,
-        X: DataFrame,
-    ) -> DataFrame:
-        """Transform the DataFrame by applying the subtraction operation between two columns.
-
-        Parameters
-        ----------
-        X : pd.DataFrame or pl.DataFrame
-            DataFrame containing the columns to operate on.
-
-        Returns
-        -------
-        pd.DataFrame or pl.DataFrame
-            Transformed DataFrame with the new column containing the subtraction results.
-
-
-        Example:
-        --------
-        >>> import polars as pl
-        >>> transformer = DifferenceTransformer(columns=['a', 'b'])
-        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
-        >>> transformer.transform(test_df)
-        shape: (3, 3)
-        ┌─────┬─────┬───────────┐
-        │ a   ┆ b   ┆ a_minus_b │
-        │ --- ┆ --- ┆ ---       │
-        │ i64 ┆ i64 ┆ i64       │
-        ╞═════╪═════╪═══════════╡
-        │ 100 ┆ 80  ┆ 20        │
-        │ 200 ┆ 150 ┆ 50        │
-        │ 300 ┆ 200 ┆ 100       │
-        └─────┴─────┴───────────┘
-        """
-        X = _convert_dataframe_to_narwhals(X)
-
-        X = super().transform(X, return_native_override=False)
-
-        # Create the subtraction expression
-        expr = nw.col(self.columns[0]) - nw.col(self.columns[1])
-
-        X = X.with_columns(expr.alias(self.new_column_name))
-
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-    def get_feature_names_out(self) -> list[str]:
-        """Get the names of the output features.
-
-        Returns
-        -------
-        list[str]
-            List containing the name of the new column created by the transformation.
-        """
-        return [f"{self.columns[0]}_minus_{self.columns[1]}"]
-
-
-class RatioTransformer(BaseNumericTransformer):
-    """Transformer that performs division operation between two columns.
-
-    This transformer allows performing division between two columns in a DataFrame
-    and stores the result in a new column.
-
-    Attributes
-    ----------
-    columns : ListOfTwoStrs
-        List of exactly two column names to operate on. The first column is the numerator,
-        and the second column is the denominator.
-    return_dtype : str
-        The dtype of the resulting column, either 'Float32' or 'Float64'.
-
-    Example
-    -------
-    >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
-    >>> transformer.columns
-    ['a', 'b']
-    >>> transformer.return_dtype
-    'Float32'
-    """
-
-    polars_compatible = True
-    FITS = False
-    jsonable = True
-
-    @block_from_json
-    def to_json(self) -> dict[str, dict[str, Any]]:
-        """Serialize the transformer to a JSON-compatible dictionary.
-
-        Returns
-        -------
-        dict[str, dict[str, Any]]:
-            JSON representation of the transformer, including init parameters.
-
-        Examples
-        --------
-        >>> ratio_transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
-        >>> ratio_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
-        """
-
-        json_dict = super().to_json()
-        json_dict["init"]["return_dtype"] = self.return_dtype
-
-        return json_dict
-
-    @beartype
-    def __init__(
-        self,
-        columns: ListOfTwoStrs,
-        return_dtype: FloatTypeAnnotated = "Float32",
-        **kwargs: Optional[bool],
-    ) -> None:
-        """Initialize the RatioTransformer.
-
-        Parameters
-        ----------
-        columns : ListOfTwoStrs
-            List of exactly two column names to operate on. The first column is the numerator,
-            and the second column is the denominator.
-        return_dtype : str, default='Float32'
-            The dtype of the resulting column, either 'Float32' or 'Float64'.
-        """
-        super().__init__(columns=columns, **kwargs)
-
-        self.return_dtype = return_dtype
-
-    @beartype
-    def transform(
-        self,
-        X: DataFrame,
-    ) -> DataFrame:
-        """Transform the DataFrame by applying the division operation between two columns.
-
-        Parameters
-        ----------
-        X : pd.DataFrame or pl.DataFrame
-            DataFrame containing the columns to operate on.
-
-        Returns
-        -------
-        pd.DataFrame or pl.DataFrame
-            Transformed DataFrame with the new column containing the division results.
-
-        Example:
-        --------
-        >>> import polars as pl
-        >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
-        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
-        >>> transformer.transform(test_df)
-        shape: (3, 3)
-        ┌─────┬─────┬────────────────┐
-        │ a   ┆ b   ┆ a_divided_by_b │
-        │ --- ┆ --- ┆ ---            │
-        │ i64 ┆ i64 ┆ f32            │
-        ╞═════╪═════╪════════════════╡
-        │ 100 ┆ 80  ┆ 1.25           │
-        │ 200 ┆ 150 ┆ 1.333333       │
-        │ 300 ┆ 200 ┆ 1.5            │
-        └─────┴─────┴────────────────┘
-        """
-        X = _convert_dataframe_to_narwhals(X)
-        X = super().transform(X, return_native_override=False)
-
-        # Create the division expression
-        expr = (
-            nw.when(nw.col(self.columns[1]) != 0)
-            .then(nw.col(self.columns[0]) / nw.col(self.columns[1]))
-            .otherwise(None)
-            .cast(getattr(nw, self.return_dtype))
-        )
-
-        # Add the new column
-        new_column_name = f"{self.columns[0]}_divided_by_{self.columns[1]}"
-        X = X.with_columns(expr.alias(new_column_name))
-
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-    def get_feature_names_out(self) -> list[str]:
-        """Get the names of the output features.
-
-        Returns
-        -------
-        list[str]
-            List containing the name of the new column created by the transformation.
-        """
-        return [f"{self.columns[0]}_divided_by_{self.columns[1]}"]
