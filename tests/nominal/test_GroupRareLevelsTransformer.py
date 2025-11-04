@@ -281,7 +281,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
-        _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
@@ -325,9 +325,9 @@ class TestTransform(GenericNominalTransformTests):
         x = GroupRareLevelsTransformer(columns=["b"], rare_level_name="bla")
 
         x.fit(df)
-        x = _handle_from_json(x, from_json)
         # overwrite columns to non str-like before transform, to trigger error
         x.columns = ["a"]
+        x = _handle_from_json(x, from_json)
 
         msg = re.escape(
             "GroupRareLevelsTransformer: transformer must run on str-like columns, but got non str-like {'a'}",

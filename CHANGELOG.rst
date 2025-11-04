@@ -26,6 +26,10 @@ We use the tags:
 - chore: minor improvements to repo health
 
 Each individual change should have a link to the pull request after the description of the change.
+2.2.0 (unreleased)
+------------------
+
+- feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
 
 2.1.0 (unreleased)
 ------------------
@@ -33,7 +37,6 @@ Each individual change should have a link to the pull request after the descript
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
 - feat: added `to_json` method for BaseGenericDateTransformer `#540 <https://github.com/azukds/tubular/issues/540>_`
-- feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
 
 2.0.0 (16/10/2025)
 ------------------
