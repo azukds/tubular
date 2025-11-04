@@ -384,7 +384,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**expr_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.drop_original,
             self.columns,
@@ -555,7 +555,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**transform_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.drop_original,
             self.columns,

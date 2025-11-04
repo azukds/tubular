@@ -381,10 +381,10 @@ class TestTransform(
 
     # overloading below test as column count is different for this one
     @pytest.mark.parametrize(
-        ("columns, datetime_col, date_col"),
+        ("columns, datetime_col"),
         [
-            (["date_col_1", "datetime_col_2", "date_col_2"], 1, 0),
-            (["datetime_col_1", "date_col_2", "datetime_col_2"], 0, 1),
+            (["date_col_1", "datetime_col_2", "date_col_2"], 1),
+            (["datetime_col_1", "date_col_2", "datetime_col_2"], 0),
         ],
     )
     @pytest.mark.parametrize(

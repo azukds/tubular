@@ -689,7 +689,6 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -997,7 +996,6 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -1349,7 +1347,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -1635,7 +1632,6 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         X = X.with_columns(**exprs)
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -1799,7 +1795,6 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -1972,7 +1967,6 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,

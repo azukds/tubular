@@ -439,7 +439,11 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
                 backend=native_backend,
             ),
         )
-        return self.drop_original_column(X, self.drop_original, self.columns[0])
+        return DropOriginalMixin.drop_original_column(
+            X,
+            self.drop_original,
+            self.columns[0],
+        )
 
 
 class DifferenceTransformer(BaseNumericTransformer):
@@ -801,7 +805,11 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
             else:
                 X[new_column_names] = np.log(X[self.columns]) / np.log(self.base)
 
-        return self.drop_original_column(X, self.drop_original, self.columns)
+        return DropOriginalMixin.drop_original_column(
+            X,
+            self.drop_original,
+            self.columns,
+        )
 
 
 @deprecated(

@@ -31,8 +31,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
     def setup_class(cls):
         cls.transformer_name = "NullIndicator"
 
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def expected_df_1(request):
         """Expected output for test_null_indicator_columns_correct."""
         library = request.param

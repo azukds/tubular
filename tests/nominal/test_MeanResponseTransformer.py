@@ -200,6 +200,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
 class TestPriorRegularisation:
     "tests for _prior_regularisation method."
 
+    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_output1(library):
         "Test output of method."

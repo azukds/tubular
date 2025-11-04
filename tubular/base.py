@@ -667,7 +667,6 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,

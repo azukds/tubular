@@ -24,8 +24,8 @@ pl.enable_string_cache()
 
 
 class GenericImputerTransformTests:
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def test_fit_df(request):
         library = request.param
         df_dict = {
@@ -36,8 +36,8 @@ class GenericImputerTransformTests:
 
         return dataframe_init_dispatch(df_dict, library)
 
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def expected_df_1(request):
         library = request.param
         df1_dict = {
@@ -53,8 +53,8 @@ class GenericImputerTransformTests:
 
         return narwhals_df.to_native()
 
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def expected_df_2(request):
         library = request.param
         df2_dict = {
@@ -68,8 +68,8 @@ class GenericImputerTransformTests:
 
         return narwhals_df.to_native()
 
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def expected_df_3(request):
         library = request.param
         df3_dict = {
@@ -85,8 +85,8 @@ class GenericImputerTransformTests:
 
         return narwhals_df.to_native()
 
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def expected_df_4(request):
         library = request.param
         df4_dict = {
@@ -356,8 +356,8 @@ class GenericImputerTransformTests:
 
 
 class GenericImputerTransformTestsWeight:
-    @pytest.fixture()
     @staticmethod
+    @pytest.fixture()
     def expected_df_weights(request):
         """Expected output for test_nulls_imputed_correctly_weights."""
         library = request.param

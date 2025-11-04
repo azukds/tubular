@@ -1372,7 +1372,6 @@ class MeanResponseTransformer(
         ]
 
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             columns_to_drop,
@@ -1832,7 +1831,6 @@ class OneHotEncodingTransformer(
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
