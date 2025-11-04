@@ -484,13 +484,12 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             expected = learnt_mapping_dict[column]
             assert actual == expected
 
-    @pytest.mark.parametrize("library", ["polars"])
-    # @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("level", "target_column", "unseen_level_handling"),
         [
             (["blue"], "multi_level_response", "median"),
-            # ("all", "multi_level_response", 32),
+            ("all", "multi_level_response", 32),
             (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
@@ -644,7 +643,6 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             "MeanResponseTransformer should ignore unobserved levels"
         )
 
-    # TODO - adapt from old fit binary tests
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         (
