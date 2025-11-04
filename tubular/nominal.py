@@ -1147,7 +1147,7 @@ class MeanResponseTransformer(
             c: nw.col(weights_column).sum().over(c) for c in self.columns
         }
 
-        # these are the inputs for our encoding algorithm
+        # the previous two then make up the inputs for our encoding algorithm
         prior_exprs = self._prior_regularisation(
             weighted_response_sum_over_groups_exprs,
             weight_sum_over_groups_exprs,
@@ -1217,7 +1217,8 @@ class MeanResponseTransformer(
         weights_column : str
             name of weights column
 
-        # TODO not adding doctests yet as this method will change in an upcoming PR
+        # this private method is not intended to be used outside
+        # of the fit process, so not including examples
 
         """
 
