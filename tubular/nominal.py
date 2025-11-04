@@ -890,7 +890,7 @@ class MeanResponseTransformer(
 
         The formula used is:
 
-        (value + prior*global_mean)/(weight + prior)
+        (weight*value + prior*global_mean)/(weight + prior)
 
         Parameters
         ----------
