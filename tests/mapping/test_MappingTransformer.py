@@ -11,7 +11,11 @@ from tests.mapping.test_BaseMappingTransformer import (
     GenericFitTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.mapping import MappingTransformer
 
 
@@ -66,9 +70,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     def setup_class(cls):
         cls.transformer_name = "MappingTransformer"
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_expected_output(library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output(library, from_json):
         """Test that transform is giving the expected output."""
 
         df = d.create_df_1(library=library)
@@ -83,6 +88,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
+        x = _handle_from_json(x, from_json)
+
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
@@ -100,9 +107,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
                 df_expected_row,
             )
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_non_specified_values_unchanged(library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_non_specified_values_unchanged(library, from_json):
         """Test that values not specified in mappings are left unchanged in transform."""
 
         df = d.create_df_1(library=library)
@@ -114,6 +122,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
+        x = _handle_from_json(x, from_json)
+
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
@@ -131,6 +141,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("mapping", "return_dtypes"),
@@ -159,9 +170,13 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         mapping,
         return_dtypes,
         library,
+        from_json,
     ):
         df = d.create_df_1(library=library)
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        x = _handle_from_json(x, from_json)
+
         df = x.transform(df)
 
         column = next(iter(mapping.keys()))
@@ -170,9 +185,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
         )
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_category_dtype_is_conserved(library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_category_dtype_is_conserved(library, from_json):
         """This is a separate test due to the behaviour of category dtypes.
 
         See documentation of transform method
@@ -185,12 +201,17 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         return_dtypes = {"b": "Categorical"}
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        x = _handle_from_json(x, from_json)
+
         df = x.transform(df)
 
         assert nw.from_native(df).get_column("b").dtype == nw.Categorical, (
             "Categorical dtype not preserved for column b"
         )
 
+    @staticmethod
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("mapping", "mapped_col", "return_dtypes"),
@@ -199,8 +220,13 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             ({"b": {"z": "99", "y": "98"}}, "b", {"b": "String"}),
         ],
     )
-    @staticmethod
-    def test_no_applicable_mapping(mapping, mapped_col, return_dtypes, library):
+    def test_no_applicable_mapping(
+        mapping,
+        mapped_col,
+        return_dtypes,
+        library,
+        from_json,
+    ):
         df = d.create_df_1(library=library)
 
         x = MappingTransformer(
@@ -209,12 +235,16 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             verbose=True,
         )
 
+        x = _handle_from_json(x, from_json)
+
         with pytest.warns(
             UserWarning,
             match=f"MappingTransformer: No values from mapping for {mapped_col} exist in dataframe.",
         ):
             x.transform(df)
 
+    @staticmethod
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("mapping", "mapped_col", "return_dtypes"),
@@ -223,8 +253,13 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             ({"b": {"a": "1", "z": "99"}}, "b", {"b": "String"}),
         ],
     )
-    @staticmethod
-    def test_excess_mapping_values(mapping, mapped_col, return_dtypes, library):
+    def test_excess_mapping_values(
+        mapping,
+        mapped_col,
+        return_dtypes,
+        library,
+        from_json,
+    ):
         df = d.create_df_1(library=library)
 
         x = MappingTransformer(
@@ -233,15 +268,18 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             verbose=True,
         )
 
+        x = _handle_from_json(x, from_json)
+
         with pytest.warns(
             UserWarning,
             match=f"MappingTransformer: There are values in the mapping for {mapped_col} that are not present in the dataframe",
         ):
             x.transform(df)
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_expected_output_boolean_with_nulls(library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_boolean_with_nulls(library, from_json):
         """Test that output is as expected for tricky bool cases:
         e.g. mapping {True:1, False:0, None: 0}, potential causes of failure:
             - None being cast to False when these values are inserted into bool series
@@ -333,13 +371,16 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
+        transformer = _handle_from_json(transformer, from_json)
+
         df_transformed = transformer.transform(df)
 
         assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_warnings_issued_with_verbose_true(library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_warnings_issued_with_verbose_true(library, from_json):
         """Test that warnings are issued when verbose is set to True."""
         df = d.create_df_1(library=library)
 
@@ -351,6 +392,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             return_dtypes=return_dtypes,
             verbose=True,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         with pytest.warns(
             UserWarning,
@@ -364,9 +407,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         ):
             transformer.transform(df)
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @staticmethod
-    def test_warnings_silenced_with_verbose_false(library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_warnings_silenced_with_verbose_false(library, from_json):
         """Test that warnings are silenced when verbose is set to defualt value False."""
         df = d.create_df_1(library=library)
 
@@ -374,6 +418,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         return_dtypes = {"a": "Int32", "b": "String"}
 
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        transformer = _handle_from_json(transformer, from_json)
 
         # Guidance from pytest to use followiong syntax rather than pytest.warns(None)
         try:

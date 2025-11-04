@@ -27,15 +27,37 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.1.0 (unreleased)
+2.2.0 (unreleased)
 ------------------
 
+Changed
+^^^^^^^
+
+- placeholder
+
+2.1.0 (30/10/25)
+------------------
+
+Changed
+^^^^^^^
+
+- feat: optimisation changes to fit methods in imputers file
+- feat: optimisation changes to transform method of NullIndicator
+- feat: optimisation changes to MeanResponseTransformer
+- feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
+- feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
+- feat: removed TwoColumnMixin and BaseDateTwoColumnTransformer and replaced with beartype
 - feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
 - feat: added `to_json` method for BaseGenericDateTransformer `#540 <https://github.com/azukds/tubular/issues/540>_`
+- feat: added `to_json` method for DateDifferenceTransformer `#552 <https://github.com/azukds/tubular/issues/552>_`
+- feat: added `to_json` method for BaseMappingTransformer, MappingTransformer `#541 <https://github.com/azukds/tubular/issues/541>_`
 
 2.0.0 (16/10/2025)
 ------------------
+
+Changed
+^^^^^^^
 
 - chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
 - feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
@@ -64,6 +86,9 @@ Each individual change should have a link to the pull request after the descript
 
 1.4.8 (03/09/25)
 ----------------
+
+Changed
+^^^^^^^
 
 - feat: optimisation changes to OneHotEncodingTransformer
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 https://github.com/azukds/tubular/issues/465>_`

@@ -48,6 +48,7 @@ dev = [
     "pytest-cov<=2.10.1",
     "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
     "ruff>=0.2.2",
+    "auto-walrus==0.3.4",
     ]
 
 [project.urls]
@@ -77,7 +78,8 @@ select = [
     "B", # bugbear 
     "C4",
     "COM",
-    "DJ",
+    "D",
+    "DOC",
     "DTZ",
     "E", # pycodestyle
     "EM",
@@ -145,10 +147,21 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 "tests/*" = [
+    "D",
+    "DOC",
     "ANN",
     "S101",
     "PLC2701" # complains about private imports, which we test
     ]
+"profiling/*"=["D", "DOC"]
+# too much to turn on D/DOC lints in one go,
+# will tackle individual modules at a time
+"numeric.py"=["D", "DOC"]
+"nominal.py"=["D", "DOC"]
+"mixins.py"=["D", "DOC"]
+"mapping.py"=["D", "DOC"]
+"imputers.py"=["D", "DOC"]
+"dates.py"=["D", "DOC"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true

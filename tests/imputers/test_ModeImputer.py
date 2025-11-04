@@ -126,11 +126,11 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         ) as warnings:
             x.fit(df)
 
-        for col, w in zip(columns, warnings):
-            assert (
-                w.message.args[0]
-                == f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
-            )
+        columns.sort()
+        warnings = [w.message.args[0] for w in warnings]
+        for col in columns:
+            msg = f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
+            assert msg in warnings
 
         assert x.impute_values_ == expected_impute_values, (
             f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
@@ -185,17 +185,16 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         expected_impute_values = {
             "col": learnt_value,
         }
-
         with pytest.warns(
             UserWarning,
         ) as warnings:
             x.fit(df)
 
-        for col, w in zip(columns, warnings):
-            assert (
-                w.message.args[0]
-                == f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
-            )
+        columns.sort()
+        warnings = [w.message.args[0] for w in warnings]
+        for col in columns:
+            msg = f"ModeImputer: The Mode of column {col} is tied, will sort in descending order and return first candidate"
+            assert msg in warnings
 
         assert x.impute_values_ == expected_impute_values, (
             f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
@@ -214,7 +213,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
 
         with pytest.warns(
             UserWarning,
-            match="ModeImputer: The Mode of column a is None",
+            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
         ):
             x.fit(df)
 
@@ -252,7 +251,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
 
         with pytest.warns(
             UserWarning,
-            match="ModeImputer: The Mode of column a is None",
+            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
         ):
             x.fit(df)
 

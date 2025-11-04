@@ -1,7 +1,6 @@
 import datetime
 
 import narwhals as nw
-import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
@@ -34,33 +33,11 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "DateDiffLeapYearTransformer"
 
-    # overload until we beartype the new_column_name mixin
-    @pytest.mark.parametrize(
-        "new_column_type",
-        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
-    )
-    def test_new_column_name_type_error(
-        self,
-        new_column_type,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if any type other than str passed to new_column_name"""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["new_column_name"] = new_column_type
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
-
     @staticmethod
     def test_missing_replacement_type_error():
         """Test that an exception is raised if missing_replacement is not the correct type."""
         with pytest.raises(
-            TypeError,
-            match="DateDiffLeapYearTransformer: if not None, missing_replacement should be an int, float or string",
+            BeartypeCallHintParamViolation,
         ):
             DateDiffLeapYearTransformer(
                 columns=["dummy_1", "dummy_2"],
