@@ -864,9 +864,17 @@ class MeanResponseTransformer(
             },
         )
 
+        # make sure mappings dict is sorted for consistent repr
+        mappings = {
+            key: {
+                value: self.mappings[key][value] for value in sorted(self.mappings[key])
+            }
+            for key in sorted(self.mappings)
+        }
+
         json_dict["fit"].update(
             {
-                "mappings": self.mappings,
+                "mappings": mappings,
                 "return_dtypes": self.return_dtypes,
                 "column_to_encoded_columns": self.column_to_encoded_columns,
                 "encoded_columns": self.encoded_columns,
