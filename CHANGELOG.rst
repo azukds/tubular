@@ -53,7 +53,6 @@ Changed
 - feat: added `to_json` method for DateDifferenceTransformer `#552 <https://github.com/azukds/tubular/issues/552>_`
 - feat: added `to_json` method for BaseMappingTransformer, MappingTransformer `#541 <https://github.com/azukds/tubular/issues/541>_`
 
-
 2.0.0 (16/10/2025)
 ------------------
 
