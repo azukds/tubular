@@ -888,6 +888,10 @@ class MeanResponseTransformer(
     ) -> dict[str, nw.Expr]:
         """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
 
+        The formula used is:
+
+        (value + prior*global_mean)/(weight + prior)
+
         Parameters
         ----------
 
