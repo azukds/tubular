@@ -33,7 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 
-- placeholder
+- feat: optimation changes to fit method of MeanResponseTransformer
 
 2.1.0 (30/10/25)
 ------------------
@@ -43,7 +43,6 @@ Changed
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
-- feat: optimation changes to fit method of MeanResponseTransformer
 - feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype

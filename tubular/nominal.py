@@ -891,11 +891,22 @@ class MeanResponseTransformer(
         Parameters
         ----------
 
+        weighted_response_sum_over_groups_exprs: dict[str, nw.Expr]
+            expressions giving the weighted responses (one per level) summed over the column groups
+
+        weight_sum_over_groups_expr: dict[str, nw.Expr]
+            expressions giving the sum of weights over the column groups
+
+        weights_column: str
+            name of the weights column
 
         Returns
         -------
         prior_exprs: dict[str, nw.Expr]
             dictionary of format col:prior expression for col
+
+        # this private method is not intended to be used outside
+        # of the fit process, so not including examples
 
         """
 
@@ -951,7 +962,8 @@ class MeanResponseTransformer(
         response_column: str
             name of response column
 
-        # TODO not adding doctests yet as this method will change in an upcoming PR
+        # this private method is not intended to be used outside
+        # of the fit process, so not including examples
         """
 
         self.response_levels = self.level
@@ -985,6 +997,9 @@ class MeanResponseTransformer(
         ----------
         response_column: str
             name of response column
+
+        # this private method is not intended to be used outside
+        # of the fit process, so not including examples
 
         """
 
@@ -1087,6 +1102,7 @@ class MeanResponseTransformer(
         ]
         self.encoded_columns.sort()
 
+        # start by creating new columns as clones
         encoded_column_exprs = {
             encoded_column: nw.col(
                 self.encoded_columns_to_columns[encoded_column],
@@ -1094,6 +1110,7 @@ class MeanResponseTransformer(
             for encoded_column in self.encoded_columns
         }
 
+        # then setup binary response expressions for each level
         response_exprs = {
             response_column + "_" + level if self.MULTI_LEVEL else response_column: (
                 nw.col(response_column) == level
@@ -1116,6 +1133,7 @@ class MeanResponseTransformer(
         # need to materialise these here in order to use .over with pandas
         X_y = X_y.with_columns(**all_response_exprs)
 
+        # now get the weighted response per group
         weighted_response_sum_over_groups_exprs = {
             f"{c}_{response_column}": nw.col("weighted_" + response_column)
             .sum()
@@ -1124,10 +1142,12 @@ class MeanResponseTransformer(
             for c in self.columns
         }
 
+        # and the total weight per group
         weight_sum_over_groups_exprs = {
             c: nw.col(weights_column).sum().over(c) for c in self.columns
         }
 
+        # these are the inputs for our encoding algorithm
         prior_exprs = self._prior_regularisation(
             weighted_response_sum_over_groups_exprs,
             weight_sum_over_groups_exprs,
