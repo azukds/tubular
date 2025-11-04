@@ -119,10 +119,6 @@ def minimal_attribute_dict():
             "columns": ["a"],
             "new_column_name": "bla",
         },
-        "BaseDateTwoColumnTransformer": {
-            "columns": ["a", "b"],
-            "new_column_name": "bla",
-        },
         "BaseImputer": {
             "columns": ["b"],
         },

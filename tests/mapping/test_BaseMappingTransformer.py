@@ -11,6 +11,7 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
+from tests.utils import _handle_from_json
 from tubular.mapping import BaseMappingTransformer
 
 
@@ -108,12 +109,14 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_mappings_unchanged(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that mappings is unchanged in transform."""
         df = d.create_df_3(library=library)
@@ -128,6 +131,8 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         args["return_dtypes"] = return_dtypes
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        transformer = _handle_from_json(transformer, from_json)
 
         # if transformer is not yet polars compatible, skip this test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):

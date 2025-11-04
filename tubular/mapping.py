@@ -17,6 +17,7 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.types import DataFrame
@@ -83,7 +84,7 @@ class BaseMappingTransformer(BaseTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     RETURN_DTYPES = Literal[
         "String",
@@ -146,6 +147,33 @@ class BaseMappingTransformer(BaseTransformer):
         self.return_dtypes = return_dtypes
 
         super().__init__(columns=columns, **kwargs)
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> mapping_transformer=BaseMappingTransformer(mappings={'a': {'x': 1}})
+
+        >>> mapping_transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+
+        # replace columns arg with mappings arg
+        del json_dict["init"]["columns"]
+        json_dict["init"]["mappings"] = self.mappings
+        json_dict["init"]["return_dtypes"] = self.return_dtypes
+
+        return json_dict
 
     @staticmethod
     def _infer_return_type(
@@ -524,10 +552,20 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     Example:
     --------
-    >>> MappingTransformer(
+    >>> transformer = MappingTransformer(
     ...   mappings={'a': {'Y': 1, 'N': 0}},
     ...   return_dtypes={"a":"Int8"},
     ...    )
+    >>> transformer
+    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                       return_dtypes={'a': 'Int8'})
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {}}
+
+    >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
                        return_dtypes={'a': 'Int8'})
 
@@ -537,7 +575,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def transform(

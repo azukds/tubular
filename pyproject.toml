@@ -48,6 +48,7 @@ dev = [
     "pytest-cov<=2.10.1",
     "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
     "ruff>=0.2.2",
+    "auto-walrus==0.3.4",
     ]
 
 [project.urls]
