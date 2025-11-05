@@ -85,8 +85,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_no_weight(self, library):
+    def test_learnt_values_no_weight(self, library, from_json):
         """Test that the impute values learnt during fit, without using a weight, are expected."""
         df = d.create_df_5(library=library)
 
@@ -100,6 +101,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
 
         x.fit(df)
+        x = _handle_from_json(x, from_json)
 
         expected = {"b": ["a"], "c": ["a", "c", "e"]}
         actual = x.non_rare_levels
@@ -233,8 +235,9 @@ class TestTransform(GenericNominalTransformTests):
     def test_non_mappable_rows_exception_raised(self):
         """override test in GenericNominalTransformTests as not relevant to this transformer."""
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(self, library):
+    def test_learnt_values_not_modified(self, library, from_json):
         """Test that the non_rare_levels from fit are not changed in transform."""
         df = d.create_df_5(library=library)
 
@@ -248,11 +251,12 @@ class TestTransform(GenericNominalTransformTests):
         x = GroupRareLevelsTransformer(columns=["b", "c"])
 
         x.fit(df)
+        x = _handle_from_json(x, from_json)
 
         x2 = GroupRareLevelsTransformer(columns=["b", "c"])
 
         x2.fit(df)
-
+        x2 = _handle_from_json(x2, from_json)
         x2.transform(df)
 
         actual = x2.non_rare_levels
