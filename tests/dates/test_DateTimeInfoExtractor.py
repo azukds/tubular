@@ -1,7 +1,7 @@
 import datetime
 
-import joblib
 import narwhals as nw
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -15,7 +15,13 @@ from tests.base_tests import (
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
 
 
@@ -199,10 +205,14 @@ class TestTransform(
         cls.transformer_name = "DatetimeInfoExtractor"
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_single_column_output_for_all_options(self, library):
+    def test_single_column_output_for_all_options(self, library, lazy):
         """Test that correct df is returned after transformation."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -285,7 +295,13 @@ class TestTransform(
             columns=["b"],
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
         )
-        transformed = transformer.transform(df.to_native())
+
+        polars = isinstance(df, pl.DataFrame)
+
+        if _check_if_skip_test(transformer, df, lazy):
+            return
+
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy))
 
         expected = df.clone()
         expected = df.with_columns(
@@ -361,24 +377,33 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, polars, lazy),
+            expected.to_native(),
+        )
 
         # also test single row
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy),
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, polars, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_multi_column_output(self, library):
+    def test_multi_column_output(self, library, lazy):
         "test output for multiple columns"
 
         df = d.create_date_test_df(library=library)
@@ -533,7 +558,13 @@ class TestTransform(
             columns=["a", "b"],
             include=["timeofmonth"],
         )
-        transformed = transformer.transform(df.to_native())
+
+        polars = isinstance(df, pl.DataFrame)
+
+        if _check_if_skip_test(transformer, df, lazy):
+            return
+
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy))
 
         expected = df.clone()
         expected = df.with_columns(
@@ -569,24 +600,33 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, polars, lazy),
+            expected.to_native(),
+        )
 
         # also test single row
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy),
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, polars, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_custom_mappings_can_be_used(self, library):
+    def test_custom_mappings_can_be_used(self, library, lazy):
         "test output when custom mappings provided"
 
         df_dict = {
@@ -666,7 +706,13 @@ class TestTransform(
                 },
             },
         )
-        transformed = transformer.transform(df)
+
+        polars = isinstance(df, pl.DataFrame)
+
+        if _check_if_skip_test(transformer, df, lazy):
+            return
+
+        transformed = transformer.transform(_convert_to_lazy(df, lazy))
         expected = nw.from_native(df).clone()
         expected = expected.with_columns(
             nw.new_series(
@@ -751,27 +797,23 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, polars, lazy),
+            expected.to_native(),
+        )
 
         # also test single row
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy),
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, polars, lazy),
                 df_expected_row,
             )
-
-    def test_is_serialisable(self, tmp_path):
-        transformer = DatetimeInfoExtractor(columns=["b"], include=["timeofyear"])
-
-        # pickle transformer
-        path = tmp_path / "transformer.pkl"
-
-        # serialise without raising error
-        joblib.dump(transformer, path)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

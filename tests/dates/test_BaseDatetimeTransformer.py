@@ -3,7 +3,6 @@ from copy import deepcopy
 import narwhals as nw
 import numpy as np
 import pandas as pd
-import polars as pl
 import pytest
 
 from tests.base_tests import (
@@ -15,12 +14,17 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
+from tests.utils import _check_if_skip_test, _convert_to_lazy
 from tubular.dates import TIME_UNITS
 
 
 class DatetimeMixinTransformTests:
     """Generic tests for Datetime Transformers"""
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -42,6 +46,7 @@ class DatetimeMixinTransformTests:
         minimal_dataframe_lookup,
         bad_value,
         bad_type,
+        lazy,
     ):
         "Test that transform raises an error if columns contains non datetime types"
 
@@ -54,8 +59,7 @@ class DatetimeMixinTransformTests:
 
         df = deepcopy(minimal_dataframe_lookup[self.transformer_name])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy):
             return
 
         for i in range(len(columns)):
@@ -78,7 +82,7 @@ class DatetimeMixinTransformTests:
             with pytest.raises(
                 TypeError,
             ) as exc_info:
-                transformer.transform(nw.to_native(bad_df))
+                transformer.transform(nw.to_native(_convert_to_lazy(bad_df, lazy)))
 
             assert msg in str(exc_info.value)
 

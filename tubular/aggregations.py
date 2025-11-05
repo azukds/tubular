@@ -109,7 +109,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -266,7 +266,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -454,7 +454,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
