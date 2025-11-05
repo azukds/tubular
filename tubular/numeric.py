@@ -940,10 +940,16 @@ class CutTransformer(BaseNumericTransformer):
         """
         X = super().transform(X)
 
-        X[self.new_column_name] = pd.cut(
-            X[self.columns[0]].to_numpy(),
-            **self.cut_kwargs,
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated
+        if X.empty:
+            X[self.new_column_name] = pd.Series(dtype=float)
+
+        else:
+            X[self.new_column_name] = pd.cut(
+                X[self.columns[0]].to_numpy(),
+                **self.cut_kwargs,
+            )
 
         return X
 
@@ -1218,7 +1224,14 @@ class ScalingTransformer(BaseNumericTransformer):
         """
         X = super().transform(X)
 
-        X[self.columns] = self.scaler.transform(X[self.columns])
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated
+        if X.empty:
+            for col in self.columns:
+                X[col] = pd.Series(dtype=float)
+
+        else:
+            X[self.columns] = self.scaler.transform(X[self.columns])
 
         return X
 
@@ -1621,6 +1634,14 @@ class PCATransformer(BaseNumericTransformer):
         """
         X = super().transform(X)
         X = CheckNumericMixin.check_numeric_columns(self, X)
-        X[self.feature_names_out] = self.pca.transform(X[self.columns])
+
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated
+        if X.empty:
+            for col in self.feature_names_out:
+                X[col] = pd.Series(dtype=float)
+
+        else:
+            X[self.feature_names_out] = self.pca.transform(X[self.columns])
 
         return X

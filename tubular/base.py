@@ -348,6 +348,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             ...
             narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
             ...
+
         """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
@@ -640,9 +641,27 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         """
         X = super().transform(X)
 
-        X[self.new_column_names] = getattr(X[self.columns], self.pd_method_name)(
-            **self.pd_method_kwargs,
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated.
+        # the new_column_names attr is a bit messy,
+        # sometimes str and sometimes list
+        # editing init to make it always a list
+        # broke other tests which didn't seem worth fixing
+        # so have included handling for both cases here..
+        if X.empty:
+            # hard to know the best dtype to use here given the
+            # flexibility of this transformer, which is
+            # partially why it was deprecated
+            if isinstance(self.new_column_names, list):
+                for col in X[self.new_column_names]:
+                    X[col] = pd.Series(dtype=float)
+            else:
+                X[self.new_column_names] = pd.Series(dtype=float)
+
+        else:
+            X[self.new_column_names] = getattr(X[self.columns], self.pd_method_name)(
+                **self.pd_method_kwargs,
+            )
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(

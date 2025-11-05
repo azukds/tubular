@@ -237,8 +237,14 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
         """
         X = super().transform(X)
 
-        X[self.new_column_name] = (
-            X[self.columns].astype(str).apply(self.separator.join, axis=1)
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated
+        if X.empty:
+            X[self.new_column_name] = pd.Series(dtype=str)
+
+        else:
+            X[self.new_column_name] = (
+                X[self.columns].astype(str).apply(self.separator.join, axis=1)
+            )
 
         return X
