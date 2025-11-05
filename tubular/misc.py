@@ -14,6 +14,7 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer
+from tubular.types import DataFrame
 
 
 class SetValueTransformer(BaseTransformer):
@@ -90,7 +91,7 @@ class SetValueTransformer(BaseTransformer):
         --------
         >>> transformer = SetValueTransformer(columns='a', value=1)
         >>> transformer.to_json()
-        {'tubular_version': 'dev', 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
 
 
         """
@@ -100,7 +101,7 @@ class SetValueTransformer(BaseTransformer):
 
         return json_dict
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
 
         Parameters
@@ -141,8 +142,7 @@ class SetValueTransformer(BaseTransformer):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        for c in self.columns:
-            X = X.with_columns(nw.lit(self.value).alias(c))
+        X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

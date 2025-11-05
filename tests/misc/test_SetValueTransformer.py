@@ -11,7 +11,7 @@ from tests.base_tests import (
 )
 from tests.utils import (
     assert_frame_equal_dispatch,
-    dataframe_init_dispatch,
+    dataframe_init_dispatch, _handle_from_json,
 )
 from tubular.misc import SetValueTransformer
 
@@ -70,7 +70,7 @@ class TestTransform(GenericTransformTests):
         x = SetValueTransformer(columns=["a", "b"], value=value)
 
         if from_json:
-            x = SetValueTransformer.from_json(x.to_json())
+            x=_handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -81,6 +81,17 @@ class TestTransform(GenericTransformTests):
             df2=expected,
         )
 
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for SetValueTransformer behaviour outside the three standard methods.
+
+    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "SetValueTransformer"
+
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
     def test_to_json_returns_correct_dict(self, value):
         """Test that to_json is working as expected."""
@@ -88,8 +99,14 @@ class TestTransform(GenericTransformTests):
 
         actual = transformer.to_json()
 
+        # check tubular_version is present and a string, then remove
+        assert isinstance(
+            actual["tubular_version"],
+            str,
+        ), "expected tubular version to be captured as str in to_json"
+        del actual["tubular_version"]
+
         expected = {
-            "tubular_version": "dev",
             "classname": "SetValueTransformer",
             "init": {
                 "columns": ["a"],
@@ -102,15 +119,3 @@ class TestTransform(GenericTransformTests):
         }
 
         assert actual == expected, "to_json does not return the expected dictionary"
-
-
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
-    """
-    Class to run tests for SetValueTransformer behaviour outside the three standard methods.
-
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
-    """
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "SetValueTransformer"
