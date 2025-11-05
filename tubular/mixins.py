@@ -110,17 +110,6 @@ class DropOriginalMixin:
         return X.to_native() if return_native else X
 
 
-class SeparatorColumnMixin:
-    """Hel per to validate and set separator attribute"""
-
-    def check_and_set_separator_column(self, separator: str) -> None:
-        if not (isinstance(separator, str)):
-            msg = f"{self.classname()}: separator should be str"
-            raise TypeError(msg)
-
-        self.separator = separator
-
-
 class WeightColumnMixin:
     """
     Mixin class with weights functionality
