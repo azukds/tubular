@@ -1060,7 +1060,9 @@ class MeanResponseTransformer(
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-        if (response_null_count := y.is_null().sum()) > 0:
+        response_null_count = y.is_null().sum()
+
+        if response_null_count > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
@@ -1966,7 +1968,9 @@ class OrdinalEncoderTransformer(
         if self.weights_column is not None:
             WeightColumnMixin.check_weights_column(self, X, self.weights_column)
 
-        if (response_null_count := y.isna().sum()) > 0:
+        response_null_count = y.isna().sum()
+
+        if response_null_count > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 

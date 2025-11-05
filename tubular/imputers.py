@@ -1222,7 +1222,9 @@ class NearestMeanResponseImputer(BaseImputer):
 
         super().fit(X, y)
 
-        if (n_nulls := y.is_null().sum()) > 0:
+        n_nulls = y.is_null().sum()
+
+        if n_nulls > 0:
             msg = f"{self.classname()}: y has {n_nulls} null values"
             raise ValueError(msg)
 

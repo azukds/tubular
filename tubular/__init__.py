@@ -27,11 +27,7 @@ from tubular.nominal import (
     MeanResponseTransformer,
     OneHotEncodingTransformer,
 )
-from tubular.numeric import (
-    DifferenceTransformer,
-    OneDKmeansTransformer,
-    RatioTransformer,
-)
+from tubular.numeric import OneDKmeansTransformer
 
 __all__ = [
     "AggregateColumnsOverRowTransformer",
@@ -42,7 +38,6 @@ __all__ = [
     "DateDifferenceTransformer",
     "DatetimeInfoExtractor",
     "DatetimeSinusoidCalculator",
-    "DifferenceTransformer",
     "GroupRareLevelsTransformer",
     "MappingTransformer",
     "MeanImputer",
@@ -53,7 +48,6 @@ __all__ = [
     "OneDKmeansTransformer",
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
-    "RatioTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",
 ]
