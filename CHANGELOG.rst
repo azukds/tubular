@@ -34,6 +34,8 @@ Changed
 ^^^^^^^
 
 - removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>_`
+- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>_`
 
 2.1.0 (30/10/25)
 ------------------
