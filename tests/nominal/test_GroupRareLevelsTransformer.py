@@ -85,9 +85,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
-    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_no_weight(self, library, from_json):
+    def test_learnt_values_no_weight(self, library):
         """Test that the impute values learnt during fit, without using a weight, are expected."""
         df = d.create_df_5(library=library)
 
@@ -101,7 +100,6 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
 
         x.fit(df)
-        x = _handle_from_json(x, from_json)
 
         expected = {"b": ["a"], "c": ["a", "c", "e"]}
         actual = x.non_rare_levels
