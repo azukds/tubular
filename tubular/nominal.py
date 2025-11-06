@@ -22,7 +22,7 @@ from tubular._utils import (
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
-from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumnMixin
+from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
     DataFrame,
     FloatBetweenZeroOne,
@@ -1429,7 +1429,6 @@ class MeanResponseTransformer(
 
 class OneHotEncodingTransformer(
     DropOriginalMixin,
-    SeparatorColumnMixin,
     BaseTransformer,
 ):
     """Transformer to convert categorical variables into dummy columns.
@@ -1513,7 +1512,7 @@ class OneHotEncodingTransformer(
 
         self.wanted_values = wanted_values
         self.drop_original = drop_original
-        self.check_and_set_separator_column(separator)
+        self.separator = separator
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer
