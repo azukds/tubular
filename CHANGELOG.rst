@@ -36,6 +36,8 @@ Changed
 - feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
+- feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
+- removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
 
 2.1.0 (30/10/25)
 ------------------
