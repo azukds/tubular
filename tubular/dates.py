@@ -1340,17 +1340,19 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         for col in self.columns:
             for include_option in self.include:
                 # Extract raw datetime attribute and give it an alias
-                unmapped_dt_dict[col + "_" + include_option] = getattr(
+                unmapped_alias = col + "_" + include_option + "_unmapped"
+                unmapped_dt_dict[unmapped_alias] = getattr(
                     nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
-                )().alias(col + "_" + include_option)
+                )().alias(unmapped_alias)
 
                 # Apply mapping transformation if mappings are provided
                 if self.final_datetime_mappings[include_option]:
-                    mapped_dt_dict[col + "_" + include_option] = unmapped_dt_dict[
-                        col + "_" + include_option
+                    mapped_alias = col + "_" + include_option
+                    mapped_dt_dict[mapped_alias] = unmapped_dt_dict[
+                        unmapped_alias
                     ].replace_strict(
-                        self.mapping_transformer.mappings[col + "_" + include_option],
+                        self.mapping_transformer.mappings[mapped_alias],
                     )
 
 
@@ -1365,8 +1367,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         if return_unmapped_values:
             # Cast to Float64 to accommodate NaN values
             return_dict = {
-                col + "_" + include_option: return_dict[col + "_" + include_option].cast(
-                    nw.Float64,
+                col + "_" + include_option + "_unmapped": return_dict[col + "_" + include_option + "_unmapped"].cast(
+                    nw.Int8,
                 )
                 for col in self.columns
                 for include_option in self.include

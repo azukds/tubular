@@ -862,25 +862,25 @@ class TestTransform(
                 name="b_timeofmonth",
                 values=[None, 25, 10, 10, 10, 10, 10, 23],
                 backend=backend,
-                dtype=nw.Float64,
+                dtype=nw.Int8,
             ),
             nw.new_series(
                 name="b_timeofyear",
                 values=[None, 12, 11, 11, 9, 11, 11, 7],
                 backend=backend,
-                dtype=nw.Float64,
+                dtype=nw.Int8,
             ),
             nw.new_series(
                 name="b_dayofweek",
                 values=[None, 3, 6, 6, 1, 2, 2, 4],
                 backend=backend,
-                dtype=nw.Float64,
+                dtype=nw.Int8,
             ),
             nw.new_series(
                 name="b_timeofday",
                 values=[None, 12, 11, 10, 18, 22, 19, 3],
                 backend=backend,
-                dtype=nw.Float64,
+                dtype=nw.Int8,
             ),
         )
 
