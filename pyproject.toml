@@ -116,12 +116,12 @@ preview = true
 
 ignore = [
     "E501", # ignore E501 - linelength limit (covered by black except in docstrings) 
-    "PD901", # and PD901 - use of df variable name
-    "ANN101",
-    "B905", # the below two rules seem to make changes that error for python3.9
-    "UP038", 
+    "B905", # this rule makes changes that error for python3.9, as the strict argument for zip() was introduced in python3.10
     "PYI041", # clashes with beartype
-    "TCH001", # clashes with beartype
+    "TC001", # clashes with beartype, was previously "TCH001"
+    "D203", # clashes with D211
+    "D213", # clashes with D212
+    "COM812", # conflicts with ruff formatter, which enforces this rule by default, produces a warning if used
     ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
