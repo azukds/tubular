@@ -1353,7 +1353,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                         unmapped_alias
                     ].replace_strict(
                         self.mapping_transformer.mappings[mapped_alias],
-                    )
+                    ).alias(mapped_alias)
 
 
         # Decide what to return based on conditions
