@@ -69,6 +69,8 @@ class BaseNominalTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    jsonable = False
+
     lazyframe_compatible = False
 
     FITS = False
