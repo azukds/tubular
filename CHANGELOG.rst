@@ -69,7 +69,7 @@ Changed
 - feat: optimisation changes to GroupRareLevelsTransformer fit method
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
 - chore: turned on doctest
-- chore: deprecateds DataFrameMethodTransformer
+- chore: deprecated DataFrameMethodTransformer
 - chore: added doctest examples for BaseTransfomer
 - chore: deleted stale example notebooks for BaseTransfomer (replaced by doctest) and DataFrameMethodTransformer (deprecated)
 - bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype
