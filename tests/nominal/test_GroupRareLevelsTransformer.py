@@ -14,7 +14,11 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.nominal import GroupRareLevelsTransformer
 
 
@@ -229,8 +233,9 @@ class TestTransform(GenericNominalTransformTests):
     def test_non_mappable_rows_exception_raised(self):
         """override test in GenericNominalTransformTests as not relevant to this transformer."""
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(self, library):
+    def test_learnt_values_not_modified(self, library, from_json):
         """Test that the non_rare_levels from fit are not changed in transform."""
         df = d.create_df_5(library=library)
 
@@ -244,11 +249,12 @@ class TestTransform(GenericNominalTransformTests):
         x = GroupRareLevelsTransformer(columns=["b", "c"])
 
         x.fit(df)
+        x = _handle_from_json(x, from_json)
 
         x2 = GroupRareLevelsTransformer(columns=["b", "c"])
 
         x2.fit(df)
-
+        x2 = _handle_from_json(x2, from_json)
         x2.transform(df)
 
         actual = x2.non_rare_levels
@@ -258,8 +264,9 @@ class TestTransform(GenericNominalTransformTests):
             f"non_rare_levels attr modified in transform, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_no_weight(self, library):
+    def test_expected_output_no_weight(self, library, from_json):
         """Test that the output is expected from transform."""
         df = d.create_df_5(library=library)
 
@@ -276,13 +283,14 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
-
+        x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_weight(self, library):
+    def test_expected_output_weight(self, library, from_json):
         """Test that the output is expected from transform, when weights are used."""
 
         df = d.create_df_6(library=library)
@@ -301,13 +309,14 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mapping dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"]}
-
+        x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_column_strlike_error(self, library):
+    def test_column_strlike_error(self, library, from_json):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
@@ -318,9 +327,9 @@ class TestTransform(GenericNominalTransformTests):
         x = GroupRareLevelsTransformer(columns=["b"], rare_level_name="bla")
 
         x.fit(df)
-
         # overwrite columns to non str-like before transform, to trigger error
         x.columns = ["a"]
+        x = _handle_from_json(x, from_json)
 
         msg = re.escape(
             "GroupRareLevelsTransformer: transformer must run on str-like columns, but got non str-like {'a'}",
@@ -331,8 +340,9 @@ class TestTransform(GenericNominalTransformTests):
         ):
             x.transform(df)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_unseen_levels_not_encoded(self, library):
+    def test_expected_output_unseen_levels_not_encoded(self, library, from_json):
         """Test that unseen levels are not encoded when unseen_levels_to_rare is false"""
 
         df = d.create_df_8(library=library)
@@ -345,6 +355,7 @@ class TestTransform(GenericNominalTransformTests):
             unseen_levels_to_rare=False,
         )
         x.fit(df)
+        x = _handle_from_json(x, from_json)
 
         df = nw.from_native(df)
         native_backend = nw.get_native_namespace(df)
@@ -365,8 +376,9 @@ class TestTransform(GenericNominalTransformTests):
             f"unseen level handling not working as expected, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("from_json", ["True", "False"])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_rare_categories_forgotten(self, library):
+    def test_rare_categories_forgotten(self, library, from_json):
         "test that for category dtype, categories encoded as rare are forgotten by series"
 
         df = d.create_df_8(library=library)
@@ -381,7 +393,7 @@ class TestTransform(GenericNominalTransformTests):
         expected_removed_cats = ["c", "b"]
 
         x.fit(df)
-
+        x = _handle_from_json(x, from_json)
         output_df = x.transform(df)
 
         output_categories = (
