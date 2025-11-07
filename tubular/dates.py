@@ -1067,6 +1067,9 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     drop_original: str
         indicates whether to drop provided columns post transform
 
+    return_unmapped_values: bool, default = False
+        If True, returns raw datetime attribute values without mapping.
+
     **kwargs
         Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -1102,6 +1105,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     >>> DatetimeInfoExtractor(
     ... columns='a',
     ... include='timeofday',
+    ... return_unmapped_values=False
     ...    )
     DatetimeInfoExtractor(columns=['a'], include=['timeofday'])
     """
@@ -1164,6 +1168,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
+        return_unmapped_values: Optional[bool] = False,
         **kwargs: dict[str, bool],
     ) -> None:
         if include is None:
@@ -1181,6 +1186,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         self.include = include
         self.datetime_mappings = datetime_mappings
+        self.return_unmapped_values = return_unmapped_values
         self._process_provided_mappings(datetime_mappings=datetime_mappings)
 
         # this is a situation where we know the values our mappings allow,
@@ -1282,13 +1288,15 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                 raise ValueError(msg)
 
     @beartype
-    def transform(self, X: DataFrame) -> DataFrame:
+    def transform(self, X: DataFrame, return_unmapped_values: bool = False) -> DataFrame:
         """Transform - Extracts new features from datetime variables.
 
         Parameters
         ----------
         X : pd/pl.DataFrame
             Data with columns to extract info from.
+        return_unmapped_values : bool
+            If True, returns raw datetime attribute values without mapping.
 
         Returns
         -------
@@ -1303,6 +1311,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         >>> transformer = DatetimeInfoExtractor(
         ... columns='a',
         ... include='timeofmonth',
+        ... return_unmapped_values=False
         ...    )
 
         >>> test_df=pl.DataFrame(
@@ -1325,30 +1334,56 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         """
         X = super().transform(X, return_native_override=False)
 
-        transform_dict = {
-            col + "_" + include_option: (
-                getattr(
+        unmapped_dt_dict = {}
+        mapped_dt_dict = {}
+
+        for col in self.columns:
+            for include_option in self.include:
+                # Extract raw datetime attribute and give it an alias
+                unmapped_dt_dict[col + "_" + include_option] = getattr(
                     nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
-                )().replace_strict(
-                    self.mapping_transformer.mappings[col + "_" + include_option],
-                )
-            )
-            for col in self.columns
-            for include_option in self.include
-        }
+                )().alias(col + "_" + include_option)
 
-        # final casts
-        transform_dict = {
-            col + "_" + include_option: transform_dict[col + "_" + include_option].cast(
-                self.enums[include_option],
-            )
-            for col in self.columns
-            for include_option in self.include
-        }
+                # Apply mapping transformation if mappings are provided
+                if self.final_datetime_mappings[include_option]:
+                    mapped_dt_dict[col + "_" + include_option] = unmapped_dt_dict[
+                        col + "_" + include_option
+                    ].replace_strict(
+                        self.mapping_transformer.mappings[col + "_" + include_option],
+                    )
+
+
+        # Decide what to return based on conditions
+        return_dict = {}
+        if return_unmapped_values:
+            return_dict.update(unmapped_dt_dict)
+        if any(self.final_datetime_mappings[include_option] for include_option in self.include):
+            return_dict.update(mapped_dt_dict)
+
+        # Final casts
+        if return_unmapped_values:
+            # Cast to Float64 to accommodate NaN values
+            return_dict = {
+                col + "_" + include_option: return_dict[col + "_" + include_option].cast(
+                    nw.Float64,
+                )
+                for col in self.columns
+                for include_option in self.include
+            }
+        else:
+            # Cast to Enum when mapped
+            return_dict = {
+                col + "_" + include_option: return_dict[col + "_" + include_option].cast(
+                    self.enums[include_option],
+                )
+                for col in self.columns
+                for include_option in self.include
+            }
+
 
         X = X.with_columns(
-            **transform_dict,
+            **return_dict,
         )
 
         # Drop original columns if self.drop_original is True
