@@ -10,8 +10,9 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.utils import (
+    _handle_from_json,
     assert_frame_equal_dispatch,
-    dataframe_init_dispatch, _handle_from_json,
+    dataframe_init_dispatch,
 )
 from tubular.misc import SetValueTransformer
 
@@ -70,7 +71,7 @@ class TestTransform(GenericTransformTests):
         x = SetValueTransformer(columns=["a", "b"], value=value)
 
         if from_json:
-            x=_handle_from_json(x, from_json)
+            x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -80,6 +81,7 @@ class TestTransform(GenericTransformTests):
             df1=df_transformed,
             df2=expected,
         )
+
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
