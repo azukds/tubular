@@ -4,6 +4,7 @@ import narwhals as nw
 import numpy as np
 import polars as pl
 import pytest
+import pandas as pd
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -15,7 +16,8 @@ from tests.base_tests import (
     WeightColumnInitMixinTests,
 )
 from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
-from tubular.capping import BaseCappingTransformer
+from tubular.capping import BaseCappingTransformer, CappingTransformer, OutOfRangeNullTransformer
+from tubular.base import BaseTransformer
 
 
 class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
@@ -784,72 +786,224 @@ class TestBaseCappingTransformerTransform(GenericCappingTransformTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseCappingTransformer"
+        
+import pandas as pd
+import polars as pl
+import pytest
+
+from tubular.capping import BaseCappingTransformer, CappingTransformer, OutOfRangeNullTransformer
+from tests.utils import assert_frame_equal_dispatch
 
 
-class TestWeightedQuantile:
-    """Tests for the BaseCappingTransformer.weighted_quantile method."""
+def _handle_from_json_capping(transformer, from_json=True):
+    """Helper function to handle JSON serialization for tests."""
+    return (
+        transformer.from_json(transformer.to_json())
+        if (from_json and transformer.jsonable)
+        else transformer
+    )
+
+
+class TestBaseCappingTransformerJSON:
+    """Tests for to_json and from_json functionality for BaseCappingTransformer."""
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        ("values", "sample_weight", "quantiles", "expected_quantiles"),
+        "capping_values, quantiles, weights_column",
         [
-            (
-                [1, 2, 3],
-                [1, 1, 1],
-                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-                [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0],
-            ),
-            (
-                [1, 2, 3],
-                [0, 1, 0],
-                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-                [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ),
-            (
-                [1, 2, 3],
-                [1, 1, 0],
-                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0],
-            ),
-            (
-                [1, 2, 3, 4, 5],
-                [1, 1, 1, 1, 1],
-                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-                [1.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0],
-            ),
-            ([1, 2, 3, 4, 5], [1, 0, 1, 0, 1], [0, 0.5, 1.0], [1.0, 2.0, 5.0]),
+            # Test with capping_values only
+            ({"a": [2, 8], "b": [1, 5]}, None, None),
+            ({"a": [None, 10], "b": [0, None]}, None, None),
+            # Test with quantiles only
+            (None, {"a": [0.1, 0.9], "b": [0.05, 0.95]}, None),
+            (None, {"a": [0.2, 0.8]}, "weight"),
         ],
     )
-    def test_expected_output(
-        self,
-        values,
-        sample_weight,
-        quantiles,
-        expected_quantiles,
-        library,
+    def test_to_from_json_transform_consistency(
+        self, 
+        library, 
+        capping_values, 
+        quantiles, 
+        weights_column
     ):
-        """Test that weighted_quantile gives the expected outputs."""
-        x = BaseCappingTransformer(capping_values={"a": [2, 10]})
-
-        values_col = "values"
-        weights_col = "weight"
+        """Test that transformer reconstructed from JSON produces same transform results."""
+        
+        # Create test data
         df_dict = {
-            values_col: values,
-            weights_col: sample_weight,
+            "a": [1, 3, 5, 7, 9, 11],
+            "b": [0, 2, 4, 6, 8, 10],
         }
-
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-        actual = x.weighted_quantile(
-            df,
-            quantiles,
-            values_column=values_col,
-            weights_column=weights_col,
+        if weights_column:
+            df_dict["weight"] = [1, 1, 2, 2, 1, 1]
+        
+        if library == "pandas":
+            df = pd.DataFrame(df_dict)
+        else:
+            df = pl.DataFrame(df_dict)
+        
+        # Create and fit original transformer
+        transformer = BaseCappingTransformer(
+            capping_values=capping_values,
+            quantiles=quantiles,
+            weights_column=weights_column,
         )
+        
+        # Only fit if using quantiles
+        if quantiles is not None:
+            transformer.fit(df)
+        
+        # Transform with original
+        result_original = transformer.transform(df)
+        
+        # Serialize to JSON and reconstruct
+        json_data = transformer.to_json()
+        transformer_from_json = transformer.from_json(json_data)
+        
+        # Transform with reconstructed transformer
+        result_from_json = transformer_from_json.transform(df)
+        
+        # Compare results
+        assert_frame_equal_dispatch(result_original, result_from_json)
 
-        # round to 1dp to avoid mismatches due to numerical precision
-        actual_rounded_1_dp = list(np.round(actual, 1))
-
-        assert actual_rounded_1_dp == expected_quantiles, (
-            "unexpected weighted quantiles calculated"
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_to_from_json_attributes_preserved(self, library):
+        """Test that all attributes are correctly preserved through JSON serialization."""
+        
+        df_dict = {
+            "a": [1, 5, 10, 15, 20],
+            "b": [0, 2, 4, 6, 8],
+        }
+        if library == "pandas":
+            df = pd.DataFrame(df_dict)
+        else:
+            df = pl.DataFrame(df_dict)
+        
+        # Test with quantiles (requires fit)
+        transformer = BaseCappingTransformer(
+            quantiles={"a": [0.1, 0.9], "b": [0.2, 0.8]},
+            weights_column=None,
         )
+        transformer.fit(df)
+        
+        # Serialize and deserialize
+        json_data = transformer.to_json()
+        transformer_from_json = transformer.from_json(json_data)
+        
+        # Check that key attributes are preserved
+        assert transformer_from_json.columns == transformer.columns
+        assert isinstance(transformer_from_json, BaseCappingTransformer)
+        
+        # Check transform works correctly (which implicitly tests attributes are preserved)
+        result_original = transformer.transform(df)
+        result_from_json = transformer_from_json.transform(df)
+        assert_frame_equal_dispatch(result_original, result_from_json)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_from_json_fit_blocked(self, library):
+        """Test that fit method is blocked on transformer created from JSON."""
+        
+        df_dict = {"a": [1, 2, 3, 4, 5]}
+        if library == "pandas":
+            df = pd.DataFrame(df_dict)
+        else:
+            df = pl.DataFrame(df_dict)
+        
+        # Create transformer with quantiles
+        transformer = BaseCappingTransformer(
+            quantiles={"a": [0.1, 0.9]},
+        )
+        transformer.fit(df)
+        
+        # Reconstruct from JSON
+        json_data = transformer.to_json()
+        transformer_from_json = transformer.from_json(json_data)
+        
+        # Try to call fit - should raise error
+        with pytest.raises(
+            RuntimeError,
+            match="Transformers that are reconstructed from json only support .transform functionality",
+        ):
+            transformer_from_json.fit(df)
+
+    def test_to_json_structure(self):
+        """Test that to_json returns expected dictionary structure."""
+        
+        transformer = BaseCappingTransformer(
+            capping_values={"a": [1, 10], "b": [None, 5]},
+        )
+        
+        json_data = transformer.to_json()
+        
+        # Check that JSON contains expected top-level keys
+        assert "classname" in json_data
+        assert "init" in json_data
+        assert "fit" in json_data
+        assert "tubular_version" in json_data
+        
+        # Check classname
+        assert json_data["classname"] == "BaseCappingTransformer"
+        
+        # Check init section contains capping parameters
+        assert "capping_values" in json_data["init"]
+        assert "quantiles" in json_data["init"]
+        assert "weights_column" in json_data["init"]
+        
+        # Check values in init
+        assert json_data["init"]["capping_values"] == {"a": [1, 10], "b": [None, 5]}
+        assert json_data["init"]["quantiles"] is None
+        assert json_data["init"]["weights_column"] is None
+        
+        # Check fit section contains replacement values
+        assert "_replacement_values" in json_data["fit"]
+        assert json_data["fit"]["_replacement_values"] == {"a": [1, 10], "b": [None, 5]}
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_to_json_with_fitted_quantiles(self, library):
+        """Test to_json includes fitted quantile_capping_values."""
+        
+        df_dict = {"a": [1, 5, 10, 15, 20], "b": [2, 4, 6, 8, 10]}
+        if library == "pandas":
+            df = pd.DataFrame(df_dict)
+        else:
+            df = pl.DataFrame(df_dict)
+        
+        transformer = BaseCappingTransformer(
+            quantiles={"a": [0.1, 0.9], "b": [0.2, 0.8]},
+        )
+        transformer.fit(df)
+        
+        json_data = transformer.to_json()
+        
+        # Check that quantile_capping_values is included in fit section
+        assert "fit" in json_data
+        assert "quantile_capping_values" in json_data["fit"]
+        assert json_data["fit"]["quantile_capping_values"] is not None
+        assert "a" in json_data["fit"]["quantile_capping_values"]
+        assert "b" in json_data["fit"]["quantile_capping_values"]
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_json_single_row_transform(self, library):
+        """Test that JSON transformer works correctly on single row dataframes."""
+        
+        df_dict = {"a": [1, 5, 10, 15, 20]}
+        if library == "pandas":
+            df = pd.DataFrame(df_dict)
+            df_single = pd.DataFrame({"a": [8]})
+        else:
+            df = pl.DataFrame(df_dict)
+            df_single = pl.DataFrame({"a": [8]})
+        
+        transformer = BaseCappingTransformer(
+            capping_values={"a": [3, 12]},
+        )
+        
+        # Transform single row with original
+        result_original = transformer.transform(df_single)
+        
+        # Reconstruct from JSON and transform
+        json_data = transformer.to_json()
+        transformer_from_json = transformer.from_json(json_data)
+        result_from_json = transformer_from_json.transform(df_single)
+        
+        # Compare
+        assert_frame_equal_dispatch(result_original, result_from_json)

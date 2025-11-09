@@ -11,6 +11,7 @@ import numpy as np
 
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
+from tubular.base import block_from_json
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -63,7 +64,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     FITS = True
 
-    jsonable = False
+    jsonable = True
 
     def __init__(
         self,
@@ -213,6 +214,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 msg = f"{self.classname()}: both values are None for key {k}"
                 raise ValueError(msg)
 
+    @block_from_json
     @beartype
     @nw.narwhalify
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
@@ -584,6 +586,25 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X = X.with_columns(**exprs)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
+    def to_json(self) -> dict:
+        """Return a JSON-serializable representation of the transformer."""
+        data = super().to_json()
+        
+        data["init"].pop("columns", None)
+        data["init"].update({
+            "capping_values": self.capping_values,
+            "quantiles": self.quantiles,
+            "weights_column": self.weights_column,
+        })
+        
+        if hasattr(self, "quantile_capping_values"):
+            data["fit"]["quantile_capping_values"] = self.quantile_capping_values
+        
+        if hasattr(self, "_replacement_values"):
+            data["fit"]["_replacement_values"] = self._replacement_values
+        
+        return data
 
 
 class CappingTransformer(BaseCappingTransformer):
