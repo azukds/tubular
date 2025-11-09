@@ -786,13 +786,75 @@ class TestBaseCappingTransformerTransform(GenericCappingTransformTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseCappingTransformer"
-        
-import pandas as pd
-import polars as pl
-import pytest
+    
 
-from tubular.capping import BaseCappingTransformer, CappingTransformer, OutOfRangeNullTransformer
-from tests.utils import assert_frame_equal_dispatch
+class TestWeightedQuantile:
+    """Tests for the BaseCappingTransformer.weighted_quantile method."""
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize(
+        ("values", "sample_weight", "quantiles", "expected_quantiles"),
+        [
+            (
+                [1, 2, 3],
+                [1, 1, 1],
+                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0],
+            ),
+            (
+                [1, 2, 3],
+                [0, 1, 0],
+                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ),
+            (
+                [1, 2, 3],
+                [1, 1, 0],
+                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0],
+            ),
+            (
+                [1, 2, 3, 4, 5],
+                [1, 1, 1, 1, 1],
+                [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                [1.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0],
+            ),
+            ([1, 2, 3, 4, 5], [1, 0, 1, 0, 1], [0, 0.5, 1.0], [1.0, 2.0, 5.0]),
+        ],
+    )
+    def test_expected_output(
+        self,
+        values,
+        sample_weight,
+        quantiles,
+        expected_quantiles,
+        library,
+    ):
+        """Test that weighted_quantile gives the expected outputs."""
+        x = BaseCappingTransformer(capping_values={"a": [2, 10]})
+
+        values_col = "values"
+        weights_col = "weight"
+        df_dict = {
+            values_col: values,
+            weights_col: sample_weight,
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        actual = x.weighted_quantile(
+            df,
+            quantiles,
+            values_column=values_col,
+            weights_column=weights_col,
+        )
+
+        # round to 1dp to avoid mismatches due to numerical precision
+        actual_rounded_1_dp = list(np.round(actual, 1))
+
+        assert actual_rounded_1_dp == expected_quantiles, (
+            "unexpected weighted quantiles calculated"
+        )
 
 
 def _handle_from_json_capping(transformer, from_json=True):
