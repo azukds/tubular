@@ -1288,7 +1288,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                 raise ValueError(msg)
 
     @beartype
-    def transform(self, X: DataFrame, return_unmapped_values: bool = False) -> DataFrame:
+    def transform(self, X: DataFrame) -> DataFrame:
         """Transform - Extracts new features from datetime variables.
 
         Parameters
@@ -1332,7 +1332,16 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ start         │
         └─────────────────────┴─────────────────────┴───────────────┘
         """
+
+        print("Initial DataFrame:")
+        print(X)
+
+        return_unmapped_values = self.return_unmapped_values
+
         X = super().transform(X, return_native_override=False)
+
+        print("DataFrame after base transformation:")
+        print(X)
 
         unmapped_dt_dict = {}
         mapped_dt_dict = {}
@@ -1346,47 +1355,63 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                     self.DATETIME_ATTR[include_option],
                 )().alias(unmapped_alias)
 
+                print(f"Unmapped {include_option} for column {col}:")
+                print(unmapped_dt_dict[unmapped_alias])
+
                 # Apply mapping transformation if mappings are provided
                 if self.final_datetime_mappings[include_option]:
                     mapped_alias = col + "_" + include_option
-                    mapped_dt_dict[mapped_alias] = unmapped_dt_dict[
-                        unmapped_alias
-                    ].replace_strict(
-                        self.mapping_transformer.mappings[mapped_alias],
-                    ).alias(mapped_alias)
+                    mapped_dt_dict[mapped_alias] = (
+                        unmapped_dt_dict[unmapped_alias]
+                        .replace_strict(
+                            self.mapping_transformer.mappings[mapped_alias],
+                        )
+                        .alias(mapped_alias)
+                    )
 
+                    print(f"Mapped {include_option} for column {col}:")
+                    print(mapped_dt_dict[mapped_alias])
 
         # Decide what to return based on conditions
         return_dict = {}
         if return_unmapped_values:
             return_dict.update(unmapped_dt_dict)
-        if any(self.final_datetime_mappings[include_option] for include_option in self.include):
+            print("Returning unmapped values:")
+        else:
             return_dict.update(mapped_dt_dict)
+            print("Returning mapped values:")
 
         # Final casts
         if return_unmapped_values:
             # Cast to Float64 to accommodate NaN values
             return_dict = {
-                col + "_" + include_option + "_unmapped": return_dict[col + "_" + include_option + "_unmapped"].cast(
-                    nw.Int8,
-                )
+                col + "_" + include_option + "_unmapped": return_dict[
+                    col + "_" + include_option + "_unmapped"
+                ].cast(nw.Int8)
                 for col in self.columns
                 for include_option in self.include
             }
         else:
             # Cast to Enum when mapped
             return_dict = {
-                col + "_" + include_option: return_dict[col + "_" + include_option].cast(
+                col + "_" + include_option: return_dict[
+                    col + "_" + include_option
+                ].cast(
                     self.enums[include_option],
                 )
                 for col in self.columns
                 for include_option in self.include
             }
 
+        print("Return dictionary after casting:")
+        print(return_dict)
 
         X = X.with_columns(
             **return_dict,
         )
+
+        print("DataFrame after adding new columns:")
+        print(X)
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
