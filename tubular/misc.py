@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any
 
 import narwhals as nw
 import pandas as pd
 from typing_extensions import deprecated
 
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
-
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+    block_from_json,
+)
 from tubular.base import BaseTransformer
+from tubular.types import DataFrame
 
 
 class SetValueTransformer(BaseTransformer):
@@ -53,7 +56,7 @@ class SetValueTransformer(BaseTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     def __init__(
         self,
@@ -79,8 +82,31 @@ class SetValueTransformer(BaseTransformer):
 
         super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = SetValueTransformer(columns='a', value=1)
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["value"] = self.value
+
+        return json_dict
+
+    def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
 
         Parameters
@@ -117,10 +143,13 @@ class SetValueTransformer(BaseTransformer):
         └─────┴─────┘
 
         """
-        X = nw.from_native(super().transform(X))
+        X = super().transform(X, return_native_override=False)
 
-        set_value_expression = [nw.lit(self.value).alias(col) for col in self.columns]
-        return X.with_columns(set_value_expression)
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 # DEPRECATED TRANSFORMERS
