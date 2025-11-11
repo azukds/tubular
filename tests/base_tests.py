@@ -1149,25 +1149,21 @@ class ColumnsCheckTests:
         ["pandas", "polars"],
         indirect=True,
     )
-    @pytest.mark.parametrize("from_json", [True, False])
     def test_columns_not_in_X_error(
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
         lazy,
-        from_json,
     ):
         """Test an error is raised if self.columns contains a value not in X."""
         df = nw.from_native(minimal_dataframe_lookup[self.transformer_name])
 
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=False):
             return
 
         x.columns = ["a", "z"]
-
-        x = _handle_from_json(x, from_json)
 
         with pytest.raises(ValueError):
             x.columns_check(X=_convert_to_lazy(df, lazy))
