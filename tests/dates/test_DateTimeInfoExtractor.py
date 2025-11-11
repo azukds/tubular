@@ -860,33 +860,27 @@ class TestTransform(
                 name="b_timeofmonth_unmapped",
                 values=[None, 25, 10, 10, 10, 10, 10, 23],
                 backend=backend,
-                dtype=nw.Int8,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_timeofyear_unmapped",
                 values=[None, 12, 11, 11, 9, 11, 11, 7],
                 backend=backend,
-                dtype=nw.Int8,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_dayofweek_unmapped",
                 values=[None, 3, 6, 6, 1, 2, 2, 4],
                 backend=backend,
-                dtype=nw.Int8,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_timeofday_unmapped",
                 values=[None, 12, 11, 10, 18, 22, 19, 3],
                 backend=backend,
-                dtype=nw.Int8,
+                dtype=nw.Float64,
             ),
         )
-
-        print("Expected DataFrame:")
-        print(expected.to_native())
-
-        print("Transformed DataFrame:")
-        print(transformed)
 
         assert_frame_equal_dispatch(transformed, expected.to_native())
 

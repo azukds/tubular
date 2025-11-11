@@ -1333,15 +1333,9 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         └─────────────────────┴─────────────────────┴───────────────┘
         """
 
-        print("Initial DataFrame:")
-        print(X)
-
         return_unmapped_values = self.return_unmapped_values
 
         X = super().transform(X, return_native_override=False)
-
-        print("DataFrame after base transformation:")
-        print(X)
 
         unmapped_dt_dict = {}
         mapped_dt_dict = {}
@@ -1355,9 +1349,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                     self.DATETIME_ATTR[include_option],
                 )().alias(unmapped_alias)
 
-                print(f"Unmapped {include_option} for column {col}:")
-                print(unmapped_dt_dict[unmapped_alias])
-
                 # Apply mapping transformation if mappings are provided
                 if self.final_datetime_mappings[include_option]:
                     mapped_alias = col + "_" + include_option
@@ -1369,17 +1360,12 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                         .alias(mapped_alias)
                     )
 
-                    print(f"Mapped {include_option} for column {col}:")
-                    print(mapped_dt_dict[mapped_alias])
-
         # Decide what to return based on conditions
         return_dict = {}
         if return_unmapped_values:
             return_dict.update(unmapped_dt_dict)
-            print("Returning unmapped values:")
         else:
             return_dict.update(mapped_dt_dict)
-            print("Returning mapped values:")
 
         # Final casts
         if return_unmapped_values:
@@ -1387,7 +1373,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             return_dict = {
                 col + "_" + include_option + "_unmapped": return_dict[
                     col + "_" + include_option + "_unmapped"
-                ].cast(nw.Int8)
+                ].cast(nw.Float64)
                 for col in self.columns
                 for include_option in self.include
             }
@@ -1403,15 +1389,9 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                 for include_option in self.include
             }
 
-        print("Return dictionary after casting:")
-        print(return_dict)
-
         X = X.with_columns(
             **return_dict,
         )
-
-        print("DataFrame after adding new columns:")
-        print(X)
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
