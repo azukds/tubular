@@ -219,7 +219,6 @@ def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
         converted or original dataframe
     """
 
-    print(df)
     lazy = isinstance(df, (pl.LazyFrame, nw.LazyFrame))
 
     return df.collect() if lazy else df
