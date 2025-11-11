@@ -938,8 +938,6 @@ class GenericTransformTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
-
         if _check_if_skip_test(x, df, lazy):
             return
 
@@ -957,7 +955,7 @@ class GenericTransformTests:
 
         output = nw.from_native(output)
 
-        assert _collect_frame(output, polars, lazy).shape[0] == 0, (
+        assert _collect_frame(output, lazy).shape[0] == 0, (
             "expected empty frame transform to return empty frame"
         )
 

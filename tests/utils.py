@@ -1,3 +1,4 @@
+import narwhals as nw
 import pandas as pd
 import polars as pl
 from narwhals.typing import FrameT
@@ -196,7 +197,7 @@ def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
     return df.lazy() if (lazy and polars) else df
 
 
-def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
+def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
     """
     collect lazyframe if type is polars and test is for lazyframes
 
@@ -204,8 +205,6 @@ def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
     -----------
     df:
         dataframe being tested
-    polars:
-        is the frame polars type?
     lazy:
         is the test lazy?
 
@@ -215,7 +214,10 @@ def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
         converted or original dataframe
     """
 
-    return df.collect() if (lazy and polars) else df
+    print(df)
+    lazy = isinstance(df, (pl.LazyFrame, nw.LazyFrame))
+
+    return df.collect() if lazy else df
 
 
 def _handle_from_json(
