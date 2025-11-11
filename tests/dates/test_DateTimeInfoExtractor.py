@@ -290,6 +290,12 @@ class TestTransform(
         expected = df.clone()
         expected = df.with_columns(
             nw.new_series(
+                name="b_timeofmonth_unmapped",
+                values=[None, 25, 10, 10, 10, 10, 10, 23],
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="b_timeofmonth",
                 values=[
                     None,
@@ -305,6 +311,12 @@ class TestTransform(
                 dtype=nw.Enum(["end", "middle", "start"]),
             ),
             nw.new_series(
+                name="b_timeofyear_unmapped",
+                values=[None, 12, 11, 11, 9, 11, 11, 7],
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="b_timeofyear",
                 values=[
                     None,
@@ -318,6 +330,12 @@ class TestTransform(
                 ],
                 backend=backend,
                 dtype=nw.Enum(["autumn", "spring", "summer", "winter"]),
+            ),
+            nw.new_series(
+                name="b_dayofweek_unmapped",
+                values=[None, 3, 6, 6, 1, 2, 2, 4],
+                backend=backend,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_dayofweek",
@@ -345,6 +363,12 @@ class TestTransform(
                 ),
             ),
             nw.new_series(
+                name="b_timeofday_unmapped",
+                values=[None, 12, 11, 10, 18, 22, 19, 3],
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="b_timeofday",
                 values=[
                     None,
@@ -360,6 +384,13 @@ class TestTransform(
                 dtype=nw.Enum(["afternoon", "evening", "morning", "night"]),
             ),
         )
+
+        print('transformed')
+        print(transformed)
+
+
+        print('expected')
+        print(expected.to_native())
 
         assert_frame_equal_dispatch(transformed, expected.to_native())
 
@@ -538,6 +569,12 @@ class TestTransform(
         expected = df.clone()
         expected = df.with_columns(
             nw.new_series(
+                name="a_timeofmonth_unmapped",
+                values=[None, 4, 12, 22, 17, 15, 5, 21],
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="a_timeofmonth",
                 values=[
                     None,
@@ -551,6 +588,12 @@ class TestTransform(
                 ],
                 backend=backend,
                 dtype=nw.Enum(["end", "middle", "start"]),
+            ),
+            nw.new_series(
+                name="b_timeofmonth_unmapped",
+                values=[None, 2, 11, 12, 10, 15, 5, 23],
+                backend=backend,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_timeofmonth",
@@ -667,89 +710,120 @@ class TestTransform(
             },
         )
         transformed = transformer.transform(df)
+        
         expected = nw.from_native(df).clone()
         expected = expected.with_columns(
             nw.new_series(
+                name="a_timeofday_unmapped",
+                values=[10.0, 20.0, 6.0],  
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="a_timeofday",
-                values=[
-                    "start",
-                    "end",
-                    "start",
-                ],
+                values=["start", "end", "start"], 
                 backend=backend,
                 dtype=nw.Enum(["end", "start"]),
+            ),
+            nw.new_series(
+                name="a_timeofmonth_unmapped",
+                values=[4.0, 12.0, 22.0],  
+                backend=backend,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="a_timeofmonth",
-                values=[
-                    "start",
-                    "start",
-                    "end",
-                ],
+                values=["start", "start", "end"],  
                 backend=backend,
                 dtype=nw.Enum(["end", "start"]),
+            ),
+            nw.new_series(
+                name="a_timeofyear_unmapped",
+                values=[10.0, 7.0, 10.0], 
+                backend=backend,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="a_timeofyear",
-                values=[
-                    "end",
-                    "end",
-                    "end",
-                ],
+                values=["end", "end", "end"],  
                 backend=backend,
                 dtype=nw.Enum(["end", "start"]),
             ),
             nw.new_series(
+                name="a_dayofweek_unmapped",
+                values=[3.0, 2.0, 3.0],  
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="a_dayofweek",
-                values=[
-                    "weekday",
-                    "weekday",
-                    "weekday",
-                ],
+                values=["weekday", "weekday", "weekday"],  
                 backend=backend,
                 dtype=nw.Enum(["weekday", "weekend"]),
             ),
             nw.new_series(
+                name="b_timeofday_unmapped",
+                values=[None, 9.0, 19.0],  
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="b_timeofday",
-                values=[
-                    None,
-                    "start",
-                    "end",
-                ],
+                values=[None, 'start', 'end'],  
                 backend=backend,
                 dtype=nw.Enum(["end", "start"]),
+            ),
+            nw.new_series(
+                name="b_timeofmonth_unmapped",
+                values=[None, 2.0, 11.0],  
+                backend=backend,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_timeofmonth",
-                values=[
-                    None,
-                    "start",
-                    "start",
-                ],
+                values=[None, "start", "start"],  
                 backend=backend,
                 dtype=nw.Enum(["end", "start"]),
+            ),
+            nw.new_series(
+                name="b_timeofyear_unmapped",
+                values=[None, 11.0, 4.0], 
+                backend=backend,
+                dtype=nw.Float64,
             ),
             nw.new_series(
                 name="b_timeofyear",
-                values=[
-                    None,
-                    "end",
-                    "start",
-                ],
+                values=[None, "end", "start"],  
                 backend=backend,
                 dtype=nw.Enum(["end", "start"]),
             ),
             nw.new_series(
+                name="b_dayofweek_unmapped",
+                values=[None, 4.0, 6.0],  
+                backend=backend,
+                dtype=nw.Float64,
+            ),
+            nw.new_series(
                 name="b_dayofweek",
-                values=[
-                    None,
-                    "weekday",
-                    "weekend",
-                ],
+                values=[None, "weekday", "weekend"],  
                 backend=backend,
                 dtype=nw.Enum(["weekday", "weekend"]),
             ),
         )
+
+        #print('transformed')
+        #print(transformed)
+
+
+        #print('expected')
+        #print(expected.to_native())
+
+        # Print values for the specific column
+        print("Transformed 'b_dayofweek' values:")
+        print(transformed["b_dayofweek"].to_list())
+
+        print("\nExpected 'b_dayofweek' values:")
+        print(expected["b_dayofweek"].to_list())
 
         assert_frame_equal_dispatch(transformed, expected.to_native())
 
@@ -768,7 +842,7 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_return_unmapped_values_true(self, library):
+    def test_return_unmapped_values_when_no_mapping_provided(self, library):
         """Test that raw values are returned when return_unmapped_values=True."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -850,7 +924,7 @@ class TestTransform(
         transformer = DatetimeInfoExtractor(
             columns=["b"],
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
-            return_unmapped_values=True,
+            #return_unmapped_values=True,
         )
         transformed = transformer.transform(df.to_native())
 
@@ -882,173 +956,17 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        print('transformed')
+        print(transformed)
 
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_return_unmapped_values_false(self, library):
-        """Test that mapped values are returned when return_unmapped_values=False."""
-        df = d.create_date_test_df(library=library)
-        df = nw.from_native(df)
-        backend = nw.get_native_namespace(df)
-        df = df.with_columns(
-            nw.new_series(
-                name="b",
-                values=[
-                    None,
-                    datetime.datetime(
-                        2019,
-                        12,
-                        25,
-                        12,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                    datetime.datetime(
-                        2018,
-                        11,
-                        10,
-                        11,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                    datetime.datetime(
-                        2018,
-                        11,
-                        10,
-                        10,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                    datetime.datetime(
-                        2018,
-                        9,
-                        10,
-                        18,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                    datetime.datetime(
-                        2015,
-                        11,
-                        10,
-                        22,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                    datetime.datetime(
-                        2015,
-                        11,
-                        10,
-                        19,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                    datetime.datetime(
-                        2015,
-                        7,
-                        23,
-                        3,
-                        0,
-                        0,
-                        tzinfo=datetime.timezone.utc,
-                    ),
-                ],
-                backend=backend,
-                dtype=nw.Datetime(time_unit="us", time_zone="UTC"),
-            ),
-        )
 
-        transformer = DatetimeInfoExtractor(
-            columns=["b"],
-            include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
-            return_unmapped_values=False,
-        )
-        transformed = transformer.transform(df.to_native())
+        print('expected')
+        print(expected.to_native())
 
-        expected = df.clone()
-        expected = df.with_columns(
-            nw.new_series(
-                name="b_timeofmonth",
-                values=[
-                    None,
-                    "end",
-                    "start",
-                    "start",
-                    "start",
-                    "start",
-                    "start",
-                    "end",
-                ],
-                backend=backend,
-                dtype=nw.Enum(["end", "middle", "start"]),
-            ),
-            nw.new_series(
-                name="b_timeofyear",
-                values=[
-                    None,
-                    "winter",
-                    "autumn",
-                    "autumn",
-                    "autumn",
-                    "autumn",
-                    "autumn",
-                    "summer",
-                ],
-                backend=backend,
-                dtype=nw.Enum(["autumn", "spring", "summer", "winter"]),
-            ),
-            nw.new_series(
-                name="b_dayofweek",
-                values=[
-                    None,
-                    "wednesday",
-                    "saturday",
-                    "saturday",
-                    "monday",
-                    "tuesday",
-                    "tuesday",
-                    "thursday",
-                ],
-                backend=nw.get_native_namespace(df),
-                dtype=nw.Enum(
-                    [
-                        "friday",
-                        "monday",
-                        "saturday",
-                        "sunday",
-                        "thursday",
-                        "tuesday",
-                        "wednesday",
-                    ],
-                ),
-            ),
-            nw.new_series(
-                name="b_timeofday",
-                values=[
-                    None,
-                    "afternoon",
-                    "morning",
-                    "morning",
-                    "evening",
-                    "evening",
-                    "evening",
-                    "night",
-                ],
-                backend=nw.get_native_namespace(df),
-                dtype=nw.Enum(["afternoon", "evening", "morning", "night"]),
-            ),
-        )
 
         assert_frame_equal_dispatch(transformed, expected.to_native())
+
+
 
     def test_is_serialisable(self, tmp_path):
         transformer = DatetimeInfoExtractor(columns=["b"], include=["timeofyear"])

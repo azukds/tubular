@@ -1067,9 +1067,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     drop_original: str
         indicates whether to drop provided columns post transform
 
-    return_unmapped_values: bool, default = False
-        If True, returns raw datetime attribute values without mapping.
-
     **kwargs
         Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -1168,9 +1165,11 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        return_unmapped_values: Optional[bool] = False,
         **kwargs: dict[str, bool],
     ) -> None:
+        
+        self.final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
+        
         if include is None:
             include = self.INCLUDE_OPTIONS
 
@@ -1186,7 +1185,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         self.include = include
         self.datetime_mappings = datetime_mappings
-        self.return_unmapped_values = return_unmapped_values
         self._process_provided_mappings(datetime_mappings=datetime_mappings)
 
         # this is a situation where we know the values our mappings allow,
@@ -1197,20 +1195,35 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                 sorted(set(self.final_datetime_mappings[include_option].values())),
             )
             for include_option in self.include
+            if self.final_datetime_mappings[include_option] is not None
         }
 
-        self.mapping_transformer = MappingTransformer(
-            mappings={
-                col + "_" + include_option: self.final_datetime_mappings[include_option]
-                for col in self.columns
-                for include_option in self.include
-            },
-            return_dtypes={
-                col + "_" + include_option: "Categorical"
-                for col in self.columns
-                for include_option in self.include
-            },
-        )
+
+
+        valid_mappings = {
+            col + "_" + include_option: self.final_datetime_mappings[include_option]
+            for col in self.columns
+            for include_option in self.include
+            if self.final_datetime_mappings[include_option] is not None
+        }
+
+
+        if valid_mappings:  # Only initialize if there are valid mappings
+            self.mapping_transformer = MappingTransformer(
+                mappings=valid_mappings,
+                return_dtypes={
+                    col + "_" + include_option: "Categorical"
+                    for col in self.columns
+                    for include_option in self.include
+                    if self.final_datetime_mappings[include_option] is not None
+                },
+            )
+        else:
+            self.mapping_transformer = None
+
+
+
+
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer
@@ -1269,23 +1282,29 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         # and overwrite with user provided mappings
         # where possible
         self.final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
+
         if datetime_mappings:
-            for key in datetime_mappings:
-                if key not in self.include:
-                    msg = f"{self.classname()}: keys in datetime_mappings should be in include"
-                    raise ValueError(msg)
-                self.final_datetime_mappings[key] = copy.deepcopy(
-                    datetime_mappings[key],
-                )
+            for key in self.include:
+                if key in datetime_mappings:
+                    self.final_datetime_mappings[key] = copy.deepcopy(datetime_mappings[key])
+                else:
+                    self.final_datetime_mappings[key] = None
+
+        else:
+            # If no datetime_mappings are provided, set all to None
+            for key in self.include:
+                self.final_datetime_mappings[key] = None
+
 
         for include_option in self.include:
-            # check provided mappings fit required format
-            if (
-                set(self.final_datetime_mappings[include_option].keys())
-                != self.RANGE_TO_MAP[include_option]
-            ):
-                msg = f"{self.classname()}: {include_option.value} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.final_datetime_mappings[include_option].keys())} are missing"
-                raise ValueError(msg)
+            if self.final_datetime_mappings[include_option] is not None:
+                # Check provided mappings fit required format
+                if (
+                    set(self.final_datetime_mappings[include_option].keys())
+                    != self.RANGE_TO_MAP[include_option]
+                ):
+                    msg = f"{self.classname()}: {include_option.value} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.final_datetime_mappings[include_option].keys())} are missing"
+                    raise ValueError(msg)
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -1333,61 +1352,45 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         └─────────────────────┴─────────────────────┴───────────────┘
         """
 
-        return_unmapped_values = self.return_unmapped_values
 
         X = super().transform(X, return_native_override=False)
 
-        unmapped_dt_dict = {}
-        mapped_dt_dict = {}
+
+        datetime_expressions = {}
+
 
         for col in self.columns:
             for include_option in self.include:
                 # Extract raw datetime attribute and give it an alias
                 unmapped_alias = col + "_" + include_option + "_unmapped"
-                unmapped_dt_dict[unmapped_alias] = getattr(
+                datetime_expressions[unmapped_alias] = getattr(
                     nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
-                )().alias(unmapped_alias)
+                )().alias(unmapped_alias).cast(nw.Float64)
 
                 # Apply mapping transformation if mappings are provided
-                if self.final_datetime_mappings[include_option]:
+                if self.final_datetime_mappings.get(include_option) is not None:
                     mapped_alias = col + "_" + include_option
-                    mapped_dt_dict[mapped_alias] = (
-                        unmapped_dt_dict[unmapped_alias]
+                    datetime_expressions[mapped_alias] = (
+                        datetime_expressions[unmapped_alias]
                         .replace_strict(
                             self.mapping_transformer.mappings[mapped_alias],
                         )
-                        .alias(mapped_alias)
+                        .alias(mapped_alias).cast(self.enums[include_option])
                     )
 
-        # Decide what to return based on conditions
-        return_dict = {}
-        if return_unmapped_values:
-            return_dict.update(unmapped_dt_dict)
-        else:
-            return_dict.update(mapped_dt_dict)
+        #print("Final datetime mappings:", self.final_datetime_mappings)
 
-        # Final casts
-        if return_unmapped_values:
-            # Cast to Float64 to accommodate NaN values
-            return_dict = {
-                col + "_" + include_option + "_unmapped": return_dict[
-                    col + "_" + include_option + "_unmapped"
-                ].cast(nw.Float64)
-                for col in self.columns
-                for include_option in self.include
-            }
-        else:
-            # Cast to Enum when mapped
-            return_dict = {
-                col + "_" + include_option: return_dict[
-                    col + "_" + include_option
-                ].cast(
-                    self.enums[include_option],
-                )
-                for col in self.columns
-                for include_option in self.include
-            }
+        # Determine which expressions to return based on mappings
+        return_dict = {
+            key: datetime_expressions[key]
+            for key in datetime_expressions
+            if "_unmapped" in key or (self.final_datetime_mappings.get(key.split("_")[1]) is not None)
+        }
+        
+
+
+
 
         X = X.with_columns(
             **return_dict,
