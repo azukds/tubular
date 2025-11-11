@@ -833,7 +833,7 @@ class GenericTransformTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, False):
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
             return
 
         x = x.fit(df, df["a"])
@@ -869,7 +869,7 @@ class GenericTransformTests:
         x = initialized_transformers[self.transformer_name]
         x.copy = True
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
         original_df = copy.deepcopy(df)
@@ -900,6 +900,9 @@ class GenericTransformTests:
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
+
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
+            return
 
         # update to abnormal index
         df.index = [2 * i for i in df.index]
@@ -938,7 +941,7 @@ class GenericTransformTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
         x = x.fit(df, df["a"])

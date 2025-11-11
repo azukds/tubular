@@ -67,7 +67,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         args["return_native"] = return_native
         x = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
         df = nw.from_native(df)

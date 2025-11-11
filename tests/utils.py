@@ -143,12 +143,14 @@ def _check_if_skip_test(
     transformer: BaseTransformer,
     df: DataFrame,
     lazy: bool,
+    from_json: bool = False,
 ) -> bool:
     """
     check for conditions under which test can be skipped:
         - is a polars test on a non polars transformer
         - is a lazy test on a non lazy transformer
         - is a lazy test on a pandas dataframe
+        - is a from_json test on a non jsonable transformer
 
     Parameters:
     -----------
@@ -158,6 +160,8 @@ def _check_if_skip_test(
         dataframe being tested
     lazy:
         is the test lazy?
+    from_json:
+        is the test for a from_json'd transformer? Defaults to False.
 
     Returns
     -------
@@ -172,6 +176,7 @@ def _check_if_skip_test(
         (not transformer.polars_compatible and polars)
         or (not polars and lazy)
         or (not transformer.lazyframe_compatible and lazy)
+        or (not transformer.jsonable and from_json)
     )
 
 
@@ -224,8 +229,8 @@ def _handle_from_json(
     transformer: BaseTransformer,
     from_json: bool,
 ) -> BaseTransformer:
-    """handle converting transformer to/from json pre-testing (or just
-    passes transformer through unchanged if not from_json)
+    """handle converting transformer to/from json pre-testing. Assumes
+    _check_if_skip_test has already been run.
 
     Parameters
     ----------
@@ -241,8 +246,4 @@ def _handle_from_json(
         transformer ready for test
     """
 
-    return (
-        transformer.from_json(transformer.to_json())
-        if (from_json and transformer.jsonable)
-        else transformer
-    )
+    return transformer.from_json(transformer.to_json())
