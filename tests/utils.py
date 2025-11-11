@@ -246,4 +246,4 @@ def _handle_from_json(
         transformer ready for test
     """
 
-    return transformer.from_json(transformer.to_json())
+    return transformer.from_json(transformer.to_json()) if from_json else transformer
