@@ -442,11 +442,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         """
         quantiles = np.array(quantiles)
 
-        nan_filter = ~(nw.col(values_column).is_null())
-        X = X.filter(nan_filter)
-
-        zero_weight_filter = ~(nw.col(weights_column) == 0)
-        X = X.filter(zero_weight_filter)
+        not_null_expr = ~(nw.col(values_column).is_null())
+        nonzero_weight_expr = ~(nw.col(weights_column) == 0)
+        X = X.filter(not_null_expr & nonzero_weight_expr)
 
         X = X.sort(by=values_column, descending=False)
 
