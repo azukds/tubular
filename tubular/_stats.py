@@ -212,3 +212,58 @@ def _get_mode_calculation_expressions(
         )
         for c in columns
     }
+
+
+@beartype
+def _weighted_quantile_expr(
+    weights_column: str,
+    initial_weights_expr: Optional[nw.Expr] = None,
+) -> nw.Expr:
+    """Produce an expression that computes the cumulative fraction of weights for a column.
+
+    The returned expression calculates the running cumulative sum of the weights column,
+    divided by the total sum of weights in the same column:
+    ``cum_sum(weights) / sum(weights)``.
+
+    Parameters
+    ----------
+    weights_column : str
+        Name of the column containing weights.
+
+    initial_weights_expr : nw.Expr, optional
+        initial expression for weights column. Defaults to None,
+        and in this case nw.col(weights_column) is taken as the initial expr
+
+    Returns
+    -------
+    nw.Expr
+        An expression computing the cumulative fraction of weights:
+        ``(cum_sum(weights_column)) / (sum(weights_column))``.
+
+    Examples
+    --------
+    >>> import polars as pl
+    >>> from tubular._utils import _convert_dataframe_to_narwhals
+    >>> expr = _weighted_quantile_expr("w")
+    >>> df = pl.DataFrame({"w": [1, 2, 3]})
+    >>> df = _convert_dataframe_to_narwhals(df)
+    >>> df.select(expr)
+    ┌──────────────────┐
+    |Narwhals DataFrame|
+    |------------------|
+    |  shape: (3, 1)   |
+    |  ┌──────────┐    |
+    |  │ w        │    |
+    |  │ ---      │    |
+    |  │ f64      │    |
+    |  ╞══════════╡    |
+    |  │ 0.166667 │    |
+    |  │ 0.5      │    |
+    |  │ 1.0      │    |
+    |  └──────────┘    |
+    └──────────────────┘
+
+    """
+    if initial_weights_expr is None:
+        initial_weights_expr = nw.col(weights_column)
+    return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()
