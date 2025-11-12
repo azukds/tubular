@@ -448,9 +448,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = X.sort(by=values_column, descending=False)
 
-        weighted_quantiles = X.select(
-            (nw.col(weights_column).cum_sum()) / (nw.col(weights_column).sum()),
+        weighted_quantiles_expr = (nw.col(weights_column).cum_sum()) / (
+            nw.col(weights_column).sum()
         )
+        weighted_quantiles = X.select(weighted_quantiles_expr)
 
         # TODO - once narwhals implements interpolate, replace this with nw
         # syntax
