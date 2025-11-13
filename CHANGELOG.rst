@@ -27,7 +27,7 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.2.0 (unreleased)
+2.3.0 (unreleased)
 ------------------
 
 Changed
@@ -36,7 +36,19 @@ Changed
 - feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
+- feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
 - feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer `#586 <https://github.com/azukds/tubular/issues/586>_`
+
+2.2.0 (11/11/2025)
+------------------
+
+Changed
+^^^^^^^
+
+- chore: cleanup of ruff rules `#590 <https://github.com/azukds/tubular/issues/590>`_
+- feat: added `to_json` method for `SetValueTransformer` `#542 <https://github.com/azukds/tubular/issues/542>`_
+- feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
+- removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
 
 2.1.0 (30/10/25)
 ------------------
@@ -68,7 +80,7 @@ Changed
 - feat: optimisation changes to GroupRareLevelsTransformer fit method
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
 - chore: turned on doctest
-- chore: deprecateds DataFrameMethodTransformer
+- chore: deprecated DataFrameMethodTransformer
 - chore: added doctest examples for BaseTransfomer
 - chore: deleted stale example notebooks for BaseTransfomer (replaced by doctest) and DataFrameMethodTransformer (deprecated)
 - bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype

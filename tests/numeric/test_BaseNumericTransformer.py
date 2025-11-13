@@ -48,10 +48,11 @@ class BaseNumericTransformerFitTests(GenericFitTests):
         df = df_generator(library=library)
 
         x = initialized_transformers[self.transformer_name]
-        x.columns = bad_cols
 
         if _check_if_skip_test(x, df, lazy):
             return
+
+        x.columns = bad_cols
 
         # add in 'target column' for fit
         df = nw.from_native(df)

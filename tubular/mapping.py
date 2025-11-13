@@ -817,6 +817,8 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
 
     lazyframe_compatible = False
 
+    jsonable = False
+
     FITS = False
 
     def __init__(

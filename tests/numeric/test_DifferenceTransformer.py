@@ -1,7 +1,6 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -67,11 +66,9 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
 
         df = create_difference_test_df(library=library)
 
-        polars = isinstance(df, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df, lazy):
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = u._handle_from_json(transformer, from_json)
@@ -86,7 +83,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -125,8 +122,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
 
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
 
-        polars = isinstance(single_row_df, pl.DataFrame)
-
         single_row_df = (
             nw.from_native(single_row_df)
             .with_columns(
@@ -138,7 +133,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, single_row_df, lazy):
+        if u._check_if_skip_test(transformer, single_row_df, lazy, from_json):
             return
 
         transformer = u._handle_from_json(transformer, from_json)
@@ -162,7 +157,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         )
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -188,11 +183,9 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
-        polars = isinstance(df_with_nulls, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
+        if u._check_if_skip_test(transformer, df_with_nulls, lazy, from_json):
             return
 
         transformer = u._handle_from_json(transformer, from_json)
@@ -207,6 +200,6 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )

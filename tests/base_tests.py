@@ -833,7 +833,7 @@ class GenericTransformTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, False):
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
             return
 
         x = x.fit(df, df["a"])
@@ -869,7 +869,7 @@ class GenericTransformTests:
         x = initialized_transformers[self.transformer_name]
         x.copy = True
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
         original_df = copy.deepcopy(df)
@@ -900,6 +900,9 @@ class GenericTransformTests:
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
+
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
+            return
 
         # update to abnormal index
         df.index = [2 * i for i in df.index]
@@ -938,9 +941,7 @@ class GenericTransformTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
-
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
         x = x.fit(df, df["a"])
@@ -957,7 +958,7 @@ class GenericTransformTests:
 
         output = nw.from_native(output)
 
-        assert _collect_frame(output, polars, lazy).shape[0] == 0, (
+        assert _collect_frame(output, lazy).shape[0] == 0, (
             "expected empty frame transform to return empty frame"
         )
 
@@ -1159,15 +1160,13 @@ class ColumnsCheckTests:
 
         x = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
-        # skip polars test if not narwhalified
-        if (not x.polars_compatible and polars) or (not polars and lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=False):
             return
 
         x.columns = ["a", "z"]
 
         with pytest.raises(ValueError):
-            x.columns_check(X=df.lazy() if (lazy and polars) else df)
+            x.columns_check(X=_convert_to_lazy(df, lazy))
 
 
 class CombineXYTests:

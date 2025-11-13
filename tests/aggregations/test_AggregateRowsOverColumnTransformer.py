@@ -1,7 +1,6 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -117,8 +116,6 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
         df = create_aggregate_over_rows_test_df(library=library)
 
-        polars = isinstance(df, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if u._check_if_skip_test(transformer, df, lazy):
@@ -142,7 +139,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
         # Compare the transformed DataFrame with the expected DataFrame using the dispatch function
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -168,8 +165,6 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "c": ["A"],
         }
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
-
-        polars = isinstance(single_row_df, pl.DataFrame)
 
         # ensure none column is numeric type
         single_row_df = (
@@ -229,7 +224,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
             ).to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -255,8 +250,6 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "c": ["A", "B", "A", "B", "A"],
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
-
-        polars = isinstance(df_with_nulls, pl.DataFrame)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
@@ -297,6 +290,6 @@ class TestAggregateRowsOverColumnTransformerTransform(
             ).to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )

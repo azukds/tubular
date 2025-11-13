@@ -17,11 +17,12 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
-from tubular.mixins import DropOriginalMixin, SeparatorColumnMixin, WeightColumnMixin
+from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
     DataFrame,
     FloatBetweenZeroOne,
@@ -67,6 +68,8 @@ class BaseNominalTransformer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    jsonable = False
 
     lazyframe_compatible = False
 
@@ -299,7 +302,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
     lazyframe_compatible = False
 
-    jsonable = False
+    jsonable = True
 
     FITS = True
 
@@ -325,6 +328,49 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         self.record_rare_levels = record_rare_levels
 
         self.unseen_levels_to_rare = unseen_levels_to_rare
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> import tests.test_data as d
+
+        >>> df = d.create_df_8("pandas")
+
+        >>> x = GroupRareLevelsTransformer(columns=["b", "c"],cut_off_percent=0.4, unseen_levels_to_rare=False)
+
+        >>> x.fit(df)
+        GroupRareLevelsTransformer(columns=['b', 'c'], cut_off_percent=0.4,
+                                   unseen_levels_to_rare=False)
+
+        >>> x.to_json()
+        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}}}
+        """
+        self.check_is_fitted(["non_rare_levels"])
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "cut_off_percent": self.cut_off_percent,
+                "weights_column": self.weights_column,
+                "rare_level_name": self.rare_level_name,
+                "record_rare_levels": self.record_rare_levels,
+                "unseen_levels_to_rare": self.unseen_levels_to_rare,
+            },
+        )
+        json_dict["fit"]["non_rare_levels"] = self.non_rare_levels
+        if not self.unseen_levels_to_rare:
+            self.check_is_fitted(["training_data_levels"])
+            json_dict["fit"]["training_data_levels"] = self.training_data_levels
+        return json_dict
 
     @beartype
     def _check_str_like_columns(self, schema: nw.Schema) -> None:
@@ -428,6 +474,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
             raise ValueError(msg)
 
+    @block_from_json
     @beartype
     def fit(
         self,
@@ -1397,7 +1444,6 @@ class MeanResponseTransformer(
 
 class OneHotEncodingTransformer(
     DropOriginalMixin,
-    SeparatorColumnMixin,
     BaseTransformer,
 ):
     """Transformer to convert categorical variables into dummy columns.
@@ -1486,7 +1532,7 @@ class OneHotEncodingTransformer(
 
         self.wanted_values = wanted_values
         self.drop_original = drop_original
-        self.check_and_set_separator_column(separator)
+        self.separator = separator
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer

@@ -1,5 +1,4 @@
 import narwhals as nw
-import polars as pl
 import pytest
 
 import tests.test_data as d
@@ -83,19 +82,18 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         columns = ["b", "c"]
         transformer = NullIndicator(columns=columns)
 
-        polars = isinstance(df, pl.DataFrame)
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json)
 
         df_transformed = transformer.transform(df)
-
-        if _check_if_skip_test(transformer, df, lazy):
-            return
 
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
             expected_df_1,
         )
 
@@ -109,7 +107,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
             df_expected_row = expected_df_1[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 

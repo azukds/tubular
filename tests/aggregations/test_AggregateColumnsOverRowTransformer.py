@@ -1,7 +1,6 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
 
 from tests import utils as u
@@ -82,7 +81,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         # Compare the transformed DataFrame with the expected DataFrame using the dispatch function
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, library == "polars", lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -107,8 +106,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "c": ["A"],
         }
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
-
-        polars = isinstance(single_row_df, pl.DataFrame)
 
         # cast none row to numeric type
         single_row_df = nw.from_native(single_row_df)
@@ -142,7 +139,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         )
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -168,8 +165,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
-        polars = isinstance(df_with_nulls, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if u._check_if_skip_test(transformer, df_with_nulls, lazy):
@@ -190,6 +185,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )

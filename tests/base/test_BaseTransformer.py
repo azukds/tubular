@@ -1,5 +1,4 @@
 import narwhals as nw
-import polars as pl
 import pytest
 
 from tests.base_tests import (
@@ -68,9 +67,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         args["return_native"] = return_native
         x = uninitialized_transformers[self.transformer_name](**args)
 
-        polars = isinstance(df, pl.DataFrame)
-
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
         df = nw.from_native(df)
@@ -88,7 +85,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
         )
 
 

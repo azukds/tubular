@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import polars as pl
 import pytest
 import test_aide as ta
 
@@ -142,8 +141,9 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
+
         transformer = _handle_from_json(transformer, from_json)
 
         transformer.transform(_convert_to_lazy(df, lazy))
@@ -191,8 +191,6 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         x = BaseMappingTransformer(mappings=mapping)
 
-        polars = isinstance(df, pl.DataFrame)
-
         if _check_if_skip_test(x, df, lazy):
             return
 
@@ -200,7 +198,7 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         ta.equality.assert_equal_dispatch(
             expected=expected,
-            actual=_collect_frame(df_transformed, polars, lazy),
+            actual=_collect_frame(df_transformed, lazy),
             msg="Check X returned from transform",
         )
 

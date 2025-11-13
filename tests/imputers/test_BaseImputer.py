@@ -137,7 +137,7 @@ class GenericImputerTransformTests:
         df1 = d.create_df_1(library=library)
         transformer = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(transformer, df1, lazy):
+        if _check_if_skip_test(transformer, df1, lazy, from_json):
             return
 
         impute_value = "g"
@@ -181,9 +181,7 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df2, pl.DataFrame)
-
-        if _check_if_skip_test(transformer, df2, lazy):
+        if _check_if_skip_test(transformer, df2, lazy, from_json):
             return
 
         transformer.impute_values_ = {"a": 7}
@@ -200,7 +198,7 @@ class GenericImputerTransformTests:
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
             expected_df_1,
         )
         df2 = nw.from_native(df2)
@@ -213,7 +211,7 @@ class GenericImputerTransformTests:
             df_expected_row = expected_df_1[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
@@ -242,9 +240,7 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df2, pl.DataFrame)
-
-        if _check_if_skip_test(transformer, df2, lazy):
+        if _check_if_skip_test(transformer, df2, lazy, from_json):
             return
 
         impute_value = "g"
@@ -262,7 +258,7 @@ class GenericImputerTransformTests:
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
             expected_df_2,
         )
         df2 = nw.from_native(df2)
@@ -275,7 +271,7 @@ class GenericImputerTransformTests:
             df_expected_row = expected_df_2[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
@@ -308,9 +304,7 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df2, pl.DataFrame)
-
-        if _check_if_skip_test(transformer, df2, lazy):
+        if _check_if_skip_test(transformer, df2, lazy, from_json):
             return
 
         transformer.impute_values_ = impute_values_dict
@@ -327,7 +321,7 @@ class GenericImputerTransformTests:
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
             expected_df_3,
         )
         df2 = nw.from_native(df2)
@@ -340,7 +334,7 @@ class GenericImputerTransformTests:
             df_expected_row = expected_df_3[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
@@ -388,9 +382,7 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        polars = isinstance(df, pl.DataFrame)
-
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         if self.transformer_name == "ArbitraryImputer":
@@ -399,6 +391,8 @@ class GenericImputerTransformTests:
         transformer.columns = [column]
 
         transformer.impute_values_ = dict.fromkeys(transformer.columns, impute_value)
+
+        transformer = _handle_from_json(transformer, from_json)
 
         expected_df_dict = {
             column: expected,
@@ -415,13 +409,11 @@ class GenericImputerTransformTests:
             nw.col(column).cast(nw.from_native(df)[column].dtype),
         )
 
-        transformer = _handle_from_json(transformer, from_json)
-
         # Transform the DataFrame
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, polars, lazy)[[column]],
+            _collect_frame(df_transformed, lazy)[[column]],
             expected_df.to_native()[[column]],
         )
 
@@ -471,6 +463,9 @@ class GenericImputerTransformTestsWeight:
         if self.transformer_name == "ArbitraryImputer":
             self.impute_value = impute_value
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json)
 
         df_transformed = transformer.transform(df)
@@ -511,6 +506,9 @@ class GenericImputerTransformTestsWeight:
         transformer1 = uninitialized_transformers[self.transformer_name](**args)
 
         transformer1.fit(df)
+
+        if _check_if_skip_test(transformer1, df, lazy=False, from_json=from_json):
+            return
 
         transformer1 = _handle_from_json(transformer1, from_json)
 

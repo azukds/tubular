@@ -1,7 +1,6 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -82,8 +81,6 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         df = create_ratio_test_df(library=library)
 
-        polars = isinstance(df, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if u._check_if_skip_test(transformer, df, lazy):
@@ -112,7 +109,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         transformed_df = transformed_df.to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -153,8 +150,6 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         }
 
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
-
-        polars = isinstance(single_row_df, pl.DataFrame)
 
         single_row_df = (
             nw.from_native(single_row_df)
@@ -203,7 +198,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         transformed_df = transformed_df.to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
@@ -232,8 +227,6 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
-        polars = isinstance(df_with_nulls, pl.DataFrame)
-
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if u._check_if_skip_test(transformer, df_with_nulls, lazy):
@@ -261,6 +254,6 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         transformed_df = transformed_df.to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, polars, lazy),
+            u._collect_frame(transformed_df, lazy),
             expected_df,
         )

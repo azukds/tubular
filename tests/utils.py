@@ -1,3 +1,4 @@
+import narwhals as nw
 import pandas as pd
 import polars as pl
 from narwhals.typing import FrameT
@@ -142,12 +143,14 @@ def _check_if_skip_test(
     transformer: BaseTransformer,
     df: DataFrame,
     lazy: bool,
+    from_json: bool = False,
 ) -> bool:
     """
     check for conditions under which test can be skipped:
         - is a polars test on a non polars transformer
         - is a lazy test on a non lazy transformer
         - is a lazy test on a pandas dataframe
+        - is a from_json test on a non jsonable transformer
 
     Parameters:
     -----------
@@ -157,6 +160,8 @@ def _check_if_skip_test(
         dataframe being tested
     lazy:
         is the test lazy?
+    from_json:
+        is the test for a from_json'd transformer? Defaults to False.
 
     Returns
     -------
@@ -171,6 +176,7 @@ def _check_if_skip_test(
         (not transformer.polars_compatible and polars)
         or (not polars and lazy)
         or (not transformer.lazyframe_compatible and lazy)
+        or (not transformer.jsonable and from_json)
     )
 
 
@@ -196,7 +202,7 @@ def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
     return df.lazy() if (lazy and polars) else df
 
 
-def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
+def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
     """
     collect lazyframe if type is polars and test is for lazyframes
 
@@ -204,8 +210,6 @@ def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
     -----------
     df:
         dataframe being tested
-    polars:
-        is the frame polars type?
     lazy:
         is the test lazy?
 
@@ -215,15 +219,17 @@ def _collect_frame(df: DataFrame, polars: bool, lazy: bool) -> DataFrame:
         converted or original dataframe
     """
 
-    return df.collect() if (lazy and polars) else df
+    lazy = isinstance(df, (pl.LazyFrame, nw.LazyFrame))
+
+    return df.collect() if lazy else df
 
 
 def _handle_from_json(
     transformer: BaseTransformer,
     from_json: bool,
 ) -> BaseTransformer:
-    """handle converting transformer to/from json pre-testing (or just
-    passes transformer through unchanged if not from_json)
+    """handle converting transformer to/from json pre-testing. Assumes
+    _check_if_skip_test has already been run.
 
     Parameters
     ----------
@@ -239,8 +245,4 @@ def _handle_from_json(
         transformer ready for test
     """
 
-    return (
-        transformer.from_json(transformer.to_json())
-        if (from_json and transformer.jsonable)
-        else transformer
-    )
+    return transformer.from_json(transformer.to_json()) if from_json else transformer

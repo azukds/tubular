@@ -1,7 +1,6 @@
 import datetime
 
 import narwhals as nw
-import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -296,8 +295,6 @@ class TestTransform(
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
         )
 
-        polars = isinstance(df, pl.DataFrame)
-
         if _check_if_skip_test(transformer, df, lazy):
             return
 
@@ -378,7 +375,7 @@ class TestTransform(
         )
 
         assert_frame_equal_dispatch(
-            _collect_frame(transformed, polars, lazy),
+            _collect_frame(transformed, lazy),
             expected.to_native(),
         )
 
@@ -391,7 +388,7 @@ class TestTransform(
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
@@ -559,8 +556,6 @@ class TestTransform(
             include=["timeofmonth"],
         )
 
-        polars = isinstance(df, pl.DataFrame)
-
         if _check_if_skip_test(transformer, df, lazy):
             return
 
@@ -601,7 +596,7 @@ class TestTransform(
         )
 
         assert_frame_equal_dispatch(
-            _collect_frame(transformed, polars, lazy),
+            _collect_frame(transformed, lazy),
             expected.to_native(),
         )
 
@@ -614,7 +609,7 @@ class TestTransform(
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
@@ -707,8 +702,6 @@ class TestTransform(
             },
         )
 
-        polars = isinstance(df, pl.DataFrame)
-
         if _check_if_skip_test(transformer, df, lazy):
             return
 
@@ -798,7 +791,7 @@ class TestTransform(
         )
 
         assert_frame_equal_dispatch(
-            _collect_frame(transformed, polars, lazy),
+            _collect_frame(transformed, lazy),
             expected.to_native(),
         )
 
@@ -811,7 +804,7 @@ class TestTransform(
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, polars, lazy),
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 

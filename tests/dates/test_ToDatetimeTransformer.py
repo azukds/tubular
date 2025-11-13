@@ -1,6 +1,5 @@
 import datetime
 
-import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -153,8 +152,6 @@ class TestTransform(GenericTransformTests):
             time_format=time_format,
         )
 
-        polars = isinstance(df, pl.DataFrame)
-
         if _check_if_skip_test(to_dt, df, lazy):
             return
 
@@ -162,7 +159,7 @@ class TestTransform(GenericTransformTests):
 
         assert_frame_equal_dispatch(
             expected[columns],
-            _collect_frame(df_transformed, polars, lazy)[columns],
+            _collect_frame(df_transformed, lazy)[columns],
         )
 
 

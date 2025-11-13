@@ -403,16 +403,14 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        polars = isinstance(df, pl.DataFrame)
-
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy, from_json):
             return
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy))
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
         )
 
     @pytest.mark.parametrize(
@@ -442,18 +440,16 @@ class TestTransform(
             verbose=False,
         )
 
-        polars = isinstance(df, pl.DataFrame)
-
         x = _handle_from_json(x, from_json)
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy, from_json):
             return
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy))
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
         )
 
     @pytest.mark.parametrize(
@@ -483,17 +479,16 @@ class TestTransform(
             verbose=False,
         )
 
-        polars = isinstance(df, pl.DataFrame)
         x = _handle_from_json(x, from_json)
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy, from_json):
             return
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy))
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, polars, lazy),
+            _collect_frame(df_transformed, lazy),
         )
 
 
