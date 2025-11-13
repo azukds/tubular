@@ -676,11 +676,16 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         if self.weights_column is not None:
             WeightColumnMixin.check_weights_column(self, X, self.weights_column)
             for c in not_all_null_columns:
-                X = X.sort(c).filter(~nw.col(c).is_null())
+                col_not_null_expr = ~nw.col(c).is_null()
+
+                X = X.sort(c)
+
+                col_expr = nw.col(c).filter(col_not_null_expr)
+                weight_expr = nw.col(self.weights_column).filter(col_not_null_expr)
 
                 median_expr = _get_median_calculation_expression(
-                    c,
-                    self.weights_column,
+                    initial_column_expr=col_expr,
+                    initial_weights_expr=weight_expr,
                 )
 
                 # impute value is weighted median
@@ -688,7 +693,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         else:
             median_exprs = {
-                c: _get_median_calculation_expression(c, None)
+                c: _get_median_calculation_expression(nw.col(c), None)
                 for c in not_all_null_columns
             }
             results_dict = X.select(
