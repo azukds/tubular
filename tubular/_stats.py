@@ -243,10 +243,10 @@ def _weighted_quantile_expr(
     Examples
     --------
     >>> import polars as pl
-    >>> from tubular._utils import _convert_dataframe_to_narwhals
+    >>> import narwhals as nw
     >>> expr = _weighted_quantile_expr("w")
     >>> df = pl.DataFrame({"w": [1, 2, 3]})
-    >>> df = _convert_dataframe_to_narwhals(df)
+    >>> df = nw.from_native(df)
     >>> df.select(expr)
     ┌──────────────────┐
     |Narwhals DataFrame|
