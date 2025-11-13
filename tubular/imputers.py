@@ -25,7 +25,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer
 from tubular.mixins import WeightColumnMixin
-from tubular.types import DataFrame, Series
+from tubular.types import DataFrame, NonEmptyListOfStrs, Series
 
 pl.enable_string_cache()
 
@@ -1068,10 +1068,14 @@ class NullIndicator(BaseTransformer):
 
     jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 

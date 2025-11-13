@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
+from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular._utils import (
@@ -14,7 +15,10 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer
-from tubular.types import DataFrame
+from tubular.types import (
+    DataFrame,
+    NonEmptyListOfStrs,
+)
 
 
 class SetValueTransformer(BaseTransformer):
@@ -53,11 +57,15 @@ class SetValueTransformer(BaseTransformer):
 
     jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        value: type,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        value: Optional[Union[int, float, str, bool]],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -69,7 +77,7 @@ class SetValueTransformer(BaseTransformer):
         value : various
             Value to set.
 
-        **kwargs: dict[str, Any]
+        **kwargs: dict[str, bool]
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
         """
@@ -101,6 +109,7 @@ class SetValueTransformer(BaseTransformer):
 
         return json_dict
 
+    @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
 

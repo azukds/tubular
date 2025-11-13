@@ -1,5 +1,6 @@
 import narwhals as nw
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -22,6 +23,13 @@ class TestInit(ColumnStrListInitTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "NullIndicator"
+
+    @pytest.mark.parametrize("columns", [[], None])
+    def test_column_type(self, columns):
+        """Tests that check the column type."""
+
+        with pytest.raises(BeartypeCallHintParamViolation):
+            NullIndicator(columns=columns)
 
 
 class TestTransform(GenericTransformTests, ReturnNativeTests):
