@@ -10,6 +10,7 @@ from tubular.dates import (
     BetweenDatesTransformer,
     DateDifferenceTransformer,
     DatetimeInfoExtractor,
+    DatetimeComponentExtractor,
     DatetimeSinusoidCalculator,
     ToDatetimeTransformer,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "CappingTransformer",
     "DateDifferenceTransformer",
     "DatetimeInfoExtractor",
+    "DatetimeComponentExtractor",
     "DatetimeSinusoidCalculator",
     "DifferenceTransformer",
     "GroupRareLevelsTransformer",
