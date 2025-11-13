@@ -37,6 +37,7 @@ Changed
 - feat: added `to_json` method for `SetValueTransformer` `#542 <https://github.com/azukds/tubular/issues/542>`_
 - feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
 - removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- feat: optimisation changes to BaseCappingTransformer `#484 <https://github.com/azukds/tubular/issues/484>`
 
 2.1.0 (30/10/25)
 ------------------
