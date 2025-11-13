@@ -154,6 +154,21 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_nulls_error(self, library):
+        """Test that checks error is raised if transform is run on column with nulls."""
+        df_dict = {"a": ["a", None]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        x = GroupRareLevelsTransformer(columns="a", rare_level_name="bla")
+
+        msg = "GroupRareLevelsTransformer: transformer can only fit/apply on columns without nulls, columns a need to be imputed first"
+        with pytest.raises(
+            ValueError,
+            match=msg,
+        ):
+            x.fit(df)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("col", ["a", "c"])
     def test_column_strlike_error(self, col, library):
         """Test that checks error is raised if transform is run on non-strlike columns."""

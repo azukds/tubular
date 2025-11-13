@@ -527,11 +527,12 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self._check_str_like_columns(schema)
 
-        present_levels = {
-            c: sorted(set(X.get_column(c).unique())) for c in self.columns
-        }
+        present_levels = {c: list(set(X.get_column(c).unique())) for c in self.columns}
 
         self._check_for_nulls(present_levels)
+
+        # sort once nulls are removed
+        present_levels = {c: sorted(present_levels[c]) for c in self.columns}
 
         self.non_rare_levels = {}
 
