@@ -12,6 +12,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -118,6 +119,9 @@ class GenericImputerTransformTests:
 
         impute_values = deepcopy(transformer.impute_values_)
 
+        if _check_if_skip_test(transformer, df1, lazy=False, from_json=from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json)
 
         transformer.transform(df1)
@@ -152,6 +156,9 @@ class GenericImputerTransformTests:
             transformer.impute_value = 7
 
         transformer.columns = ["a"]
+
+        if _check_if_skip_test(transformer, df2, lazy=False, from_json=from_json):
+            return
 
         transformer = _handle_from_json(transformer, from_json)
 
@@ -202,6 +209,9 @@ class GenericImputerTransformTests:
             transformer.impute_value = impute_value
 
         transformer.columns = ["b"]
+
+        if _check_if_skip_test(transformer, df2, lazy=False, from_json=from_json):
+            return
 
         transformer = _handle_from_json(transformer, from_json)
 
@@ -255,6 +265,9 @@ class GenericImputerTransformTests:
             transformer.impute_value = "f"
 
         transformer.columns = ["b", "c"]
+
+        if _check_if_skip_test(transformer, df2, lazy=False, from_json=from_json):
+            return
 
         transformer = _handle_from_json(transformer, from_json)
 
@@ -324,6 +337,11 @@ class GenericImputerTransformTests:
 
         transformer.impute_values_ = dict.fromkeys(transformer.columns, impute_value)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
         expected_df_dict = {
             column: expected,
         }
@@ -338,8 +356,6 @@ class GenericImputerTransformTests:
         expected_df = expected_df.with_columns(
             nw.col(column).cast(nw.from_native(df)[column].dtype),
         )
-
-        transformer = _handle_from_json(transformer, from_json)
 
         # Transform the DataFrame
         df_transformed = transformer.transform(df)
@@ -395,6 +411,9 @@ class GenericImputerTransformTestsWeight:
         if self.transformer_name == "ArbitraryImputer":
             self.impute_value = impute_value
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json)
 
         df_transformed = transformer.transform(df)
@@ -438,6 +457,9 @@ class GenericImputerTransformTestsWeight:
         transformer1 = uninitialized_transformers[self.transformer_name](**args)
 
         transformer1.fit(df)
+
+        if _check_if_skip_test(transformer1, df, lazy=False, from_json=from_json):
+            return
 
         transformer1 = _handle_from_json(transformer1, from_json)
 

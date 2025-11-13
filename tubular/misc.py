@@ -37,6 +37,9 @@ class SetValueTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Examples
     --------
     >>> SetValueTransformer(
@@ -48,6 +51,8 @@ class SetValueTransformer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -172,9 +177,14 @@ class ColumnDtypeSetter(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 

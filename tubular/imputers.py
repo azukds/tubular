@@ -55,6 +55,9 @@ class BaseImputer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseImputer(columns=["a", "b"])
@@ -63,6 +66,8 @@ class BaseImputer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     # this class is not by itself jsonable, as needs attrs
     # which are set in the child classes
@@ -247,6 +252,9 @@ class ArbitraryImputer(BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Examples:
     --------
     >>> arbitrary_imputer = ArbitraryImputer(
@@ -265,6 +273,8 @@ class ArbitraryImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -576,6 +586,9 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> median_imputer = MedianImputer(
@@ -599,6 +612,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -739,6 +754,9 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> mean_imputer = MeanImputer(
@@ -762,6 +780,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -883,6 +903,9 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> mode_imputer = ModeImputer(
@@ -906,6 +929,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -1045,6 +1070,9 @@ class NullIndicator(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> null_indicator = NullIndicator(
@@ -1063,6 +1091,8 @@ class NullIndicator(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1151,9 +1181,14 @@ class NearestMeanResponseImputer(BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = False
 

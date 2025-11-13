@@ -33,7 +33,10 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 
-- placeholder
+- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BaseTransfomer
+- feat: introduced `lazyframe_compatible` class attr to all transformers
+- feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
 
 2.2.0 (11/11/2025)
 ------------------
