@@ -37,6 +37,7 @@ Changed
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
 - feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
+- bugfix: MeanResponseTransformer approach was hitting a recursion depth limit error for many levels, have switched to more resilient (and generally better) approach
 
 2.2.0 (11/11/2025)
 ------------------
