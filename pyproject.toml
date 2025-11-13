@@ -28,7 +28,7 @@ authors = [{ name = "Allianz UK Data Science Team", email="datasciencepackages@a
 description = "Python package implementing ML feature engineering and pre-processing for polars or pandas dataframes."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
-keywords = ["polars", "pandas", "feature engineering", "pre-processing" "machine learning", "ML", "data science", "data transforms", "pipeline", "sklearn", "DS"]
+keywords = ["polars", "pandas", "feature engineering", "pre-processing", "machine learning", "ML", "data science", "data transforms", "pipeline", "sklearn", "DS"]
 classifiers=[
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.9",
