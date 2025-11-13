@@ -53,11 +53,11 @@ def _get_median_calculation_expression(
         initial_weights_expr = nw.col(weights_column)
 
     if weights_column is not None:
-        cumsum_weights_expr = initial_weights_expr.cum_sum()
+        weighted_quantile_expr = _weighted_quantile_expr(
+            weights_column, initial_weights_expr
+        )
 
-        median_expr = initial_column_expr.filter(
-            cumsum_weights_expr >= (initial_weights_expr.sum() / 2.0),
-        ).min()
+        median_expr = initial_column_expr.filter(weighted_quantile_expr >= 0.5).min()
 
     else:
         median_expr = initial_column_expr.drop_nulls().median()
