@@ -187,8 +187,9 @@ def minimal_attribute_dict():
         "DatetimeInfoExtractor": {
             "columns": ["a"],
         },
-        "DatetimeComponentExtractor": { 
+        "DatetimeComponentExtractor": {
             "columns": ["a"],
+            "include": ["hour", "day", "month", "year"],
         },
         "DatetimeSinusoidCalculator": {
             "columns": ["a"],
@@ -344,8 +345,6 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     date_transformers = [x[0] for x in get_all_classes(wanted_module="tubular.dates")]
     for transformer in date_transformers:
         min_df_dict[transformer] = date_df
-
-    min_df_dict["DatetimeComponentExtractor"] = date_df
 
     # override dict value for transformers that run on object type columns
     object_modules = ["tubular.mapping", "tubular.nominal", "tubular.strings"]
