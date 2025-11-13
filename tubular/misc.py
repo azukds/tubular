@@ -77,7 +77,7 @@ class SetValueTransformer(BaseTransformer):
         value : various
             Value to set.
 
-        **kwargs: dict[str, bool]
+        **kwargs: bool
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
         """

@@ -45,8 +45,9 @@ class TestInit(ColumnStrListInitTests):
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
 
-    @pytest.mark.parametrize("columns", [[], None])
-    def test_column_type(self, columns, value=1):
+    @pytest.mark.parametrize("value", [{"a": 1}, [1, 2]])
+    @pytest.mark.parametrize("columns", [["a"]])
+    def test_column_type(self, columns, value):
         """Tests that check the column type."""
 
         with pytest.raises(BeartypeCallHintParamViolation):
