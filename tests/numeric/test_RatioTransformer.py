@@ -83,7 +83,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df, lazy):
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = u._handle_from_json(transformer, from_json)
@@ -162,7 +162,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, single_row_df, lazy):
+        if u._check_if_skip_test(transformer, single_row_df, lazy, from_json):
             return
 
         transformer = u._handle_from_json(transformer, from_json)
@@ -229,7 +229,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
+        if u._check_if_skip_test(transformer, df_with_nulls, lazy, from_json):
             return
 
         transformer = u._handle_from_json(transformer, from_json)
