@@ -1463,6 +1463,21 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         The period of the output in the units specified above. To leave the period of the sinusoid output as 2 pi, specify 2*np.pi (or leave as default).
         Can be a string or a dict containing key-value pairs of column name and period to be used for that column.
 
+    verbose: bool, default = False
+        Flag to control the verbosity in print statements.
+
+    drop_original: bool, default = False
+        Indicates whether to drop original columns.
+
+    new_column_name : str, default = "dummy"
+         This transformer generates its own column names and does not use this parameter.
+         A placeholder is therefore set for API compatibility and consistency with other datetime classes.
+
+    **kwargs
+         Arbitrary keyword arguments passed onto BaseTransformer.init method.
+         Restricted to only boolean values, e.g. `copy`, `return_native`.
+
+
     Attributes
     ----------
     columns : str or list
@@ -1512,7 +1527,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -1526,12 +1541,15 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
         verbose: bool = False,
         drop_original: bool = False,
+        new_column_name: str = "dummy",
+        **kwargs: bool,
     ) -> None:
         super().__init__(
             columns=columns,
             drop_original=drop_original,
-            new_column_name="dummy",
+            new_column_name=new_column_name,
             verbose=verbose,
+            **kwargs,
         )
 
         method_list = [method] if isinstance(method, str) else method
@@ -1574,6 +1592,35 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for column in self.columns
             for method in self.method
         ]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = DatetimeSinusoidCalculator(
+        ...     columns='a',
+        ...     method='sin',
+        ...     units='month',
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 24}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["method"] = self.method
+        json_dict["init"]["units"] = self.units
+        json_dict["init"]["period"] = self.period
+
+        return json_dict
 
     @beartype
     def transform(
