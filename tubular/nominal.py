@@ -10,6 +10,7 @@ import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
@@ -702,7 +703,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 class MeanResponseTransformer(
     BaseNominalTransformer,
     WeightColumnMixin,
-    BaseMappingTransformMixin,
     DropOriginalMixin,
 ):
     """Transformer to apply mean response encoding. This converts categorical variables to
@@ -1389,7 +1389,7 @@ class MeanResponseTransformer(
                 return_dtype=getattr(nw, self.return_dtypes[encoded_col]),
                 default=self.unseen_levels_encoding_dict[encoded_col]
                 if self.unseen_level_handling
-                else "no_default",
+                else no_default,
             )
             for col in self.columns
             for encoded_col in self.column_to_encoded_columns[col]
