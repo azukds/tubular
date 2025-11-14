@@ -46,12 +46,11 @@ class TestInit(ColumnStrListInitTests):
         cls.transformer_name = "SetValueTransformer"
 
     @pytest.mark.parametrize("value", [{"a": 1}, [1, 2]])
-    @pytest.mark.parametrize("columns", [["a"]])
-    def test_column_type(self, columns, value):
-        """Tests that check the column type."""
+    def test_value_arg_type(self, value):
+        """Tests that check arg value type."""
 
         with pytest.raises(BeartypeCallHintParamViolation):
-            SetValueTransformer(columns=columns, value=value)
+            SetValueTransformer(columns=["a"], value=value)
 
 
 class TestFit(GenericFitTests):
