@@ -252,9 +252,47 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     lazyframe_compatible = False
 
-    jsonable = False
+    jsonable = True
 
     FITS = True
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Serialize the transformer to a JSON-compatible dictionary.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            JSON representation of the transformer, including init parameters.
+
+        Examples
+        --------
+        >>> onedkmeans_transformer = OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="new",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...    )
+        >>> onedkmeans_transformer.to_json()
+        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        """
+
+        self.check_is_fitted(["bins"])
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "new_column_name": self.new_column_name,
+                "n_init": self.n_init,
+                "n_clusters": self.n_clusters,
+                "drop_original": self.drop_original,
+                "kmeans_kwargs": self.kmeans_kwargs,
+            },
+        )
+        json_dict["fit"]["bins"] = self.bins
+
+        return json_dict
 
     @beartype
     def __init__(
@@ -313,6 +351,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             self.new_column_name,
         ]
 
+    @block_from_json
     @nw.narwhalify
     def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
         """Fit transformer to input data.
