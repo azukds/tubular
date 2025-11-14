@@ -216,20 +216,17 @@ def _get_mode_calculation_expressions(
 def _weighted_quantile_expr(
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> nw.Expr:
-    """Produce an expression that computes the cumulative fraction of weights for a column.
+    """Produce an expression that computes the cumulative fraction of weights.
 
     The returned expression calculates the running cumulative sum of the weights column,
     divided by the total sum of weights in the same column:
-    ``cum_sum(weights) / sum(weights)``.
+    ``cum_sum(initial_weights_expr) / sum(initial_weights_expr)``.
 
     This expression assumes that the data has already been sorted by the
     weight column (and any other columns of interest) before evaluation.
 
     Parameters
     ----------
-    weights_column : str
-        Name of the column containing weights.
-
     initial_weights_expr : nw.Expr, optional
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
