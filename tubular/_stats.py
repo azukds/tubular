@@ -53,9 +53,7 @@ def _get_median_calculation_expression(
         initial_weights_expr = nw.col(weights_column)
 
     if weights_column is not None:
-        weighted_quantile_expr = _weighted_quantile_expr(
-            weights_column, initial_weights_expr
-        )
+        weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
 
         median_expr = initial_column_expr.filter(weighted_quantile_expr >= 0.5).min()
 
@@ -216,7 +214,6 @@ def _get_mode_calculation_expressions(
 
 @beartype
 def _weighted_quantile_expr(
-    weights_column: str,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> nw.Expr:
     """Produce an expression that computes the cumulative fraction of weights for a column.
@@ -224,6 +221,9 @@ def _weighted_quantile_expr(
     The returned expression calculates the running cumulative sum of the weights column,
     divided by the total sum of weights in the same column:
     ``cum_sum(weights) / sum(weights)``.
+
+    This expression assumes that the data has already been sorted by the
+    weight column (and any other columns of interest) before evaluation.
 
     Parameters
     ----------
@@ -244,7 +244,7 @@ def _weighted_quantile_expr(
     --------
     >>> import polars as pl
     >>> import narwhals as nw
-    >>> expr = _weighted_quantile_expr("w")
+    >>> expr = _weighted_quantile_expr(nw.col("w"))
     >>> df = pl.DataFrame({"w": [1, 2, 3]})
     >>> df = nw.from_native(df)
     >>> df.select(expr)
@@ -264,6 +264,4 @@ def _weighted_quantile_expr(
     └──────────────────┘
 
     """
-    if initial_weights_expr is None:
-        initial_weights_expr = nw.col(weights_column)
     return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()
