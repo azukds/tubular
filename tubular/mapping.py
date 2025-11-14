@@ -712,6 +712,9 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -721,6 +724,8 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -811,6 +816,9 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -820,6 +828,8 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -906,6 +916,9 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -915,6 +928,8 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -1005,6 +1020,9 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1014,6 +1032,8 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -1102,6 +1122,9 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1111,6 +1134,8 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,

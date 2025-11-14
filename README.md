@@ -55,6 +55,38 @@ transformer.transform(test_df)
 # └─────┴─────┴─────┘
 ```
 
+We are currently in the process of rolling out support for some new features:
+- to/from json methods for our transformers to allow json storage
+- polars lazyframe support
+
+You can track our progress here:
+<!-- AUTO-GENERATED: feature table>
+|                                    | polars_compatible   | jsonable   | lazyframe_compatible   |
+|------------------------------------|---------------------|------------|------------------------|
+| AggregateColumnsOverRowTransformer | ✅                   | ❌          | ❌                      |
+| AggregateRowsOverColumnTransformer | ✅                   | ❌          | ❌                      |
+| ArbitraryImputer                   | ✅                   | ✅          | ❌                      |
+| BetweenDatesTransformer            | ✅                   | ❌          | ❌                      |
+| CappingTransformer                 | ✅                   | ❌          | ❌                      |
+| DateDifferenceTransformer          | ✅                   | ✅          | ❌                      |
+| DatetimeInfoExtractor              | ✅                   | ❌          | ❌                      |
+| DatetimeSinusoidCalculator         | ✅                   | ❌          | ❌                      |
+| DifferenceTransformer              | ✅                   | ✅          | ❌                      |
+| GroupRareLevelsTransformer         | ✅                   | ✅          | ❌                      |
+| MappingTransformer                 | ✅                   | ✅          | ❌                      |
+| MeanImputer                        | ✅                   | ✅          | ❌                      |
+| MeanResponseTransformer            | ✅                   | ❌          | ❌                      |
+| MedianImputer                      | ✅                   | ✅          | ❌                      |
+| ModeImputer                        | ✅                   | ✅          | ❌                      |
+| NullIndicator                      | ✅                   | ✅          | ❌                      |
+| OneDKmeansTransformer              | ✅                   | ❌          | ❌                      |
+| OneHotEncodingTransformer          | ✅                   | ❌          | ❌                      |
+| OutOfRangeNullTransformer          | ✅                   | ❌          | ❌                      |
+| RatioTransformer                   | ✅                   | ✅          | ❌                      |
+| SetValueTransformer                | ✅                   | ✅          | ❌                      |
+| ToDatetimeTransformer              | ✅                   | ❌          | ❌                      |
+<!-- /AUTO-GENERATED: feature table>
+
 ## Installation
 
 The easiest way to get `tubular` is directly from [pypi](https://pypi.org/project/tubular/) with;

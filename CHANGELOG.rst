@@ -37,6 +37,7 @@ Changed
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
 - feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
+- feat: added auto generated feature table to readme, to track transform support for e.g. polars/lazyframes/json `#595 <https://github.com/azukds/tubular/issues/595>_`
 
 2.2.0 (11/11/2025)
 ------------------

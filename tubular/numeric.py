@@ -782,6 +782,9 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -791,6 +794,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -901,6 +906,9 @@ class CutTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -908,6 +916,8 @@ class CutTransformer(BaseNumericTransformer):
     lazyframe_compatible = False
 
     FITS = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -1024,6 +1034,9 @@ class TwoColumnOperatorTransformer(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1033,6 +1046,8 @@ class TwoColumnOperatorTransformer(
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -1138,6 +1153,9 @@ class ScalingTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1147,6 +1165,8 @@ class ScalingTransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
     scaler_options: ClassVar[
@@ -1306,6 +1326,9 @@ class InteractionTransformer(BaseNumericTransformer):
         lazyframe_compatible: bool
             class attribute, indicates whether transformer works with lazyframes
 
+        deprecated: bool
+            indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1315,6 +1338,8 @@ class InteractionTransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -1509,6 +1534,9 @@ class PCATransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1518,6 +1546,8 @@ class PCATransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     def __init__(
         self,

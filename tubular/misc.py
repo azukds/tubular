@@ -189,6 +189,9 @@ class ColumnDtypeSetter(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -198,6 +201,8 @@ class ColumnDtypeSetter(BaseTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,

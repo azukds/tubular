@@ -1743,6 +1743,9 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = True
@@ -1752,6 +1755,8 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -1930,6 +1935,9 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1939,6 +1947,8 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(

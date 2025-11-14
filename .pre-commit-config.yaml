@@ -12,3 +12,9 @@ repos:
     rev: 0.3.4
     hooks:
     -   id: auto-walrus
+-   repo: local
+    hooks:
+      - id: generate-feature-table
+        name: Generate feature table for README
+        entry: python feature_table.py
+        language: system

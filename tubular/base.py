@@ -31,6 +31,8 @@ from tubular.types import (
 
 pd.options.mode.copy_on_write = True
 
+FEATURE_REGISTRY = {}
+
 
 class BaseTransformer(BaseEstimator, TransformerMixin):
     """Base tranformer class which all other transformers in the package inherit from.
@@ -87,6 +89,24 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     FITS = True
 
     _version = _get_version()
+
+    def __init_subclass__(cls):
+        """Logic to be run when a new child class is defined.
+
+        This populates a dictionary, which will help us track which
+        transformers in the repo support which functionality.
+        """
+        deprecated = getattr(cls, "deprecated", False)
+
+        # ignore deprecated transformers and base classes
+        if deprecated or cls.__name__.startswith("Base"):
+            return
+
+        FEATURE_REGISTRY[cls.__name__] = {
+            "polars_compatible": cls.polars_compatible,
+            "jsonable": cls.jsonable,
+            "lazyframe_compatible": cls.lazyframe_compatible,
+        }
 
     def classname(self) -> str:
         """Return the name of the current class when called.
@@ -551,6 +571,9 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -558,6 +581,10 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     FITS = False
 
     jsonable = False
+
+    lazyframe_compatible = False
+
+    deprecated = True
 
     @beartype
     def __init__(
