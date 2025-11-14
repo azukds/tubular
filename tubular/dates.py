@@ -1505,7 +1505,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         ...    )
 
         >>> transformer.to_json()
-        {'tubular_version': 'dev', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
         """
 
         json_dict = super().to_json()
