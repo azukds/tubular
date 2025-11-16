@@ -13,10 +13,12 @@ from tubular._utils import (
 )
 from tubular.types import DataFrame, NumericTypes
 
+from tubular._registry import register
+
 if TYPE_CHECKING:
     from narhwals.typing import FrameT
 
-
+@register
 class CheckNumericMixin:
     """
     Mixin class with methods for numeric transformers
@@ -57,7 +59,7 @@ class CheckNumericMixin:
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
-
+@register
 class DropOriginalMixin:
     """Mixin class to validate and apply 'drop_original' argument used by various transformers.
 
@@ -110,6 +112,7 @@ class DropOriginalMixin:
         return X.to_native() if return_native else X
 
 
+@register
 class WeightColumnMixin:
     """
     Mixin class with weights functionality

@@ -22,6 +22,7 @@ from tubular._utils import (
 )
 from tubular.types import DataFrame, Series
 
+from tubular._registry import register
 
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     """Base class for capping transformers, contains functionality shared across capping transformer classes.
@@ -591,6 +592,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class CappingTransformer(BaseCappingTransformer):
     """Transformer to cap numeric values at both or either minimum and maximum values.
 
@@ -742,6 +744,7 @@ class CappingTransformer(BaseCappingTransformer):
         return self
 
 
+@register
 class OutOfRangeNullTransformer(BaseCappingTransformer):
     """Transformer to set values outside of a range to null.
 

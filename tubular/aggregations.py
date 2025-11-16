@@ -16,6 +16,8 @@ from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, NumericTypes
 
+from tubular._registry import register
+
 
 class ColumnsOverRowAggregationOptions(str, Enum):
     """Aggregation options fo ColumnsOverRowAggregationTransformer."""
@@ -219,6 +221,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
+@register
 class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     """Aggregate rows over specified columns, where rows are grouped by provided key column.
 
@@ -405,6 +408,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """Aggregate provided columns over each row.
 

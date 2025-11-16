@@ -20,7 +20,9 @@ from tubular.types import (
     NonEmptyListOfStrs,
 )
 
+from tubular._registry import register
 
+@register
 class SetValueTransformer(BaseTransformer):
     """Transformer to set value of column(s) to a given value.
 

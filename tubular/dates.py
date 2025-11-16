@@ -30,6 +30,7 @@ from tubular.types import (
     ListOfThreeStrs,
     ListOfTwoStrs,
 )
+from tubular._registry import register
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -491,7 +492,7 @@ DateDifferenceUnitsOptionsStr = Annotated[
     Is[lambda s: s in DateDifferenceUnitsOptions._value2member_map_],
 ]
 
-
+@register
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
@@ -718,6 +719,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class ToDatetimeTransformer(BaseTransformer):
     """Class to transform convert specified columns to datetime.
 
@@ -828,6 +830,7 @@ class ToDatetimeTransformer(BaseTransformer):
         )
 
 
+@register
 class BetweenDatesTransformer(BaseGenericDateTransformer):
     """Transformer to generate a boolean column indicating if one date is between two others.
 
@@ -1056,6 +1059,7 @@ DatetimeInfoOptionList = Annotated[
 ]
 
 
+@register
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
 
@@ -1441,6 +1445,7 @@ NumberNotBool = Annotated[
 ]
 
 
+@register
 class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """Transformer to derive a feature in a dataframe by calculating the
     sine or cosine of a datetime column in a given unit (e.g hour), with the option to scale

@@ -31,6 +31,7 @@ from tubular.types import (
     Series,
 )
 
+from tubular._registry import register
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
 
@@ -198,7 +199,7 @@ class BaseNominalTransformer(BaseTransformer):
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
-
+@register
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """Transformer to group together rare levels of nominal variables into a new level,
     labelled 'rare' (by default).
@@ -698,7 +699,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
-
+@register
 class MeanResponseTransformer(
     BaseNominalTransformer,
     WeightColumnMixin,
@@ -1441,7 +1442,7 @@ class MeanResponseTransformer(
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
-
+@register
 class OneHotEncodingTransformer(
     DropOriginalMixin,
     BaseTransformer,
