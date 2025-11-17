@@ -32,6 +32,7 @@ from tubular.types import (
 )
 
 from tubular._registry import register
+
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
 
@@ -198,6 +199,7 @@ class BaseNominalTransformer(BaseTransformer):
         self.check_mappable_rows(X, present_values)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
 
 @register
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
@@ -698,6 +700,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         X = X.with_columns(**transform_expressions)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
+
 
 @register
 class MeanResponseTransformer(
@@ -1441,6 +1444,7 @@ class MeanResponseTransformer(
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
+
 
 @register
 class OneHotEncodingTransformer(

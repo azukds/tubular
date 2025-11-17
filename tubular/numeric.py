@@ -182,6 +182,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
+
 @register
 class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     """Transformer that generates a new column based on kmeans algorithm.
@@ -450,6 +451,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         )
         return self.drop_original_column(X, self.drop_original, self.columns[0])
 
+
 @register
 class DifferenceTransformer(BaseNumericTransformer):
     """Transformer that performs subtraction operation between two columns.
@@ -568,6 +570,7 @@ class DifferenceTransformer(BaseNumericTransformer):
             List containing the name of the new column created by the transformation.
         """
         return [f"{self.columns[0]}_minus_{self.columns[1]}"]
+
 
 @register
 class RatioTransformer(BaseNumericTransformer):

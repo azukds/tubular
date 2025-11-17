@@ -18,6 +18,7 @@ from tubular._registry import register
 if TYPE_CHECKING:
     from narhwals.typing import FrameT
 
+
 @register
 class CheckNumericMixin:
     """
@@ -58,6 +59,7 @@ class CheckNumericMixin:
             raise TypeError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
 
 @register
 class DropOriginalMixin:

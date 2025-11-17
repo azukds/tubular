@@ -28,6 +28,7 @@ from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, NonEmptyListOfStrs, Series
 
 from tubular._registry import register
+
 pl.enable_string_cache()
 
 
@@ -217,6 +218,7 @@ class BaseImputer(BaseTransformer):
         X = X.with_columns(**transform_expressions)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
 
 @register
 class ArbitraryImputer(BaseImputer):

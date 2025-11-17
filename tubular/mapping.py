@@ -504,6 +504,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
+
 @register
 class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     """Transformer to map values in columns to other values e.g. to merge two levels into one.

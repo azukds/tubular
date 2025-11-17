@@ -492,6 +492,7 @@ DateDifferenceUnitsOptionsStr = Annotated[
     Is[lambda s: s in DateDifferenceUnitsOptions._value2member_map_],
 ]
 
+
 @register
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
