@@ -25,10 +25,10 @@ dependencies = [
 ]
 requires-python = ">=3.9"
 authors = [{ name = "Allianz UK Data Science Team", email="datasciencepackages@allianz.co.uk"}]
-description = "Package to perform pre processing steps for machine learning models"
+description = "Python package implementing ML feature engineering and pre-processing for polars or pandas dataframes."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
-keywords = ["data science", "feature engineering", "data transforms", "pipeline", "sklearn", "machine learning", "ML", "DS"]
+keywords = ["polars", "pandas", "feature engineering", "pre-processing", "machine learning", "ML", "data science", "data transforms", "pipeline", "sklearn", "DS"]
 classifiers=[
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.9",
