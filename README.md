@@ -60,6 +60,7 @@ We are currently in the process of rolling out support for some new features:
 - polars lazyframe support
 
 You can track our progress here:
+```
 <!-- AUTO-GENERATED: feature table>
 | polars_compatible   | pandas_compatible   | jsonable   | lazyframe_compatible   |
 |---------------------|---------------------|------------|------------------------|
@@ -86,6 +87,7 @@ You can track our progress here:
 | ✓                   | ✓                   | ✓          | ✗                      |
 | ✓                   | ✓                   | ✗          | ✗                      |
 <!-- /AUTO-GENERATED: feature table>
+```
 
 ## Installation
 
