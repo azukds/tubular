@@ -1443,7 +1443,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         self,
         columns: Union[str, list[str]],
         include: Union[DatetimeComponentOptionList, DatetimeComponentOptionStr],
-        **kwargs: bool,
+        **kwargs: Union[str, bool],
     ) -> None:
         """
         Initialize the DatetimeComponentExtractor.
@@ -1465,6 +1465,8 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
         if isinstance(include, str):
             include = [include]
+
+        kwargs.pop("new_column_name", None)
 
         super().__init__(
             columns=columns,
@@ -1583,8 +1585,6 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         X = X.with_columns(
             **transform_dict,
         )
-
-
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
