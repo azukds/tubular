@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Union
 
+import narwhals as nw
 import pandas as pd
 from beartype import beartype
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -65,6 +66,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> BaseTransformer(
@@ -75,6 +79,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -267,10 +273,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y : None or pd.DataFrame or pd.Series, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
-        Raises
-        ------
-            ValueError: X/y empty
-
         Returns
         -------
             BaseTransformer: returns self
@@ -293,14 +295,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y = _convert_series_to_narwhals(y)
 
         self.columns_check(X)
-
-        if not X.shape[0] > 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
-
-        if (y is not None) and (not y.shape[0] > 0):
-            msg = f"{self.classname()}: y is empty; {y.shape}"
-            raise ValueError(msg)
 
         return self
 
@@ -331,16 +325,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             option to override return_native attr in transformer, useful when calling parent
             methods
 
-        Raises
-        ------
-            ValueError: shape of X/y do not match
-
         Returns
         -------
             pd/pl/nw.DataFrame: DataFrame with added column containing y
 
         Examples
         --------
+            # correct usage
             >>> import polars as pl
             >>> transformer=BaseTransformer(
             ... columns='a',
@@ -358,17 +349,20 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             │ 2   ┆ 4   ┆ 2                   │
             └─────┴─────┴─────────────────────┘
 
+            # example error from mismatched X/y
+            >>> X=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+            >>> y=pl.Series(name='a', values=[1])
+            >>> transformer._combine_X_y(X, y)
+            Traceback (most recent call last):
+            ...
+            narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
+            ...
+
         """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
         return_native = self._process_return_native(return_native_override)
-
-        len_X = len(X)
-        len_y = len(y)
-        if len_X != len_y:
-            msg = f"{self.classname()}: X and y have different numbers of rows ({len_X} vs {len_y})"
-            raise ValueError(msg)
 
         X = X.with_columns(_temporary_response=y)
 
@@ -429,10 +423,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : pd/pl.DataFrame
             Input X, copied if specified by user.
 
-        Raises
-        ------
-        ValueError: for empty df
-
         Examples
         --------
             >>> import polars as pl
@@ -458,7 +448,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        if self.copy:
+        if self.copy and not isinstance(X, nw.LazyFrame):
             # to prevent overwriting original dataframe
             X = X.clone()
 
@@ -466,10 +456,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         if self.verbose:
             print("BaseTransformer.transform() called")
-
-        if not len(X) > 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
@@ -575,6 +561,9 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
@@ -665,9 +654,27 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         """
         X = super().transform(X)
 
-        X[self.new_column_names] = getattr(X[self.columns], self.pd_method_name)(
-            **self.pd_method_kwargs,
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated.
+        # the new_column_names attr is a bit messy,
+        # sometimes str and sometimes list
+        # editing init to make it always a list
+        # broke other tests which didn't seem worth fixing
+        # so have included handling for both cases here..
+        if X.empty:
+            # hard to know the best dtype to use here given the
+            # flexibility of this transformer, which is
+            # partially why it was deprecated
+            if isinstance(self.new_column_names, list):
+                for col in X[self.new_column_names]:
+                    X[col] = pd.Series(dtype=float)
+            else:
+                X[self.new_column_names] = pd.Series(dtype=float)
+
+        else:
+            X[self.new_column_names] = getattr(X[self.columns], self.pd_method_name)(
+                **self.pd_method_kwargs,
+            )
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(

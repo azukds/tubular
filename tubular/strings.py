@@ -9,7 +9,6 @@ from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
-from tubular.mixins import SeparatorColumnMixin
 from tubular.types import GenericKwargs, ListOfOneStr
 
 
@@ -54,9 +53,14 @@ class SeriesStrMethodTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -151,7 +155,7 @@ class SeriesStrMethodTransformer(BaseTransformer):
     for it to be modernised
     """,
 )
-class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
+class StringConcatenator(BaseTransformer):
     """Transformer to combine data from specified columns, of mixed datatypes, into a new column containing one string.
 
     Parameters
@@ -178,9 +182,14 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -190,7 +199,7 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
         columns: Union[str, list[str]],
         new_column_name: str = "new_column",
         separator: str = " ",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -209,7 +218,7 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
         super().__init__(columns=columns, **kwargs)
 
         self.new_column_name = new_column_name
-        self.check_and_set_separator_column(separator)
+        self.separator = separator
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Combine data from specified columns, of mixed datatypes, into a new column containing one string.
@@ -227,8 +236,14 @@ class StringConcatenator(SeparatorColumnMixin, BaseTransformer):
         """
         X = super().transform(X)
 
-        X[self.new_column_name] = (
-            X[self.columns].astype(str).apply(self.separator.join, axis=1)
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated
+        if X.empty:
+            X[self.new_column_name] = pd.Series(dtype=str)
+
+        else:
+            X[self.new_column_name] = (
+                X[self.columns].astype(str).apply(self.separator.join, axis=1)
+            )
 
         return X
