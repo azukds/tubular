@@ -115,7 +115,6 @@ select = [
 preview = true
 
 ignore = [
-    "E501", # ignore E501 - linelength limit (covered by black except in docstrings) 
     "B905", # this rule makes changes that error for python3.9, as the strict argument for zip() was introduced in python3.10
     "PYI041", # clashes with beartype
     "TC001", # clashes with beartype, was previously "TCH001"
@@ -142,17 +141,23 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "DOC",
     "ANN",
     "S101",
-    "PLC2701" # complains about private imports, which we test
+    "PLC2701", # complains about private imports, which we test
+    "E501",
     ]
-"profiling/*"=["D", "DOC"]
+"profiling/*"=["D", "DOC", "E501"]
 # too much to turn on D/DOC lints in one go,
 # will tackle individual modules at a time
-"numeric.py"=["D", "DOC"]
-"nominal.py"=["D", "DOC"]
-"mixins.py"=["D", "DOC"]
-"mapping.py"=["D", "DOC"]
-"imputers.py"=["D", "DOC"]
-"dates.py"=["D", "DOC"]
+"numeric.py"=["D", "DOC", "E501"]
+"nominal.py"=["D", "DOC","E501"]
+"mixins.py"=["D", "DOC", "E501"]
+"mapping.py"=["D", "DOC", "E501"]
+"imputers.py"=["D", "DOC", "E501"]
+"dates.py"=["D", "DOC", "E501"]
+"strings.py"=["E501"]
+"misc.py"=["E501"]
+"comparison.py"=["E501"]
+"capping.py"=["E501"]
+
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true
