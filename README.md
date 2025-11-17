@@ -60,34 +60,32 @@ We are currently in the process of rolling out support for some new features:
 - polars lazyframe support
 
 You can track our progress here:
-```
-<!-- AUTO-GENERATED: feature table>
-| polars_compatible   | pandas_compatible   | jsonable   | lazyframe_compatible   |
-|---------------------|---------------------|------------|------------------------|
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✓          | ✗                      |
-| ✓                   | ✓                   | ✗          | ✗                      |
-<!-- /AUTO-GENERATED: feature table>
-``` 
+<!-- AUTO-GENERATED feature table -->
+| polars_compatible   | pandas_compatible   | jsonable           | lazyframe_compatible   |
+|---------------------|---------------------|--------------------|------------------------|
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+<!-- /AUTO-GENERATED feature table -->
 
 ## Installation
 

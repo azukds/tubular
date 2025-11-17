@@ -12,15 +12,15 @@ def get_feature_table() -> str:
     """Function to process FEATURE_REGISTRY into markdown table to README"""
     df = pd.DataFrame.from_dict(FEATURE_REGISTRY, orient="index").sort_index()
     # replace bools with unicode tick/cross
-    df = df.replace({True: "✓", False: "✗"})
+    df = df.replace({True: ":heavy_check_mark:", False: ":unchecked:"})
 
     return df.to_markdown(tablefmt="github", index=False).strip()
 
 
 def insert_table_to_readme(table: str, readme_text: str) -> None:
     """Function to insert markdown table into repo README file"""
-    START = "<!-- AUTO-GENERATED: feature table>"
-    END = "<!-- /AUTO-GENERATED: feature table>"
+    START = "<!-- AUTO-GENERATED feature table -->"
+    END = "<!-- /AUTO-GENERATED feature table -->"
     pattern = re.compile(rf"{re.escape(START)}.*?{re.escape(END)}", flags=re.DOTALL)
     replacement = f"{START}\n{table}\n{END}"
 
