@@ -87,7 +87,7 @@ You can track our progress here:
 | ✓                   | ✓                   | ✓          | ✗                      |
 | ✓                   | ✓                   | ✗          | ✗                      |
 <!-- /AUTO-GENERATED: feature table>
-```
+``` 
 
 ## Installation
 
