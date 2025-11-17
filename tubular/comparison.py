@@ -1,59 +1,75 @@
-"""Contains transformer for comparing equality between given columns (deprecated)."""
+"""Contains transformers for performing data comparisons."""
 
 from __future__ import annotations
-
-from typing import TYPE_CHECKING, Optional
 
 from beartype import beartype
 from typing_extensions import deprecated
 
-from tubular._registry import register
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import ListOfTwoStrs
 
-if TYPE_CHECKING:
-    import pandas as pd
 
-
-# DEPRECATED TRANSFORMERS
 @deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
+    "EqualityChecker is deprecated and will be removed in a future version. "
+    "Please use a different approach for your use case. If you have a specific "
+    "use case, please open an issue for it to be modernised",
 )
-@register
 class EqualityChecker(
     DropOriginalMixin,
     BaseTransformer,
 ):
-    """Transformer to check if two columns are equal.
+    """Check if two columns are equal.
+
+    This transformer creates a new column that contains boolean values indicating
+    whether the values in two specified columns are equal.
+
+    Parameters
+    ----------
+    columns : list of two str
+        Two column names to compare for equality.
+    new_column_name : str
+        Name for the new column containing the equality check results.
+    drop_original : bool, default=False
+        Whether to drop the original columns after creating the new column.
+    copy : bool, default=False
+        Whether to copy the dataframe before transformation.
+    verbose : bool, default=False
+        Whether to print verbose output.
+    return_native : bool, default=True
+        Whether to return native dataframe (pandas/polars) or narwhals frame.
 
     Attributes
     ----------
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+    columns : list of two str
+        Two column names to compare for equality.
+    new_column_name : str
+        Name for the new column containing the equality check results.
+    drop_original : bool
+        Whether to drop the original columns after creating the new column.
 
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+    .. deprecated:: 0.5.0
+        This transformer is deprecated and will be removed in a future version.
 
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+    Examples
+    --------
+    >>> from tubular.comparison import EqualityChecker
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'a': [1, 2, 3], 'b': [1, 2, 4]})
+    >>> transformer = EqualityChecker(columns=['a', 'b'], new_column_name='equal')
+    >>> df_transformed = transformer.transform(df)
+    >>> print(df_transformed[['a', 'b', 'equal']])
+       a  b  equal
+    0  1  1   True
+    1  2  2   True
+    2  3  4  False
 
     """
 
-    polars_compatible = False
+    # class attribute, indicates whether transformer works with lazyframes
+    WORKS_WITH_LAZYFRAMES = True
 
-    lazyframe_compatible = False
-
+    # class attribute, indicates whether transform requires fit to be run first
     FITS = False
 
     jsonable = False
@@ -64,74 +80,63 @@ class EqualityChecker(
         columns: ListOfTwoStrs,
         new_column_name: str,
         drop_original: bool = False,
-        **kwargs: Optional[bool],
-    ) -> None:
-        """Initialise class instance.
+        copy: bool = False,
+        verbose: bool = False,
+        return_native: bool = True,
+    ):
+        """Initialize EqualityChecker.
 
         Parameters
         ----------
-        columns: list
-            List containing names of the two columns to check.
-
-        new_column_name: string
-            string containing the name of the new column.
-
-        drop_original: boolean = False
-            boolean representing dropping the input columns from X after checks.
-
-        **kwargs:
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+        columns : list of two str
+            Two column names to compare for equality.
+        new_column_name : str
+            Name for the new column containing the equality check results.
+        drop_original : bool, default=False
+            Whether to drop the original columns after creating the new column.
+        copy : bool, default=False
+            Whether to copy the dataframe before transformation.
+        verbose : bool, default=False
+            Whether to print verbose output.
+        return_native : bool, default=True
+            Whether to return native dataframe (pandas/polars) or narwhals frame.
 
         """
-        super().__init__(columns=columns, **kwargs)
-
-        self.drop_original = drop_original
+        super().__init__(columns=columns, copy=copy, verbose=verbose, return_native=return_native)
         self.new_column_name = new_column_name
+        self.drop_original = drop_original
 
-    def get_feature_names_out(self) -> list[str]:
-        """Get list of features modified/created by the transformer.
-
-        Returns
-        -------
-        list[str]:
-            list of features modified/created by the transformer
-
-        Examples
-        --------
-        >>> # base classes just return inputs
-        >>> transformer  = EqualityChecker(
-        ... columns=['a',  'b'],
-        ... new_column_name='bla',
-        ...    )
-
-        >>> transformer.get_feature_names_out()
-        ['bla']
-
-        """
-        return [self.new_column_name]
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Create a column which indicated equality between given columns.
+    @beartype
+    def transform(
+        self,
+        X,
+    ):
+        """Transform the dataframe by checking column equality.
 
         Parameters
         ----------
-        X : pd.DataFrame
-            Data to apply mappings to.
+        X : narwhals Frame
+            Input dataframe to transform.
 
         Returns
         -------
-        X : pd.DataFrame
-            Transformed input X with additional boolean column.
+        narwhals Frame
+            Transformed dataframe with equality check column added.
 
         """
-        X = super().transform(X)
+        import narwhals as nw
 
-        X[self.new_column_name] = X[self.columns[0]] == X[self.columns[1]]
+        X = super().transform(X, return_native_override=False)
 
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            self,
-            X,
-            self.drop_original,
-            self.columns,
+        # Check equality
+        X = X.with_columns(
+            (X[self.columns[0]] == X[self.columns[1]]).alias(self.new_column_name)
         )
+
+        # Drop original columns if requested
+        if self.drop_original:
+            X = X.drop(self.columns)
+
+        from tubular._utils import _return_narwhals_or_native_dataframe
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
