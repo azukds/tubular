@@ -214,7 +214,7 @@ def _get_mode_calculation_expressions(
 
 @beartype
 def _weighted_quantile_expr(
-    initial_weights_expr: Optional[nw.Expr] = None,
+    initial_weights_expr: nw.Expr,
 ) -> nw.Expr:
     """Produce an expression that computes the cumulative fraction of weights.
 
@@ -227,7 +227,7 @@ def _weighted_quantile_expr(
 
     Parameters
     ----------
-    initial_weights_expr : nw.Expr, optional
+    initial_weights_expr : nw.Expr
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
 
