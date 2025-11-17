@@ -1389,16 +1389,7 @@ DatetimeComponentOptionList = Annotated[
 class DatetimeComponentExtractor(BaseDatetimeTransformer):
     """Transformer to extract numeric datetime components.
 
-    Parameters
-    ----------
-    columns : str or list
-        datetime columns to extract information from
 
-    include : list of str
-        Which numeric datetime components to extract
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
     Attributes
     ----------
@@ -1424,6 +1415,14 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     ... include=['hour', 'day'],
     ...    )
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump = transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+
+    >>> DatetimeComponentExtractor.from_json(json_dump)
+    DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
     """
 
     DATETIME_ATTR: ClassVar[dict[str, str]] = {
@@ -1444,20 +1443,32 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         self,
         columns: Union[str, list[str]],
         include: Union[DatetimeComponentOptionList, DatetimeComponentOptionStr],
-        drop_original: Optional[bool] = False,
-        new_column_name: str = "dummy",
         **kwargs: bool,
     ) -> None:
-        if include is None:
-            include = self.INCLUDE_OPTIONS
+        """
+        Initialize the DatetimeComponentExtractor.
+
+        Parameters
+        ----------
+        columns : str or list
+            datetime columns to extract information from
+
+        include : list of str
+            Which numeric datetime components to extract
+
+        new_column_name : str, default = "dummy"
+            Name given to new column created by the transformation.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+        """
 
         if isinstance(include, str):
             include = [include]
 
         super().__init__(
             columns=columns,
-            drop_original=drop_original,
-            new_column_name=new_column_name,
+            new_column_name="dummy",
             **kwargs,
         )
 
@@ -1573,15 +1584,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
             **transform_dict,
         )
 
-        # Drop original columns if self.drop_original is True
-        if self.drop_original:
-            X = DropOriginalMixin.drop_original_column(
-                self,
-                X,
-                self.drop_original,
-                self.columns,
-                return_native=False,
-            )
+
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

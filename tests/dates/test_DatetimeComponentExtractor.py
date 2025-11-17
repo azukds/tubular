@@ -8,25 +8,19 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalTransformMixinTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+)
 from tubular.dates import DatetimeComponentExtractor
 
 
-@pytest.fixture()
-def hour_extractor():
-    return DatetimeComponentExtractor(columns=["a"], include=["hour"])
-
-
-@pytest.fixture()
-def day_extractor():
-    return DatetimeComponentExtractor(columns=["a"], include=["day"])
 
 
 class TestInit(
@@ -63,7 +57,6 @@ class TestInit(
 class TestTransform(
     GenericTransformTests,
     DatetimeMixinTransformTests,
-    DropOriginalTransformMixinTests,
 ):
     "tests for DatetimeComponentExtractor.transform"
 
@@ -71,11 +64,12 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DatetimeComponentExtractor"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_single_column_output_for_all_options(self, library):
+    def test_output_for_subset_of_options(self, library, from_json):
         """Test that correct df is returned after transformation."""
         # Create test data with explicit datetime values
         df = nw.from_native(d.create_date_test_df(library=library))
@@ -159,6 +153,8 @@ class TestTransform(
             columns=["b"],
             include=["hour", "day"],
         )
+
+        transformer = _handle_from_json(transformer, from_json)
         transformed = transformer.transform(df.to_native())
 
         # Define the expected output DataFrame
@@ -211,14 +207,186 @@ class TestTransform(
             )
 
 
-def test_is_serialisable(tmp_path):
-    transformer = DatetimeComponentExtractor(columns=["b"], include=["hour"])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "library",
+        ["pandas", "polars"],
+    )
+    def test_output_for_all_options(self, library, from_json):
+        """Test that correct df is returned after transformation for all options, including JSON serialization."""
+        # Create test data with explicit datetime values
+        df = nw.from_native(d.create_date_test_df(library=library))
+        backend = nw.get_native_namespace(df)
+        df = df.with_columns(
+            nw.new_series(
+                name="b",
+                values=[
+                    None,
+                    datetime.datetime(
+                        2019,
+                        12,
+                        25,
+                        12,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                    datetime.datetime(
+                        2018,
+                        11,
+                        10,
+                        11,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                    datetime.datetime(
+                        2018,
+                        11,
+                        10,
+                        10,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                    datetime.datetime(
+                        2018,
+                        9,
+                        10,
+                        18,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                    datetime.datetime(
+                        2015,
+                        11,
+                        10,
+                        22,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                    datetime.datetime(
+                        2015,
+                        11,
+                        10,
+                        19,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                    datetime.datetime(
+                        2015,
+                        7,
+                        23,
+                        3,
+                        0,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                ],
+                backend=backend,
+                dtype=nw.Datetime(time_unit="us", time_zone="UTC"),
+            ),
+        )
 
-    # pickle transformer
-    path = tmp_path / "transformer.pkl"
+        # Initialize the transformer with all components to extract
+        transformer = DatetimeComponentExtractor(
+            columns=["b"],
+            include=["hour", "day", "month", "year"],
+        )
 
-    # serialise without raising error
-    joblib.dump(transformer, path)
+        # Handle JSON serialization and deserialization
+        transformer = _handle_from_json(transformer, from_json)
+
+        transformed = transformer.transform(df.to_native())
+
+        # Define the expected output DataFrame
+        expected = df.clone()
+        expected = df.with_columns(
+            nw.new_series(
+                name="b_hour",
+                values=[
+                    None,
+                    12.0,
+                    11.0,
+                    10.0,
+                    18.0,
+                    22.0,
+                    19.0,
+                    3.0,
+                ],
+                backend=backend,
+                dtype=nw.Float32,
+            ),
+            nw.new_series(
+                name="b_day",
+                values=[
+                    None,
+                    25.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    23.0,
+                ],
+                backend=backend,
+                dtype=nw.Float32,
+            ),
+            nw.new_series(
+                name="b_month",
+                values=[
+                    None,
+                    12.0,
+                    11.0,
+                    11.0,
+                    9.0,
+                    11.0,
+                    11.0,
+                    7.0,
+                ],
+                backend=backend,
+                dtype=nw.Float32,
+            ),
+            nw.new_series(
+                name="b_year",
+                values=[
+                    None,
+                    2019.0,
+                    2018.0,
+                    2018.0,
+                    2018.0,
+                    2015.0,
+                    2015.0,
+                    2015.0,
+                ],
+                backend=backend,
+                dtype=nw.Float32,
+            ),
+        )
+
+        # Assert that the transformed DataFrame matches the expected output
+        assert_frame_equal_dispatch(transformed, expected.to_native())
+
+        # Test single row transformation
+        df = nw.from_native(df)
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+            )
+
+
+def _handle_from_json(transformer, from_json):
+    if from_json:
+        json_data = transformer.to_json()
+        transformer = DatetimeComponentExtractor.from_json(json_data)
+    return transformer
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
