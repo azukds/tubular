@@ -1,6 +1,5 @@
 import datetime
 
-import joblib
 import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
@@ -19,8 +18,6 @@ from tests.utils import (
     assert_frame_equal_dispatch,
 )
 from tubular.dates import DatetimeComponentExtractor
-
-
 
 
 class TestInit(
@@ -206,7 +203,6 @@ class TestTransform(
                 df_expected_row,
             )
 
-
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
@@ -380,13 +376,6 @@ class TestTransform(
                 df_transformed_row,
                 df_expected_row,
             )
-
-
-def _handle_from_json(transformer, from_json):
-    if from_json:
-        json_data = transformer.to_json()
-        transformer = DatetimeComponentExtractor.from_json(json_data)
-    return transformer
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
