@@ -54,9 +54,7 @@ jobs:
 
       - name: Fail if update feature table produced changes
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-          echo "Changes detected: "
-          git status --porcelain
+          if [[ -n "$(git status --porcelain README.md)" ]]; then
           echo "README.md may be out of date, run script feature_table.py and commit the results (or enable pre-commit to do this automatically)"
           git --no-pager diff README.md
           exit 1
