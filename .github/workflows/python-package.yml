@@ -56,7 +56,7 @@ jobs:
         run: |
           if [[ -n "$git status --porcelain" ]]; then
           echo "README.md is out of date, run script feature_table.py and commit the results (or enable pre-commit to do this automatically)"
-          --no-pager diff README.md
+          git --no-pager diff README.md
           exit 1
           fi
 
