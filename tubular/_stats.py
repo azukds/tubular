@@ -228,8 +228,7 @@ def _weighted_quantile_expr(
     Parameters
     ----------
     initial_weights_expr : nw.Expr
-        initial expression for weights column. Defaults to None,
-        and in this case nw.col(weights_column) is taken as the initial expr
+        initial expression for weights column.
 
     Returns
     -------
