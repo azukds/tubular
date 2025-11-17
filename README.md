@@ -63,28 +63,28 @@ You can track our progress here:
 <!-- AUTO-GENERATED feature table -->
 | polars_compatible   | pandas_compatible   | jsonable           | lazyframe_compatible   |
 |---------------------|---------------------|--------------------|------------------------|
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :unchecked:            |
-| :heavy_check_mark:  | :heavy_check_mark:  | :unchecked:        | :unchecked:            |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
 <!-- /AUTO-GENERATED feature table -->
 
 ## Installation
