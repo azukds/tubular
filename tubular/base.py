@@ -104,6 +104,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         FEATURE_REGISTRY[cls.__name__] = {
             "polars_compatible": cls.polars_compatible,
+            # repo was originally written in pandas, so the is a given
+            "pandas_compatible": True,
             "jsonable": cls.jsonable,
             "lazyframe_compatible": cls.lazyframe_compatible,
         }

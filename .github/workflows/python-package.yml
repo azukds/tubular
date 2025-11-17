@@ -80,3 +80,33 @@ jobs:
             ruff --version
             ruff format --diff .
             ruff format --check .
+  
+  update:
+    runs-on: "ubuntu-22.04"
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+  
+    steps:
+        - uses: actions/checkout@v3
+
+        - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v4
+          with:
+            python-version: ${{ matrix.python-version }}
+
+        - name: Install env
+          run: |
+            uv pip install -r requirements-dev.txt
+
+        - name: Update feature table
+          run: |
+            python ./feature_table.py
+
+        - name: Fail if update feature table produced changes
+          run: |
+            if [[ -n "$git status --porcelain" ]]; then
+            echo "README.md is out of date, run script feature_table.py and commit the results (or enable pre-commit to do this automatically)"
+            --no-pager diff README.md
+            exit 1
+            fi

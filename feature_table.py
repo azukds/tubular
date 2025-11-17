@@ -12,9 +12,9 @@ def get_feature_table() -> str:
     """Function to process FEATURE_REGISTRY into markdown table to README"""
     df = pd.DataFrame.from_dict(FEATURE_REGISTRY, orient="index").sort_index()
     # replace bools with unicode tick/cross
-    df = df.replace({True: "\u2705", False: "\u274c"})
+    df = df.replace({True: "✓", False: "✗"})
 
-    return df.to_markdown(tablefmt="github")
+    return df.to_markdown(tablefmt="github", index=False).strip()
 
 
 def insert_table_to_readme(table: str, readme_text: str) -> None:

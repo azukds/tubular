@@ -61,30 +61,30 @@ We are currently in the process of rolling out support for some new features:
 
 You can track our progress here:
 <!-- AUTO-GENERATED: feature table>
-|                                    | polars_compatible   | jsonable   | lazyframe_compatible   |
-|------------------------------------|---------------------|------------|------------------------|
-| AggregateColumnsOverRowTransformer | ✅                   | ❌          | ❌                      |
-| AggregateRowsOverColumnTransformer | ✅                   | ❌          | ❌                      |
-| ArbitraryImputer                   | ✅                   | ✅          | ❌                      |
-| BetweenDatesTransformer            | ✅                   | ❌          | ❌                      |
-| CappingTransformer                 | ✅                   | ❌          | ❌                      |
-| DateDifferenceTransformer          | ✅                   | ✅          | ❌                      |
-| DatetimeInfoExtractor              | ✅                   | ❌          | ❌                      |
-| DatetimeSinusoidCalculator         | ✅                   | ❌          | ❌                      |
-| DifferenceTransformer              | ✅                   | ✅          | ❌                      |
-| GroupRareLevelsTransformer         | ✅                   | ✅          | ❌                      |
-| MappingTransformer                 | ✅                   | ✅          | ❌                      |
-| MeanImputer                        | ✅                   | ✅          | ❌                      |
-| MeanResponseTransformer            | ✅                   | ❌          | ❌                      |
-| MedianImputer                      | ✅                   | ✅          | ❌                      |
-| ModeImputer                        | ✅                   | ✅          | ❌                      |
-| NullIndicator                      | ✅                   | ✅          | ❌                      |
-| OneDKmeansTransformer              | ✅                   | ❌          | ❌                      |
-| OneHotEncodingTransformer          | ✅                   | ❌          | ❌                      |
-| OutOfRangeNullTransformer          | ✅                   | ❌          | ❌                      |
-| RatioTransformer                   | ✅                   | ✅          | ❌                      |
-| SetValueTransformer                | ✅                   | ✅          | ❌                      |
-| ToDatetimeTransformer              | ✅                   | ❌          | ❌                      |
+| polars_compatible   | pandas_compatible   | jsonable   | lazyframe_compatible   |
+|---------------------|---------------------|------------|------------------------|
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✓          | ✗                      |
+| ✓                   | ✓                   | ✗          | ✗                      |
 <!-- /AUTO-GENERATED: feature table>
 
 ## Installation
