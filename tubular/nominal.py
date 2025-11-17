@@ -10,6 +10,7 @@ import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
@@ -702,7 +703,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 class MeanResponseTransformer(
     BaseNominalTransformer,
     WeightColumnMixin,
-    BaseMappingTransformMixin,
     DropOriginalMixin,
 ):
     """Transformer to apply mean response encoding. This converts categorical variables to
@@ -1227,7 +1227,13 @@ class MeanResponseTransformer(
                 )
 
         elif isinstance(self.unseen_level_handling, str):
-            X_temp = nw.from_native(BaseMappingTransformMixin.transform(self, X_y))
+            X_temp = X_y.with_columns(
+                nw.col(col).replace_strict(
+                    self.mappings[col],
+                    return_dtype=getattr(nw, self.return_dtypes[col]),
+                )
+                for col in self.encoded_columns
+            )
 
             for c in self.encoded_columns:
                 if self.unseen_level_handling in ["mean", "median"]:
@@ -1375,52 +1381,18 @@ class MeanResponseTransformer(
             )
             self.mappings = original_mappings
 
-        # set up list of paired condition/outcome tuples for mapping
-        conditions_and_outcomes = {
-            output_col: [
-                self._create_mapping_conditions_and_outcomes(
-                    input_col,
-                    key,
-                    self.mappings,
-                    output_col=output_col,
-                )
-                for key in self.mappings[output_col]
-                if key in present_values[input_col]
-            ]
-            for input_col in self.columns
-            for output_col in self.column_to_encoded_columns[input_col]
-        }
-
-        if self.unseen_level_handling:
-            unseen_level_condition_and_outcomes = {
-                output_col: (
-                    ~nw.col(input_col).is_in(self.mappings[output_col].keys()),
-                    (nw.lit(self.unseen_levels_encoding_dict[output_col])),
-                )
-                for input_col in self.columns
-                for output_col in self.column_to_encoded_columns[input_col]
-            }
-
-            conditions_and_outcomes = {
-                col: conditions_and_outcomes[col]
-                + [unseen_level_condition_and_outcomes[col]]
-                for col in self.encoded_columns
-            }
-
-        # apply mapping using functools reduce to build expression
         transform_expressions = {
-            output_col: self._combine_mappings_into_expression(
-                input_col,
-                conditions_and_outcomes,
-                output_col,
+            encoded_col: nw.col(col)
+            .alias(encoded_col)
+            .replace_strict(
+                self.mappings[encoded_col],
+                return_dtype=getattr(nw, self.return_dtypes[encoded_col]),
+                default=self.unseen_levels_encoding_dict[encoded_col]
+                if self.unseen_level_handling
+                else no_default,
             )
-            for input_col in self.columns
-            for output_col in self.column_to_encoded_columns[input_col]
-        }
-
-        transform_expressions = {
-            col: transform_expressions[col].cast(getattr(nw, self.return_dtypes[col]))
-            for col in self.encoded_columns
+            for col in self.columns
+            for encoded_col in self.column_to_encoded_columns[col]
         }
 
         X = X.with_columns(
