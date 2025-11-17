@@ -15,6 +15,7 @@ from beartype import beartype
 from beartype.vale import Is
 from typing_extensions import deprecated
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
@@ -30,7 +31,6 @@ from tubular.types import (
     ListOfThreeStrs,
     ListOfTwoStrs,
 )
-from tubular._registry import register
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT

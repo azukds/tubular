@@ -16,13 +16,12 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT
 from beartype import beartype
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
 from tubular.types import DataFrame, Series
-
-from tubular._registry import register
 
 
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):

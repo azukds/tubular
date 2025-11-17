@@ -14,6 +14,7 @@ import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
@@ -21,8 +22,6 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer
 from tubular.types import DataFrame
-
-from tubular._registry import register
 
 if TYPE_CHECKING:
     from narwhals.typing import IntoDType

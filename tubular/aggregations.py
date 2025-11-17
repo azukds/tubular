@@ -8,6 +8,7 @@ from beartype import beartype
 from beartype.typing import Annotated, List, Optional
 from beartype.vale import Is
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
@@ -15,8 +16,6 @@ from tubular._utils import (
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, NumericTypes
-
-from tubular._registry import register
 
 
 class ColumnsOverRowAggregationOptions(str, Enum):

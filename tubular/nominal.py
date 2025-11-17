@@ -13,6 +13,7 @@ from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
@@ -30,8 +31,6 @@ from tubular.types import (
     PositiveInt,
     Series,
 )
-
-from tubular._registry import register
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT

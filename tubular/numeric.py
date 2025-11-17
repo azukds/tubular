@@ -18,6 +18,7 @@ from sklearn.preprocessing import (
 )
 from typing_extensions import deprecated
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
@@ -36,8 +37,6 @@ from tubular.types import (
     ListOfTwoStrs,
     PositiveNumber,
 )
-
-from tubular._registry import register
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT, IntoSeriesT

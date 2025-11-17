@@ -11,6 +11,7 @@ from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular._checks import _get_all_null_columns
+from tubular._registry import register
 from tubular._stats import (
     _get_mean_calculation_expressions,
     _get_median_calculation_expression,
@@ -26,8 +27,6 @@ from tubular._utils import (
 from tubular.base import BaseTransformer
 from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, NonEmptyListOfStrs, Series
-
-from tubular._registry import register
 
 pl.enable_string_cache()
 
