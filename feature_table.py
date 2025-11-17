@@ -14,7 +14,7 @@ def get_feature_table() -> str:
     # replace bools with unicode tick/cross
     df = df.replace({True: ":heavy_check_mark:", False: ":x:"})
 
-    return df.to_markdown(tablefmt="github", index=False).strip()
+    return df.to_markdown(tablefmt="github").strip()
 
 
 def insert_table_to_readme(table: str, readme_text: str) -> None:
