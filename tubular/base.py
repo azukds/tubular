@@ -90,7 +90,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     _version = _get_version()
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls: BaseTransformer) -> None:
         """Logic to be run when a new child class is defined.
 
         This populates a dictionary, which will help us track which
