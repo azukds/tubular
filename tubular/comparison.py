@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from beartype import beartype
 from typing_extensions import deprecated
 
+from tubular._registry import register
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import ListOfTwoStrs
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     for it to be modernised
     """,
 )
+@register
 class EqualityChecker(
     DropOriginalMixin,
     BaseTransformer,

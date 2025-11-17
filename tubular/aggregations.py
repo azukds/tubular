@@ -1,16 +1,18 @@
 """Contains transformers for performing data aggregations."""
 
 from enum import Enum
-from typing import Union
+from typing import Any, Union
 
 import narwhals as nw
 from beartype import beartype
 from beartype.typing import Annotated, List, Optional
 from beartype.vale import Is
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
@@ -60,6 +62,7 @@ ListOfRowsOverColumnsAggregations = Annotated[
 ]
 
 
+@register
 class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     """Base class for aggregation transformers.
 
@@ -113,7 +116,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -218,7 +221,36 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
 
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = BaseAggregationTransformer(
+        ...     columns='a',
+        ...     aggregations=['min', 'max'],
+        ... )
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseAggregationTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'aggregations': ['min', 'max'], 'drop_original': False}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["aggregations"] = self.aggregations
+        json_dict["init"]["drop_original"] = self.drop_original
+
+        return json_dict
+
+
+@register
 class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     """Aggregate rows over specified columns, where rows are grouped by provided key column.
 
@@ -270,7 +302,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -309,6 +341,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         )
         self.key = key
 
+    @block_from_json
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
 
@@ -330,6 +363,34 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         """
         return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns='a',
+        ...     aggregations=['min', 'max'],
+        ...     key='b',
+        ... )
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'AggregateRowsOverColumnTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'aggregations': ['min', 'max'], 'drop_original': False, 'key': 'b'}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["key"] = self.key
+
+        return json_dict
 
     @beartype
     def transform(
@@ -405,6 +466,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """Aggregate provided columns over each row.
 
