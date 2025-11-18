@@ -1410,10 +1410,11 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
     Example:
     --------
-    >>> DatetimeComponentExtractor(
+    >>> transformer = DatetimeComponentExtractor(
     ... columns='a',
     ... include=['hour', 'day'],
     ...    )
+    >>> transformer
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
 
     >>> # transformer can also be dumped to json and reinitialised
@@ -1466,7 +1467,11 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         if isinstance(include, str):
             include = [include]
 
-        kwargs.pop("new_column_name", None)
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
 
         super().__init__(
             columns=columns,
