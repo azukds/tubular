@@ -1472,6 +1472,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
                 f"{self.classname()}: new_column_name arg is unused by this transformer",
                 stacklevel=2,
             )
+            kwargs.pop("new_column_name", None)
 
         super().__init__(
             columns=columns,
