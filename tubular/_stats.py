@@ -53,11 +53,9 @@ def _get_median_calculation_expression(
         initial_weights_expr = nw.col(weights_column)
 
     if weights_column is not None:
-        cumsum_weights_expr = initial_weights_expr.cum_sum()
+        weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
 
-        median_expr = initial_column_expr.filter(
-            cumsum_weights_expr >= (initial_weights_expr.sum() / 2.0),
-        ).min()
+        median_expr = initial_column_expr.filter(weighted_quantile_expr >= 0.5).min()
 
     else:
         median_expr = initial_column_expr.drop_nulls().median()
@@ -212,3 +210,54 @@ def _get_mode_calculation_expressions(
         )
         for c in columns
     }
+
+
+@beartype
+def _weighted_quantile_expr(
+    initial_weights_expr: nw.Expr,
+) -> nw.Expr:
+    """Produce an expression that computes the cumulative fraction of weights.
+
+    The returned expression calculates the running cumulative sum of the weights column,
+    divided by the total sum of weights in the same column:
+    ``cum_sum(initial_weights_expr) / sum(initial_weights_expr)``.
+
+    This expression assumes that the data has already been sorted by the
+    weight column (and any other columns of interest) before evaluation.
+
+    Parameters
+    ----------
+    initial_weights_expr : nw.Expr
+        initial expression for weights column.
+
+    Returns
+    -------
+    nw.Expr
+        An expression computing the cumulative fraction of weights:
+        ``(cum_sum(weights_column)) / (sum(weights_column))``.
+
+    Examples
+    --------
+    >>> import polars as pl
+    >>> import narwhals as nw
+    >>> expr = _weighted_quantile_expr(nw.col("w"))
+    >>> df = pl.DataFrame({"w": [1, 2, 3]})
+    >>> df = nw.from_native(df)
+    >>> df.select(expr)
+    ┌──────────────────┐
+    |Narwhals DataFrame|
+    |------------------|
+    |  shape: (3, 1)   |
+    |  ┌──────────┐    |
+    |  │ w        │    |
+    |  │ ---      │    |
+    |  │ f64      │    |
+    |  ╞══════════╡    |
+    |  │ 0.166667 │    |
+    |  │ 0.5      │    |
+    |  │ 1.0      │    |
+    |  └──────────┘    |
+    └──────────────────┘
+
+    """
+    return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()

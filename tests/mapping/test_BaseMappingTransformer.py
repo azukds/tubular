@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import polars as pl
 import pytest
 import test_aide as ta
 
@@ -11,7 +10,7 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import _handle_from_json
+from tests.utils import _check_if_skip_test, _handle_from_json
 from tubular.mapping import BaseMappingTransformer
 
 
@@ -132,11 +131,10 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        transformer = _handle_from_json(transformer, from_json)
-
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         transformer.transform(df)
 

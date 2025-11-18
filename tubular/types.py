@@ -16,6 +16,8 @@ DataFrame = Union[
     nw.LazyFrame,
 ]
 
+NarwhalsFrame = Union[nw.DataFrame, nw.LazyFrame]
+
 Series = Union[
     pd.Series,
     pl.Series,

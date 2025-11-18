@@ -53,9 +53,14 @@ class SeriesStrMethodTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -177,9 +182,14 @@ class StringConcatenator(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -189,7 +199,7 @@ class StringConcatenator(BaseTransformer):
         columns: Union[str, list[str]],
         new_column_name: str = "new_column",
         separator: str = " ",
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -226,8 +236,14 @@ class StringConcatenator(BaseTransformer):
         """
         X = super().transform(X)
 
-        X[self.new_column_name] = (
-            X[self.columns].astype(str).apply(self.separator.join, axis=1)
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated
+        if X.empty:
+            X[self.new_column_name] = pd.Series(dtype=str)
+
+        else:
+            X[self.new_column_name] = (
+                X[self.columns].astype(str).apply(self.separator.join, axis=1)
+            )
 
         return X
