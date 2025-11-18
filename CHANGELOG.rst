@@ -33,7 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 
-- placeholder
+- copied optimisations/improvements from #484 into MedianImputer
 
 
 2.3.0 (18/11/2025)
