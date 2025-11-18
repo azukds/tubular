@@ -27,13 +27,28 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.3.0 (unreleased)
+2.4.0 (unreleased)
 ------------------
 
 Changed
 ^^^^^^^
 
-- placeholder
+- copied optimisations/improvements from #484 into MedianImputer
+
+
+2.3.0 (18/11/2025)
+------------------
+
+Changed
+^^^^^^^
+
+- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BaseTransfomer
+- feat: introduced `lazyframe_compatible` class attr to all transformers
+- feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
+- bugfix: MeanResponseTransformer approach was hitting a recursion depth limit error for many levels, have switched to more resilient (and generally better) approach
+- chore: add beartype decorator to transformers NullIndicator and SetValueTransformer - #563 <https://github.com/azukds/tubular/issues/563>
+- feat: optimisation changes to BaseCappingTransformer `#484 <https://github.com/azukds/tubular/issues/484>`
 
 2.2.0 (11/11/2025)
 ------------------

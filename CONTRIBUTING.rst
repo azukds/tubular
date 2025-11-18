@@ -89,11 +89,79 @@ Tests
 
 We use `pytest <https://docs.pytest.org/en/stable/>`_ as our testing framework.
 
-All existing tests must pass and new functionality must be tested. We aim for 100% coverage on new features that are added to the package.
+We have designed our tests to have a high degree of reusability across classes/usages, but a downside of this is that they can be a bit overwhelming for a newcomer! A few introductory notes on our setup:
+- We share tests across classes using fixtures and an inheritance structure
+    - tests/conftest.py contains fixtures (uninitialized_transformers, minimal_dataframe_lookup, minimal_attribute_dict) for looking up transformers (and minimal dataframes which they will run on) using the classname
+    - We then write parent test classes for shared behaviours, these are written in a generic way so that they just depend on a `transformer_name` attr setup in the child test class.
+    - Many of the most universal tests are contained in tests/base_tests.py, so would recommend starting by reading some of the classes in this file and looking at how they are used across the rest of the tests.
+- In many cases, we then also reuse tests for different scenarios using pytest.parametrize, these cases include:
+    - polars/pandas
+    - lazy/eager
+    - transformer created from_json/not
+- Transformers have class attributes that indicate whether they support the above cases, e.g. `lazyframe_compatible`, and tests for these cases are skipped using tests.utils._check_if_skip_test
 
-There are some similarities across the tests for the different transformers in the package. Please refer to existing tests as they give great examples to work from and show what is expected to be covered in the tests.
+As an example, a test class could look like:
+```
+# parent class avoids pytest 'Tests...' naming, 
+# so that test is only run when inherited
+class GenericTransformTests:
 
-We also make use of the `test-aide <https://github.com/azukds/test-aide>`_ package to make mocking easier and to help with generating data when `parametrizing <https://docs.pytest.org/en/6.2.x/parametrize.html>`_ tests for the correct output of transformers' transform methods.
+    # test for both from json/not
+    @pytest.mark.parametrize("from_json", [True, False])
+    # test for both lazy/not
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    # test for both pandas/polars
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_something(.
+      initialized_transformers, # fixture containing transformers to initialize
+      minimal_dataframe_lookup, # fixture containing dataframe transformer will run on
+      minimal_attribute_dict, # fixture containing minimal init args for transformer
+      ):
+
+      args = minimal_attribute_dict[self.transformer_name].copy()
+
+      transformer = uninitialized_transformers[self.transformer_name](**args)
+
+      df = minimal_dataframe_lookup[self.transformer_name]
+
+      # return test as pass if it is not valid to run (e.g. polars test 
+      # on non-polars transformer)
+      if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+            return
+
+      # function handles dumping transformer to json and then
+      # loading back before test logic 
+      # (if from_json True, otherwise does nothing)
+      transformer = _handle_from_json(transformer, from_json)
+
+      # _convert_to_lazy, _collect_frame handle converting to/from
+      # lazy before/after test when lazy=True,
+      # otherwise they do nothing
+      output = transformer.transform(
+        _convert_to_lazy(df, lazy)
+      )
+
+      output = _collect_frame(df, lazy)
+
+      ... # test something about output
+
+# child class inherits and runs tests, and additional child-specific tests
+# can be added here if needed
+class TestTransform(GenericTransformTests):
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "FakeTransformer"
+```
+
+All existing tests must pass and new functionality must be tested.
 
 We organise our tests with one script per transformer then group together tests for a particular method into a test class.
 
