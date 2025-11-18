@@ -1469,10 +1469,6 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     drop_original: bool, default = False
         Indicates whether to drop original columns.
 
-    new_column_name : str, default = "dummy"
-         This transformer generates its own column names and does not use this parameter.
-         A placeholder is therefore set for API compatibility and consistency with other datetime classes.
-
     **kwargs
          Arbitrary keyword arguments passed onto BaseTransformer.init method.
          Restricted to only boolean values, e.g. `copy`, `return_native`.
@@ -1539,16 +1535,20 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             dict[str, DatetimeSinusoidUnitsOptionStr],
         ],
         period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
-        verbose: bool = False,
         drop_original: bool = False,
-        new_column_name: str = "dummy",
-        **kwargs: bool,
+        **kwargs: Union[bool, str],
     ) -> None:
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
+            kwargs.pop("new_column_name", None)
+
         super().__init__(
             columns=columns,
             drop_original=drop_original,
-            new_column_name=new_column_name,
-            verbose=verbose,
+            new_column_name="dummy",
             **kwargs,
         )
 
@@ -1616,9 +1616,13 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         """
         json_dict = super().to_json()
 
-        json_dict["init"]["method"] = self.method
-        json_dict["init"]["units"] = self.units
-        json_dict["init"]["period"] = self.period
+        json_dict["init"].update(
+            {
+                "method": self.method,
+                "units": self.units,
+                "period": self.period,
+            }
+        )
 
         return json_dict
 
