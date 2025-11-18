@@ -192,12 +192,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
             >>> # version will vary for local vs CI, so use ... as generic match
             >>> transformer.to_json()
-            {'tubular_version': ..., 'classname': 'BaseTransformer', 'init':
-            {'columns': ['a', 'b'], 'copy': False, 'verbose': False,
-            'return_native': True}, 'fit': {}
-            }
+            {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
 
-        """
+        """  # noqa: E501
         if not self.jsonable:
             msg = (
                 "This transformer has not yet had to/from json functionality developed"
@@ -357,11 +354,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             >>> transformer._combine_X_y(X, y)
             Traceback (most recent call last):
             ...
-            narwhals.exceptions.InvalidOperationError:
-            Series _temporary_response, length 1 doesn't match the DataFrame height of 2
+            narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
             ...
 
-        """
+        """  # noqa: E501
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
