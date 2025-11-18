@@ -77,7 +77,7 @@ def _get_mean_calculation_expressions(
     weights_column: str
         name of weights column
 
-    initial_columns_exprs: dict[str, nw.Expr]
+    initial_columns_exprs: Optional[dict[str, nw.Expr]]
         dict containing initial column expressions to build on. Defaults to None,
         and in this case nw.col(c) is taken as the initial expr for each column c.
 
@@ -85,7 +85,7 @@ def _get_mean_calculation_expressions(
         the mean, so we are not restricted to working with nw.col(c) and
         could pass e.g. (nw.col(c) * 2) if this was of interest.
 
-    initial_weights_expr: nw.Expr
+    initial_weights_expr: Optional[nw.Expr]
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
 
@@ -157,11 +157,11 @@ def _get_mode_calculation_expressions(
     weights_column: str
         name of weights column
 
-    initial_columns_exprs: dict[str, nw.Expr]
+    initial_columns_exprs: Optional[dict[str, nw.Expr]]
         dict containing initial column expressions to build on. Defaults to None,
         and in this case nw.col(c) is taken as the initial expr for each column c
 
-    initial_weights_expr: nw.Expr
+    initial_weights_expr: Optional[nw.Expr]
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
 
