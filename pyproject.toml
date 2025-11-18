@@ -157,7 +157,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "misc.py"=["E501"]
 "comparison.py"=["E501"]
 "capping.py"=["E501"]
-"aggregations.py"=["E501"]
 "_utils.py"=["E501"]
 
 [tool.ruff.lint.pyupgrade]
