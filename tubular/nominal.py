@@ -1304,10 +1304,11 @@ class MeanResponseTransformer(
 
         elif isinstance(self.unseen_level_handling, str):
             X_temp = X_y.with_columns(
-                nw.col(col).replace_strict(
+                nw.col(col)
+                .replace_strict(
                     self.mappings[col],
-                    return_dtype=getattr(nw, self.return_dtypes[col]),
                 )
+                .cast(getattr(nw, self.return_dtypes[col]))
                 for col in self.encoded_columns
             )
 
@@ -1465,11 +1466,11 @@ class MeanResponseTransformer(
             .alias(encoded_col)
             .replace_strict(
                 self.mappings[encoded_col],
-                return_dtype=getattr(nw, self.return_dtypes[encoded_col]),
                 default=self.unseen_levels_encoding_dict[encoded_col]
                 if self.unseen_level_handling
                 else no_default,
             )
+            .cast(getattr(nw, self.return_dtypes[encoded_col]))
             for col in self.columns
             for encoded_col in self.column_to_encoded_columns[col]
         }
