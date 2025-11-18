@@ -1,5 +1,6 @@
 import copy
 
+import narwhals as nw
 import polars as pl
 import pytest
 from sklearn.exceptions import NotFittedError
@@ -84,6 +85,43 @@ class GenericNominalTransformTests(GenericTransformTests):
         _ = transformer.transform(df)
 
         assert_frame_equal_dispatch(df, d.create_df_1(library=library))
+
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_empty_in_empty_out(
+        self,
+        initialized_transformers,
+        minimal_dataframe_lookup,
+    ):
+        """Test transforming empty frame returns empty frame"""
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        x = initialized_transformers[self.transformer_name]
+
+        # skip polars test if transformer not yet converted for polars
+        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+            return
+
+        x.fit(df)
+
+        x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
+
+        df = nw.from_native(df)
+        # take 0 rows from df
+        df = df.head(0).to_native()
+
+        output = x.transform(
+            df,
+        )
+
+        output = nw.from_native(output)
+
+        assert output.shape[0] == 0, (
+            "expected empty frame transform to return empty frame"
+        )
 
     @pytest.mark.parametrize(
         "library",
