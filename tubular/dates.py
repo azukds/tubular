@@ -1388,9 +1388,6 @@ DatetimeComponentOptionList = Annotated[
 
 class DatetimeComponentExtractor(BaseDatetimeTransformer):
     """Transformer to extract numeric datetime components.
-
-
-
     Attributes
     ----------
     columns: List[str]
@@ -1426,14 +1423,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
     """
 
-    DATETIME_ATTR: ClassVar[dict[str, str]] = {
-        "hour": "hour",
-        "day": "day",
-        "month": "month",
-        "year": "year",
-    }
-
-    INCLUDE_OPTIONS: ClassVar[list[str]] = list(DATETIME_ATTR.keys())
+    INCLUDE_OPTIONS: ClassVar[list[str]] = ["hour", "day", "month", "year"]
 
     polars_compatible = True
     FITS = False
@@ -1581,7 +1571,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
             col + "_" + include_option: (
                 getattr(
                     nw.col(col).dt,
-                    self.DATETIME_ATTR[include_option],
+                    include_option,
                 )().cast(nw.Float32)  # can't cast to int as may have nulls
             )
             for col in self.columns
