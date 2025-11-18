@@ -34,6 +34,7 @@ Changed
 ^^^^^^^
 
 - copied optimisations/improvements from #484 into MedianImputer
+- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
 
 
 2.3.0 (18/11/2025)
