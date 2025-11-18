@@ -155,7 +155,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "dates.py"=["D", "DOC", "E501"]
 "strings.py"=["E501"]
 "misc.py"=["E501"]
-"comparison.py"=["E501"]
 "capping.py"=["E501"]
 "_utils.py"=["E501"]
 
