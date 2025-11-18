@@ -61,6 +61,9 @@ class BaseGenericDateTransformer(
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> BaseGenericDateTransformer(
@@ -72,6 +75,8 @@ class BaseGenericDateTransformer(
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -353,6 +358,9 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> BaseDatetimeTransformer(
@@ -364,6 +372,8 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -502,6 +512,9 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> transformer = DateDifferenceTransformer(
@@ -526,6 +539,8 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -735,6 +750,9 @@ class ToDatetimeTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> ToDatetimeTransformer(
@@ -746,6 +764,8 @@ class ToDatetimeTransformer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -878,6 +898,9 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> BetweenDatesTransformer(
@@ -893,6 +916,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
     jsonable = False
@@ -905,7 +930,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -1088,6 +1113,9 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> DatetimeInfoExtractor(
@@ -1099,6 +1127,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1156,7 +1186,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -1484,6 +1514,9 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     -------
     >>> DatetimeSinusoidCalculator(
@@ -1496,6 +1529,8 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1739,9 +1774,14 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1754,7 +1794,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         new_column_name: str,
         missing_replacement: Optional[Union[float, int, str]] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -1917,9 +1957,14 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
