@@ -34,6 +34,8 @@ Changed
 ^^^^^^^
 
 - turned on ruff PLR rule `#509 <https://github.com/azukds/tubular/issues/509>_`
+- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>_`
+- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>_`
 - copied optimisations/improvements from #484 into MedianImputer
 - feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_

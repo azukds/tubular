@@ -1,3 +1,5 @@
+"""Contains mixin classes for use across transformers."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Optional, Union
@@ -18,14 +20,17 @@ if TYPE_CHECKING:
 
 
 class CheckNumericMixin:
-    """
-    Mixin class with methods for numeric transformers
-
-    """
+    """Mixin class with methods for numeric transformers."""
 
     def classname(self) -> str:
-        """Method that returns the name of the current class when called."""
+        """Get name of the current class when called.
 
+        Returns
+        -------
+            str:
+                name of class
+
+        """
         return type(self).__name__
 
     @beartype
@@ -34,14 +39,27 @@ class CheckNumericMixin:
         X: DataFrame,
         return_native: bool = True,
     ) -> DataFrame:
-        """Helper function for checking column args are numeric for numeric transformers.
+        """Check column args are numeric for numeric transformers.
 
-        Args:
-        ----
-            X: Data containing columns to check.
+        Parameters
+        ----------
+        X: pd/pl/nw.DataFrame
+            Data containing columns to check.
+
+        return_native: bool
+            indicates whether to return nw or pd/pl dataframe
+
+        Raises
+        ------
+            TypeError:
+                if provided columns are non-numeric
+
+        Returns
+        -------
+            pd/pl/nw.DataFrame:
+                validated dataframe
 
         """
-
         X = _convert_dataframe_to_narwhals(X)
         schema = X.schema
 
@@ -66,8 +84,14 @@ class DropOriginalMixin:
     """
 
     def classname(self) -> str:
-        """Method that returns the name of the current class when called."""
+        """Get name of the current class when called.
 
+        Returns
+        -------
+            str:
+                name of class
+
+        """
         return type(self).__name__
 
     @staticmethod
@@ -79,7 +103,7 @@ class DropOriginalMixin:
         columns: Optional[Union[list[str], str]],
         return_native: bool = True,
     ) -> DataFrame:
-        """Method for dropping input columns from X if drop_original set to True.
+        """Drop input columns from X if drop_original set to True.
 
         Parameters
         ----------
@@ -101,7 +125,6 @@ class DropOriginalMixin:
             Transformed input X with columns dropped.
 
         """
-
         X = _convert_dataframe_to_narwhals(X)
 
         if drop_original:
@@ -111,13 +134,17 @@ class DropOriginalMixin:
 
 
 class WeightColumnMixin:
-    """
-    Mixin class with weights functionality
-
-    """
+    """Mixin class with weights functionality."""
 
     def classname(self) -> str:
-        """Method that returns the name of the current class when called."""
+        """Get the name of the current class when called.
+
+        Returns
+        -------
+            str:
+                name of class
+
+        """
         return type(self).__name__
 
     @staticmethod
@@ -126,8 +153,10 @@ class WeightColumnMixin:
         backend: Literal["pandas", "polars"],
         return_native: bool = True,
     ) -> tuple[DataFrame, str]:
-        """Create unit weights column. Useful to streamline logic and just treat all
-        cases as weighted, avoids branches for weights/non-weights.
+        """Create unit weights column.
+
+        Useful to streamline logic and just treat all cases as weighted,
+        avoids branches for weights/non-weights.
 
         Function will check:
         - does 'unit_weights_column' already exist in data? (unlikely but
@@ -145,8 +174,19 @@ class WeightColumnMixin:
             backend: Literal['pandas', 'polars']
                 backed of original df
 
-        """
+            return_native: bool
+                controls whether to return nw or pd/pl dataframe
 
+        Raises:
+        ------
+            RuntimeError:
+                if invalid 'unit_weights_column' already exists
+
+        Returns:
+            pd/pl/nw.DataFrame:
+                DataFrame with added 'unit_weights_column'
+
+        """
         X = _convert_dataframe_to_narwhals(X)
 
         unit_weights_column = "unit_weights_column"
@@ -184,12 +224,25 @@ class WeightColumnMixin:
 
     @nw.narwhalify
     def check_weights_column(self, X: FrameT, weights_column: str) -> None:
-        """Helper method for validating weights column in dataframe.
+        """Validate weights column in dataframe.
 
-        Args:
-        ----
-            X: pandas or polars df containing weight column
-            weights_column: name of weight column
+        Parameters
+        ----------
+        X: pd/pl/nw DataFrame
+            input data
+        weights_column: str
+            name of weight column
+
+        Raises
+        ------
+            ValueError:
+                if weights_column is missing from data
+
+            ValueError:
+                if weights_column is non-numeric
+
+            ValueError:
+                if weights_column is not strictly positive, contains nulls, or is infinite
 
         """
         # check if given weight is in columns
@@ -237,21 +290,18 @@ class WeightColumnMixin:
             raise ValueError(msg)
 
     def check_and_set_weight(self, weights_column: str) -> None:
-        """Helper method that validates and assigns the specified column name to be used as the weights_column attribute.
-        This function ensures that the `weights_column` parameter is either a string representing
-        the column name or None. If `weights_column` is not of type str and is not None, it raises
-        a TypeError.
+        """Validate provided weights_column.
 
-        Parameters:
-            weights_column (str or None): The name of the column to be used as weights. If None, no weights are used.
+        Parameters
+        ----------
+        weights_column: (str or None)
+            The name of the column to be used as weights. If None, no weights are used.
 
-        Raises:
+        Raises
+        ------
             TypeError: If `weights_column` is neither a string nor None.
 
-        Returns:
-            None
         """
-
         if weights_column is not None and not isinstance(weights_column, str):
             msg = "weights_column should be str or None"
             raise TypeError(msg)
