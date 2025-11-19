@@ -80,6 +80,9 @@ class BaseGenericDateTransformer(
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseGenericDateTransformer(
@@ -90,6 +93,8 @@ class BaseGenericDateTransformer(
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -370,6 +375,9 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseDatetimeTransformer(
@@ -380,6 +388,8 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -518,6 +528,9 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> transformer = DateDifferenceTransformer(
@@ -541,6 +554,8 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -735,6 +750,9 @@ class ToDatetimeTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> ToDatetimeTransformer(
@@ -745,6 +763,8 @@ class ToDatetimeTransformer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -880,6 +900,9 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BetweenDatesTransformer(
@@ -894,6 +917,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
     jsonable = False
@@ -906,7 +931,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         self.lower_inclusive = lower_inclusive
         self.upper_inclusive = upper_inclusive
@@ -1097,6 +1122,9 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> DatetimeInfoExtractor(
@@ -1107,6 +1135,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1164,7 +1194,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         if include is None:
             include = self.INCLUDE_OPTIONS
@@ -1655,6 +1685,17 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         The period of the output in the units specified above. To leave the period of the sinusoid output as 2 pi, specify 2*np.pi (or leave as default).
         Can be a string or a dict containing key-value pairs of column name and period to be used for that column.
 
+    verbose: bool, default = False
+        Flag to control the verbosity in print statements.
+
+    drop_original: bool, default = False
+        Indicates whether to drop original columns.
+
+    **kwargs
+         Arbitrary keyword arguments passed onto BaseTransformer.init method.
+         Restricted to only boolean values, e.g. `copy`, `return_native`.
+
+
     Attributes
     ----------
     columns : str or list
@@ -1685,6 +1726,9 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> DatetimeSinusoidCalculator(
@@ -1697,9 +1741,11 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -1711,14 +1757,21 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             dict[str, DatetimeSinusoidUnitsOptionStr],
         ],
         period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
-        verbose: bool = False,
         drop_original: bool = False,
+        **kwargs: Union[bool, str],
     ) -> None:
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
+            kwargs.pop("new_column_name", None)
+
         super().__init__(
             columns=columns,
             drop_original=drop_original,
             new_column_name="dummy",
-            verbose=verbose,
+            **kwargs,
         )
 
         method_list = [method] if isinstance(method, str) else method
@@ -1761,6 +1814,39 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for column in self.columns
             for method in self.method
         ]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = DatetimeSinusoidCalculator(
+        ...     columns='a',
+        ...     method='sin',
+        ...     units='month',
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "method": self.method,
+                "units": self.units,
+                "period": self.period,
+            }
+        )
+
+        return json_dict
 
     @beartype
     def transform(
@@ -1927,9 +2013,14 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1942,7 +2033,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         new_column_name: str,
         missing_replacement: Optional[Union[float, int, str]] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         super().__init__(
             columns=columns,
@@ -2109,9 +2200,14 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 

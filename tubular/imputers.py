@@ -25,7 +25,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer
 from tubular.mixins import WeightColumnMixin
-from tubular.types import DataFrame, Series
+from tubular.types import DataFrame, NonEmptyListOfStrs, Series
 
 pl.enable_string_cache()
 
@@ -55,6 +55,9 @@ class BaseImputer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseImputer(columns=["a", "b"])
@@ -63,6 +66,8 @@ class BaseImputer(BaseTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     # this class is not by itself jsonable, as needs attrs
     # which are set in the child classes
@@ -247,6 +252,9 @@ class ArbitraryImputer(BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Examples:
     --------
     >>> arbitrary_imputer = ArbitraryImputer(
@@ -265,6 +273,8 @@ class ArbitraryImputer(BaseImputer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -576,6 +586,9 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> median_imputer = MedianImputer(
@@ -599,6 +612,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -676,11 +691,16 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         if self.weights_column is not None:
             WeightColumnMixin.check_weights_column(self, X, self.weights_column)
             for c in not_all_null_columns:
-                X = X.sort(c).filter(~nw.col(c).is_null())
+                col_not_null_expr = ~nw.col(c).is_null()
+
+                X = X.sort(c)
+
+                col_expr = nw.col(c).filter(col_not_null_expr)
+                weight_expr = nw.col(self.weights_column).filter(col_not_null_expr)
 
                 median_expr = _get_median_calculation_expression(
-                    c,
-                    self.weights_column,
+                    initial_column_expr=col_expr,
+                    initial_weights_expr=weight_expr,
                 )
 
                 # impute value is weighted median
@@ -688,7 +708,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         else:
             median_exprs = {
-                c: _get_median_calculation_expression(c, None)
+                c: _get_median_calculation_expression(nw.col(c), None)
                 for c in not_all_null_columns
             }
             results_dict = X.select(
@@ -739,6 +759,9 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> mean_imputer = MeanImputer(
@@ -762,6 +785,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -883,6 +908,9 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> mode_imputer = ModeImputer(
@@ -906,6 +934,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -1045,6 +1075,9 @@ class NullIndicator(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> null_indicator = NullIndicator(
@@ -1064,14 +1097,20 @@ class NullIndicator(BaseTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
     jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        **kwargs: Optional[bool],
     ) -> None:
         super().__init__(columns=columns, **kwargs)
 
@@ -1151,9 +1190,14 @@ class NearestMeanResponseImputer(BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = False
 
