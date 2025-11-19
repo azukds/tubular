@@ -1,15 +1,24 @@
+"""Contains legacy transformers for introducing fixed columns and changing dtypes."""
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
+from beartype import beartype
 from typing_extensions import deprecated
 
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
-
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+    block_from_json,
+)
 from tubular.base import BaseTransformer
+from tubular.types import (
+    DataFrame,
+    NonEmptyListOfStrs,
+)
 
 
 class SetValueTransformer(BaseTransformer):
@@ -17,20 +26,8 @@ class SetValueTransformer(BaseTransformer):
 
     This should be used if columns need to be set to a constant value.
 
-    Parameters
-    ----------
-    columns: list or str
-        Columns to set values.
-
-    value : various
-        Value to set.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
     Attributes
     ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -44,7 +41,10 @@ class SetValueTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
-    Example:
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
     --------
     >>> SetValueTransformer(
     ... columns='a',
@@ -56,23 +56,66 @@ class SetValueTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        value: type,
-        copy: bool = False,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        value: Optional[Union[int, float, str, bool]],
+        **kwargs: bool,
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: list or str
+            Columns to set values.
+
+        value : various
+            Value to set.
+
+        **kwargs: bool
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         self.value = value
 
-        super().__init__(columns=columns, copy=copy, **kwargs)
+        super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = SetValueTransformer(columns='a', value=1)
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["value"] = self.value
+
+        return json_dict
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
 
         Parameters
@@ -109,10 +152,13 @@ class SetValueTransformer(BaseTransformer):
         └─────┴─────┘
 
         """
-        X = nw.from_native(super().transform(X))
+        X = super().transform(X, return_native_override=False)
 
-        set_value_expression = [nw.lit(self.value).alias(col) for col in self.columns]
-        return X.with_columns(set_value_expression)
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 # DEPRECATED TRANSFORMERS
@@ -125,18 +171,8 @@ class SetValueTransformer(BaseTransformer):
 class ColumnDtypeSetter(BaseTransformer):
     """Transformer to set transform columns in a dataframe to a dtype.
 
-    Parameters
-    ----------
-    columns : str or list
-        Columns to set dtype. Must be set or transform will not run.
-
-    dtype : type or string
-        dtype object to set columns to or a string interpretable as one by pd.api.types.pandas_dtype
-        e.g. float or 'float'
-
     Attributes
     ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -149,9 +185,15 @@ class ColumnDtypeSetter(BaseTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -163,6 +205,21 @@ class ColumnDtypeSetter(BaseTransformer):
         dtype: type | str,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : str or list
+            Columns to set dtype. Must be set or transform will not run.
+
+        dtype : type or string
+            dtype object to set columns to or a string interpretable as one by pd.api.types.pandas_dtype
+            e.g. float or 'float'
+
+        **kwargs: dict[str, Any]
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(columns, **kwargs)
 
         self.__validate_dtype(dtype)
@@ -170,6 +227,18 @@ class ColumnDtypeSetter(BaseTransformer):
         self.dtype = dtype
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Transform data.
+
+        Parameters
+        ----------
+        X: pd.DataFrame
+            data to transform.
+
+        Returns
+        -------
+            pd.DataFrame: transformed data
+
+        """
         X = super().transform(X)
 
         X[self.columns] = X[self.columns].astype(self.dtype)
@@ -177,7 +246,13 @@ class ColumnDtypeSetter(BaseTransformer):
         return X
 
     def __validate_dtype(self, dtype: str) -> None:
-        """Check string is a valid dtype."""
+        """Check string is a valid dtype.
+
+        Raises
+        ------
+            TypeError: for invalid pandas dtype
+
+        """
         try:
             pd.api.types.pandas_dtype(dtype)
         except TypeError:

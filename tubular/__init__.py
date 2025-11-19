@@ -1,3 +1,5 @@
+"""Initialise classes exposed by package."""
+
 from tubular._utils import _get_version
 from tubular.aggregations import (
     AggregateColumnsOverRowTransformer,
@@ -25,7 +27,11 @@ from tubular.nominal import (
     MeanResponseTransformer,
     OneHotEncodingTransformer,
 )
-from tubular.numeric import OneDKmeansTransformer
+from tubular.numeric import (
+    DifferenceTransformer,
+    OneDKmeansTransformer,
+    RatioTransformer,
+)
 
 __all__ = [
     "AggregateColumnsOverRowTransformer",
@@ -36,6 +42,7 @@ __all__ = [
     "DateDifferenceTransformer",
     "DatetimeInfoExtractor",
     "DatetimeSinusoidCalculator",
+    "DifferenceTransformer",
     "GroupRareLevelsTransformer",
     "MappingTransformer",
     "MeanImputer",
@@ -46,6 +53,7 @@ __all__ = [
     "OneDKmeansTransformer",
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
+    "RatioTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",
 ]

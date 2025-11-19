@@ -1,4 +1,7 @@
+import numpy as np
+import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -21,6 +24,28 @@ class TestInit(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "StringConcatenator"
+
+    # overload this test until we have converted separator mixin
+    # to beartype
+    @pytest.mark.parametrize(
+        "separator",
+        [1, True, {"a": 1}, [1, 2], None, np.inf, np.nan],
+    )
+    def test_separator_type_error(
+        self,
+        separator,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test an error is raised if any type other than str passed to separator"""
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["separator"] = separator
+
+        with pytest.raises(
+            BeartypeCallHintParamViolation,
+        ):
+            uninitialized_transformers[self.transformer_name](**args)
 
 
 class TestTransform(GenericTransformTests):

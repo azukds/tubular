@@ -1,4 +1,4 @@
-"""This module contains a transformer that applies capping to numeric columns."""
+"""Cntains transformers that apply capping to numeric columns."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT
 from beartype import beartype
 
+from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
@@ -24,7 +25,47 @@ from tubular.types import DataFrame, Series
 
 
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
+    """Base class for capping transformers, contains functionality shared across capping transformer classes.
+
+    Attributes
+    ----------
+    capping_values : dict or None
+        Capping values to apply to each column, capping_values argument.
+
+    quantiles : dict or None
+        Quantiles to set capping values at from input data. Will be empty after init, values
+        populated when fit is run.
+
+    quantile_capping_values : dict or None
+        Capping values learned from quantiles (if provided) to apply to each column.
+
+    weights_column : str or None
+        weights_column argument.
+
+    _replacement_values : dict
+        Replacement values when capping is applied. Will be a copy of capping_values.
+
+    built_from_json: bool
+    indicates if transformer was reconstructed from json, which limits it's supported
+    functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    """
+
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = True
 
@@ -37,8 +78,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         weights_column: str | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
-        """Base class for capping transformers, contains functionality shared across capping
-        transformer classes.
+        """Initialise class instance.
 
         Parameters
         ----------
@@ -67,43 +107,17 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
-        Attributes
-        ----------
-        capping_values : dict or None
-            Capping values to apply to each column, capping_values argument.
+        Raises
+        ------
+            ValueError: if capping values/quantiles passed are invalid
 
-        quantiles : dict or None
-            Quantiles to set capping values at from input data. Will be empty after init, values
-            populated when fit is run.
-
-        quantile_capping_values : dict or None
-            Capping values learned from quantiles (if provided) to apply to each column.
-
-        weights_column : str or None
-            weights_column argument.
-
-        _replacement_values : dict
-            Replacement values when capping is applied. Will be a copy of capping_values.
-
-        built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-        polars_compatible : bool
-            class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-        jsonable: bool
-            class attribute, indicates if transformer supports to/from_json methods
-
-        FITS: bool
-            class attribute, indicates whether transform requires fit to be run first
-
-        Example:
+        Examples
         --------
-        >>> BaseCappingTransformer(
-        ... capping_values={'a': [10, 20], 'b': [1,3]},
-        ...    )
-        BaseCappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+            >>> BaseCappingTransformer(
+            ... capping_values={'a': [10, 20], 'b': [1,3]},
+            ...    )
+            BaseCappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+
         """
         if capping_values is None and quantiles is None:
             msg = f"{self.classname()}: both capping_values and quantiles are None, either supply capping values in the capping_values argument or supply quantiles that can be learnt in the fit method"
@@ -143,25 +157,29 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         capping_values_dict: dict[str, list[int | float | None]],
         dict_name: str,
     ) -> None:
-        """Performs checks on a dictionary passed to.
+        """Check passed dictionary.
 
         Parameters
         ----------
-        capping_values_dict: dict of form {column_name: [lower_cap, upper_cap]}
+        capping_values_dict: dict[str, float]
+            dict of form {column_name: [lower_cap, upper_cap]}
 
-        dict_name: 'capping_values' or 'quantiles'
+        dict_name: str
+            'capping_values' or 'quantiles'
 
-        Returns
-        ----------
-        None
+        Raises
+        ------
+            TypeError: if arguments have incorrect type (being lazy here as beartype will soon replace)
 
-        Example:
+            ValueError: if capping values are invalid, e.g. lower_cap>upper_cap
+
+        Examples
         --------
-        >>> transformer=BaseCappingTransformer(
-        ... capping_values={'a': [10, 20], 'b': [1,3]},
-        ...    )
+            >>> transformer=BaseCappingTransformer(
+            ... capping_values={'a': [10, 20], 'b': [1,3]},
+            ...    )
 
-        >>> transformer.check_capping_values_dict(transformer.capping_values, 'capping_values')
+            >>> transformer.check_capping_values_dict(transformer.capping_values, 'capping_values')
 
         """
         if type(capping_values_dict) is not dict:
@@ -218,7 +236,11 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         y : None
             Required for pipeline.
 
-        Example:
+        Returns
+        -------
+            BaseCappingTransformer: fitted instance of class
+
+        Examples
         --------
         >>> import polars as pl
 
@@ -231,8 +253,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         >>> transformer.fit(test_df, test_target)
         BaseCappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
-        """
 
+        """
         super().fit(X, y)
 
         backend = nw.get_native_namespace(X)
@@ -277,7 +299,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         values_column: str,
         weights_column: str,
     ) -> list[int | float]:
-        """Method to call the weighted_quantile method and prepare the outputs.
+        """Call the weighted_quantile method and prepare the outputs.
 
         If there are no None values in the supplied quantiles then the outputs from weighted_quantile
         are returned as is. If there are then prepare_quantiles removes the None values before
@@ -292,7 +314,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         quantiles : list[float]
             Weighted quantiles to calculate. Must all be between 0 and 1.
 
-        values_col: str
+        values_column: str
             name of relevant values column in data
 
         weights_column: str
@@ -305,16 +327,16 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
-        >>> import polars as pl
+            >>> import polars as pl
 
-        >>> x = BaseCappingTransformer(capping_values={"a": [2, 10]})
+            >>> x = BaseCappingTransformer(capping_values={"a": [2, 10]})
 
-        >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
+            >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
 
-        >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        >>> computed_quantiles = x.prepare_quantiles(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
-        >>> [round(q, 1) for q in computed_quantiles]
-        [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.5), np.float64(1.8), np.float64(2.1), np.float64(2.4), np.float64(2.7), np.float64(3.0)]
+            >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            >>> computed_quantiles = x.prepare_quantiles(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
+            >>> [round(q, 1) for q in computed_quantiles]
+            [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.2), np.float64(1.5), np.float64(1.8), np.float64(2.1), np.float64(2.4), np.float64(2.7), np.float64(3.0)]
 
 
         """
@@ -360,7 +382,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         values_column: str,
         weights_column: str,
     ) -> list[int | float]:
-        """Method to calculate weighted quantiles.
+        """Calculate weighted quantiles.
 
         This method is adapted from the "Completely vectorized numpy solution" answer from user
         Alleo (https://stackoverflow.com/users/498892/alleo) to the following stackoverflow question;
@@ -426,22 +448,24 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         """
         quantiles = np.array(quantiles)
 
-        nan_filter = ~(nw.col(values_column).is_null())
-        X = X.filter(nan_filter)
-
-        zero_weight_filter = ~(nw.col(weights_column) == 0)
-        X = X.filter(zero_weight_filter)
+        not_null_expr = ~(nw.col(values_column).is_null())
+        nonzero_weight_expr = ~(nw.col(weights_column) == 0)
+        combined_filter = not_null_expr & nonzero_weight_expr
 
         X = X.sort(by=values_column, descending=False)
 
-        weighted_quantiles = X.select(
-            (nw.col(weights_column).cum_sum()) / (nw.col(weights_column).sum()),
+        weights_expr = nw.col(weights_column).filter(combined_filter)
+        values_expr = nw.col(values_column).filter(combined_filter)
+
+        weighted_quantiles_expr = _weighted_quantile_expr(
+            initial_weights_expr=weights_expr
         )
+        results_dict = X.select(weighted_quantiles_expr, values_expr).to_dict()
 
         # TODO - once narwhals implements interpolate, replace this with nw
         # syntax
-        weighted_quantiles = weighted_quantiles.get_column(weights_column).to_numpy()
-        values = X.get_column(values_column).to_numpy()
+        weighted_quantiles = results_dict[weights_column].to_numpy()
+        values = results_dict[values_column].to_numpy()
 
         return list(np.interp(quantiles, weighted_quantiles, values))
 
@@ -470,28 +494,33 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X : pd/pl.DataFrame
             Transformed input X with min and max capping applied to the specified columns.
 
-        Example:
+        Raises
+        ------
+            ValueError: if method is quantile capping and fit has not been called
+
+        Examples
         --------
-        >>> import polars as pl
+            >>> import polars as pl
 
-        >>> transformer=BaseCappingTransformer(
-        ... capping_values={'a': [10, 20], 'b': [1,3]},
-        ...    )
+            >>> transformer=BaseCappingTransformer(
+            ... capping_values={'a': [10, 20], 'b': [1,3]},
+            ...    )
 
-        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+            >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
 
-        >>> transformer.transform(test_df)
-        shape: (4, 3)
-        ┌─────┬─────┬─────┐
-        │ a   ┆ b   ┆ c   │
-        │ --- ┆ --- ┆ --- │
-        │ i64 ┆ i64 ┆ i64 │
-        ╞═════╪═════╪═════╡
-        │ 10  ┆ 3   ┆ 1   │
-        │ 15  ┆ 2   ┆ 2   │
-        │ 18  ┆ 3   ┆ 3   │
-        │ 20  ┆ 1   ┆ 4   │
-        └─────┴─────┴─────┘
+            >>> transformer.transform(test_df)
+            shape: (4, 3)
+            ┌─────┬─────┬─────┐
+            │ a   ┆ b   ┆ c   │
+            │ --- ┆ --- ┆ --- │
+            │ i64 ┆ i64 ┆ i64 │
+            ╞═════╪═════╪═════╡
+            │ 10  ┆ 3   ┆ 1   │
+            │ 15  ┆ 2   ┆ 2   │
+            │ 18  ┆ 3   ┆ 3   │
+            │ 20  ┆ 1   ┆ 4   │
+            └─────┴─────┴─────┘
+
         """
         self.check_is_fitted(["_replacement_values"])
 
@@ -553,9 +582,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 col_expr = nw.col(col)
 
             # make sure type is preserved for single row,
-            #     # e.g. mapping single row to int could convert
-            #     # from float to int
-            #     # TODO - look into better ways to achieve this
+            # e.g. mapping single row to int could convert
+            # from float to int
+            # TODO - look into better ways to achieve this
             exprs[col] = col_expr.cast(
                 X[col].dtype,
             ).alias(col)
@@ -571,34 +600,7 @@ class CappingTransformer(BaseCappingTransformer):
     For max capping any values above the cap value will be set to the cap. Similarly for min capping
     any values below the cap will be set to the cap. Only works for numeric columns.
 
-    Parameters
-    ----------
-    capping_values : dict or None, default = None
-        Dictionary of capping values to apply to each column. The keys in the dict should be the
-        column names and each item in the dict should be a list of length 2. Items in the lists
-        should be ints or floats or None. The first item in the list is the minimum capping value
-        and the second item in the list is the maximum capping value. If None is supplied for
-        either value then that capping will not take place for that particular column. Both items
-        in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
-
-    quantiles : dict or None, default = None
-        Dictionary of quantiles in the range [0, 1] to set capping values at for each column.
-        The keys in the dict should be the column names and each item in the dict should be a
-        list of length 2. Items in the lists should be ints or floats or None. The first item in the
-        list is the lower quantile and the second item is the upper quantile to set the capping
-        value from. The fit method calculates the values quantile from the input data X. If None is
-        supplied for either value then that capping will not take place for that particular column.
-        Both items in the lists cannot be None. Either one of capping_values or quantiles must be
-        supplied.
-
-    weights_column : str or None, default = None
-        Optional weights column argument that can be used in combination with quantiles. Not used
-        if capping_values is supplied. Allows weighted quantiles to be calculated.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     capping_values : dict or None
         Capping values to apply to each column, capping_values argument.
@@ -629,8 +631,11 @@ class CappingTransformer(BaseCappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> import polars as pl
 
     >>> transformer=CappingTransformer(
@@ -656,6 +661,8 @@ class CappingTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = True
 
     jsonable = False
@@ -667,6 +674,36 @@ class CappingTransformer(BaseCappingTransformer):
         weights_column: str | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        capping_values : dict or None, default = None
+            Dictionary of capping values to apply to each column. The keys in the dict should be the
+            column names and each item in the dict should be a list of length 2. Items in the lists
+            should be ints or floats or None. The first item in the list is the minimum capping value
+            and the second item in the list is the maximum capping value. If None is supplied for
+            either value then that capping will not take place for that particular column. Both items
+            in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
+
+        quantiles : dict or None, default = None
+            Dictionary of quantiles in the range [0, 1] to set capping values at for each column.
+            The keys in the dict should be the column names and each item in the dict should be a
+            list of length 2. Items in the lists should be ints or floats or None. The first item in the
+            list is the lower quantile and the second item is the upper quantile to set the capping
+            value from. The fit method calculates the values quantile from the input data X. If None is
+            supplied for either value then that capping will not take place for that particular column.
+            Both items in the lists cannot be None. Either one of capping_values or quantiles must be
+            supplied.
+
+        weights_column : str or None, default = None
+            Optional weights column argument that can be used in combination with quantiles. Not used
+            if capping_values is supplied. Allows weighted quantiles to be calculated.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(capping_values, quantiles, weights_column, **kwargs)
 
     @nw.narwhalify
@@ -685,18 +722,22 @@ class CappingTransformer(BaseCappingTransformer):
         y : None
             Required for pipeline.
 
-        Example:
-        --------
-        >>> import polars as pl
+        Returns
+        -------
+            CappingTransformer: fitted instance of class
 
-        >>> transformer=CappingTransformer(
-        ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
-        ...    )
+        Example
+        -------
+            >>> import polars as pl
 
-        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+            >>> transformer=CappingTransformer(
+            ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
+            ...    )
 
-        >>> transformer.fit(test_df)
-        CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+            >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+
+            >>> transformer.fit(test_df)
+            CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
 
         """
         super().fit(X, y)
@@ -712,33 +753,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     directly in the capping_values argument or they can be calculated
     in the fit method, if the user supplies the quantiles argument.
 
-    Parameters
-    ----------
-    capping_values : dict or None, default = None
-        Dictionary of capping values to apply to each column. The keys in the dict should be the
-        column names and each item in the dict should be a list of length 2. Items in the lists
-        should be ints or floats or None. The first item in the list is the minimum capping value
-        and the second item in the list is the maximum capping value. If None is supplied for
-        either value then that capping will not take place for that particular column. Both items
-        in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
-
-    quantiles : dict or None, default = None
-        Dictionary of quantiles to set capping values at for each column. The keys in the dict
-        should be the column names and each item in the dict should be a list of length 2. Items
-        in the lists should be ints or floats or None. The first item in the list is the lower
-        quantile and the second item is the upper quantile to set the capping value from. The fit
-        method calculates the values quantile from the input data X. If None is supplied for
-        either value then that capping will not take place for that particular column. Both items
-        in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
-
-    weights_column : str or None, default = None
-        Optional weights column argument that can be used in combination with quantiles. Not used
-        if capping_values is supplied. Allows weighted quantiles to be calculated.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     capping_values : dict or None
         Capping values to apply to each column, capping_values argument.
@@ -769,8 +784,11 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> import polars as pl
 
     >>> transformer=OutOfRangeNullTransformer(
@@ -801,6 +819,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = True
 
     jsonable = False
@@ -812,6 +832,35 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         weights_column: str | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        capping_values : dict or None, default = None
+            Dictionary of capping values to apply to each column. The keys in the dict should be the
+            column names and each item in the dict should be a list of length 2. Items in the lists
+            should be ints or floats or None. The first item in the list is the minimum capping value
+            and the second item in the list is the maximum capping value. If None is supplied for
+            either value then that capping will not take place for that particular column. Both items
+            in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
+
+        quantiles : dict or None, default = None
+            Dictionary of quantiles to set capping values at for each column. The keys in the dict
+            should be the column names and each item in the dict should be a list of length 2. Items
+            in the lists should be ints or floats or None. The first item in the list is the lower
+            quantile and the second item is the upper quantile to set the capping value from. The fit
+            method calculates the values quantile from the input data X. If None is supplied for
+            either value then that capping will not take place for that particular column. Both items
+            in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
+
+        weights_column : str or None, default = None
+            Optional weights column argument that can be used in combination with quantiles. Not used
+            if capping_values is supplied. Allows weighted quantiles to be calculated.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(
             capping_values=capping_values,
             quantiles=quantiles,
@@ -826,21 +875,21 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     @staticmethod
     def set_replacement_values(capping_values: dict[str, list[float]]) -> None:
-        """Method to set the _replacement_values to have all null values.
+        """Set the _replacement_values to have all null values.
 
         Keeps the existing keys in the _replacement_values dict and sets all values (except None) in the lists to np.NaN. Any None
         values remain in place.
 
         Example:
-        --------
+        -------
         >>> import polars as pl
 
         >>> capping_values={"a": [0.1, 0.2], "b": [None, 10]}
 
         >>> OutOfRangeNullTransformer.set_replacement_values(capping_values)
         {'a': [None, None], 'b': [False, None]}
-        """
 
+        """
         replacement_values = {}
 
         for k, cap_values_list in capping_values.items():
@@ -869,18 +918,22 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         y : None
             Required for pipeline.
 
-        Example:
-        --------
-        >>> import polars as pl
+        Returns
+        -------
+            OutOfRangeNullTransformer: fitted instance of class
 
-        >>> transformer=OutOfRangeNullTransformer(
-        ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
-        ...    )
+        Example
+        -------
+            >>> import polars as pl
 
-        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+            >>> transformer=OutOfRangeNullTransformer(
+            ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
+            ...    )
 
-        >>> transformer.fit(test_df)
-        OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+            >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+
+            >>> transformer.fit(test_df)
+            OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
 
         """
         super().fit(X=X, y=y)

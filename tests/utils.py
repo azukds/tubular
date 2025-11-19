@@ -1,11 +1,15 @@
+import narwhals as nw
 import pandas as pd
 import polars as pl
 from narwhals.typing import FrameT
 from pandas.testing import assert_frame_equal as assert_pandas_frame_equal
 from polars.testing import assert_frame_equal as assert_polars_frame_equal
 
-from tubular._utils import _assess_pandas_object_column
+from tubular._utils import (
+    _assess_pandas_object_column,
+)
 from tubular.base import BaseTransformer
+from tubular.types import DataFrame
 
 PANDAS_TO_POLARS_TYPES = {
     "int64": pl.Int64,
@@ -135,12 +139,97 @@ def dataframe_init_dispatch(
     raise ValueError(library_error_message)
 
 
+def _check_if_skip_test(
+    transformer: BaseTransformer,
+    df: DataFrame,
+    lazy: bool,
+    from_json: bool = False,
+) -> bool:
+    """
+    check for conditions under which test can be skipped:
+        - is a polars test on a non polars transformer
+        - is a lazy test on a non lazy transformer
+        - is a lazy test on a pandas dataframe
+        - is a from_json test on a non jsonable transformer
+
+    Parameters:
+    -----------
+    transformer:
+        transformer being tested
+    df:
+        dataframe being tested
+    lazy:
+        is the test lazy?
+    from_json:
+        is the test for a from_json'd transformer? Defaults to False.
+
+    Returns
+    -------
+    bool:
+        True if test can be skipped
+
+    """
+
+    polars = isinstance(df, pl.DataFrame)
+
+    return (
+        (not transformer.polars_compatible and polars)
+        or (not polars and lazy)
+        or (not transformer.lazyframe_compatible and lazy)
+        or (not transformer.jsonable and from_json)
+    )
+
+
+def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
+    """
+    converts dataframe to lazy if dataframe is polars and test is for lazyframes
+
+    Parameters:
+    -----------
+    df:
+        dataframe being tested
+    lazy:
+        is the test lazy?
+
+    Returns
+    -------
+    DataFrame:
+        converted or original dataframe
+    """
+
+    polars = isinstance(df, pl.DataFrame)
+
+    return df.lazy() if (lazy and polars) else df
+
+
+def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
+    """
+    collect lazyframe if type is polars and test is for lazyframes
+
+    Parameters:
+    -----------
+    df:
+        dataframe being tested
+    lazy:
+        is the test lazy?
+
+    Returns
+    -------
+    DataFrame:
+        converted or original dataframe
+    """
+
+    lazy = isinstance(df, (pl.LazyFrame, nw.LazyFrame))
+
+    return df.collect() if lazy else df
+
+
 def _handle_from_json(
     transformer: BaseTransformer,
     from_json: bool,
 ) -> BaseTransformer:
-    """handle converting transformer to/from json pre-testing (or just
-    passes transformer through unchanged if not from_json)
+    """handle converting transformer to/from json pre-testing. Assumes
+    _check_if_skip_test has already been run.
 
     Parameters
     ----------
@@ -156,8 +245,4 @@ def _handle_from_json(
         transformer ready for test
     """
 
-    return (
-        transformer.from_json(transformer.to_json())
-        if (from_json and transformer.jsonable)
-        else transformer
-    )
+    return transformer.from_json(transformer.to_json()) if from_json else transformer
