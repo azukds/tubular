@@ -34,6 +34,7 @@ Changed
 ^^^^^^^
 
 - removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- added a new transformer called DatetimeComponentExtractor
 
 2.1.0 (30/10/25)
 ------------------
