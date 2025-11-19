@@ -1386,6 +1386,228 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+class DatetimeComponentOptions(str, Enum):
+    __slots__ = ()
+
+    HOUR = "hour"
+    DAY = "day"
+    MONTH = "month"
+    YEAR = "year"
+
+
+DatetimeComponentOptionStr = Annotated[
+    str,
+    Is[lambda s: s in DatetimeComponentOptions._value2member_map_],
+]
+DatetimeComponentOptionList = Annotated[
+    list,
+    Is[
+        lambda list_value: all(
+            entry in DatetimeComponentOptions._value2member_map_ for entry in list_value
+        )
+    ],
+]
+
+
+class DatetimeComponentExtractor(BaseDatetimeTransformer):
+    """Transformer to extract numeric datetime components.
+    Attributes
+    ----------
+    columns: List[str]
+        List of columns for processing
+
+    include : list of str
+        Which numeric datetime components to extract
+
+    polars_compatible : bool
+        Indicates whether transformer has been converted to polars/pandas agnostic framework
+
+    jsonable: bool
+        Indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        Indicates whether transform requires fit to be run first
+
+    Example:
+    --------
+    >>> transformer = DatetimeComponentExtractor(
+    ... columns='a',
+    ... include=['hour', 'day'],
+    ...    )
+    >>> transformer
+    DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump = transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+
+    >>> DatetimeComponentExtractor.from_json(json_dump)
+    DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
+    """
+
+    INCLUDE_OPTIONS: ClassVar[list[str]] = ["hour", "day", "month", "year"]
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: Union[str, list[str]],
+        include: Union[DatetimeComponentOptionList, DatetimeComponentOptionStr],
+        **kwargs: Union[str, bool],
+    ) -> None:
+        """
+        Initialize the DatetimeComponentExtractor.
+
+        Parameters
+        ----------
+        columns : str or list
+            datetime columns to extract information from
+
+        include : list of str
+            Which numeric datetime components to extract
+
+        new_column_name : str, default = "dummy"
+            Name given to new column created by the transformation.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+        """
+
+        if isinstance(include, str):
+            include = [include]
+
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
+            kwargs.pop("new_column_name", None)
+
+        super().__init__(
+            columns=columns,
+            new_column_name="dummy",
+            **kwargs,
+        )
+
+        self.include = include
+
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer
+
+        Returns
+        -------
+        list[str]:
+            List of features modified/created by the transformer
+
+
+        Examples
+        --------
+        >>> transformer = DatetimeComponentExtractor(
+        ... columns=['a', 'b'],
+        ... include=['hour', 'day'],
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a_hour', 'a_day', 'b_hour', 'b_day']
+        """
+
+        return [
+            col + "_" + include_option
+            for col in self.columns
+            for include_option in self.include
+        ]
+
+    def to_json(self) -> dict[str, Any]:
+        """Convert transformer to JSON format
+
+        Returns
+        -------
+        dict:
+            JSON representation of the transformer
+
+        Examples
+        --------
+        >>> transformer = DatetimeComponentExtractor(
+        ... columns='a',
+        ... include=['hour', 'day'],
+        ...    )
+
+        >>> transformer.to_json()
+        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+        json_dict["init"]["include"] = self.include
+        return json_dict
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Transform - Extracts numeric datetime components.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Data with columns to extract info from.
+
+        Returns
+        -------
+        X : pd/pl.DataFrame
+            Transformed input X with added columns of extracted information.
+
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> import datetime
+
+        >>> transformer = DatetimeComponentExtractor(
+        ... columns='a',
+        ... include=['hour', 'day'],
+        ...    )
+
+        >>> test_df = pl.DataFrame(
+        ... {
+        ... "a": [datetime.datetime(1993, 9, 27, 14, 30), datetime.datetime(2005, 10, 7, 9, 45)],
+        ... "b": [datetime.datetime(1991, 5, 22, 18, 0), datetime.datetime(2001, 12, 10, 23, 59)]
+        ... },
+        ... )
+
+        >>> transformer.transform(test_df)
+        shape: (2, 4)
+        ┌─────────────────────┬─────────────────────┬────────┬───────┐
+        │ a                   ┆ b                   ┆ a_hour ┆ a_day │
+        │ ---                 ┆ ---                 ┆ ---    ┆ ---   │
+        │ datetime[μs]        ┆ datetime[μs]        ┆ f32    ┆ f32   │
+        ╞═════════════════════╪═════════════════════╪════════╪═══════╡
+        │ 1993-09-27 14:30:00 ┆ 1991-05-22 18:00:00 ┆ 14.0   ┆ 27.0  │
+        │ 2005-10-07 09:45:00 ┆ 2001-12-10 23:59:00 ┆ 9.0    ┆ 7.0   │
+        └─────────────────────┴─────────────────────┴────────┴───────┘
+        """
+
+        X = super().transform(X, return_native_override=False)
+
+        transform_dict = {
+            col + "_" + include_option: (
+                getattr(
+                    nw.col(col).dt,
+                    include_option,
+                )().cast(nw.Float32)  # can't cast to int as may have nulls
+            )
+            for col in self.columns
+            for include_option in self.include
+        }
+
+        X = X.with_columns(
+            **transform_dict,
+        )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
 class DatetimeSinusoidUnitsOptions(str, Enum):
     __slots__ = ()
 
@@ -1456,6 +1678,17 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         The period of the output in the units specified above. To leave the period of the sinusoid output as 2 pi, specify 2*np.pi (or leave as default).
         Can be a string or a dict containing key-value pairs of column name and period to be used for that column.
 
+    verbose: bool, default = False
+        Flag to control the verbosity in print statements.
+
+    drop_original: bool, default = False
+        Indicates whether to drop original columns.
+
+    **kwargs
+         Arbitrary keyword arguments passed onto BaseTransformer.init method.
+         Restricted to only boolean values, e.g. `copy`, `return_native`.
+
+
     Attributes
     ----------
     columns : str or list
@@ -1505,7 +1738,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -1518,8 +1751,15 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         ],
         period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
         drop_original: bool = False,
-        **kwargs: bool,
+        **kwargs: Union[bool, str],
     ) -> None:
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
+            kwargs.pop("new_column_name", None)
+
         super().__init__(
             columns=columns,
             drop_original=drop_original,
@@ -1567,6 +1807,39 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for column in self.columns
             for method in self.method
         ]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = DatetimeSinusoidCalculator(
+        ...     columns='a',
+        ...     method='sin',
+        ...     units='month',
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "method": self.method,
+                "units": self.units,
+                "period": self.period,
+            }
+        )
+
+        return json_dict
 
     @beartype
     def transform(
