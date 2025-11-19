@@ -24,7 +24,6 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer
-from tubular.imputers import MeanImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
@@ -1055,14 +1054,8 @@ class MeanResponseTransformer(
 
         self.global_mean = {}
 
-        # reuse mean imputer logic to calculate global mean
-        global_mean_imputer = MeanImputer(
-            columns=self.response_columns,
-            weights_column=weights_column,
-        )
-
         global_mean_exprs = _get_mean_calculation_expressions(
-            global_mean_imputer.columns,
+            self.response_columns,
             weights_column,
         )
 
