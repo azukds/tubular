@@ -14,7 +14,11 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import MeanResponseTransformer
 
@@ -111,71 +115,52 @@ def learnt_mapping_dict():
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_mean():
-    return_dict = {
+    return {
         "b": (1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0) / 6,
         "b_blue": (1.0 + 1.0 + 0.0 + 0.0 + 0.0 + 0.0) / 6,
         "b_yellow": (0.0 + 0.0 + 1.0 + 1.0 + 0.0 + 0.0) / 6,
         "b_green": (0.0 + 0.0 + 0.0 + 0.0 + 1.0 + 1.0) / 6,
     }
 
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-
-    return return_dict
-
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_median():
-    return_dict = {
+    return {
         "b": 3.0,
         "b_blue": 0.0,
         "b_yellow": 0.0,
         "b_green": 0.0,
     }
 
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
-
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_highest():
-    return_dict = {
+    return {
         "b": 6.0,
         "b_blue": 1.0,
         "b_yellow": 1.0,
         "b_green": 1.0,
     }
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
 
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_lowest():
-    return_dict = {
+    return {
         "b": 1.0,
         "b_blue": 0.0,
         "b_yellow": 0.0,
         "b_green": 0.0,
     }
 
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
-
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_arbitrary():
-    return_dict = {
+    return {
         "b": 22.0,
         "b_blue": 22.0,
         "b_yellow": 22.0,
         "b_green": 22.0,
     }
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
 
 
 class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
@@ -739,12 +724,6 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
 
         x.fit(df, df["a"])
 
-        for key in expected_mappings:
-            for value in expected_mappings[key]:
-                expected_mappings[key][value] = x.cast_method(
-                    expected_mappings[key][value],
-                )
-
         assert x.mappings == expected_mappings, (
             f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
         )
@@ -1182,6 +1161,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         (
@@ -1243,6 +1223,7 @@ class TestTransform(GenericTransformTests):
         mappings,
         column_to_encoded_columns,
         expected_getter,
+        from_json,
     ):
         """Test that the output is expected from transform with various parametrized setups."""
 
@@ -1268,6 +1249,8 @@ class TestTransform(GenericTransformTests):
         x.response_levels = level
         x.encoded_columns = list(x.mappings.keys())
         x.return_dtypes = dict.fromkeys(x.encoded_columns, "Float32")
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -1302,6 +1285,7 @@ class TestTransform(GenericTransformTests):
 
     # NOTE - this currently is more of a Fit test imo, but will leave in place for now
     # as does also test Transform
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("columns", "target", "unseen_level_handling", "level", "expected_getter"),
@@ -1323,6 +1307,7 @@ class TestTransform(GenericTransformTests):
         unseen_level_handling,
         level,
         expected_getter,
+        from_json,
     ):
         """Test that the output is expected from transform with various configs and unseen level handling"""
 
@@ -1337,6 +1322,8 @@ class TestTransform(GenericTransformTests):
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -1368,14 +1355,17 @@ class TestTransform(GenericTransformTests):
                 df_expected_row[column_order],
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_nulls_introduced_in_transform_error(self, library):
+    def test_nulls_introduced_in_transform_error(self, library, from_json):
         """Test that transform will raise an error if nulls are introduced."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
         x = MeanResponseTransformer(columns=["b", "d", "f"])
 
         x.fit(df, df["a"])
+
+        x = _handle_from_json(x, from_json)
 
         df = nw.from_native(df)
         df = df.with_columns(nw.lit("z").alias("b"))
@@ -1387,6 +1377,7 @@ class TestTransform(GenericTransformTests):
         ):
             x.transform(df)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "prior, level, target, unseen_level_handling",
@@ -1404,6 +1395,7 @@ class TestTransform(GenericTransformTests):
         target,
         unseen_level_handling,
         library,
+        from_json,
     ):
         "Test that output return types are controlled by return_type param, this defaults to float32 so test float64 here"
 
@@ -1419,6 +1411,8 @@ class TestTransform(GenericTransformTests):
         )
 
         x.fit(df, df[target])
+
+        x = _handle_from_json(x, from_json)
 
         output_df = nw.from_native(x.transform(df))
 
@@ -1439,8 +1433,9 @@ class TestTransform(GenericTransformTests):
                 f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(self, library):
+    def test_learnt_values_not_modified(self, library, from_json):
         """Test that the mappings from fit are not changed in transform."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -1451,6 +1446,8 @@ class TestTransform(GenericTransformTests):
         x2 = MeanResponseTransformer(columns="b")
 
         x2.fit(df, df["a"])
+
+        x2 = _handle_from_json(x2, from_json)
 
         x2.transform(df)
 
