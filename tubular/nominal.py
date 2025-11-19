@@ -1403,17 +1403,20 @@ class MeanResponseTransformer(
                 else:
                     for c in self.encoded_columns:
                         X_temp = X_y.with_columns(**encoded_column_exprs)
-                        X_temp = X_temp.sort(c).filter(~nw.col(c).is_null())
+                        X_temp = X_temp.sort(c)
+
+                        null_filter_expr = ~nw.col(
+                            self.encoded_columns_to_columns[c]
+                        ).is_null()
 
                         unseen_level_exprs.update(
                             {
                                 c: _get_median_calculation_expression(
-                                    c,
-                                    weights_column,
+                                    initial_weights_expr=nw.col(weights_column).filter(
+                                        null_filter_expr
+                                    ),
                                     initial_column_expr=mapping_expressions[c].filter(
-                                        ~nw.col(
-                                            self.encoded_columns_to_columns[c]
-                                        ).is_null()
+                                        null_filter_expr
                                     ),
                                 ),
                             },
@@ -1434,13 +1437,6 @@ class MeanResponseTransformer(
 
             self.unseen_levels_encoding_dict = {
                 c: unseen_level_results[c].item(0) for c in self.encoded_columns
-            }
-
-            self.unseen_levels_encoding_dict = {
-                c: self.cast_method(
-                    self.unseen_levels_encoding_dict[c],
-                )
-                for c in self.encoded_columns
             }
 
     @beartype
