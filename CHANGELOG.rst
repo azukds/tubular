@@ -38,6 +38,7 @@ Changed
 - feat: introduced `lazyframe_compatible` class attr to all transformers
 - feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
 - chore: add beartype decorator to transformers NullIndicator and SetValueTransformer - #563 <https://github.com/azukds/tubular/issues/563>
+- feat: add transformer to registry dict
 
 2.2.0 (11/11/2025)
 ------------------

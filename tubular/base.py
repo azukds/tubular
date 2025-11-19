@@ -14,6 +14,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 from typing_extensions import deprecated
 
+from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
@@ -32,6 +33,7 @@ from tubular.types import (
 pd.options.mode.copy_on_write = True
 
 
+@register
 class BaseTransformer(BaseEstimator, TransformerMixin):
     """Base tranformer class which all other transformers in the package inherit from.
 

@@ -61,6 +61,7 @@ ListOfRowsOverColumnsAggregations = Annotated[
 ]
 
 
+@register
 class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     """Base class for aggregation transformers.
 

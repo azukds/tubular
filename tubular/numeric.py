@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT, IntoSeriesT
 
 
+@register
 class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     """
     Extends BaseTransformer for datetime scenarios.

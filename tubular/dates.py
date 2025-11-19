@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 TIME_UNITS = ["us", "ns", "ms"]
 
 
+@register
 class BaseGenericDateTransformer(
     DropOriginalMixin,
     BaseTransformer,
@@ -342,6 +343,7 @@ class BaseGenericDateTransformer(
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class BaseDatetimeTransformer(BaseGenericDateTransformer):
     """
     Extends BaseTransformer for datetime scenarios

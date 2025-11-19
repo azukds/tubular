@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT
 
 
+@register
 class BaseNominalTransformer(BaseTransformer):
     """
     Base Transformer extension for nominal transformers.

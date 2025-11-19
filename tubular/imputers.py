@@ -31,6 +31,7 @@ from tubular.types import DataFrame, NonEmptyListOfStrs, Series
 pl.enable_string_cache()
 
 
+@register
 class BaseImputer(BaseTransformer):
     """Base imputer class containing standard transform method that will use pd.Series.fillna with the
     values in the impute_values_ attribute.

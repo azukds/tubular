@@ -24,6 +24,7 @@ from tubular._utils import (
 from tubular.types import DataFrame, Series
 
 
+@register
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     """Base class for capping transformers, contains functionality shared across capping transformer classes.
 
