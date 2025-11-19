@@ -39,7 +39,7 @@ class TestFit(GenericCappingFitTests):
             ([-1, -5, -10, 20, 40], None, [0.1, None]),
         ],
     )
-    def test_replacement_values_updated(  # noqa: PLR0917, PLR0913
+    def test_replacement_values_updated(
         self,
         values,
         sample_weight,
