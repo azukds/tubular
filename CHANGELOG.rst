@@ -36,7 +36,6 @@ Changed
 - turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>_`
 - copied optimisations/improvements from #484 into MedianImputer
 - feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
-- feat: added `to_json` method for DatetimeInfoExtractor `#555 <https://github.com/azukds/tubular/issues/555>_`
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
 - feat: added a new transformer called DatetimeComponentExtractor
 
