@@ -1,9 +1,7 @@
-from tubular.base import BaseTransformer
-
 CLASS_REGISTRY = {}
 
 
-def register(cls: BaseTransformer) -> BaseTransformer:
+def register(cls: type) -> type:
     """Add transformer to registry dict.
 
     Returns:
