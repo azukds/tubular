@@ -187,6 +187,10 @@ def minimal_attribute_dict():
         "DatetimeInfoExtractor": {
             "columns": ["a"],
         },
+        "DatetimeComponentExtractor": {
+            "columns": ["a"],
+            "include": ["hour", "day", "month", "year"],
+        },
         "DatetimeSinusoidCalculator": {
             "columns": ["a"],
             "method": ["sin"],
