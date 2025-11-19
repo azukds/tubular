@@ -94,7 +94,7 @@ class BaseGenericDateTransformer(
 
         Parameters
         ----------
-        columns : List[str]
+        columns : Union[list[str], str]
             List of 2 columns. First column will be subtracted from second.
 
         new_column_name : str
@@ -391,7 +391,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
         Parameters
         ----------
-        columns : List[str]
+        columns : Union[list[str], str]
             List of 2 columns. First column will be subtracted from second.
 
         new_column_name : str
@@ -473,7 +473,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
 
 class DateDifferenceUnitsOptions(str, Enum):
-    """options for return units in DateDifferenceTransformer."""
+    """Options for return units in DateDifferenceTransformer."""
 
     __slots__ = ()
 
