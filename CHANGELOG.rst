@@ -36,6 +36,8 @@ Changed
 - copied optimisations/improvements from #484 into MedianImputer
 - feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
 - feat: added `to_json` method for OneHotEncodingTransformer `#550 <https://github.com/azukds/tubular/issues/550>_`
+- feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
+- feat: added a new transformer called DatetimeComponentExtractor
 
 
 2.3.0 (18/11/2025)
@@ -44,7 +46,6 @@ Changed
 Changed
 ^^^^^^^
 
-- feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
 - feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
@@ -63,6 +64,7 @@ Changed
 - feat: added `to_json` method for `SetValueTransformer` `#542 <https://github.com/azukds/tubular/issues/542>`_
 - feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
 - removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- added a new transformer called DatetimeComponentExtractor
 
 2.1.0 (30/10/25)
 ------------------
