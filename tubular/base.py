@@ -298,10 +298,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         return self
 
-    @staticmethod
     @block_from_json
     @nw.narwhalify
-    def _combine_X_y(X: DataFrame, y: nw.Series) -> DataFrame:
+    def _combine_X_y(self, X: DataFrame, y: nw.Series) -> DataFrame:  # noqa: PLR6301, block_from_json depends on self
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
