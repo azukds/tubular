@@ -130,6 +130,7 @@ class BaseMappingTransformer(BaseTransformer):
                 mappings_from_null[col] = col_mappings[null_keys[0]]
 
         self.mappings = mappings
+
         self.mappings_from_null = mappings_from_null
 
         columns = list(mappings.keys())

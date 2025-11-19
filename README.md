@@ -69,13 +69,14 @@ You can track our progress here:
 | BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
 | CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
 | DateDifferenceTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeComponentExtractor         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | DatetimeInfoExtractor              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
-| DatetimeSinusoidCalculator         | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| DatetimeSinusoidCalculator         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | DifferenceTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | GroupRareLevelsTransformer         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | MeanImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
-| MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | MedianImputer                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
