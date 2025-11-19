@@ -17,6 +17,7 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer
 from tubular.types import DataFrame
@@ -68,6 +69,9 @@ class BaseMappingTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
     >>> BaseMappingTransformer(
@@ -81,9 +85,11 @@ class BaseMappingTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     RETURN_DTYPES = Literal[
         "String",
@@ -124,6 +130,7 @@ class BaseMappingTransformer(BaseTransformer):
                 mappings_from_null[col] = col_mappings[null_keys[0]]
 
         self.mappings = mappings
+
         self.mappings_from_null = mappings_from_null
 
         columns = list(mappings.keys())
@@ -141,6 +148,33 @@ class BaseMappingTransformer(BaseTransformer):
         self.return_dtypes = return_dtypes
 
         super().__init__(columns=columns, **kwargs)
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> mapping_transformer=BaseMappingTransformer(mappings={'a': {'x': 1}})
+
+        >>> mapping_transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
+        """
+
+        json_dict = super().to_json()
+
+        # replace columns arg with mappings arg
+        del json_dict["init"]["columns"]
+        json_dict["init"]["mappings"] = self.mappings
+        json_dict["init"]["return_dtypes"] = self.return_dtypes
+
+        return json_dict
 
     @staticmethod
     def _infer_return_type(
@@ -236,9 +270,14 @@ class BaseMappingTransformMixin(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -517,12 +556,25 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
     --------
-    >>> MappingTransformer(
+    >>> transformer = MappingTransformer(
     ...   mappings={'a': {'Y': 1, 'N': 0}},
     ...   return_dtypes={"a":"Int8"},
     ...    )
+    >>> transformer
+    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                       return_dtypes={'a': 'Int8'})
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {}}
+
+    >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
                        return_dtypes={'a': 'Int8'})
 
@@ -530,9 +582,11 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def transform(
@@ -656,9 +710,14 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -750,13 +809,18 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
 
-    FITS = False
+    lazyframe_compatible = False
 
     jsonable = False
+
+    FITS = False
 
     def __init__(
         self,
@@ -840,9 +904,14 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -934,9 +1003,14 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1026,9 +1100,14 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 

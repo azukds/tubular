@@ -2,7 +2,7 @@
   <img src="https://github.com/azukds/tubular/raw/main/logo.png">
 </p>
 
-Tubular pre-processing for machine learning!
+Feature engineering on polars and pandas dataframes for machine learning!
 
 ----
 
