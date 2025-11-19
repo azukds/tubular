@@ -12,7 +12,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.dates.test_BaseDatetimeTransformer import DatetimeMixinTransformTests
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import _handle_from_json, assert_frame_equal_dispatch
 from tubular.dates import DatetimeSinusoidCalculator
 
 
@@ -208,6 +208,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         ],
     )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_expected_output_single_method(
         self,
         columns,
@@ -215,6 +216,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         units,
         period,
         library,
+        from_json,
     ):
         """Test that the transformer produces the expected output for a single method."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
@@ -224,6 +226,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             units=units,
             period=period,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -263,6 +267,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         ],
     )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_expected_output_both_methods_single_column(
         self,
         columns,
@@ -270,6 +275,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         units,
         period,
         library,
+        from_json,
     ):
         """Test that the transformer produces the expected output for both methods on a single column."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
@@ -279,6 +285,9 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             period=period,
             columns=columns,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
 
@@ -319,7 +328,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_dict_units(self, library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_dict_units(self, library, from_json):
         """Test that the transformer produces the expected output when units is a dictionary."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -328,6 +338,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             units={"a": "month", "b": "day"},
             period=12,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -366,7 +378,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_dict_period(self, library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_dict_period(self, library, from_json):
         """Test that the transformer produces the expected output when period is a dictionary."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -375,6 +388,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             units="month",
             period={"a": 12, "b": 24},
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -412,7 +427,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_dict_units_and_period(self, library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_dict_units_and_period(self, library, from_json):
         """Test that the transformer produces the expected output when both units and period are dictionaries."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -421,6 +437,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             units={"a": "month", "b": "day"},
             period={"a": 12, "b": 24},
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)

@@ -18,7 +18,7 @@ dynamic = ["version"]
 dependencies = [
     "pandas>=1.5.0",
     "scikit-learn>=1.2.0",
-    "narwhals >= 2.10.2",
+    "narwhals >= 2.11.0",
     "polars >= 1.9.0",
     "beartype >= 0.19.0",
     "typing-extensions>=4.5.0",
@@ -145,14 +145,9 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "PLC2701" # complains about private imports, which we test
     ]
 "profiling/*"=["D", "DOC"]
-# too much to turn on D/DOC lints in one go,
-# will tackle individual modules at a time
-"numeric.py"=["D", "DOC"]
+# leaving this one for now or will have big conflicts with
+# upcoming PR
 "nominal.py"=["D", "DOC"]
-"mixins.py"=["D", "DOC"]
-"mapping.py"=["D", "DOC"]
-"imputers.py"=["D", "DOC"]
-"dates.py"=["D", "DOC"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true
