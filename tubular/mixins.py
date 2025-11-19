@@ -70,6 +70,7 @@ class DropOriginalMixin:
 
         return type(self).__name__
 
+    @staticmethod
     @beartype
     @nw.narwhalify
     def drop_original_column(
