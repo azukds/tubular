@@ -116,7 +116,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
             ([10], [None], [None]),
         ],
     )
-    def test_single_row(  # noqa: PLR0917, PLR0913
+    def test_single_row(
         self,
         library,
         return_dtype,

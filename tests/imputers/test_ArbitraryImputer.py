@@ -130,7 +130,7 @@ class TestTransform(
             ("b", "Float32", 1, [1.0, 2.0, 3.0, 4.0, 1.0]),
         ],
     )
-    def test_impute_value_preserve_dtype(  # noqa: PLR0917, PLR0913
+    def test_impute_value_preserve_dtype(
         self,
         column,
         col_type,
@@ -200,7 +200,7 @@ class TestTransform(
             ([True, False, None], "Boolean", True, [True, False, True]),
         ],
     )
-    def test_edge_cases(  # noqa: PLR0917, PLR0913
+    def test_edge_cases(
         self,
         input_col,
         expected_dtype,

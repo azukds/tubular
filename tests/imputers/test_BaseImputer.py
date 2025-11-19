@@ -308,7 +308,7 @@ class GenericImputerTransformTests:
             ("b", 0, [1, 2, 0]),
         ],
     )
-    def test_imputation_with_falsey_values(  # noqa: PLR0917, PLR0913
+    def test_imputation_with_falsey_values(
         self,
         library,
         initialized_transformers,

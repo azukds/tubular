@@ -38,7 +38,7 @@ class GenericDatesMixinTransformTests:
             (np.nan, nw.Float64()),
         ],
     )
-    def test_non_datetypes_error(  # noqa: PLR0917, PLR0913
+    def test_non_datetypes_error(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,
@@ -88,7 +88,7 @@ class GenericDatesMixinTransformTests:
             (["datetime_col_1", "date_col_2"], 0),
         ],
     )
-    def test_mismatched_datetypes_error(  # noqa: PLR0917, PLR0913
+    def test_mismatched_datetypes_error(
         self,
         columns,
         datetime_col,
