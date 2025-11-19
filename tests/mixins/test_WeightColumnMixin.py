@@ -11,7 +11,6 @@ from tubular.mixins import WeightColumnMixin
 
 class TestCreateUnitWeightsColumn:
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("i", [-1, 0, 1, 2, 3, 4])
     @staticmethod
     def test_new_column_output(
         library,
