@@ -137,22 +137,20 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 "tests/*" = [
-    "D",
-    "DOC",
     "ANN",
     "S101",
     "PLC2701", # complains about private imports, which we test
     "E501",
     ]
 "profiling/*"=["D", "DOC", "E501"]
-# too much to turn on D/DOC lints in one go,
+# too much to turn on D/DOC and E501 lints in one go,
 # will tackle individual modules at a time
-"numeric.py"=["D", "DOC", "E501"]
+"numeric.py"=["E501"]
 "nominal.py"=["D", "DOC","E501"]
-"mixins.py"=["D", "DOC", "E501"]
-"mapping.py"=["D", "DOC", "E501"]
-"imputers.py"=["D", "DOC", "E501"]
-"dates.py"=["D", "DOC", "E501"]
+"mixins.py"=["E501"]
+"mapping.py"=["E501"]
+"imputers.py"=["E501"]
+"dates.py"=["E501"]
 "strings.py"=["E501"]
 "capping.py"=["E501"]
 "_utils.py"=["E501"]
