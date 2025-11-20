@@ -630,7 +630,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
             getattr(df, pd_method_name)
 
         except Exception as err:
-            msg = f'{self.classname()}:error accessing "{pd_method_name}"method on pd.DataFrame object - pd_method_name should be a pd.DataFrame method'  # noqa: E501
+            msg = f'{self.classname()}: error accessing "{pd_method_name}" method on pd.DataFrame object - pd_method_name should be a pd.DataFrame method'  # noqa: E501
             raise AttributeError(msg) from err
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
