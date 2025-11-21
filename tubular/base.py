@@ -47,8 +47,8 @@ def register(cls: BaseTransformer) -> BaseTransformer:
     ... class MyTransformer(BaseTransformer):
     ...     pass
     >>> CLASS_REGISTRY["MyTransformer"]
-    <class 'MyTransformer'>
-
+    <class 'tubular.base.MyTransformer'>
+    
     """
     CLASS_REGISTRY[cls.__name__] = cls
     return cls
