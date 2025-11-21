@@ -14,7 +14,6 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 from typing_extensions import deprecated
 
-from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
@@ -31,6 +30,28 @@ from tubular.types import (
 )
 
 pd.options.mode.copy_on_write = True
+
+CLASS_REGISTRY = {}
+
+
+def register(cls: BaseTransformer) -> BaseTransformer:
+    """Add transformer to registry dict.
+
+    Returns:
+    -------
+    cls - transformer
+
+    Example:
+    -------
+    >>> @register
+    ... class MyTransformer(BaseTransformer):
+    ...     pass
+    >>> CLASS_REGISTRY["MyTransformer"]
+    <class 'MyTransformer'>
+
+    """
+    CLASS_REGISTRY[cls.__name__] = cls
+    return cls
 
 
 @register

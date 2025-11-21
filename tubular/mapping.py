@@ -14,13 +14,12 @@ import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
 
-from tubular._registry import register
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.types import DataFrame
 
 if TYPE_CHECKING:

@@ -16,12 +16,12 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT
 from beartype import beartype
 
-from tubular._registry import register
 from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
+from tubular.base import register
 from tubular.types import DataFrame, Series
 
 
