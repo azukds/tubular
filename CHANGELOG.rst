@@ -38,7 +38,7 @@ Changed
 - feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
 - feat: added a new transformer called DatetimeComponentExtractor
-- feat: add module that provides a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
 
 
 
