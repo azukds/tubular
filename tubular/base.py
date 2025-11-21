@@ -31,7 +31,30 @@ from tubular.types import (
 
 pd.options.mode.copy_on_write = True
 
+CLASS_REGISTRY = {}
 
+
+def register(cls: BaseTransformer) -> BaseTransformer:
+    """Add transformer to registry dict.
+
+    Returns:
+    -------
+    cls - transformer
+
+    Example:
+    -------
+    >>> @register
+    ... class MyTransformer(BaseTransformer):
+    ...     pass
+    >>> CLASS_REGISTRY["MyTransformer"]
+    <class 'tubular.base.MyTransformer'>
+
+    """
+    CLASS_REGISTRY[cls.__name__] = cls
+    return cls
+
+
+@register
 class BaseTransformer(BaseEstimator, TransformerMixin):
     """Base tranformer class which all other transformers in the package inherit from.
 

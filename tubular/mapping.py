@@ -19,13 +19,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.types import DataFrame
 
 if TYPE_CHECKING:
     from narwhals.typing import IntoDType
 
 
+@register
 class BaseMappingTransformer(BaseTransformer):
     """Base Transformer Extension for mapping transformers.
 
@@ -263,6 +264,7 @@ class BaseMappingTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class BaseMappingTransformMixin(BaseTransformer):
     """Mixin class to apply mappings to columns method.
 
@@ -516,6 +518,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     """Transformer to map values in columns to other values e.g. to merge two levels into one.
 

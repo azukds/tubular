@@ -20,7 +20,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mapping import MappingTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 TIME_UNITS = ["us", "ns", "ms"]
 
 
+@register
 class BaseGenericDateTransformer(
     DropOriginalMixin,
     BaseTransformer,
@@ -340,6 +341,7 @@ class BaseGenericDateTransformer(
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class BaseDatetimeTransformer(BaseGenericDateTransformer):
     """Extends BaseTransformer for datetime scenarios.
 
@@ -494,6 +496,7 @@ DateDifferenceUnitsOptionsStr = Annotated[
 ]
 
 
+@register
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
@@ -730,6 +733,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class ToDatetimeTransformer(BaseTransformer):
     """Class to transform convert specified columns to datetime.
 
@@ -849,6 +853,7 @@ class ToDatetimeTransformer(BaseTransformer):
         )
 
 
+@register
 class BetweenDatesTransformer(BaseGenericDateTransformer):
     """Transformer to generate a boolean column indicating if one date is between two others.
 
@@ -1083,6 +1088,7 @@ DatetimeInfoOptionList = Annotated[
 ]
 
 
+@register
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
 
@@ -1703,6 +1709,7 @@ NumberNotBool = Annotated[
 ]
 
 
+@register
 class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """Calculate the sine or cosine of a datetime column in a given unit (e.g hour).
 
