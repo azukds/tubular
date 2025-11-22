@@ -147,6 +147,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         if capping_values:
             self._replacement_values = copy.deepcopy(self.capping_values)
 
+    @block_from_json
     def check_capping_values_dict(
         self,
         capping_values_dict: dict[str, list[int | float | None]],
@@ -287,6 +288,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return self
 
+    @block_from_json
     @nw.narwhalify
     def prepare_quantiles(
         self,
@@ -370,6 +372,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return results
 
+    @block_from_json
     @nw.narwhalify
     def weighted_quantile(
         self,
@@ -598,11 +601,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             "weights_column": self.weights_column,
         })
         
-        if hasattr(self, "quantile_capping_values"):
-            data["fit"]["quantile_capping_values"] = self.quantile_capping_values
-        
-        if hasattr(self, "_replacement_values"):
-            data["fit"]["_replacement_values"] = self._replacement_values
+        data["fit"].update({'quantile_capping_values': self.quantile_capping_values, '_replacement_values': self._replacement_vaues})
         
         return data
 
