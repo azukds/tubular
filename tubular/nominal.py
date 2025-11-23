@@ -373,6 +373,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             self.check_is_fitted(["training_data_levels"])
             json_dict["fit"]["training_data_levels"] = self.training_data_levels
         if self.record_rare_levels:
+            self.check_is_fitted(["rare_levels_record_"])
             json_dict["fit"]["rare_levels_record_"] = self.rare_levels_record_
 
         return json_dict
