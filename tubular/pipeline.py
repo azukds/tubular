@@ -38,7 +38,7 @@ class PipelineSerializer:
         >>> a = pipe.fit(df_1, df_1["AveRooms"])
         >>> pipeline_json = PipelineSerializer.dump(pipe.steps)
         >>> pipeline_json
-        {'GroupRareLevelsTransformer': {'tubular_version': 'dev', 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['categorical_4'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.01, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': True}, 'fit': {'non_rare_levels': {'categorical_4': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']}}}}
+        {'GroupRareLevelsTransformer': {'tubular_version': '...', 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['categorical_4'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.01, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': True}, 'fit': {'non_rare_levels': {'categorical_4': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']}, 'rare_levels_record_': {'categorical_4': ['z']}}}}
 
 
         """
