@@ -16,13 +16,16 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT
 from beartype import beartype
 
+from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
+from tubular.base import register
 from tubular.types import DataFrame, Series
 
 
+@register
 class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     """Base class for capping transformers, contains functionality shared across capping transformer classes.
 
@@ -447,22 +450,24 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         """
         quantiles = np.array(quantiles)
 
-        nan_filter = ~(nw.col(values_column).is_null())
-        X = X.filter(nan_filter)
-
-        zero_weight_filter = ~(nw.col(weights_column) == 0)
-        X = X.filter(zero_weight_filter)
+        not_null_expr = ~(nw.col(values_column).is_null())
+        nonzero_weight_expr = ~(nw.col(weights_column) == 0)
+        combined_filter = not_null_expr & nonzero_weight_expr
 
         X = X.sort(by=values_column, descending=False)
 
-        weighted_quantiles = X.select(
-            (nw.col(weights_column).cum_sum()) / (nw.col(weights_column).sum()),
+        weights_expr = nw.col(weights_column).filter(combined_filter)
+        values_expr = nw.col(values_column).filter(combined_filter)
+
+        weighted_quantiles_expr = _weighted_quantile_expr(
+            initial_weights_expr=weights_expr
         )
+        results_dict = X.select(weighted_quantiles_expr, values_expr).to_dict()
 
         # TODO - once narwhals implements interpolate, replace this with nw
         # syntax
-        weighted_quantiles = weighted_quantiles.get_column(weights_column).to_numpy()
-        values = X.get_column(values_column).to_numpy()
+        weighted_quantiles = results_dict[weights_column].to_numpy()
+        values = results_dict[values_column].to_numpy()
 
         return list(np.interp(quantiles, weighted_quantiles, values))
 
@@ -591,6 +596,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class CappingTransformer(BaseCappingTransformer):
     """Transformer to cap numeric values at both or either minimum and maximum values.
 
@@ -742,6 +748,7 @@ class CappingTransformer(BaseCappingTransformer):
         return self
 
 
+@register
 class OutOfRangeNullTransformer(BaseCappingTransformer):
     """Transformer to set values outside of a range to null.
 

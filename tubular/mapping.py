@@ -1,4 +1,4 @@
-"""This module contains transformers that apply different types of mappings to columns."""
+"""Contains transformers that apply different types of mappings to columns."""
 
 from __future__ import annotations
 
@@ -19,31 +19,18 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.types import DataFrame
 
 if TYPE_CHECKING:
     from narwhals.typing import IntoDType
 
 
+@register
 class BaseMappingTransformer(BaseTransformer):
     """Base Transformer Extension for mapping transformers.
 
-    Parameters
-    ----------
-    mappings : dict
-        Dictionary containing column mappings. Each value in mappings should be a dictionary
-        of key (column to apply mapping to) value (mapping dict for given columns) pairs. For
-        example the following dict {'a': {1: 2, 3: 4}, 'b': {'a': 1, 'b': 2}} would specify
-        a mapping for column a of 1->2, 3->4 and a mapping for column b of 'a'->1, b->2.
-
-    return_dtype: Optional[Dict[str, RETURN_DTYPES]]
-        Dictionary of col:dtype for returned columns
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     mappings : dict
         Dictionary of mappings for each column individually. The dict passed to mappings in
@@ -73,7 +60,7 @@ class BaseMappingTransformer(BaseTransformer):
         class attribute, indicates whether transformer works with lazyframes
 
     Example:
-    --------
+    -------
     >>> BaseMappingTransformer(
     ...   mappings={'a': {'Y': 1, 'N': 0}},
     ...   return_dtypes={"a":"Int8"},
@@ -111,6 +98,31 @@ class BaseMappingTransformer(BaseTransformer):
         return_dtypes: Union[dict[str, RETURN_DTYPES], None] = None,
         **kwargs: Optional[bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        mappings : dict
+            Dictionary containing column mappings. Each value in mappings should be a dictionary
+            of key (column to apply mapping to) value (mapping dict for given columns) pairs. For
+            example the following dict {'a': {1: 2, 3: 4}, 'b': {'a': 1, 'b': 2}} would specify
+            a mapping for column a of 1->2, 3->4 and a mapping for column b of 'a'->1, b->2.
+
+        return_dtypes: Optional[Dict[str, RETURN_DTYPES]]
+            Dictionary of col:dtype for returned columns
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        Raises
+        ------
+            ValueError:
+                if mappings is empty
+
+            ValueError:
+                if multiple mappings for null values are provided
+
+        """
         if not len(mappings) > 0:
             msg = f"{self.classname()}: mappings has no values"
             raise ValueError(msg)
@@ -130,6 +142,7 @@ class BaseMappingTransformer(BaseTransformer):
                 mappings_from_null[col] = col_mappings[null_keys[0]]
 
         self.mappings = mappings
+
         self.mappings_from_null = mappings_from_null
 
         columns = list(mappings.keys())
@@ -150,7 +163,7 @@ class BaseMappingTransformer(BaseTransformer):
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
-        """dump transformer to json dict
+        """Dump transformer to json dict.
 
         Returns
         -------
@@ -164,8 +177,8 @@ class BaseMappingTransformer(BaseTransformer):
 
         >>> mapping_transformer.to_json()
         {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
-        """
 
+        """
         json_dict = super().to_json()
 
         # replace columns arg with mappings arg
@@ -180,14 +193,19 @@ class BaseMappingTransformer(BaseTransformer):
         mappings: dict[str, dict[str, str | float | int]],
         col: str,
     ) -> str:
-        """infer return_dtypes from provided mappings
+        """Infer return_dtypes from provided mappings.
 
-        Example:
+        Returns
+        -------
+            str:
+                inferred dtype, e.g. 'Float64'
+
+        Examples
         --------
         >>> BaseMappingTransformer._infer_return_type({"a": {"Y": 1, "N":0}}, col="a")
         'Int64'
-        """
 
+        """
         return str(pl.Series(mappings[col].values()).dtype)
 
     def transform(
@@ -195,8 +213,7 @@ class BaseMappingTransformer(BaseTransformer):
         X: DataFrame,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
-        """Base mapping transformer transform method.  Checks that the mappings
-        dict has been fitted and calls the BaseTransformer transform method.
+        """Check mappings dict has been fitted.
 
         Parameters
         ----------
@@ -234,8 +251,8 @@ class BaseMappingTransformer(BaseTransformer):
         │ Y   ┆ 3   │
         │ N   ┆ 4   │
         └─────┴─────┘
-        """
 
+        """
         X = _convert_dataframe_to_narwhals(X)
 
         return_native = self._process_return_native(return_native_override)
@@ -247,6 +264,7 @@ class BaseMappingTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class BaseMappingTransformMixin(BaseTransformer):
     """Mixin class to apply mappings to columns method.
 
@@ -255,7 +273,6 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     Attributes
     ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -290,8 +307,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         dtype: Optional[IntoDType] = None,
         output_col: Optional[str] = None,
     ) -> tuple[nw.Expr, nw.Expr]:
-        """Applies the mapping defined in the mappings dict to each column in the columns
-        attribute.
+        """Apply mapping defined in the mappings dict to each column in the columns attribute.
 
         Parameters
         ----------
@@ -319,6 +335,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         # currently not including doctests for this, as need to look into most meaningful
         # way to doctest functions which output expressions
+
         """
         if output_col is None:
             output_col = input_col
@@ -341,7 +358,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         conditions_and_outcomes: dict[str, tuple[nw.Expr, nw.Expr]],
         output_col: Optional[str] = None,
     ) -> nw.Expr:
-        """combines mapping conditions/outcomes into one expr for given column
+        """Combine mapping conditions/outcomes into one expr for given column.
 
         Parameters
         ----------
@@ -362,7 +379,6 @@ class BaseMappingTransformMixin(BaseTransformer):
         # way to doctest functions which output expressions
 
         """
-
         if output_col is None:
             output_col = input_col
 
@@ -401,8 +417,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         X: DataFrame,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
-        """Applies the mapping defined in the mappings dict to each column in the columns
-        attribute.
+        """Apply mapping defined in the mappings dict to each column in the columns attribute.
 
         Parameters
         ----------
@@ -503,6 +518,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     """Transformer to map values in columns to other values e.g. to merge two levels into one.
 
@@ -632,7 +648,6 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         └─────┴─────┘
 
         """
-
         X = _convert_dataframe_to_narwhals(X)
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
@@ -676,17 +691,6 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     """BaseMappingTransformer Extension for cross column mapping transformers.
 
-    Parameters
-    ----------
-    adjust_column : str
-        The column to be adjusted.
-
-    mappings : dict or OrderedDict
-        Dictionary containing adjustments. Exact structure will vary by child class.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
     Attributes
     ----------
     adjust_column : str
@@ -728,6 +732,25 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
         mappings: dict[str, dict],
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        adjust_column : str
+            The column to be adjusted.
+
+        mappings : dict or OrderedDict
+            Dictionary containing adjustments. Exact structure will vary by child class.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        Raises
+        ------
+            TypeError:
+                if adjust_column is not string type.
+
+        """
         super().__init__(mappings=mappings, **kwargs)
 
         if not isinstance(adjust_column, str):
@@ -737,7 +760,7 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
         self.adjust_column = adjust_column
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Checks X is valid for transform and calls parent transform
+        """Check X is valid for transform and calls parent transform.
 
         Parameters
         ----------
@@ -749,8 +772,12 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
         X : pd.DataFrame
             Transformed data X with adjustments applied to specified columns.
 
-        """
+        Raises
+        ------
+            ValueError:
+                if provided adjust_column is not in DataFrame.
 
+        """
         X = super().transform(X)
 
         if self.adjust_column not in X.columns.to_numpy():
@@ -769,23 +796,6 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
 class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     """Transformer to adjust values in one column based on the values of another column.
 
-    Parameters
-    ----------
-    adjust_column : str
-        The column to be adjusted.
-
-    mappings : dict or OrderedDict
-        Dictionary containing adjustments. Each value in adjustments should be a dictionary
-        of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
-        example the following dict {'a': {1: 'a', 3: 'b'}, 'b': {'a': 1, 'b': 2}}
-        would replace the values in the adjustment column based off the values in column a using the mapping
-        1->'a', 3->'b' and also replace based off the values in column b using a mapping 'a'->1, 'b'->2.
-        If more than one column is defined for this mapping, then this object must be an OrderedDict
-        to ensure reproducibility.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
     Attributes
     ----------
     adjust_column : str
@@ -827,6 +837,31 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
         mappings: dict[str, dict],
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        adjust_column : str
+            The column to be adjusted.
+
+        mappings : dict or OrderedDict
+            Dictionary containing adjustments. Each value in adjustments should be a dictionary
+            of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
+            example the following dict {'a': {1: 'a', 3: 'b'}, 'b': {'a': 1, 'b': 2}}
+            would replace the values in the adjustment column based off the values in column a using the mapping
+            1->'a', 3->'b' and also replace based off the values in column b using a mapping 'a'->1, 'b'->2.
+            If more than one column is defined for this mapping, then this object must be an OrderedDict
+            to ensure reproducibility.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        Raises
+        ------
+            TypeError:
+                if mappings is not ordered dict, or only contains one key.
+
+        """
         super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
 
         if len(mappings) > 1 and not isinstance(mappings, OrderedDict):
@@ -834,7 +869,7 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
             raise TypeError(msg)
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transforms values in given column using the values provided in the adjustments dictionary.
+        """Transform values in given column using the values provided in the adjustments dictionary.
 
         Parameters
         ----------
@@ -847,7 +882,6 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
             Transformed data X with adjustments applied to specified columns.
 
         """
-
         X = super().transform(X)
 
         for i in self.columns:
@@ -870,17 +904,6 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
 class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     """BaseCrossColumnNumericTransformer Extension for cross column numerical mapping transformers.
 
-    Parameters
-    ----------
-    adjust_column : str
-        The column to be adjusted.
-
-    mappings : dict
-        Dictionary containing adjustments. Exact structure will vary by child class.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
     Attributes
     ----------
     adjust_column : str
@@ -922,6 +945,25 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
         mappings: dict[str, dict],
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        adjust_column : str
+            The column to be adjusted.
+
+        mappings : dict
+            Dictionary containing adjustments. Exact structure will vary by child class.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        Raises
+        ------
+            TypeError:
+                if provided columns are non-numeric.
+
+        """
         super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
 
         for j in mappings.values():
@@ -931,7 +973,7 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
                     raise TypeError(msg)
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Checks X is valid for transform and calls parent transform
+        """Check X is valid for transform and calls parent transform.
 
         Parameters
         ----------
@@ -943,8 +985,12 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
         X : pd.DataFrame
             Transformed data X with adjustments applied to specified columns.
 
-        """
+        Raises
+        ------
+            TypeError:
+                if provided columns are non-numeric
 
+        """
         X = super().transform(X)
 
         if not pd.api.types.is_numeric_dtype(X[self.adjust_column]):
@@ -962,23 +1008,6 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
 )
 class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     """Transformer to apply a multiplicative adjustment to values in one column based on the values of another column.
-
-    Parameters
-    ----------
-    adjust_column : str
-        The column to be adjusted.  The data type of this column must be int or float.
-
-    mappings : dict
-        Dictionary containing adjustments. Each value in adjustments should be a dictionary
-        of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
-        example the following dict {'a': {1: 2, 3: 5}, 'b': {'a': 0.5, 'b': 1.1}}
-        would multiply the values in the adjustment column based off the values in column a using the mapping
-        1->2*value, 3->5*value and also multiply based off the values in column b using a mapping
-        'a'->0.5*value, 'b'->1.1*value.
-        The values within the dicts defining the multipliers must have type int or float.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
     Attributes
     ----------
@@ -1021,10 +1050,30 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
         mappings: dict[str, dict],
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        adjust_column : str
+            The column to be adjusted.  The data type of this column must be int or float.
+
+        mappings : dict
+            Dictionary containing adjustments. Each value in adjustments should be a dictionary
+            of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
+            example the following dict {'a': {1: 2, 3: 5}, 'b': {'a': 0.5, 'b': 1.1}}
+            would multiply the values in the adjustment column based off the values in column a using the mapping
+            1->2*value, 3->5*value and also multiply based off the values in column b using a mapping
+            'a'->0.5*value, 'b'->1.1*value.
+            The values within the dicts defining the multipliers must have type int or float.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transforms values in given column using the values provided in the adjustments dictionary.
+        """Transform values in given column using the values provided in the adjustments dictionary.
 
         Parameters
         ----------
@@ -1037,7 +1086,6 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
             Transformed data X with adjustments applied to specified columns.
 
         """
-
         X = super().transform(X)
 
         for i in self.columns:
@@ -1059,23 +1107,6 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
 )
 class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     """Transformer to apply an additive adjustment to values in one column based on the values of another column.
-
-    Parameters
-    ----------
-    adjust_column : str
-        The column to be adjusted.  The data type of this column must be int or float.
-
-    mappings : dict
-        Dictionary containing adjustments. Each value in adjustments should be a dictionary
-        of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
-        example the following dict {'a': {1: 2, 3: 5}, 'b': {'a': 1, 'b': -5}}
-        would provide an additive adjustment to the values in the adjustment column based off the values
-        in column a using the mapping 1->2+value, 3->5+value and also an additive adjustment based off the
-        values in column b using a mapping 'a'->1+value, 'b'->(-5)+value.
-        The values within the dicts defining the values to be added must have type int or float.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
     Attributes
     ----------
@@ -1118,10 +1149,30 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
         mappings: dict[str, dict],
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        adjust_column : str
+            The column to be adjusted.  The data type of this column must be int or float.
+
+        mappings : dict
+            Dictionary containing adjustments. Each value in adjustments should be a dictionary
+            of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
+            example the following dict {'a': {1: 2, 3: 5}, 'b': {'a': 1, 'b': -5}}
+            would provide an additive adjustment to the values in the adjustment column based off the values
+            in column a using the mapping 1->2+value, 3->5+value and also an additive adjustment based off the
+            values in column b using a mapping 'a'->1+value, 'b'->(-5)+value.
+            The values within the dicts defining the values to be added must have type int or float.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transforms values in given column using the values provided in the adjustments dictionary.
+        """Transform values in given column using the values provided in the adjustments dictionary.
 
         Parameters
         ----------
@@ -1134,7 +1185,6 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
             Transformed data X with adjustments applied to specified columns.
 
         """
-
         X = super().transform(X)
 
         for i in self.columns:

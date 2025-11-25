@@ -1,6 +1,7 @@
 import numpy as np
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -46,6 +47,13 @@ class TestInit(ColumnStrListInitTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
+
+    @pytest.mark.parametrize("value", [{"a": 1}, [1, 2]])
+    def test_value_arg_type(self, value):
+        """Tests that check arg value type."""
+
+        with pytest.raises(BeartypeCallHintParamViolation):
+            SetValueTransformer(columns=["a"], value=value)
 
 
 class TestFit(GenericFitTests):
