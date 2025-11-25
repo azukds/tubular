@@ -14,13 +14,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.types import (
     DataFrame,
     NonEmptyListOfStrs,
 )
 
 
+@register
 class SetValueTransformer(BaseTransformer):
     """Transformer to set value of column(s) to a given value.
 
