@@ -20,7 +20,11 @@ from tests.dates.test_BaseGenericDateTransformer import (
     GenericDatesMixinTransformTests,
     create_date_diff_different_dtypes,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import TIME_UNITS, BetweenDatesTransformer
 
 
@@ -183,7 +187,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_output(self, df, expected):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_output(self, df, expected, from_json):
         """Test the output of transform is as expected."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -191,6 +196,8 @@ class TestTransform(
             lower_inclusive=False,
             upper_inclusive=False,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -209,7 +216,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_output_both_exclusive(self, df, expected):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_output_both_exclusive(self, df, expected, from_json):
         """Test the output of transform is as expected if both limits are exclusive."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -217,6 +225,8 @@ class TestTransform(
             lower_inclusive=False,
             upper_inclusive=False,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -235,7 +245,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_output_lower_exclusive(self, df, expected):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_output_lower_exclusive(self, df, expected, from_json):
         """Test the output of transform is as expected if the lower limits are exclusive only."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -243,6 +254,8 @@ class TestTransform(
             lower_inclusive=False,
             upper_inclusive=True,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -261,7 +274,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_output_upper_exclusive(self, df, expected):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_output_upper_exclusive(self, df, expected, from_json):
         """Test the output of transform is as expected if the upper limits are exclusive only."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -269,6 +283,8 @@ class TestTransform(
             lower_inclusive=True,
             upper_inclusive=False,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -287,7 +303,8 @@ class TestTransform(
             ),
         ],
     )
-    def test_output_both_inclusive(self, df, expected):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_output_both_inclusive(self, df, expected, from_json):
         """Test the output of transform is as expected if the both limits are inclusive."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -295,6 +312,8 @@ class TestTransform(
             lower_inclusive=True,
             upper_inclusive=True,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -340,7 +359,8 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
-    def test_output_different_date_dtypes(self, columns, library):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_output_different_date_dtypes(self, columns, library, from_json):
         """Test the output of transform is as expected if both limits are exclusive."""
         x = BetweenDatesTransformer(
             columns=columns,
@@ -348,6 +368,8 @@ class TestTransform(
             lower_inclusive=False,
             upper_inclusive=False,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df = d.create_is_between_dates_df_3(library=library)
         output = [False, False, True, True, False, False]
@@ -475,14 +497,13 @@ class TestTransform(
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
-        msg = "a type should be in ['Datetime', 'Date'] but got Unknown. Note, Datetime columns should have time_unit in ['us', 'ns', 'ms'] and time_zones from zoneinfo.available_timezones()"
-
         with pytest.raises(
             TypeError,
         ) as exc_info:
             transformer.transform(df)
 
-        assert msg in str(exc_info.value)
+        assert "type should be in ['Datetime', 'Date']" in str(exc_info.value)
+        assert "time_zones from zoneinfo.available_timezones()" in str(exc_info.value)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_only_typechecks_self_columns(
