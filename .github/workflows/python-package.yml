@@ -50,7 +50,7 @@ jobs:
       - name: Update feature table
         run: |
           source ${{ matrix.python-version }}/bin/activate
-          python ./feature_table.py
+          python utils/feature_table.py
 
       - name: Fail if update feature table produced changes
         run: |

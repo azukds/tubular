@@ -16,5 +16,5 @@ repos:
     hooks:
       - id: generate-feature-table
         name: Generate feature table for README
-        entry: python feature_table.py
+        entry: python utils/feature_table.py
         language: system
