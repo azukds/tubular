@@ -53,18 +53,18 @@ def insert_table_to_readme(table: str, readme_text: str) -> None:
     Examples
     --------
     >>> readme_text=(
-    ... "this is a fake readme\\n"
-    ... "it contains info on stuff\\n"
-    ... "<!-- AUTO-GENERATED feature table -->\\n"
-    ... "placeholder\\n"
-    ... "<!-- /AUTO-GENERATED feature table -->\\n"
+    ... "this is a fake readme\n"
+    ... "it contains info on stuff\n"
+    ... "<!-- AUTO-GENERATED feature table -->\n"
+    ... "placeholder\n"
+    ... "<!-- /AUTO-GENERATED feature table -->\n"
     ... "and a conclusion"
     ... )
 
     >>> table=(
-    ... "|        | feature1           | feature2   |\\n"
-    ... "|--------|--------------------|------------|\\n"
-    ... "| class1 | :heavy_check_mark: | :x:        |\\n"
+    ... "|        | feature1           | feature2   |\n"
+    ... "|--------|--------------------|------------|\n"
+    ... "| class1 | :heavy_check_mark: | :x:        |\n"
     ... "| class2 | :x:                | :x:        |"
     ... )
 
