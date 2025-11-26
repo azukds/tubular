@@ -319,7 +319,8 @@ class TestTransform(
 
         assert_frame_equal_dispatch(expected, df_transformed)
 
-    def test_warning_message(self):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_warning_message(self, from_json):
         """Test a warning is generated if not all the values in column_upper are greater than or equal to column_lower."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -327,6 +328,8 @@ class TestTransform(
             lower_inclusive=True,
             upper_inclusive=True,
         )
+
+        x = _handle_from_json(x, from_json)
 
         df = d.create_is_between_dates_df_2()
         df = nw.from_native(df)
@@ -404,6 +407,7 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_mismatched_datetypes_error(
         self,
         columns,
@@ -411,6 +415,7 @@ class TestTransform(
         date_col,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         "Test that transform raises an error if one column is a date and one is datetime"
 
@@ -418,6 +423,8 @@ class TestTransform(
             columns=columns,
             new_column_name="c",
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = create_date_diff_different_dtypes(library=library)
 
@@ -454,12 +461,14 @@ class TestTransform(
             "localtime",
         ],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_bad_timezones_error(
         self,
         bad_timezone,
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        from_json,
     ):
         """Test that transform raises an error if
         datetime columns have non-accepted timezones
@@ -475,6 +484,8 @@ class TestTransform(
         transformer = uninitialized_transformers[self.transformer_name](
             **args,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df_dict = {
             "a": [
@@ -497,20 +508,23 @@ class TestTransform(
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
+        msg = "a type should be in ['Datetime', 'Date'] but got Unknown. Note, Datetime columns should have time_unit in ['us', 'ns', 'ms'] and time_zones from zoneinfo.available_timezones()"
+
         with pytest.raises(
             TypeError,
         ) as exc_info:
             transformer.transform(df)
 
-        assert "type should be in ['Datetime', 'Date']" in str(exc_info.value)
-        assert "time_zones from zoneinfo.available_timezones()" in str(exc_info.value)
+        assert msg in str(exc_info.value)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_only_typechecks_self_columns(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        from_json,
     ):
         "Test that type checks are only performed on self.columns"
         args = minimal_attribute_dict[self.transformer_name].copy()
@@ -519,6 +533,8 @@ class TestTransform(
         transformer = uninitialized_transformers[self.transformer_name](
             **args,
         )
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = d.create_is_between_dates_df_3(library=library)
 
