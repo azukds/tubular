@@ -141,6 +141,8 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "S101",
     "PLC2701", # complains about private imports, which we test
     "E501",
+    "D",
+    "DOC",
     ]
 "profiling/*"=["D", "DOC", "E501"]
 # too much to turn on D/DOC and E501 lints in one go,
