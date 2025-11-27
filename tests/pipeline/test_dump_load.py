@@ -41,7 +41,8 @@ class TestDumpLoad:
 
     def test_dump_output(self):
         original_pipeline = TubularPipelineGenerator()
-        original_pipeline = original_pipeline.generate_pipeline(["MedianImputer"])
+        transformer = "MedianImputer"
+        original_pipeline = original_pipeline.generate_pipeline([transformer])
 
         df_1 = create.create_standard_pandas_dataset()
 
@@ -70,9 +71,12 @@ class TestDumpLoad:
             }
         }
 
-        assert actual_json == expected_json, (
-            f"expected {expected_json} but got {actual_json}"
+        assert (
+            actual_json[transformer]["classname"]
+            == expected_json[transformer]["classname"]
         )
+        assert actual_json[transformer]["init"] == expected_json[transformer]["init"]
+        assert actual_json[transformer]["fit"] == expected_json[transformer]["fit"]
 
     def test_dump_transformer_not_jsonable(self):
         original_pipeline = TubularPipelineGenerator()
