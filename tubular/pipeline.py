@@ -36,7 +36,7 @@ def dump(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     >>> a = pipe.fit(df_1, df_1["AveRooms"])
     >>> pipeline_json = dump(pipe)
     >>> pipeline_json
-    {'GroupRareLevelsTransformer': {'tubular_version': '...', 'classname': 'GroupRareLevelsTransformer', 'init': {...}, 'fit': {...}}
+    {'GroupRareLevelsTransformer': {...}}
 
     """
     steps = pipeline.steps
