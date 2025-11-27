@@ -1,84 +1,83 @@
-"""Module contains utility class for serializing and deserializing pipelines."""
+"""Module contains methods for serializing and deserializing pipelines."""
 
-from __future__ import annotations
+from typing import Any
 
 from sklearn.pipeline import Pipeline
 
-from tubular.base import CLASS_REGISTRY, BaseTransformer
+from tubular.base import CLASS_REGISTRY
 
 
-class PipelineSerializer:
-    """Utility class for serializing and deserializing pipelines.
+def dump(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
+    """Serialize a pipeline into json dictionary.
 
-    Provides dump and load methods for pipeline.
+    Parameters
+    ----------
+    pipeline: Pipeline
+        sequence of transformer objects
+
+    Raises
+    ------
+    RuntimeError
+        If any of the transformer in pipeline is not jsonable then it raises RuntimeError.
+
+
+    Returns
+    -------
+    dict
+        json dictionary representing the pipeline.
+
+    Examples
+    --------
+    >>> from profiling.pipeline_generator import TubularPipelineGenerator
+    >>> from profiling import create_dataset as create
+    >>> pipe = TubularPipelineGenerator()
+    >>> pipe = pipe.generate_pipeline(["GroupRareLevelsTransformer"])
+    >>> df_1 = create.create_standard_pandas_dataset()
+    >>> a = pipe.fit(df_1, df_1["AveRooms"])
+    >>> pipeline_json = dump(pipe)
+    >>> pipeline_json
+    {'GroupRareLevelsTransformer': {'tubular_version': '...', 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['categorical_4'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.01, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': True}, 'fit': {'non_rare_levels': {'categorical_4': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']}, 'rare_levels_record_': {'categorical_4': ['z']}}}}
 
     """
+    steps = pipeline.steps
+    non_jsonable_steps = [step[0] for step in steps if step[1].jsonable is False]
+    if non_jsonable_steps:
+        msg = f"the following steps are not yet jsonable: {non_jsonable_steps}"
+        raise RuntimeError(msg)
 
-    @classmethod
-    def dump(cls, steps: list[tuple[str, BaseTransformer]]) -> str | dict[str, dict]:
-        """Serialize a sequence of pipeline steps into a json dictionary.
-
-        Parameters
-        ----------
-        steps : list
-            sequence of pipeline steps
-
-        Returns
-        -------
-        dict
-            json dictionary representing the pipeline.
-
-        Examples
-        --------
-        >>> from profiling.pipeline_generator import TubularPipelineGenerator
-        >>> from profiling import create_dataset as create
-        >>> pipe = TubularPipelineGenerator()
-        >>> pipe = pipe.generate_pipeline(["GroupRareLevelsTransformer"])
-        >>> df_1 = create.create_standard_pandas_dataset()
-        >>> a = pipe.fit(df_1, df_1["AveRooms"])
-        >>> pipeline_json = PipelineSerializer.dump(pipe.steps)
-        >>> pipeline_json
-        {'GroupRareLevelsTransformer': {'tubular_version': '...', 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['categorical_4'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.01, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': True}, 'fit': {'non_rare_levels': {'categorical_4': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']}, 'rare_levels_record_': {'categorical_4': ['z']}}}}
+    return {step_name: step.to_json() for step_name, step in steps}
 
 
-        """
-        for transformer in steps:
-            if not transformer[1].jsonable:
-                return f"{transformer[0]} is not jsonable"
+def load(pipeline_json: dict[str, dict[str, Any]]) -> Pipeline:
+    """Deserialize a pipeline json structure into a pipeline.
 
-        return {step_name: step.to_json() for step_name, step in steps}
+    Parameters
+    ----------
+    pipeline_json: dict
+        json dictionary representing the pipeline.
 
-    @classmethod
-    def load(cls, pipeline_json: dict) -> Pipeline:
-        """Deserialize a pipeline json structure into a pipeline.
+    Returns
+    -------
+    Pipeline loaded  from json dict
 
-        Parameters
-        ----------
-        pipeline_json: dict
-            json dictionary representing the pipeline.
+    Examples
+    --------
+    >>> from profiling.pipeline_generator import TubularPipelineGenerator
+    >>> from profiling import create_dataset as create
+    >>> pipe = TubularPipelineGenerator()
+    >>> pipe = pipe.generate_pipeline(["GroupRareLevelsTransformer"])
+    >>> df_1 = create.create_standard_pandas_dataset()
+    >>> a = pipe.fit(df_1, df_1["AveRooms"])
+    >>> pipeline_json = dump(pipe)
+    >>> pipeline = load(pipeline_json)
+    >>> pipeline
+    Pipeline(steps=[('GroupRareLevelsTransformer',
+                     GroupRareLevelsTransformer(columns=['categorical_4']))])
 
-        Returns
-        -------
-        Pipeline
+    """
+    steps = [
+        (step_name, CLASS_REGISTRY[step_name].from_json(json_dict))
+        for step_name, json_dict in pipeline_json.items()
+    ]
 
-        Examples
-        --------
-        >>> from profiling.pipeline_generator import TubularPipelineGenerator
-        >>> from profiling import create_dataset as create
-        >>> pipe = TubularPipelineGenerator()
-        >>> pipe = pipe.generate_pipeline(["GroupRareLevelsTransformer"])
-        >>> df_1 = create.create_standard_pandas_dataset()
-        >>> a = pipe.fit(df_1, df_1["AveRooms"])
-        >>> pipeline_json = PipelineSerializer.dump(pipe.steps)
-        >>> pipeline = PipelineSerializer.load(pipeline_json)
-        >>> pipeline
-        Pipeline(steps=[('GroupRareLevelsTransformer',
-                         GroupRareLevelsTransformer(columns=['categorical_4']))])
-
-        """
-        steps = [
-            (step_name, CLASS_REGISTRY[step_name].from_json(json_dict))
-            for step_name, json_dict in pipeline_json.items()
-        ]
-
-        return Pipeline(steps)
+    return Pipeline(steps)
