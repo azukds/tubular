@@ -40,6 +40,7 @@ Changed
 - feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
 - feat: added a new transformer called DatetimeComponentExtractor
 - feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
+- bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
 
 
 
