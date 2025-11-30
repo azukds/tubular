@@ -27,8 +27,7 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-
-2.1.1 (unreleased)
+2.5.0 (unreleased)
 ------------------
 
 Added
@@ -38,15 +37,72 @@ Added
 - feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>_`
 - chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>_`
 
-2.1.0 (unreleased)
+
+2.4.0 (unreleased)
 ------------------
 
+Changed
+^^^^^^^
+- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>_`
+- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>_`
+- copied optimisations/improvements from #484 into MedianImputer
+- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
+- feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
+- feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
+- feat: added a new transformer called DatetimeComponentExtractor
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
+
+
+
+2.3.0 (18/11/2025)
+------------------
+
+Changed
+^^^^^^^
+
+- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BaseTransfomer
+- feat: introduced `lazyframe_compatible` class attr to all transformers
+- feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
+- bugfix: MeanResponseTransformer approach was hitting a recursion depth limit error for many levels, have switched to more resilient (and generally better) approach
+- chore: add beartype decorator to transformers NullIndicator and SetValueTransformer - #563 <https://github.com/azukds/tubular/issues/563>
+- feat: optimisation changes to BaseCappingTransformer `#484 <https://github.com/azukds/tubular/issues/484>`
+
+2.2.0 (11/11/2025)
+------------------
+
+Changed
+^^^^^^^
+
+- chore: cleanup of ruff rules `#590 <https://github.com/azukds/tubular/issues/590>`_
+- feat: added `to_json` method for `SetValueTransformer` `#542 <https://github.com/azukds/tubular/issues/542>`_
+- feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
+- removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- added a new transformer called DatetimeComponentExtractor
+
+2.1.0 (30/10/25)
+------------------
+
+Changed
+^^^^^^^
+
+- feat: optimisation changes to fit methods in imputers file
+- feat: optimisation changes to transform method of NullIndicator
+- feat: optimisation changes to MeanResponseTransformer
+- feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
+- feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
+- feat: removed TwoColumnMixin and BaseDateTwoColumnTransformer and replaced with beartype
 - feat: added `get_feature_names_out` method to all transformers, which gives back list of modified/created features. This follows the sklearn API.
 - feat: added `to_json` method for BaseGenericDateTransformer `#540 <https://github.com/azukds/tubular/issues/540>_`
+- feat: added `to_json` method for DateDifferenceTransformer `#552 <https://github.com/azukds/tubular/issues/552>_`
+- feat: added `to_json` method for BaseMappingTransformer, MappingTransformer `#541 <https://github.com/azukds/tubular/issues/541>_`
 
 2.0.0 (16/10/2025)
 ------------------
+
+Changed
+^^^^^^^
 
 - chore: refactored unit weight handling into method of WeightColumnMixin, tightened up handling
 - feat: added AggregateColumnsOverRowTransformer `#385 <https://github.com/azukds/tubular/issues/385>_`
@@ -75,6 +131,9 @@ Added
 
 1.4.8 (03/09/25)
 ----------------
+
+Changed
+^^^^^^^
 
 - feat: optimisation changes to OneHotEncodingTransformer
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 https://github.com/azukds/tubular/issues/465>_`

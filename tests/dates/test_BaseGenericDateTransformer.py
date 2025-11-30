@@ -5,7 +5,6 @@ import narwhals as nw
 import numpy as np
 import polars as pl
 import pytest
-from beartype.roar import BeartypeCallHintParamViolation
 from dateutil.tz import gettz
 
 from tests.base_tests import (
@@ -18,7 +17,7 @@ from tests.base_tests import (
     ReturnNativeTests,
 )
 from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
-from tests.utils import _handle_from_json, dataframe_init_dispatch
+from tests.utils import _check_if_skip_test, _handle_from_json, dataframe_init_dispatch
 from tubular.dates import TIME_UNITS
 
 
@@ -57,13 +56,12 @@ class GenericDatesMixinTransformTests:
             **args,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
-
         df = copy.deepcopy(minimal_dataframe_lookup[self.transformer_name])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         for i in range(len(columns)):
             col = columns[i]
@@ -107,9 +105,12 @@ class GenericDatesMixinTransformTests:
             **args,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
-
         df = create_date_diff_different_dtypes(library=library)
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = (
             nw.from_native(df)
@@ -119,10 +120,6 @@ class GenericDatesMixinTransformTests:
             )
             .to_native()
         )
-
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
-            return
 
         present_types = (
             {nw.Datetime, nw.Date()} if datetime_col == 0 else {nw.Date(), nw.Datetime}
@@ -172,8 +169,6 @@ class GenericDatesMixinTransformTests:
             **args,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
-
         df_dict = {
             "a": [
                 datetime.datetime(1993, 9, 27, tzinfo=gettz(bad_timezone)),
@@ -187,9 +182,10 @@ class GenericDatesMixinTransformTests:
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         msg = "a type should be in ['Datetime', 'Date'] but got Unknown. Note, Datetime columns should have time_unit in ['us', 'ns', 'ms'] and time_zones from zoneinfo.available_timezones()"
 
@@ -216,9 +212,12 @@ class GenericDatesMixinTransformTests:
             **args,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
-
         df = create_date_test_df(library=library)
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df = nw.from_native(df)
 
@@ -258,27 +257,6 @@ class TestInit(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseGenericDateTransformer"
-
-    # overload until we beartype the new_column_name mixin
-    @pytest.mark.parametrize(
-        "new_column_type",
-        [1, True, {"a": 1}, [1, 2], np.inf, np.nan],
-    )
-    def test_new_column_name_type_error(
-        self,
-        new_column_type,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if any type other than str passed to new_column_name"""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["new_column_name"] = new_column_type
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
 
 
 class TestFit(GenericFitTests):

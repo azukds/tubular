@@ -2,18 +2,26 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
+from beartype import beartype
 from typing_extensions import deprecated
 
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+    block_from_json,
+)
+from tubular.base import BaseTransformer, register
+from tubular.types import (
+    DataFrame,
+    NonEmptyListOfStrs,
+)
 
-from tubular.base import BaseTransformer
 
-
+@register
 class SetValueTransformer(BaseTransformer):
     """Transformer to set value of column(s) to a given value.
 
@@ -22,17 +30,21 @@ class SetValueTransformer(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json, which limits it's
+        supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Examples
     --------
@@ -46,15 +58,21 @@ class SetValueTransformer(BaseTransformer):
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        value: type,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        value: Optional[Union[int, float, str, bool]],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -66,7 +84,7 @@ class SetValueTransformer(BaseTransformer):
         value : various
             Value to set.
 
-        **kwargs: dict[str, Any]
+        **kwargs: bool
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
         """
@@ -74,8 +92,32 @@ class SetValueTransformer(BaseTransformer):
 
         super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = SetValueTransformer(columns='a', value=1)
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+
+
+        """  # noqa: E501
+        json_dict = super().to_json()
+
+        json_dict["init"]["value"] = self.value
+
+        return json_dict
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
 
         Parameters
@@ -112,10 +154,13 @@ class SetValueTransformer(BaseTransformer):
         └─────┴─────┘
 
         """
-        X = nw.from_native(super().transform(X))
+        X = super().transform(X, return_native_override=False)
 
-        set_value_expression = [nw.lit(self.value).alias(col) for col in self.columns]
-        return X.with_columns(set_value_expression)
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 # DEPRECATED TRANSFORMERS
@@ -131,11 +176,12 @@ class ColumnDtypeSetter(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -143,9 +189,14 @@ class ColumnDtypeSetter(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -165,8 +216,8 @@ class ColumnDtypeSetter(BaseTransformer):
             Columns to set dtype. Must be set or transform will not run.
 
         dtype : type or string
-            dtype object to set columns to or a string interpretable as one by pd.api.types.pandas_dtype
-            e.g. float or 'float'
+            dtype object to set columns to or a string interpretable as one
+            by pd.api.types.pandas_dtype e.g. float or 'float'
 
         **kwargs: dict[str, Any]
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -208,5 +259,5 @@ class ColumnDtypeSetter(BaseTransformer):
         try:
             pd.api.types.pandas_dtype(dtype)
         except TypeError:
-            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"
+            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"  # noqa: E501
             raise TypeError(msg) from None

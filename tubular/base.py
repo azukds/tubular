@@ -5,7 +5,7 @@ These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
@@ -22,38 +22,65 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.mixins import DropOriginalMixin
-from tubular.types import DataFrame, GenericKwargs, Series
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
+from tubular.types import (
+    DataFrame,
+    GenericKwargs,
+    NonEmptyListOfStrs,
+    Series,
+)
 
 pd.options.mode.copy_on_write = True
 
+CLASS_REGISTRY = {}
 
+
+def register(cls: BaseTransformer) -> BaseTransformer:
+    """Add transformer to registry dict.
+
+    Returns:
+    -------
+    cls - transformer
+
+    Example:
+    -------
+    >>> @register
+    ... class MyTransformer(BaseTransformer):
+    ...     pass
+    >>> CLASS_REGISTRY["MyTransformer"]
+    <class 'tubular.base.MyTransformer'>
+
+    """
+    CLASS_REGISTRY[cls.__name__] = cls
+    return cls
+
+
+@register
 class BaseTransformer(BaseEstimator, TransformerMixin):
     """Base tranformer class which all other transformers in the package inherit from.
 
-    Provides fit and transform methods (required by sklearn transformers), simple input checking
-    and functionality to copy X prior to transform.
+    Provides fit and transform methods (required by sklearn transformers), simple input
+    checking and functionality to copy X prior to transform.
 
     Attributes:
     ----------
     columns : list
-        Either a list of str values giving which columns in a input pandas.DataFrame the transformer
-        will be applied to.
+        Either a list of str values giving which columns in a input pandas.DataFrame the
+        transformer will be applied to.
 
     copy : bool
-        Should X be copied before tansforms are applied? Copy argument no longer used and will be deprecated in a future release
+        Should X be copied before tansforms are applied?
+        Copy argument no longer used and will be deprecated in a future release
 
     verbose : bool
         Print statements to show which methods are being run or not.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     return_native: bool, default = True
         Controls whether transformer returns narwhals or native pandas/polars type
@@ -63,6 +90,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------
@@ -74,6 +104,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -94,7 +126,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
         copy: bool = False,
         verbose: bool = False,
         return_native: bool = True,
@@ -104,21 +139,19 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         Parameters
         ----------
         columns : None or list or str
-            Columns to apply the transformer to. If a str is passed this is put into a list. Value passed
-            in columns is saved in the columns attribute on the object.
+            Columns to apply the transformer to. If a str is passed this is put into
+            a list.
+            Value passed in columns is saved in the columns attribute on the object.
 
         copy : bool, default = False
-            Should X be copied before tansforms are applied? Copy argument no longer used and will be deprecated in a future release
+            Should X be copied before tansforms are applied?
+            Copy argument no longer used and will be deprecated in a future release
 
         verbose : bool, default = False
             Should statements be printed when methods are run?
 
         return_native: bool, default = True
             Controls whether transformer returns narwhals or native pandas/polars type
-
-        Raises
-        ------
-            ValueError: if columns is empty
 
         """
         self.verbose = verbose
@@ -131,10 +164,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             self.columns = [columns]
 
         elif isinstance(columns, list):
-            if not len(columns) > 0:
-                msg = f"{self.classname()}: columns has no values"
-                raise ValueError(msg)
-
             self.columns = columns
 
         self.copy = copy
@@ -177,7 +206,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Raises
         ------
-            RuntimeError: if transformer does not have to/from json functionality enabled
+            RuntimeError: if transformer does not have to/from json functionality
+            enabled
 
         Examples
         --------
@@ -187,7 +217,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             >>> transformer.to_json()
             {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
 
-        """
+        """  # noqa: E501
         if not self.jsonable:
             msg = (
                 "This transformer has not yet had to/from json functionality developed"
@@ -224,7 +254,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Raises
         ------
-            RuntimeError: if transformer does not have to/from json functionality enabled
+            RuntimeError: if transformer does not have to/from json
+            functionality enabled
 
         Examples
         --------
@@ -261,7 +292,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
         """Check data before fit.
 
-        Fit calls the columns_check method which will check that the columns attribute is set and all values are present in X
+        Fit calls the columns_check method which will check that the columns
+        attribute is set and all values are present in X
 
         Parameters
         ----------
@@ -269,11 +301,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             Data to fit the transformer on.
 
         y : None or pd.DataFrame or pd.Series, default = None
-            Optional argument only required for the transformer to work with sklearn pipelines.
-
-        Raises
-        ------
-            ValueError: X/y empty
+            Optional argument only required for the transformer to work with sklearn
+            pipelines.
 
         Returns
         -------
@@ -298,25 +327,17 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         self.columns_check(X)
 
-        if not X.shape[0] > 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
-
-        if (y is not None) and (not y.shape[0] > 0):
-            msg = f"{self.classname()}: y is empty; {y.shape}"
-            raise ValueError(msg)
-
         return self
 
     @block_from_json
     @nw.narwhalify
-    def _combine_X_y(self, X: FrameT, y: nw.Series) -> FrameT:
+    def _combine_X_y(self, X: DataFrame, y: nw.Series) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
 
-        This method can be used by transformers that need to use the response, y, together
-        with the explanatory variables, X, in their `fit` methods.
+        This method can be used by transformers that need to use the response, y,
+        together with the explanatory variables, X, in their `fit` methods.
 
         Parameters
         ----------
@@ -326,18 +347,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y : pd/pl.Series
             Response variable.
 
-        Raises
-        ------
-            TypeError: incorrect types passed for X,y
-
-            ValueError: shape of X/y do not match
-
         Returns
         -------
             pd/pl/nw.DataFrame: DataFrame with added column containing y
 
         Examples
         --------
+            # correct usage
             >>> import polars as pl
             >>> transformer=BaseTransformer(
             ... columns='a',
@@ -355,18 +371,18 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             │ 2   ┆ 4   ┆ 2                   │
             └─────┴─────┴─────────────────────┘
 
-        """
-        if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
-            msg = f"{self.classname()}: X should be a polars or pandas DataFrame/LazyFrame"
-            raise TypeError(msg)
+            # example error from mismatched X/y
+            >>> X=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+            >>> y=pl.Series(name='a', values=[1])
+            >>> transformer._combine_X_y(X, y)
+            Traceback (most recent call last):
+            ...
+            narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
+            ...
 
-        if not isinstance(y, nw.Series):
-            msg = f"{self.classname()}: y should be a polars or pandas Series"
-            raise TypeError(msg)
-
-        if X.shape[0] != y.shape[0]:
-            msg = f"{self.classname()}: X and y have different numbers of rows ({X.shape[0]} vs {y.shape[0]})"
-            raise ValueError(msg)
+        """  # noqa: E501
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
 
         return X.with_columns(_temporary_response=y)
 
@@ -377,8 +393,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         Parameters
         ----------
         return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
+            option to override return_native attr in transformer,
+            useful when calling parent methods
 
         Returns
         -------
@@ -409,7 +425,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     ) -> DataFrame:
         """Check data before child transform.
 
-        Transform calls the columns_check method which will check columns in columns attribute are in X.
+        Transform calls the columns_check method which will check columns in columns
+        attribute are in X.
 
         Parameters
         ----------
@@ -417,17 +434,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             Data to transform with the transformer.
 
         return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
+            option to override return_native attr in transformer,
+            useful when calling parent methods
 
         Returns
         -------
         X : pd/pl.DataFrame
             Input X, copied if specified by user.
-
-        Raises
-        ------
-        ValueError: for empty df
 
         Examples
         --------
@@ -454,7 +467,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        if self.copy:
+        if self.copy and not isinstance(X, nw.LazyFrame):
             # to prevent overwriting original dataframe
             X = X.clone()
 
@@ -462,10 +475,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         if self.verbose:
             print("BaseTransformer.transform() called")
-
-        if not len(X) > 0:
-            msg = f"{self.classname()}: X has no rows; {X.shape}"
-            raise ValueError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
@@ -540,13 +549,14 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     """Tranformer that applies a pandas.DataFrame method.
 
-    Transformer assigns the output of the method to a new column or columns. It is possible to
-    supply other key word arguments to the transform method, which will be passed to the
-    pandas.DataFrame method being called.
+    Transformer assigns the output of the method to a new column or columns.
+    It is possible to supply other key word arguments to the transform method,
+    which will be passed to the pandas.DataFrame method being called.
 
     Be aware it is possible to supply incompatible arguments to init that will only be
-    identified when transform is run. This is because there are many combinations of method, input
-    and output sizes. Additionally some methods may only work as expected when called in
+    identified when transform is run.
+    This is because there are many combinations of method, input and output sizes.
+    Additionally some methods may only work as expected when called in
     transform with specific key word arguments.
 
     Attributes
@@ -559,17 +569,21 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         The name of the pandas.DataFrame method to call.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json, which limits it's
+        supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     """
 
@@ -594,21 +608,24 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         Parameters
         ----------
         new_column_names : str or list of str
-            The name of the column or columns to be assigned to the output of running the
-            pandas method in transform.
+            The name of the column or columns to be assigned to the output of running
+            the pandas method in transform.
 
         pd_method_name : str
             The name of the pandas.DataFrame method to call.
 
         columns : None or list or str
-            Columns to apply the transformer to. If a str is passed this is put into a list. Value passed
-            in columns is saved in the columns attribute on the object. Note this has no default value so
-            the user has to specify the columns when initialising the transformer. This is avoid likely
-            when the user forget to set columns, in this case all columns would be picked up when super
-            transform runs.
+            Columns to apply the transformer to.
+            If a str is passed this is put into a list. Value passed
+            in columns is saved in the columns attribute on the object.
+            Note this has no default value so
+            the user has to specify the columns when initialising the transformer.
+            This is avoid likelywhen the user forget to set columns,
+            in this case all columns would be picked up when super transform runs.
 
         pd_method_kwargs : dict, default = {}
-            A dictionary of keyword arguments to be passed to the pd.DataFrame method when it is called.
+            A dictionary of keyword arguments to be passed to the pd.DataFrame method
+            when it is called.
 
         drop_original : bool, default = False
             Should original columns be dropped?
@@ -636,7 +653,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
             getattr(df, pd_method_name)
 
         except Exception as err:
-            msg = f'{self.classname()}: error accessing "{pd_method_name}" method on pd.DataFrame object - pd_method_name should be a pd.DataFrame method'
+            msg = f'{self.classname()}: error accessing "{pd_method_name}" method on pd.DataFrame object - pd_method_name should be a pd.DataFrame method'  # noqa: E501
             raise AttributeError(msg) from err
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -645,7 +662,8 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         Uses the given pandas.DataFrame method and assign the output
         back to column or columns in X.
 
-        Any keyword arguments set in the pd_method_kwargs attribute are passed onto the pandas DataFrame method when calling it.
+        Any keyword arguments set in the pd_method_kwargs attribute are passed onto the
+        pandas DataFrame method when calling it.
 
         Parameters
         ----------
@@ -655,15 +673,33 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         Returns
         -------
         X : pd.DataFrame
-            Input X with additional column or columns (self.new_column_names) added. These contain the output of
-            running the pandas DataFrame method.
+            Input X with additional column or columns (self.new_column_names) added.
+            These contain the output of running the pandas DataFrame method.
 
         """
         X = super().transform(X)
 
-        X[self.new_column_names] = getattr(X[self.columns], self.pd_method_name)(
-            **self.pd_method_kwargs,
-        )
+        # quick fix for empty frames, not spending much
+        # time on this as transformer is deprecated.
+        # the new_column_names attr is a bit messy,
+        # sometimes str and sometimes list
+        # editing init to make it always a list
+        # broke other tests which didn't seem worth fixing
+        # so have included handling for both cases here..
+        if X.empty:
+            # hard to know the best dtype to use here given the
+            # flexibility of this transformer, which is
+            # partially why it was deprecated
+            if isinstance(self.new_column_names, list):
+                for col in X[self.new_column_names]:
+                    X[col] = pd.Series(dtype=float)
+            else:
+                X[self.new_column_names] = pd.Series(dtype=float)
+
+        else:
+            X[self.new_column_names] = getattr(X[self.columns], self.pd_method_name)(
+                **self.pd_method_kwargs,
+            )
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(

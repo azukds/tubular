@@ -1,4 +1,4 @@
-"""This module contains transformers for working with date columns"""
+"""Contains transformers for working with date columns."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import copy
 import datetime
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -20,10 +20,16 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mapping import MappingTransformer
-from tubular.mixins import DropOriginalMixin, NewColumnNameMixin, TwoColumnMixin
-from tubular.types import DataFrame
+from tubular.mixins import DropOriginalMixin
+from tubular.types import (
+    DataFrame,
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfThreeStrs,
+    ListOfTwoStrs,
+)
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -31,34 +37,15 @@ if TYPE_CHECKING:
 TIME_UNITS = ["us", "ns", "ms"]
 
 
+@register
 class BaseGenericDateTransformer(
-    NewColumnNameMixin,
     DropOriginalMixin,
     BaseTransformer,
 ):
-    """
-    Extends BaseTransformer for datetime/date scenarios
+    """Extends BaseTransformer for datetime/date scenarios.
 
-    Parameters
+    Attributes:
     ----------
-    columns : List[str]
-        List of 2 columns. First column will be subtracted from second.
-
-    new_column_name : str
-        Name for the new year column.
-
-    drop_original : bool
-        Flag for whether to drop the original columns.
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -75,16 +62,22 @@ class BaseGenericDateTransformer(
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> BaseGenericDateTransformer(
     ... columns=['a',  'b'],
     ... new_column_name='bla',
     ...    )
     BaseGenericDateTransformer(columns=['a', 'b'], new_column_name='bla')
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -94,10 +87,30 @@ class BaseGenericDateTransformer(
     def __init__(
         self,
         columns: Union[list[str], str],
-        new_column_name: Optional[str] = None,
+        new_column_name: str,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : Union[list[str], str]
+            List of 2 columns. First column will be subtracted from second.
+
+        new_column_name : str
+            Name for the new year column.
+
+        drop_original : bool
+            Flag for whether to drop the original columns.
+
+        return_native: bool, default = True
+            Controls whether transformer returns narwhals or native pandas/polars type
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(columns=columns, **kwargs)
 
         self.drop_original = drop_original
@@ -105,7 +118,7 @@ class BaseGenericDateTransformer(
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
-        """dump transformer to json dict
+        """Dump transformer to json dict.
 
         Returns
         -------
@@ -119,8 +132,8 @@ class BaseGenericDateTransformer(
 
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False}, 'fit': {}}
-        """
 
+        """
         json_dict = super().to_json()
 
         json_dict["init"]["new_column_name"] = self.new_column_name
@@ -129,7 +142,7 @@ class BaseGenericDateTransformer(
         return json_dict
 
     def get_feature_names_out(self) -> list[str]:
-        """list features modified/created by the transformer
+        """List features modified/created by the transformer.
 
         Returns
         -------
@@ -138,7 +151,6 @@ class BaseGenericDateTransformer(
 
         Examples
         --------
-
         >>> # base classes just return inputs
         >>> transformer  = BaseGenericDateTransformer(
         ... columns=['a',  'b'],
@@ -156,8 +168,8 @@ class BaseGenericDateTransformer(
 
         >>> transformer.get_feature_names_out()
         ['bla']
-        """
 
+        """
         # base classes just return columns, so need special handling
         return (
             [*self.columns]
@@ -165,7 +177,6 @@ class BaseGenericDateTransformer(
             in [
                 BaseGenericDateTransformer,
                 BaseDatetimeTransformer,
-                BaseDateTwoColumnTransformer,
             ]
             else [self.new_column_name]
         )
@@ -176,28 +187,27 @@ class BaseGenericDateTransformer(
         X: DataFrame,
         datetime_only: bool,
     ) -> None:
-        """Checks the schema of the DataFrame to ensure that each column listed in
-        self.columns is either a datetime or date type, depending on the datetime_only
+        """Check types of provided columns.
+
+        Columns must be datetime or date type, depending on the datetime_only
         flag. If a column does not meet the expected type criteria, a TypeError is raised.
 
         Parameters
         ----------
-
-        X: pd/pl.DataFrame
+        X: pd/pl/nw.DataFrame
             Data to validate
 
         datetime_only: bool
             Indicates whether ONLY datetime types are accepted
 
         Raises
-        ----------
-
+        ------
         TypeError: if non date/datetime types are found
 
         TypeError: if mismatched date/datetime types are found,
         types should be consistent
 
-        Example:
+        Examples
         --------
         >>> import polars as pl
 
@@ -219,7 +229,6 @@ class BaseGenericDateTransformer(
         ... )
 
         """
-
         X = _convert_dataframe_to_narwhals(X)
 
         type_msg = ["Datetime"]
@@ -272,11 +281,11 @@ class BaseGenericDateTransformer(
         datetime_only: bool = False,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
-        """Base transform method, calls parent transform and validates data.
+        """Validate data pre transform.
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data containing self.columns
 
         datetime_only: bool
@@ -288,10 +297,10 @@ class BaseGenericDateTransformer(
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Validated data
 
-        Example:
+        Examples
         --------
         >>> import polars as pl
         >>> import datetime
@@ -319,8 +328,8 @@ class BaseGenericDateTransformer(
         │ 1993-09-27 ┆ 1991-05-22 │
         │ 2005-10-07 ┆ 2001-12-10 │
         └────────────┴────────────┘
-        """
 
+        """
         return_native = self._process_return_native(return_native_override)
 
         X = super().transform(X, return_native_override=False)
@@ -332,27 +341,12 @@ class BaseGenericDateTransformer(
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class BaseDatetimeTransformer(BaseGenericDateTransformer):
-    """
-    Extends BaseTransformer for datetime scenarios
+    """Extends BaseTransformer for datetime scenarios.
 
-    Parameters
+    Attributes:
     ----------
-    columns : List[str]
-        List of 2 columns. First column will be subtracted from second.
-
-    new_column_name : str
-        Name for the new year column.
-
-    drop_original : bool
-        Flag for whether to drop the original columns.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -366,28 +360,52 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> BaseDatetimeTransformer(
     ... columns=['a',  'b'],
     ... new_column_name='bla',
     ...    )
     BaseDatetimeTransformer(columns=['a', 'b'], new_column_name='bla')
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
+        columns: Union[list[str], str],
+        new_column_name: str,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : Union[list[str], str]
+            List of 2 columns. First column will be subtracted from second.
+
+        new_column_name : str
+            Name for the new year column.
+
+        drop_original : bool
+            Flag for whether to drop the original columns.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(
             columns=columns,
             new_column_name=new_column_name,
@@ -401,11 +419,11 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         X: DataFrame,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
-        """base transform method for transformers that operate exclusively on datetime columns
+        """Check types of selected columns in provided data.
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data containing self.columns
 
         return_native_override: Optional[bool]
@@ -414,7 +432,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Validated data
 
         Example:
@@ -447,7 +465,6 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         └─────────────────────┴─────────────────────┘
 
         """
-
         return_native = self._process_return_native(return_native_override)
 
         X = _convert_dataframe_to_narwhals(X)
@@ -457,91 +474,34 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-class BaseDateTwoColumnTransformer(
-    TwoColumnMixin,
-    BaseGenericDateTransformer,
-):
-    """Extends BaseDateTransformer for transformers which accept exactly two columns
+class DateDifferenceUnitsOptions(str, Enum):
+    """Options for return units in DateDifferenceTransformer."""
 
-    Parameters
-    ----------
-    columns : list
-        Either a list of str values or a string giving which columns in a input pandas.DataFrame the transformer
-        will be applied to.
+    __slots__ = ()
 
-    new_column_name : str
-        Name for the new year column.
-
-    drop_original : bool
-        Flag for whether to drop the original columns.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
-    ----------
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    """
-
-    polars_compatible = True
-
-    FITS = False
-
-    jsonable = False
-
-    def __init__(
-        self,
-        columns: list[str],
-        new_column_name: str | None = None,
-        drop_original: bool = False,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        super().__init__(
-            columns=columns,
-            new_column_name=new_column_name,
-            drop_original=drop_original,
-            **kwargs,
-        )
-
-        self.check_two_columns(columns)
+    WEEK = "week"
+    FORTNIGHT = "fortnight"
+    LUNAR_MONTH = "lunar_month"
+    COMMON_YEAR = "common_year"
+    CUSTOM_DAYS = "custom_days"
+    DAYS = "D"
+    HOURS = "h"
+    MINUTES = "m"
+    SECONDS = "s"
 
 
-class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
+DateDifferenceUnitsOptionsStr = Annotated[
+    str,
+    Is[lambda s: s in DateDifferenceUnitsOptions._value2member_map_],
+]
+
+
+@register
+class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
-    Parameters
+    Attributes:
     ----------
-    columns : List[str]
-        List of 2 columns. First column will be subtracted from second.
-    new_column_name : str, default = None
-        Name given to calculated datediff column. If None then {column_upper}_{column_lower}_datediff_{units}
-        will be used.
-    units : str, default = 'D'
-        Accepted values are "week", "fortnight", "lunar_month", "common_year", "custom_days", 'D', 'h', 'm', 's'
-    copy : bool, default = False
-        Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
-    verbose: bool, default = False
-        Control level of detail in printouts
-    drop_original:
-        Boolean flag indicating whether to drop original columns.
-    custom_days_divider:
-        Integer value for the "custom_days" unit
-    Attributes
-    ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -555,60 +515,73 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
-    >>> DateDifferenceTransformer(
+    -------
+    >>> transformer = DateDifferenceTransformer(
     ... columns=['a',  'b'],
     ... new_column_name='bla',
     ... units='common_year',
     ...    )
+    >>> transformer
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
                               units='common_year')
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False, 'units': 'common_year', 'custom_days_divider': None}, 'fit': {}}
+
+    >>> DateDifferenceTransformer.from_json(json_dump)
+    DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
+                              units='common_year')
+
     """
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
-        units: Literal[
-            "week",
-            "fortnight",
-            "lunar_month",
-            "common_year",
-            "custom_days",
-            "D",
-            "h",
-            "m",
-            "s",
-        ] = "D",
-        copy: bool = False,
-        verbose: bool = False,
+        columns: ListOfTwoStrs,
+        new_column_name: str,
+        units: DateDifferenceUnitsOptionsStr = "D",
         drop_original: bool = False,
         custom_days_divider: Optional[int] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
-        accepted_values_units = [
-            "week",
-            "fortnight",
-            "lunar_month",
-            "common_year",
-            "custom_days",
-            "D",
-            "h",
-            "m",
-            "s",
-        ]
+        """Initialise class instance.
 
-        if units not in accepted_values_units:
-            msg = f"{self.classname()}: units must be one of {accepted_values_units}, got {units}"
-            raise ValueError(msg)
+        Parameters
+        ----------
+        columns : List[str]
+            List of 2 columns. First column will be subtracted from second.
+        new_column_name : str, default = None
+            Name given to calculated datediff column. If None then {column_upper}_{column_lower}_datediff_{units}
+            will be used.
+        units : str, default = 'D'
+            Accepted values are "week", "fortnight", "lunar_month", "common_year", "custom_days", 'D', 'h', 'm', 's'
+        copy : bool, default = False
+            Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
+        verbose: bool, default = False
+            Control level of detail in printouts
+        drop_original:
+            Boolean flag indicating whether to drop original columns.
+        custom_days_divider:
+            Integer value for the "custom_days" unit
+        kwargs:
+            arguments for base class, e.g. verbose
 
+        """
         self.units = units
         self.custom_days_divider = custom_days_divider
 
@@ -616,8 +589,6 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
             columns=columns,
             new_column_name=new_column_name,
             drop_original=drop_original,
-            copy=copy,
-            verbose=verbose,
             **kwargs,
         )
 
@@ -626,16 +597,53 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[1]
 
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer=DateDifferenceTransformer(columns=['a', 'b'], new_column_name='a_diff_b')
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'drop_original': False, 'units': 'D', 'custom_days_divider': None}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "new_column_name": self.new_column_name,
+                "units": self.units,
+                "drop_original": self.drop_original,
+                "custom_days_divider": self.custom_days_divider,
+            },
+        )
+
+        return json_dict
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Calculate the difference between the given fields in the specified units.
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data containing self.columns
 
-        Example:
+        Returns
+        -------
+        pd/pl/nw.DataFrame:
+            dataframe with added date difference column
+
+        Examples
         --------
         >>> import polars as pl
         >>> import datetime
@@ -663,8 +671,8 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         │ 1993-09-27 ┆ 1991-05-22 ┆ -2.353425            │
         │ 2005-10-07 ┆ 2001-12-10 ┆ -3.827397            │
         └────────────┴────────────┴──────────────────────┘
-        """
 
+        """
         X = _convert_dataframe_to_narwhals(X)
 
         X = super().transform(X, return_native_override=False)
@@ -725,25 +733,14 @@ class DateDifferenceTransformer(BaseDateTwoColumnTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class ToDatetimeTransformer(BaseTransformer):
     """Class to transform convert specified columns to datetime.
 
     Class simply uses the pd.to_datetime method on the specified columns.
 
-    Parameters
+    Attributes:
     ----------
-    columns : List[str]
-        List of names of the column to convert to datetime.
-
-    time_format: str
-        str indicating format of time to parse, e.g. '%d/%m/%Y'
-
-    **kwargs
-        Arbitrary keyword arguments passed onto pd.to_datetime().
-
-    Attributes
-    ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -757,16 +754,22 @@ class ToDatetimeTransformer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> ToDatetimeTransformer(
     ... columns='a',
     ... time_format='%d/%m/%Y',
     ...    )
     ToDatetimeTransformer(columns=['a'], time_format='%d/%m/%Y')
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -779,6 +782,20 @@ class ToDatetimeTransformer(BaseTransformer):
         time_format: Optional[str] = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : List[str]
+            List of names of the column to convert to datetime.
+
+        time_format: str
+            str indicating format of time to parse, e.g. '%d/%m/%Y'
+
+        **kwargs
+            Arbitrary keyword arguments passed onto pd.to_datetime().
+
+        """
         if not time_format:
             warnings.warn(
                 "time_format arg has not been provided, so datetime format will be inferred",
@@ -798,10 +815,15 @@ class ToDatetimeTransformer(BaseTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data with column to transform.
 
-        Example:
+        Returns
+        -------
+        pd/pl/nw.DataFrame:
+            dataframe with provided columns converted to datetime
+
+        Examples
         --------
         >>> import polars as pl
 
@@ -822,6 +844,7 @@ class ToDatetimeTransformer(BaseTransformer):
         │ 2020-02-01 00:00:00 ┆ 1   │
         │ 1996-12-10 00:00:00 ┆ 2   │
         └─────────────────────┴─────┘
+
         """
         X = nw.from_native(super().transform(X))
 
@@ -830,37 +853,15 @@ class ToDatetimeTransformer(BaseTransformer):
         )
 
 
+@register
 class BetweenDatesTransformer(BaseGenericDateTransformer):
     """Transformer to generate a boolean column indicating if one date is between two others.
 
     If not all column_lower values are less than or equal to column_upper when transform is run
     then a warning will be raised.
 
-    Parameters
+    Attributes:
     ----------
-    columns : list[str]
-        List of columns for comparison, in format [lower, to_compare, upper]
-
-    new_column_name : str
-        Name for new column to be added to X.
-
-    drop_original: bool
-        indicates whether to drop original columns.
-
-    lower_inclusive : bool, defualt = True
-        If lower_inclusive is True the comparison to column_lower will be column_lower <=
-        column_between, otherwise the comparison will be column_lower < column_between.
-
-    upper_inclusive : bool, defualt = True
-        If upper_inclusive is True the comparison to column_upper will be column_between <=
-        column_upper, otherwise the comparison will be column_between < column_upper.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.__init__().
-
-    Attributes
-    ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -902,8 +903,11 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> BetweenDatesTransformer(
     ... columns=['a', 'b', 'c'],
     ... new_column_name='b_between_a_c',
@@ -912,31 +916,52 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     ...    )
     BetweenDatesTransformer(columns=['a', 'b', 'c'],
                             new_column_name='b_between_a_c')
+
     """
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
+        columns: ListOfThreeStrs,
         new_column_name: str,
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
-        if type(lower_inclusive) is not bool:
-            msg = f"{self.classname()}: lower_inclusive should be a bool"
-            raise TypeError(msg)
+        """Initialise class instance.
 
-        if type(upper_inclusive) is not bool:
-            msg = f"{self.classname()}: upper_inclusive should be a bool"
-            raise TypeError(msg)
+        Parameters
+        ----------
+        columns : list[str]
+            List of columns for comparison, in format [lower, to_compare, upper]
 
+        new_column_name : str
+            Name for new column to be added to X.
+
+        drop_original: bool
+            indicates whether to drop original columns.
+
+        lower_inclusive : bool, defualt = True
+            If lower_inclusive is True the comparison to column_lower will be column_lower <=
+            column_between, otherwise the comparison will be column_lower < column_between.
+
+        upper_inclusive : bool, defualt = True
+            If upper_inclusive is True the comparison to column_upper will be column_between <=
+            column_upper, otherwise the comparison will be column_between < column_upper.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.__init__().
+
+        """
         self.lower_inclusive = lower_inclusive
         self.upper_inclusive = upper_inclusive
 
@@ -947,15 +972,44 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
             **kwargs,
         )
 
-        if len(columns) != 3:
-            msg = f"{self.classname()}: This transformer works with three columns only"
-            raise ValueError(msg)
-
         # This attribute is not for use in any method, use 'columns' instead.
         # Here only as a fix to allow string representation of transformer.
         self.column_lower = columns[0]
         self.column_upper = columns[2]
         self.column_between = columns[2]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = BetweenDatesTransformer(
+        ...     columns=['a', 'b', 'c'],
+        ...     new_column_name='b_between_a_c',
+        ...     lower_inclusive=True,
+        ...     upper_inclusive=False,
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "lower_inclusive": self.lower_inclusive,
+                "upper_inclusive": self.upper_inclusive,
+            },
+        )
+
+        return json_dict
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:
@@ -966,12 +1020,12 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data to transform.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Input X with additional column (self.new_column_name) added. This column is
             boolean and indicates if the middle column is between the other 2.
 
@@ -1005,6 +1059,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         │ 1990-09-27 ┆ 1991-05-22 ┆ 1993-04-20 ┆ true          │
         │ 2005-10-07 ┆ 2001-12-10 ┆ 2007-11-08 ┆ false         │
         └────────────┴────────────┴────────────┴───────────────┘
+
         """
         X = nw.from_native(super().transform(X))
 
@@ -1042,6 +1097,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
 
 class DatetimeInfoOptions(str, Enum):
+    """Options for what is returned by DatetimeInfoExtractor."""
+
     __slots__ = ()
 
     TIME_OF_DAY = "timeofday"
@@ -1064,46 +1121,11 @@ DatetimeInfoOptionList = Annotated[
 ]
 
 
+@register
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
 
-    Parameters
-    ----------
-    columns : str or list
-        datetime columns to extract information from
-
-    include : list of str, default = ["timeofday", "timeofmonth", "timeofyear", "dayofweek"]
-        Which datetime categorical information to extract
-
-    datetime_mappings : dict, default = {}
-        Optional argument to define custom mappings for datetime values.
-        Keys of the dictionary must be contained in `include`.
-        All possible values of each feature must be included in the mappings,
-        ie, a mapping for `dayofweek` must include all values 1-7;
-        datetime_mappings = {
-                             "dayofweek": {
-                                           **{i: "week" for i in range(1,6)},
-                                           **{i: "week" for i in range(6,8)}
-                                           }
-                            }
-
-        The required ranges for each mapping are:
-            timeofday: 0-23
-            timeofmonth: 1-31
-            timeofyear: 1-12
-            dayofweek: 1-7
-
-        If an option is present in 'include' but no mappings are provided,
-        then default values from cls.DEFAULT_MAPPINGS will be used for this
-        option.
-
-    drop_original: str
-        indicates whether to drop provided columns post transform
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     columns: List[str]
         List of columns for processing
@@ -1130,16 +1152,22 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> DatetimeInfoExtractor(
     ... columns='a',
     ... include='timeofday',
     ...    )
     DatetimeInfoExtractor(columns=['a'], include=['timeofday'])
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -1197,8 +1225,47 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : str or list
+            datetime columns to extract information from
+
+        include : list of str, default = ["timeofday", "timeofmonth", "timeofyear", "dayofweek"]
+            Which datetime categorical information to extract
+
+        datetime_mappings : dict, default = {}
+            Optional argument to define custom mappings for datetime values.
+            Keys of the dictionary must be contained in `include`.
+            All possible values of each feature must be included in the mappings,
+            ie, a mapping for `dayofweek` must include all values 1-7;
+            datetime_mappings = {
+                                "dayofweek": {
+                                            **{i: "week" for i in range(1,6)},
+                                            **{i: "week" for i in range(6,8)}
+                                            }
+                                }
+
+            The required ranges for each mapping are:
+                timeofday: 0-23
+                timeofmonth: 1-31
+                timeofyear: 1-12
+                dayofweek: 1-7
+
+            If an option is present in 'include' but no mappings are provided,
+            then default values from cls.DEFAULT_MAPPINGS will be used for this
+            option.
+
+        drop_original: str
+            indicates whether to drop provided columns post transform
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         if include is None:
             include = self.INCLUDE_OPTIONS
 
@@ -1240,7 +1307,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         )
 
     def get_feature_names_out(self) -> list[str]:
-        """list features modified/created by the transformer
+        """List features modified/created by the transformer.
 
         Returns
         -------
@@ -1249,7 +1316,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
-
         >>> transformer  = DatetimeInfoExtractor(
         ... columns=['a', 'b'],
         ... include=['timeofday', 'timeofmonth'],
@@ -1257,8 +1323,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         >>> transformer.get_feature_names_out()
         ['a_timeofday', 'a_timeofmonth', 'b_timeofday', 'b_timeofmonth']
-        """
 
+        """
         return [
             col + "_" + include_option
             for col in self.columns
@@ -1269,13 +1335,15 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         self,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]],
     ) -> None:
-        """Method to process user provided mappings. Sets datetime_mappings attribute, then validates against RANGE_TO_MAP.
+        """Process user provided mappings.
 
-        Returns
-        -------
-        None
+        Sets datetime_mappings attribute, then validates against RANGE_TO_MAP.
 
-        Example:
+        Raises
+        ------
+            ValueError: keys in datetime mapping do not match values in include
+
+        Examples
         --------
         >>> transformer = DatetimeInfoExtractor(
         ... columns='a',
@@ -1290,8 +1358,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         ... }
         ... }
         ... )
-        """
 
+        """
         # initialise mappings attr with defaults,
         # and overwrite with user provided mappings
         # where possible
@@ -1320,12 +1388,12 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data with columns to extract info from.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Transformed input X with added columns of extracted information.
 
         Example:
@@ -1355,6 +1423,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 ┆ end           │
         │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ start         │
         └─────────────────────┴─────────────────────┴───────────────┘
+
         """
         X = super().transform(X, return_native_override=False)
 
@@ -1396,29 +1465,291 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
-class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
-    """Transformer to derive a feature in a dataframe by calculating the
-    sine or cosine of a datetime column in a given unit (e.g hour), with the option to scale
-    period of the sine or cosine to match the natural period of the unit (e.g. 24).
+class DatetimeComponentOptions(str, Enum):
+    """Contains options for DatetimeComponentExtractor."""
 
-    Parameters
+    __slots__ = ()
+
+    HOUR = "hour"
+    DAY = "day"
+    MONTH = "month"
+    YEAR = "year"
+
+
+DatetimeComponentOptionStr = Annotated[
+    str,
+    Is[lambda s: s in DatetimeComponentOptions._value2member_map_],
+]
+DatetimeComponentOptionList = Annotated[
+    list,
+    Is[
+        lambda list_value: all(
+            entry in DatetimeComponentOptions._value2member_map_ for entry in list_value
+        )
+    ],
+]
+
+
+class DatetimeComponentExtractor(BaseDatetimeTransformer):
+    """Transformer to extract numeric datetime components.
+
+    Attributes:
     ----------
-    columns : str or list
-        Columns to take the sine or cosine of. Must be a datetime[64] column.
+    columns: List[str]
+        List of columns for processing
 
-    method : str or list
-        Argument to specify which function is to be calculated. Accepted values are 'sin', 'cos' or a list containing both.
+    include : list of str
+        Which numeric datetime components to extract
 
-    units : str or dict
-        Which time unit the calculation is to be carried out on. Accepted values are 'year', 'month',
-        'day', 'hour', 'minute', 'second', 'microsecond'.  Can be a string or a dict containing key-value pairs of column
-        name and units to be used for that column.
+    polars_compatible : bool
+        Indicates whether transformer has been converted to polars/pandas agnostic framework
 
-    period : int, float or dict, default = 2*np.pi
-        The period of the output in the units specified above. To leave the period of the sinusoid output as 2 pi, specify 2*np.pi (or leave as default).
-        Can be a string or a dict containing key-value pairs of column name and period to be used for that column.
+    jsonable: bool
+        Indicates if transformer supports to/from_json methods
 
-    Attributes
+    FITS: bool
+        Indicates whether transform requires fit to be run first
+
+    Example:
+    -------
+    >>> transformer = DatetimeComponentExtractor(
+    ... columns='a',
+    ... include=['hour', 'day'],
+    ...    )
+    >>> transformer
+    DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump = transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+
+    >>> DatetimeComponentExtractor.from_json(json_dump)
+    DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
+
+    """
+
+    INCLUDE_OPTIONS: ClassVar[list[str]] = ["hour", "day", "month", "year"]
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: Union[str, list[str]],
+        include: Union[DatetimeComponentOptionList, DatetimeComponentOptionStr],
+        **kwargs: Union[str, bool],
+    ) -> None:
+        """Initialize the DatetimeComponentExtractor.
+
+        Parameters
+        ----------
+        columns : str or list
+            datetime columns to extract information from
+
+        include : list of str
+            Which numeric datetime components to extract
+
+        new_column_name : str, default = "dummy"
+            Name given to new column created by the transformation.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        if isinstance(include, str):
+            include = [include]
+
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
+            kwargs.pop("new_column_name", None)
+
+        super().__init__(
+            columns=columns,
+            new_column_name="dummy",
+            **kwargs,
+        )
+
+        self.include = include
+
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            List of features modified/created by the transformer
+
+
+        Examples
+        --------
+        >>> transformer = DatetimeComponentExtractor(
+        ... columns=['a', 'b'],
+        ... include=['hour', 'day'],
+        ...    )
+
+        >>> transformer.get_feature_names_out()
+        ['a_hour', 'a_day', 'b_hour', 'b_day']
+
+        """
+        return [
+            col + "_" + include_option
+            for col in self.columns
+            for include_option in self.include
+        ]
+
+    def to_json(self) -> dict[str, Any]:
+        """Convert transformer to JSON format.
+
+        Returns
+        -------
+        dict:
+            JSON representation of the transformer
+
+        Examples
+        --------
+        >>> transformer = DatetimeComponentExtractor(
+        ... columns='a',
+        ... include=['hour', 'day'],
+        ...    )
+
+        >>> transformer.to_json()
+        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+        json_dict["init"]["include"] = self.include
+        return json_dict
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Transform - Extracts numeric datetime components.
+
+        Parameters
+        ----------
+        X : pd/pl.DataFrame
+            Data with columns to extract info from.
+
+        Returns
+        -------
+        X : pd/pl.DataFrame
+            Transformed input X with added columns of extracted information.
+
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> import datetime
+
+        >>> transformer = DatetimeComponentExtractor(
+        ... columns='a',
+        ... include=['hour', 'day'],
+        ...    )
+
+        >>> test_df = pl.DataFrame(
+        ... {
+        ... "a": [datetime.datetime(1993, 9, 27, 14, 30), datetime.datetime(2005, 10, 7, 9, 45)],
+        ... "b": [datetime.datetime(1991, 5, 22, 18, 0), datetime.datetime(2001, 12, 10, 23, 59)]
+        ... },
+        ... )
+
+        >>> transformer.transform(test_df)
+        shape: (2, 4)
+        ┌─────────────────────┬─────────────────────┬────────┬───────┐
+        │ a                   ┆ b                   ┆ a_hour ┆ a_day │
+        │ ---                 ┆ ---                 ┆ ---    ┆ ---   │
+        │ datetime[μs]        ┆ datetime[μs]        ┆ f32    ┆ f32   │
+        ╞═════════════════════╪═════════════════════╪════════╪═══════╡
+        │ 1993-09-27 14:30:00 ┆ 1991-05-22 18:00:00 ┆ 14.0   ┆ 27.0  │
+        │ 2005-10-07 09:45:00 ┆ 2001-12-10 23:59:00 ┆ 9.0    ┆ 7.0   │
+        └─────────────────────┴─────────────────────┴────────┴───────┘
+
+        """
+        X = super().transform(X, return_native_override=False)
+
+        transform_dict = {
+            col + "_" + include_option: (
+                getattr(
+                    nw.col(col).dt,
+                    include_option,
+                )().cast(nw.Float32)  # can't cast to int as may have nulls
+            )
+            for col in self.columns
+            for include_option in self.include
+        }
+
+        X = X.with_columns(
+            **transform_dict,
+        )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+class DatetimeSinusoidUnitsOptions(str, Enum):
+    """Options for units argument of DatetimeSinusoidCalculator."""
+
+    __slots__ = ()
+
+    YEAR = "year"
+    MONTH = "month"
+    DAY = "day"
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+    MICROSECOND = "microsecond"
+
+
+DatetimeSinusoidUnitsOptionStr = Annotated[
+    str,
+    Is[lambda s: s in DatetimeSinusoidUnitsOptions._value2member_map_],
+]
+
+
+class MethodOptions(str, Enum):
+    """Options for method arg of DatetimeSinusoidCalculator."""
+
+    __slots__ = ()
+
+    SIN = "sin"
+    COS = "cos"
+
+
+MethodOptionStr = Annotated[
+    str,
+    Is[lambda s: s in MethodOptions._value2member_map_],
+]
+
+MethodOptionList = Annotated[
+    list,
+    Is[
+        lambda list_value: all(
+            entry in MethodOptions._value2member_map_ for entry in list_value
+        )
+    ],
+]
+
+NumberNotBool = Annotated[
+    Union[int, float],
+    Is[
+        # exclude bools which would pass isinstance(..., (float, int))
+        lambda value: type(value) in [int, float]
+    ],
+]
+
+
+@register
+class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
+    """Calculate the sine or cosine of a datetime column in a given unit (e.g hour).
+
+    Includes the option to scale period of the sine or cosine to match the natural
+    period of the unit (e.g. 24).
+
+    Attributes:
     ----------
     columns : str or list
         Columns to take the sine or cosine of.
@@ -1448,98 +1779,86 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> DatetimeSinusoidCalculator(
     ... columns='a',
     ... method='sin',
     ... units='month',
     ...    )
     DatetimeSinusoidCalculator(columns=['a'], method=['sin'], units='month')
+
     """
 
     polars_compatible = True
 
+    lazyframe_compatible = False
+
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        method: str | list[str],
-        units: str | dict,
-        period: float | dict = 2 * np.pi,
-        verbose: bool = False,
+        columns: Union[str, list[str]],
+        method: Union[MethodOptionStr, MethodOptionList],
+        units: Union[
+            DatetimeSinusoidUnitsOptionStr,
+            dict[str, DatetimeSinusoidUnitsOptionStr],
+        ],
+        period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
         drop_original: bool = False,
+        **kwargs: Union[bool, str],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : str or list
+            Columns to take the sine or cosine of. Must be a datetime[64] column.
+
+        method : str or list
+            Argument to specify which function is to be calculated. Accepted values are 'sin', 'cos' or a list containing both.
+
+        units : str or dict
+            Which time unit the calculation is to be carried out on. Accepted values are 'year', 'month',
+            'day', 'hour', 'minute', 'second', 'microsecond'.  Can be a string or a dict containing key-value pairs of column
+            name and units to be used for that column.
+
+        period : int, float or dict, default = 2*np.pi
+            The period of the output in the units specified above. To leave the period of the sinusoid output as 2 pi, specify 2*np.pi (or leave as default).
+            Can be a string or a dict containing key-value pairs of column name and period to be used for that column.
+
+        drop_original: bool
+            indicates whether to drop original columns
+
+        kwargs: Union[bool, str]
+            arguments for base classes, e.g. verbose
+
+        Raises
+        ------
+            ValueError: if keys in provided period dictionary do match provided columns
+
+        """
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name arg is unused by this transformer",
+                stacklevel=2,
+            )
+            kwargs.pop("new_column_name", None)
+
         super().__init__(
             columns=columns,
             drop_original=drop_original,
             new_column_name="dummy",
-            verbose=verbose,
+            **kwargs,
         )
 
-        if not isinstance(method, str) and not isinstance(method, list):
-            msg = f"{self.classname()}: method must be a string or list but got {type(method)}"
-            raise TypeError(msg)
-
-        if not isinstance(units, str) and not isinstance(units, dict):
-            msg = f"{self.classname()}: units must be a string or dict but got {type(units)}"
-            raise TypeError(msg)
-
-        if (
-            (not isinstance(period, int))
-            and (not isinstance(period, float))
-            and (not isinstance(period, dict))
-        ) or (isinstance(period, bool)):
-            msg = f"{self.classname()}: period must be an int, float or dict but got {type(period)}"
-            raise TypeError(msg)
-
-        if isinstance(units, dict) and (
-            not all(isinstance(item, str) for item in list(units.keys()))
-            or not all(isinstance(item, str) for item in list(units.values()))
-        ):
-            msg = f"{self.classname()}: units dictionary key value pair must be strings but got keys: { ({type(k) for k in units}) } and values: { ({type(v) for v in units.values()}) }"
-            raise TypeError(msg)
-
-        if isinstance(period, dict) and (
-            not all(isinstance(item, str) for item in list(period.keys()))
-            or (
-                not all(isinstance(item, int) for item in list(period.values()))
-                and not all(isinstance(item, float) for item in list(period.values()))
-            )
-            or any(isinstance(item, bool) for item in list(period.values()))
-        ):
-            msg = f"{self.classname()}: period dictionary key value pair must be str:int or str:float but got keys: { ({type(k) for k in period}) } and values: { ({type(v) for v in period.values()}) }"
-            raise TypeError(msg)
-
-        valid_method_list = ["sin", "cos"]
-
         method_list = [method] if isinstance(method, str) else method
-
-        for method in method_list:
-            if method not in valid_method_list:
-                msg = f'{self.classname()}: Invalid method {method} supplied, should be "sin", "cos" or a list containing both'
-                raise ValueError(msg)
-
-        valid_unit_list = [
-            "year",
-            "month",
-            "day",
-            "hour",
-            "minute",
-            "second",
-            "microsecond",
-        ]
-
-        if isinstance(units, dict):
-            if not set(units.values()).issubset(valid_unit_list):
-                msg = f"{self.classname()}: units dictionary values must be one of 'year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond' but got {set(units.values())}"
-                raise ValueError(msg)
-        elif units not in valid_unit_list:
-            msg = f"{self.classname()}: Invalid units {units} supplied, should be in {valid_unit_list}"
-            raise ValueError(msg)
 
         self.method = method_list
         self.units = units
@@ -1554,7 +1873,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             raise ValueError(msg)
 
     def get_feature_names_out(self) -> list[str]:
-        """list features modified/created by the transformer
+        """List features modified/created by the transformer.
 
         Returns
         -------
@@ -1563,7 +1882,6 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Examples
         --------
-
         >>> transformer = DatetimeSinusoidCalculator(
         ... columns='a',
         ... method='sin',
@@ -1572,13 +1890,46 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         >>> transformer.get_feature_names_out()
         ['sin_6.283185307179586_month_a']
-        """
 
+        """
         return [
             f"{method}_{self.period if not isinstance(self.period, dict) else self.period[column]}_{self.units if not isinstance(self.units, dict) else self.units[column]}_{column}"
             for column in self.columns
             for method in self.method
         ]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = DatetimeSinusoidCalculator(
+        ...     columns='a',
+        ...     method='sin',
+        ...     units='month',
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "method": self.method,
+                "units": self.units,
+                "period": self.period,
+            }
+        )
+
+        return json_dict
 
     @beartype
     def transform(
@@ -1592,7 +1943,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data to transform.
 
         return_native_override: Optional[bool]
@@ -1601,7 +1952,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Input X with additional columns added, these are named "<method>_<original_column>"
 
         Example:
@@ -1632,6 +1983,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 ┆ 0.412118                      │
         │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ -0.544021                     │
         └─────────────────────┴─────────────────────┴───────────────────────────────┘
+
         """
         X = _convert_dataframe_to_narwhals(X)
         return_native = self._process_return_native(return_native_override)
@@ -1696,29 +2048,11 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     "If you prefer this transformer to DateDifferenceTransformer, "
     "let us know through a github issue",
 )
-class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
+class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     """Transformer to calculate the number of years between two dates.
 
     !!! warning "Deprecated"
         This transformer is now deprecated; use `DateDifferenceTransformer` instead.
-
-    Parameters
-    ----------
-    columns : List[str]
-        List of 2 columns. First column will be subtracted from second.
-
-    new_column_name : str
-        Name for the new year column.
-
-    drop_original : bool
-        Flag for whether to drop the original columns.
-
-    missing_replacement : int/float/str
-        Value to output if either the lower date value or the upper date value are
-        missing. Default value is None.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
     Attributes
     ----------
@@ -1745,34 +2079,55 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        columns: list[str],
-        new_column_name: str | None = None,
-        missing_replacement: float | str | None = None,
+        columns: ListOfTwoStrs,
+        new_column_name: str,
+        missing_replacement: Optional[Union[float, int, str]] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : List[str]
+            List of 2 columns. First column will be subtracted from second.
+
+        new_column_name : str
+            Name for the new year column.
+
+        drop_original : bool
+            Flag for whether to drop the original columns.
+
+        missing_replacement : int/float/str
+            Value to output if either the lower date value or the upper date value are
+            missing. Default value is None.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(
             columns=columns,
             new_column_name=new_column_name,
             drop_original=drop_original,
             **kwargs,
         )
-
-        if (missing_replacement) and (
-            type(missing_replacement) not in [int, float, str]
-        ):
-            msg = f"{self.classname()}: if not None, missing_replacement should be an int, float or string"
-            raise TypeError(msg)
 
         self.missing_replacement = missing_replacement
 
@@ -1790,16 +2145,15 @@ class DateDiffLeapYearTransformer(BaseDateTwoColumnTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data containing self.columns
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : pd/pl/nw.DataFrame
             Data containing self.columns
 
         """
-
         X = nw.from_native(super().transform(X))
 
         # Create a helping column col0 for the first date. This will convert the date into an integer in a format or YYYYMMDD
@@ -1873,30 +2227,6 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     and output sizes. Additionally some methods may only work as expected when called in
     transform with specific key word arguments.
 
-    Parameters
-    ----------
-    new_column_name : str
-        The name of the column to be assigned to the output of running the pandas method in transform.
-
-    pd_method_name : str
-        The name of the pandas.Series.dt method to call.
-
-    column : str
-        Column to apply the transformer to. If a str is passed this is put into a list. Value passed
-        in columns is saved in the columns attribute on the object. Note this has no default value so
-        the user has to specify the columns when initialising the transformer. This is avoid likely
-        when the user forget to set columns, in this case all columns would be picked up when super
-        transform runs.
-
-    pd_method_kwargs : dict, default = {}
-        A dictionary of keyword arguments to be passed to the pd.Series.dt method when it is called.
-
-    drop_original: bool
-        Indicates whether to drop self.column post transform
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.__init__().
-
     Attributes
     ----------
     column : str
@@ -1932,23 +2262,63 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = False
+
+    lazyframe_compatible = False
 
     FITS = False
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
         new_column_name: str,
         pd_method_name: str,
-        columns: list[str],
-        pd_method_kwargs: dict[str, object] | None = None,
+        columns: Union[
+            ListOfOneStr,
+            str,
+        ],
+        pd_method_kwargs: Optional[GenericKwargs] = None,
         drop_original: bool = False,
-        **kwargs: dict[str, bool],
+        **kwargs: Optional[bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        new_column_name : str
+            The name of the column to be assigned to the output of running the pandas method in transform.
+
+        pd_method_name : str
+            The name of the pandas.Series.dt method to call.
+
+        columns : str
+            Column to apply the transformer to. If a str is passed this is put into a list. Value passed
+            in columns is saved in the columns attribute on the object. Note this has no default value so
+            the user has to specify the columns when initialising the transformer. This is avoid likely
+            when the user forget to set columns, in this case all columns would be picked up when super
+            transform runs.
+
+        pd_method_kwargs : dict, default = {}
+            A dictionary of keyword arguments to be passed to the pd.Series.dt method when it is called.
+
+        drop_original: bool
+            Indicates whether to drop self.column post transform
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.__init__().
+
+        Raises
+        ------
+            AttributeError: if requested pd.Series.dt method does not exist
+
+        """
         super().__init__(
             columns=columns,
             new_column_name=new_column_name,
@@ -1956,27 +2326,8 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
             **kwargs,
         )
 
-        if len(self.columns) > 1:
-            msg = rf"{self.classname()}: column should be a str or list of len 1, got {self.columns}"
-            raise ValueError(
-                msg,
-            )
-
-        if type(pd_method_name) is not str:
-            msg = f"{self.classname()}: unexpected type ({type(pd_method_name)}) for pd_method_name, expecting str"
-            raise TypeError(msg)
-
         if pd_method_kwargs is None:
             pd_method_kwargs = {}
-        else:
-            if type(pd_method_kwargs) is not dict:
-                msg = f"{self.classname()}: pd_method_kwargs should be a dict but got type {type(pd_method_kwargs)}"
-                raise TypeError(msg)
-
-            for i, k in enumerate(pd_method_kwargs.keys()):
-                if type(k) is not str:
-                    msg = f"{self.classname()}: unexpected type ({type(k)}) for pd_method_kwargs key in position {i}, must be str"
-                    raise TypeError(msg)
 
         self.pd_method_name = pd_method_name
         self.pd_method_kwargs = pd_method_kwargs
@@ -2002,8 +2353,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
         self.column = self.columns[0]
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform specific column on input pandas.DataFrame (X) using the given pandas.Series.dt method and
-        assign the output back to column in X.
+        """Transform specific column on input pandas.DataFrame (X) using the given pandas.Series.dt method.
 
         Any keyword arguments set in the pd_method_kwargs attribute are passed onto the pd.Series.dt method
         when calling it.

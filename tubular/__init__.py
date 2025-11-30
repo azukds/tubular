@@ -9,6 +9,7 @@ from tubular.capping import CappingTransformer, OutOfRangeNullTransformer
 from tubular.dates import (
     BetweenDatesTransformer,
     DateDifferenceTransformer,
+    DatetimeComponentExtractor,
     DatetimeInfoExtractor,
     DatetimeSinusoidCalculator,
     ToDatetimeTransformer,
@@ -27,7 +28,11 @@ from tubular.nominal import (
     MeanResponseTransformer,
     OneHotEncodingTransformer,
 )
-from tubular.numeric import OneDKmeansTransformer
+from tubular.numeric import (
+    DifferenceTransformer,
+    OneDKmeansTransformer,
+    RatioTransformer,
+)
 
 __all__ = [
     "AggregateColumnsOverRowTransformer",
@@ -36,8 +41,10 @@ __all__ = [
     "BetweenDatesTransformer",
     "CappingTransformer",
     "DateDifferenceTransformer",
+    "DatetimeComponentExtractor",
     "DatetimeInfoExtractor",
     "DatetimeSinusoidCalculator",
+    "DifferenceTransformer",
     "GroupRareLevelsTransformer",
     "MappingTransformer",
     "MeanImputer",
@@ -48,6 +55,7 @@ __all__ = [
     "OneDKmeansTransformer",
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
+    "RatioTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",
 ]

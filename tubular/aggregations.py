@@ -12,7 +12,7 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, NumericTypes
 
@@ -60,6 +60,7 @@ ListOfRowsOverColumnsAggregations = Annotated[
 ]
 
 
+@register
 class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     """Base class for aggregation transformers.
 
@@ -82,8 +83,8 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         Indicator for verbose output.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible: bool
         Indicates if transformer will work with polars frames
@@ -93,6 +94,9 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------
@@ -105,6 +109,8 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -156,8 +162,8 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             DataFrame to transform by aggregating specified columns.
 
         return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
+            option to override return_native attr in transformer,
+            useful when calling parent methods
 
         Returns
         -------
@@ -208,14 +214,18 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         non_numerical_columns = list(non_numerical_columns)
         non_numerical_columns.sort()
         if len(non_numerical_columns) != 0:
-            msg = f"{self.classname}: attempting to call transformer on non-numeric columns {non_numerical_columns}, which is not supported"
+            msg = f"{self.classname}: attempting to call transformer on non-numeric columns {non_numerical_columns}, which is not supported"  # noqa:E501
             raise TypeError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
+@register
 class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
-    """Aggregate rows over specified columns, where rows are grouped by provided key column.
+    """Aggregation transformer.
+
+    Aggregate rows over specified columns,
+    where rows are grouped by provided key column.
 
     Attributes:
     ----------
@@ -232,8 +242,8 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         Whether to drop the original columns after transformation. Default is False.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible: bool
         Indicates if transformer will work with polars frames
@@ -243,6 +253,9 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------
@@ -257,6 +270,8 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
@@ -395,6 +410,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """Aggregate provided columns over each row.
 
@@ -416,8 +432,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         Indicator for verbose output.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible: bool
         Indicates if transformer will work with polars frames
@@ -427,6 +443,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
 
     Example:
     -------
@@ -440,6 +459,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 

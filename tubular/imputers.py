@@ -1,4 +1,4 @@
-"""This module contains transformers that deal with imputation of missing values."""
+"""Contains transformers that deal with imputation of missing values."""
 
 from __future__ import annotations
 
@@ -10,6 +10,12 @@ import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
 
+from tubular._checks import _get_all_null_columns
+from tubular._stats import (
+    _get_mean_calculation_expressions,
+    _get_median_calculation_expression,
+    _get_mode_calculation_expressions,
+)
 from tubular._utils import (
     _assess_pandas_object_column,
     _convert_dataframe_to_narwhals,
@@ -17,22 +23,21 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mixins import WeightColumnMixin
-from tubular.types import DataFrame, Series
+from tubular.types import DataFrame, NonEmptyListOfStrs, Series
 
 pl.enable_string_cache()
 
 
+@register
 class BaseImputer(BaseTransformer):
-    """Base imputer class containing standard transform method that will use pd.Series.fillna with the
-    values in the impute_values_ attribute.
+    """Contains transform method that will use fill nulls with values from self.impute_values_.
 
     Other imputers in this module should inherit from this class.
 
-    Attributes
+    Attributes:
     ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -49,14 +54,19 @@ class BaseImputer(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> BaseImputer(columns=["a", "b"])
     BaseImputer(columns=['a', 'b'])
 
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     # this class is not by itself jsonable, as needs attrs
     # which are set in the child classes
@@ -66,7 +76,7 @@ class BaseImputer(BaseTransformer):
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
-        """dump transformer to json dict
+        """Dump transformer to json dict.
 
         Returns
         -------
@@ -74,9 +84,13 @@ class BaseImputer(BaseTransformer):
             jsonified transformer. Nested dict containing levels for attributes
             set at init and fit.
 
+        Raises
+        ------
+            RuntimeError:
+                if class is not jsonable
+
         Examples
         --------
-
         >>> arbitrary_imputer=ArbitraryImputer(columns=['a', 'b'], impute_value=1)
 
         >>> # version will vary for local vs CI, so use ... as generic match
@@ -124,7 +138,7 @@ class BaseImputer(BaseTransformer):
         return json_dict
 
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
-        """update input expressions to include imputation.
+        """Update input expressions to include imputation.
 
         Parameters
         ----------
@@ -138,7 +152,6 @@ class BaseImputer(BaseTransformer):
         nw.Expr: updated expression, with imputation
 
         """
-
         return (
             expr.fill_null(value=self.impute_values_[col])
             if (self.impute_values_[col] is not None)
@@ -188,6 +201,7 @@ class BaseImputer(BaseTransformer):
         │ 2   ┆ 3.5 │
         │ 2   ┆ 4.0 │
         └─────┴─────┘
+
         """
         self.check_is_fitted("impute_values_")
 
@@ -207,18 +221,9 @@ class BaseImputer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class ArbitraryImputer(BaseImputer):
     """Transformer to impute null values with an arbitrary pre-defined value.
-
-    Parameters
-    ----------
-    impute_value : int or float or str or bool
-        Value to impute nulls with.
-    columns : None or str or list, default = None
-        Columns to impute, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
     Attributes
     ----------
@@ -241,7 +246,10 @@ class ArbitraryImputer(BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
-    Examples:
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
     --------
     >>> arbitrary_imputer = ArbitraryImputer(
     ... columns=["a", "b"], impute_value= 5
@@ -256,9 +264,12 @@ class ArbitraryImputer(BaseImputer):
 
     >>> ArbitraryImputer.from_json(json_dump)
     ArbitraryImputer(columns=['a', 'b'], impute_value=5)
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -271,6 +282,19 @@ class ArbitraryImputer(BaseImputer):
         columns: Union[str, list[str]],
         **kwargs: Optional[bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        impute_value : int or float or str or bool
+            Value to impute nulls with.
+        columns : None or str or list, default = None
+            Columns to impute, if the default of None is supplied all columns in X are used
+            when the transform method is called.
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(columns=columns, **kwargs)
 
         self.impute_values_ = {}
@@ -280,8 +304,7 @@ class ArbitraryImputer(BaseImputer):
             self.impute_values_[c] = self.impute_value
 
     def cat_to_enum_expr(self, expr: nw.Expr, categories: list[str]) -> nw.Expr:
-        """update expression to include handling of category types to allow new
-        impute value category
+        """Update expression to include handling of category types.
 
         Parameters
         ----------
@@ -295,7 +318,6 @@ class ArbitraryImputer(BaseImputer):
         nw.Expr: updated expression, with category type handling
 
         """
-
         return expr.cast(nw.Enum({*categories, self.impute_value}))
 
     def _check_impute_value_type_works_with_columns(
@@ -304,15 +326,25 @@ class ArbitraryImputer(BaseImputer):
         schema: nw.Schema,
         native_namespace: Literal["pandas", "polars"],
     ) -> tuple[dict[str, str], list[StopIteration]]:
-        """raises TypeError if there is a type clash between impute_value and columns in X for imputation
+        """Check if there is a type clash between impute_value and columns in X.
 
         Parameters
         ----------
-        X: FrameT
+        X: pd/pl/nw.DataFrame
             DataFrame being imputed
 
+        schema: nw.Schema
+            schema for provided data
+
+        native_namespace: str
+            'pandas' or 'polars'
+
+        Raises
+        ------
+            TypeError: if given impute value clashes with types of given columns
+
         Returns
-        ---------
+        -------
         pandas_object_cols_to_polars_types: dict[str, str]
             dictionary of type conversions for tricky pandas object types
 
@@ -320,7 +352,6 @@ class ArbitraryImputer(BaseImputer):
             list of Unknown type columns, singled out for different type handling
 
         """
-
         object_columns = set()
         cat_columns = set()
         num_columns = set()
@@ -435,7 +466,6 @@ class ArbitraryImputer(BaseImputer):
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Impute missing values with the supplied impute_value.
-        If columns is None all columns in X will be imputed.
 
         Parameters
         ----------
@@ -470,7 +500,6 @@ class ArbitraryImputer(BaseImputer):
         └─────┴─────┘
 
         """
-
         X = _convert_dataframe_to_narwhals(X)
 
         schema = X.schema
@@ -533,22 +562,11 @@ class ArbitraryImputer(BaseImputer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class MedianImputer(BaseImputer, WeightColumnMixin):
     """Transformer to impute missing values with the median of the supplied columns.
 
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to impute, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-
-    weights_column: None or str, default=None
-        Column containing weights
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     impute_values_ : dict
         Created during fit method. Dictionary of float / int (median) values of columns
@@ -570,8 +588,11 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> median_imputer = MedianImputer(
     ... columns=["a", "b"],
     ... )
@@ -590,9 +611,12 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     >>> MedianImputer.from_json(json_dump)
     MedianImputer(columns=['a', 'b'])
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -604,6 +628,21 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         weights_column: str | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : None or str or list, default = None
+            Columns to impute, if the default of None is supplied all columns in X are used
+            when the transform method is called.
+
+        weights_column: None or str, default=None
+            Column containing weights
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(columns=columns, **kwargs)
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
@@ -621,7 +660,12 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         y : None or pd/pl.Series, default = None
             Not required.
 
-        Example:
+        Returns
+        -------
+            MedianImputer:
+                fitted class instance.
+
+        Examples
         --------
         >>> import polars as pl
         >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
@@ -638,8 +682,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         │ 1.5 ┆ 3.5 │
         │ 2.0 ┆ 4.0 │
         └─────┴─────┘
-        """
 
+        """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
@@ -647,55 +691,65 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        for c in self.columns:
-            # filter out null rows so their weight doesn't influence calc
-            filtered = X.filter(~nw.col(c).is_null())
+        all_null_cols = _get_all_null_columns(X, self.columns)
 
-            # if column is only nulls, then median is None
-            if len(filtered) <= 0:
-                self.impute_values_[c] = None
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
+            )
 
-            elif self.weights_column is not None:
-                WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+            warnings.warn(
+                f"{self.classname()}: The Median of columns {all_null_cols} will be None",
+                stacklevel=2,
+            )
 
-                # first sort df by column to be imputed (order of weight column shouldn't matter for median)
-                filtered = filtered.sort(c)
+        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
 
-                # next calculate cumulative weight sums
-                cumsum = filtered[self.weights_column].cum_sum()
+        # as median depends on data ordering, it is less amenable to writing in
+        # pure expression form, so implementation here is still
+        # slightly pandas-like
+        # also, the weighted median approach is genuinely different to the unweighted
+        # approach, so have left as two separate logic flows
+        if self.weights_column is not None:
+            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+            for c in not_all_null_columns:
+                col_not_null_expr = ~nw.col(c).is_null()
 
-                # find midpoint
-                cutoff = filtered[self.weights_column].sum() / 2.0
+                X = X.sort(c)
 
-                # find first value >= this point
-                median = filtered.filter(cumsum >= cutoff).select(c)[0].item()
+                col_expr = nw.col(c).filter(col_not_null_expr)
+                weight_expr = nw.col(self.weights_column).filter(col_not_null_expr)
+
+                median_expr = _get_median_calculation_expression(
+                    initial_column_expr=col_expr,
+                    initial_weights_expr=weight_expr,
+                )
 
                 # impute value is weighted median
-                self.impute_values_[c] = median
+                self.impute_values_[c] = X.select(median_expr).item(0, 0)
 
-            else:
-                # impute value is median without considering weight
-                self.impute_values_[c] = X.select(nw.col(c).median()).item()
+        else:
+            median_exprs = {
+                c: _get_median_calculation_expression(nw.col(c), None)
+                for c in not_all_null_columns
+            }
+            results_dict = X.select(
+                **median_exprs,
+            ).to_dict(as_series=False)
+
+            self.impute_values_.update(
+                {col: value[0] for col, value in results_dict.items()},
+            )
 
         return self
 
 
+@register
 class MeanImputer(WeightColumnMixin, BaseImputer):
     """Transformer to impute missing values with the mean of the supplied columns.
 
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to impute, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-
-    weights_column : None or str, default = None
-        Column containing weights.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     impute_values_ : dict
         Created during fit method. Dictionary of float / int (mean) values of columns
@@ -717,8 +771,11 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> mean_imputer = MeanImputer(
     ... columns=["a", "b"],
     ... )
@@ -737,9 +794,12 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     >>> MeanImputer.from_json(json_dump)
     MeanImputer(columns=['a', 'b'])
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -751,6 +811,21 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         weights_column: str | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : None or str or list, default = None
+            Columns to impute, if the default of None is supplied all columns in X are used
+            when the transform method is called.
+
+        weights_column : None or str, default = None
+            Column containing weights.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(columns=columns, **kwargs)
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
@@ -768,7 +843,12 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         y : None or pd.DataFrame or pd.Series, default = None
             Not required.
 
-        Example:
+        Returns
+        -------
+            MeanImputer:
+                fitted class instance.
+
+        Examples
         --------
         >>> import polars as pl
         >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
@@ -785,8 +865,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         │ 1.5 ┆ 3.5 │
         │ 2.0 ┆ 4.0 │
         └─────┴─────┘
-        """
 
+        """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
@@ -794,50 +874,40 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         self.impute_values_ = {}
 
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        native_backend = nw.get_native_namespace(X)
 
-            for c in self.columns:
-                # filter out null rows so they don't count towards total weight
-                filtered = X.filter(~nw.col(c).is_null())
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=native_backend.__name__,
+                return_native=False,
+            )
 
-                # calculate total weight and total of weighted col
-                total_weight = filtered.select(nw.col(self.weights_column).sum()).item()
-                total_weighted_col = filtered.select(
-                    (nw.col(c) * nw.col(self.weights_column)).sum(),
-                ).item()
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
 
-                # find weighted mean and add to dict
-                weighted_mean = total_weighted_col / total_weight
+        weighted_mean_exprs = _get_mean_calculation_expressions(
+            self.columns,
+            weights_column,
+        )
 
-                self.impute_values_[c] = weighted_mean
+        results_dict = X.select(**weighted_mean_exprs).to_dict(as_series=False)
 
-        else:
-            for c in self.columns:
-                self.impute_values_[c] = X.select(nw.col(c).mean()).item()
+        # results looks like {key: [value]} so extract value from list
+        self.impute_values_.update(
+            {col: value[0] for col, value in results_dict.items()},
+        )
 
         return self
 
 
+@register
 class ModeImputer(BaseImputer, WeightColumnMixin):
     """Transformer to impute missing values with the mode of the supplied columns.
 
     If mode is NaN, a warning will be raised.
 
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to impute, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-
-    weights_column : str
-        Name of weights columns to use if mode should be in terms of sum of weights
-        not count of rows.
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-    Attributes
+    Attributes:
     ----------
     impute_values_ : dict
         Created during fit method. Dictionary of float / int (mode) values of columns
@@ -859,8 +929,11 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> mode_imputer = ModeImputer(
     ... columns=["a", "b"],
     ... )
@@ -879,9 +952,12 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     >>> ModeImputer.from_json(json_dump)
     ModeImputer(columns=['a', 'b'])
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = True
 
@@ -893,6 +969,22 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         weights_column: str | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : None or str or list, default = None
+            Columns to impute, if the default of None is supplied all columns in X are used
+            when the transform method is called.
+
+        weights_column : str
+            Name of weights columns to use if mode should be in terms of sum of weights
+            not count of rows.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
         super().__init__(columns=columns, **kwargs)
 
         WeightColumnMixin.check_and_set_weight(self, weights_column)
@@ -900,8 +992,9 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:
-        """Calculate mode values to impute with from X - in the event of a tie,
-        the highest modal value will be returned.
+        """Calculate mode values to impute with from X.
+
+        In the event of a tie, the highest modal value will be returned.
 
         Parameters
         ----------
@@ -911,7 +1004,12 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         y : None or pd/pl.DataFrame or pd/pl.Series, default = None
             Not required.
 
-        Example:
+        Returns
+        -------
+        ModeImputer:
+            fitted class instance
+
+        Examples
         --------
         >>> import polars as pl
         >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
@@ -928,8 +1026,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         │ 2   ┆ 4   │
         │ 2   ┆ 4   │
         └─────┴─────┘
-        """
 
+        """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
@@ -937,69 +1035,68 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        if self.weights_column:
-            # pull this out of loop to only check weights once
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
-            weights_column = self.weights_column
+        backend = nw.get_native_namespace(X)
 
-        else:
-            weights_column = "dummy_unit_weights"
-            native_backend = nw.get_native_namespace(X)
-            X = X.with_columns(
-                nw.new_series(
-                    name=weights_column,
-                    values=[1] * len(X),
-                    backend=native_backend.__name__,
-                ),
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=backend.__name__,
+                return_native=False,
             )
 
-        for c in self.columns:
-            level_weights = (
-                X.filter(~nw.col(c).is_null())
-                .group_by(c)
-                .agg(
-                    nw.col(weights_column).sum(),
-                )
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+
+        self.impute_values_ = {}
+
+        all_null_cols = _get_all_null_columns(X, self.columns)
+
+        if all_null_cols:
+            # touch the dict entry for each all null col so that they are recorded
+            self.impute_values_.update(
+                dict.fromkeys(all_null_cols),
             )
 
-            if level_weights.is_empty():
-                self.impute_values_[c] = None
+            warnings.warn(
+                f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
+                stacklevel=2,
+            )
 
+        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
+
+        mode_value_exprs = _get_mode_calculation_expressions(
+            not_all_null_columns,
+            weights_column,
+        )
+
+        results_dict = X.select(**mode_value_exprs).to_dict(as_series=True)
+
+        for c in results_dict:
+            mode_values = results_dict[c]
+
+            mode_values = mode_values.drop_nulls().sort(
+                descending=True,
+            )
+
+            n_mode_vals = len(mode_values)
+
+            if n_mode_vals > 1:
                 warnings.warn(
-                    f"ModeImputer: The Mode of column {c} is None",
+                    f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
                     stacklevel=2,
                 )
 
-            else:
-                max_weight = level_weights.select(nw.col(weights_column).max()).item()
-
-                mode_values = level_weights.filter(
-                    nw.col(weights_column) == max_weight,
-                ).sort(by=c, descending=True)
-
-                if len(mode_values) > 1:
-                    warnings.warn(
-                        f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
-                        stacklevel=2,
-                    )
-
-                self.impute_values_[c] = mode_values.item(row=0, column=0)
+            self.impute_values_[c] = mode_values.item(0)
 
         return self
 
 
+@register
 class NullIndicator(BaseTransformer):
     """Class to create a binary indicator column for null values.
 
-    Parameters
+    Attributes:
     ----------
-    columns : None or str or list, default = None
-        Columns to produce indicator columns for, if the default of None is supplied all columns in X are used
-        when the transform method is called.
-
-    Attributes
-    ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -1016,8 +1113,11 @@ class NullIndicator(BaseTransformer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     Example:
-    --------
+    -------
     >>> null_indicator = NullIndicator(
     ... columns=["a", "b"],
     ... )
@@ -1031,19 +1131,38 @@ class NullIndicator(BaseTransformer):
 
     >>> NullIndicator.from_json(json_dump)
     NullIndicator(columns=['a', 'b'])
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     FITS = False
 
     jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        **kwargs: Optional[bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : None or str or list, default = None
+            Columns to produce indicator columns for, if the default of None is supplied all columns in X are used
+            when the transform method is called.
+
+        kwargs: bool
+            arguments for base class, e.g. verbose.
+
+        """
         super().__init__(columns=columns, **kwargs)
 
     @beartype
@@ -1052,10 +1171,15 @@ class NullIndicator(BaseTransformer):
 
         Parameters
         ----------
-        X : FrameT
+        X : pd/pl/nw.DataFrame
             Data to add indicators to.
 
-        Example:
+        Returns
+        -------
+        pd/pl/nw.DataFrame:
+            dataframe with null indicator columns added
+
+        Examples
         --------
         >>> import polars as pl
         >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
@@ -1071,15 +1195,15 @@ class NullIndicator(BaseTransformer):
         │ null ┆ null ┆ true    ┆ true    │
         │ 2    ┆ 4    ┆ false   ┆ false   │
         └──────┴──────┴─────────┴─────────┘
+
         """
-        super().transform(X)
+        X = super().transform(X, return_native_override=False)
 
         X = _convert_dataframe_to_narwhals(X)
 
-        for c in self.columns:
-            X = X.with_columns(
-                (nw.col(c).is_null()).alias(f"{c}_nulls"),
-            )
+        X = X.with_columns(
+            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
+        )
 
         return X if not self.return_native else X.to_native()
 
@@ -1094,19 +1218,10 @@ class NullIndicator(BaseTransformer):
     """,
 )
 class NearestMeanResponseImputer(BaseImputer):
-    """Class to impute missing values with; the value for which the average response is closest
-    to the average response for the unknown levels.
-
-    Parameters
-    ----------
-    columns : None or str or list, default = None
-        Columns to impute, if the default of None is supplied all columns in X are used
-        when the transform method is called. If the column does not contain nulls at fit,
-        a warning will be issues and this transformer will have no effect on that column.
+    """Impute nulls with the value where the average target is most similar to that for the nulls.
 
     Attributes
     ----------
-
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
         functionality to .transform
@@ -1123,9 +1238,14 @@ class NearestMeanResponseImputer(BaseImputer):
     FITS: bool
         class attribute, indicates whether transform requires fit to be run first
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     """
 
     polars_compatible = True
+
+    lazyframe_compatible = False
 
     jsonable = False
 
@@ -1136,6 +1256,19 @@ class NearestMeanResponseImputer(BaseImputer):
         columns: str | list[str] | None = None,
         **kwargs: dict[str, bool],
     ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns : None or str or list, default = None
+            Columns to impute, if the default of None is supplied all columns in X are used
+            when the transform method is called. If the column does not contain nulls at fit,
+            a warning will be issues and this transformer will have no effect on that column.
+
+        kwargs: bool
+            arguments for base class, e.g. verbose
+
+        """
         super().__init__(columns=columns, **kwargs)
 
     @beartype
@@ -1152,16 +1285,21 @@ class NearestMeanResponseImputer(BaseImputer):
             each level of every column is calculated. The level which has the closest average response
             to the average response of the unknown levels is selected as the imputation value.
 
-        """
+        Raises
+        ------
+            ValueError: provided y contains nulls
 
+        Returns
+        -------
+        NearestMeanResponseImputer: fitted class instance
+
+        """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
         super().fit(X, y)
 
-        n_nulls = y.is_null().sum()
-
-        if n_nulls > 0:
+        if (n_nulls := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {n_nulls} null values"
             raise ValueError(msg)
 
