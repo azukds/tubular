@@ -4,7 +4,6 @@ import narwhals as nw
 import numpy as np
 import polars as pl
 import pytest
-import pandas as pd
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -15,9 +14,13 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
-from tubular.capping import BaseCappingTransformer, CappingTransformer, OutOfRangeNullTransformer
-from tubular.base import BaseTransformer
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
+from tubular.capping import BaseCappingTransformer
+
 
 class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
     """Tests for BaseCappingTransformer.init()."""
@@ -432,7 +435,7 @@ class GenericCappingTransformTests(GenericTransformTests):
         self,
         initialized_transformers,
         library,
-        from_json
+        from_json,
     ):
         """Test that capping is applied only to specific columns, others remain the same."""
 
@@ -446,9 +449,8 @@ class GenericCappingTransformTests(GenericTransformTests):
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
-
         transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
 
         df_transformed = transformer.transform(df)
 
@@ -485,7 +487,7 @@ class GenericCappingTransformTests(GenericTransformTests):
         fit_value,
         initialized_transformers,
         library,
-        from_json
+        from_json,
     ):
         """Test that the replacements from fit are not changed in transform."""
 
@@ -699,13 +701,12 @@ class GenericCappingTransformTests(GenericTransformTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-
     def test_fixed_attributes_unchanged_from_transform(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
-        from_json
+        from_json,
     ):
         """Test that attributes are unchanged after transform is run."""
         df = d.create_df_9(library=library)
@@ -724,7 +725,6 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer2 = uninitialized_transformers[self.transformer_name](**args)
         transformer2 = _handle_from_json(transformer2, from_json)
-
 
         transformer2.fit(df)
 
@@ -749,13 +749,12 @@ class GenericCappingTransformTests(GenericTransformTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-
     def test_expected_output_min_and_max_combinations(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
-        from_json
+        from_json,
     ):
         """Test that capping is applied correctly in transform."""
 
@@ -766,8 +765,8 @@ class GenericCappingTransformTests(GenericTransformTests):
         args["capping_values"] = {"a": [2, 5], "b": [None, 7], "c": [0, None]}
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+        transformer.fit(df)
         transformer = _handle_from_json(transformer, from_json)
-
 
         df_transformed = transformer.transform(df)
 
@@ -802,7 +801,7 @@ class TestBaseCappingTransformerTransform(GenericCappingTransformTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseCappingTransformer"
-    
+
 
 class TestWeightedQuantile:
     """Tests for the BaseCappingTransformer.weighted_quantile method."""

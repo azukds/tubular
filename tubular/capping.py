@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Optional
 import narwhals as nw
 import numpy as np
 
+from tubular.base import block_from_json
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
-from tubular.base import block_from_json
 
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
@@ -147,7 +147,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         if capping_values:
             self._replacement_values = copy.deepcopy(self.capping_values)
 
-    @block_from_json
     def check_capping_values_dict(
         self,
         capping_values_dict: dict[str, list[int | float | None]],
@@ -591,18 +590,33 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
     def to_json(self) -> dict:
-        """Return a JSON-serializable representation of the transformer."""
+        """Return a JSON-serializable representation of the transformer.
+
+        Returns
+        -------
+         dict
+        Dictionary containing all necessary attributes to recreate the transformer with
+        `from_json`. Keys include 'init' (initialization parameters) and 'fit' (fitted values).
+
+        """
         data = super().to_json()
-        
+
         data["init"].pop("columns", None)
-        data["init"].update({
-            "capping_values": self.capping_values,
-            "quantiles": self.quantiles,
-            "weights_column": self.weights_column,
-        })
-        
-        data["fit"].update({'quantile_capping_values': self.quantile_capping_values, '_replacement_values': self._replacement_vaues})
-        
+        data["init"].update(
+            {
+                "capping_values": self.capping_values,
+                "quantiles": self.quantiles,
+                "weights_column": self.weights_column,
+            },
+        )
+
+        data["fit"].update(
+            {
+                "quantile_capping_values": self.quantile_capping_values,
+                "_replacement_values": self._replacement_values,
+            },
+        )
+
         return data
 
 
