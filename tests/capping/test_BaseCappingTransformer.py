@@ -15,6 +15,7 @@ from tests.base_tests import (
     WeightColumnInitMixinTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -445,6 +446,9 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = initialized_transformers[self.transformer_name]
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
@@ -492,15 +496,18 @@ class GenericCappingTransformTests(GenericTransformTests):
         """Test that the replacements from fit are not changed in transform."""
 
         transformer = initialized_transformers[self.transformer_name]
-        transformer = _handle_from_json(transformer, from_json)
 
         df = d.create_df_3(library=library)
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
 
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
         transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
 
         learnt_values = getattr(transformer, fit_value)
 
@@ -522,11 +529,13 @@ class GenericCappingTransformTests(GenericTransformTests):
             )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_non_numeric_column_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that transform will raise an error if a column to transform is not numeric."""
 
@@ -534,14 +543,17 @@ class GenericCappingTransformTests(GenericTransformTests):
         args["capping_values"] = {"a": [1, 2]}
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-
         df = d.create_df_5(library=library)
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
 
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
         transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
 
         # convert column to non-numeric
         df = nw.from_native(df)
@@ -561,11 +573,13 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_quantile_capping_values_not_fit_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that transform will raise an error if capping_values attr has not fit"""
         df = d.create_df_9(library=library)
@@ -576,9 +590,14 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         with pytest.raises(
             ValueError,
@@ -587,11 +606,13 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_quantile_capping_values_empty_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that transform will raise an error if quantile_capping_values is empty dict"""
         df = d.create_df_9(library=library)
@@ -602,11 +623,15 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
         transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
         transformer.quantile_capping_values = {}
 
         with pytest.raises(
@@ -616,11 +641,13 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_capping_values_empty_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that transform will raise an error if capping_values is empty dict"""
         df = d.create_df_9(library=library)
@@ -630,11 +657,15 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
         transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
         transformer.capping_values = {}
 
         with pytest.raises(
@@ -644,11 +675,13 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_replacement_values_not_fit_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that transform will raise an error if replacement values attr has not fit"""
         df = d.create_df_9(library=library)
@@ -659,9 +692,14 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
+
+        transformer = _handle_from_json(transformer, from_json)
 
         with pytest.raises(
             ValueError,
@@ -670,11 +708,13 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_replacement_values_dict_empty_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that transform will raise an error if _replacement_values is an empty dict."""
         df = d.create_df_9(library=library)
@@ -685,6 +725,9 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
@@ -692,6 +735,8 @@ class GenericCappingTransformTests(GenericTransformTests):
         # manually set attribute to get past the capping_values attribute is an empty dict exception
         transformer.quantile_capping_values = {"a": [1, 4]}
         transformer._replacement_values = {}
+
+        transformer = _handle_from_json(transformer, from_json)
 
         with pytest.raises(
             ValueError,
@@ -717,16 +762,23 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
 
         transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
 
         transformer2 = uninitialized_transformers[self.transformer_name](**args)
-        transformer2 = _handle_from_json(transformer2, from_json)
+
+        if _check_if_skip_test(transformer2, df, lazy=False, from_json=from_json):
+            return
 
         transformer2.fit(df)
+        transformer2 = _handle_from_json(transformer2, from_json)
 
         transformer2.transform(df)
 
@@ -765,6 +817,10 @@ class GenericCappingTransformTests(GenericTransformTests):
         args["capping_values"] = {"a": [2, 5], "b": [None, 7], "c": [0, None]}
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+            return
+
         transformer.fit(df)
         transformer = _handle_from_json(transformer, from_json)
 
