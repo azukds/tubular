@@ -334,8 +334,8 @@ class BaseMappingTransformMixin(BaseTransformer):
         }
 
         # if the column is categorical, narwhals struggles to infer a type
-        # during the when/then logic, so we need to record this so that we can
-        # tell polars to use string as a common type
+        # during the when/then logic, so we need to tell polars to use string
+        # as a common type.
         # types are then corrected before returning at the end
         schema = X.schema
         mapping_exprs = {
