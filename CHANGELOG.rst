@@ -27,7 +27,14 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.4.0 (unreleased)
+2.5.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- placeholder
+
+2.4.0 (01/12/2025)
 ------------------
 
 Changed
@@ -40,11 +47,13 @@ Changed
 - feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
 - feat: added a new transformer called DatetimeComponentExtractor
 - feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
+
 - feat: added `to_json` method to BaseCappingTransformer to enable dumping transformer state, including init attributes (`capping_values`, `quantiles`, `weights_column`) and fitted attributes (`quantile_capping_values`, `_replacement_values`) `#540 <https://github.com/azukds/tubular/pull/594>_`
 - feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>_`
 - chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>_`
 
 
+- bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
 
 2.3.0 (18/11/2025)
 ------------------
