@@ -27,7 +27,7 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.5.0 (01/12/2025)
+2.5.0 (unreleased)
 ------------------
 
 Changed
