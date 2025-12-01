@@ -400,8 +400,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     Note, the MappingTransformer does not require 'self-mappings' to be defined i.e. if you want
     to map a value to itself, you can omit this value from the mappings rather than having to
-    map it to itself. This is because it uses the pandas replace method which only replaces values
-    which have a corresponding mapping.
+    map it to itself.
 
     This transformer inherits from BaseMappingTransformMixin as well as the BaseMappingTransformer,
     BaseMappingTransformer performs standard checks, while BasemappingTransformMixin handles the
