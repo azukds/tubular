@@ -12,3 +12,12 @@ repos:
     rev: 0.3.4
     hooks:
     -   id: auto-walrus
+-   repo: https://github.com/codespell-project/codespell
+    rev: 'v2.4.1'
+    hooks:
+      - id: codespell
+        files: \.(py|rst|md)$
+-   repo: https://github.com/crate-ci/typos
+    rev: 'v1.39.0'
+    hooks:
+      - id: typos
