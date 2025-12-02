@@ -486,6 +486,41 @@ class TestTransform(GenericTransformTests):
             "expected empty frame transform to return empty frame"
         )
 
+    @staticmethod
+    @pytest.mark.parametrize(
+        "library",
+        ["pandas", "polars"],
+    )
+    def test_can_handle_lots_of_mappings(library):
+        """older implementations had issues erroring for too many mappings, include
+        this stress test
+        """
+        df_dict = {"a": range(1000)}
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        mappings = {"a": {i: i + 1 for i in range(1000)}}
+
+        expected_df_dict = {"a": range(1, 1001)}
+
+        expected_df = dataframe_init_dispatch(
+            dataframe_dict=expected_df_dict, library=library
+        )
+
+        transformer = BaseMappingTransformMixin(columns="a")
+
+        base_mapping_transformer = BaseMappingTransformer(
+            mappings=mappings,
+        )
+
+        transformer.mappings = base_mapping_transformer.mappings
+        transformer.return_dtypes = base_mapping_transformer.return_dtypes
+        transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
+
+        output = transformer.transform(df)
+
+        assert_frame_equal_dispatch(output, expected_df)
+
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """

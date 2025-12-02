@@ -20,7 +20,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mapping import MappingTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 TIME_UNITS = ["us", "ns", "ms"]
 
 
+@register
 class BaseGenericDateTransformer(
     DropOriginalMixin,
     BaseTransformer,
@@ -340,6 +341,7 @@ class BaseGenericDateTransformer(
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class BaseDatetimeTransformer(BaseGenericDateTransformer):
     """Extends BaseTransformer for datetime scenarios.
 
@@ -494,6 +496,7 @@ DateDifferenceUnitsOptionsStr = Annotated[
 ]
 
 
+@register
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
 
@@ -729,6 +732,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class ToDatetimeTransformer(BaseTransformer):
     """Class to transform convert specified columns to datetime.
 
@@ -848,6 +852,7 @@ class ToDatetimeTransformer(BaseTransformer):
         )
 
 
+@register
 class BetweenDatesTransformer(BaseGenericDateTransformer):
     """Transformer to generate a boolean column indicating if one date is between two others.
 
@@ -919,7 +924,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -971,6 +976,39 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[2]
         self.column_between = columns[2]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = BetweenDatesTransformer(
+        ...     columns=['a', 'b', 'c'],
+        ...     new_column_name='b_between_a_c',
+        ...     lower_inclusive=True,
+        ...     upper_inclusive=False,
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "lower_inclusive": self.lower_inclusive,
+                "upper_inclusive": self.upper_inclusive,
+            },
+        )
+
+        return json_dict
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:
@@ -1081,6 +1119,7 @@ DatetimeInfoOptionList = Annotated[
 ]
 
 
+@register
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
 
@@ -1700,6 +1739,7 @@ NumberNotBool = Annotated[
 ]
 
 
+@register
 class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     """Calculate the sine or cosine of a datetime column in a given unit (e.g hour).
 

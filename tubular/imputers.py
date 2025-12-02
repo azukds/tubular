@@ -23,13 +23,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, NonEmptyListOfStrs, Series
 
 pl.enable_string_cache()
 
 
+@register
 class BaseImputer(BaseTransformer):
     """Contains transform method that will use fill nulls with values from self.impute_values_.
 
@@ -220,6 +221,7 @@ class BaseImputer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class ArbitraryImputer(BaseImputer):
     """Transformer to impute null values with an arbitrary pre-defined value.
 
@@ -560,6 +562,7 @@ class ArbitraryImputer(BaseImputer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class MedianImputer(BaseImputer, WeightColumnMixin):
     """Transformer to impute missing values with the median of the supplied columns.
 
@@ -742,6 +745,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         return self
 
 
+@register
 class MeanImputer(WeightColumnMixin, BaseImputer):
     """Transformer to impute missing values with the mean of the supplied columns.
 
@@ -897,6 +901,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         return self
 
 
+@register
 class ModeImputer(BaseImputer, WeightColumnMixin):
     """Transformer to impute missing values with the mode of the supplied columns.
 
@@ -1086,6 +1091,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         return self
 
 
+@register
 class NullIndicator(BaseTransformer):
     """Class to create a binary indicator column for null values.
 
