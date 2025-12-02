@@ -130,6 +130,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             NonEmptyListOfStrs,
             str,
         ],
+        *,
         copy: bool = False,
         verbose: bool = False,
         return_native: bool = True,
@@ -387,7 +388,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         return X.with_columns(_temporary_response=y)
 
     @beartype
-    def _process_return_native(self, return_native_override: Optional[bool]) -> bool:
+    def _process_return_native(self, *, return_native_override: Optional[bool]) -> bool:
         """Determine whether to override return_native attr.
 
         Parameters
@@ -421,6 +422,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Check data before child transform.
@@ -463,7 +465,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             └─────┴─────┘
 
         """
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -476,7 +480,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         if self.verbose:
             print("BaseTransformer.transform() called")
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
     def check_is_fitted(self, attribute: str) -> None:
         """Check if particular attributes are on the object.
@@ -600,6 +604,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         pd_method_name: str,
         columns: Optional[Union[list[str], str]],
         pd_method_kwargs: Optional[GenericKwargs] = None,
+        *,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
@@ -705,6 +710,6 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         return DropOriginalMixin.drop_original_column(
             self,
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
         )

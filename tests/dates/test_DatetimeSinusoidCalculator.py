@@ -227,7 +227,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             period=period,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -286,7 +286,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             columns=columns,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -339,7 +339,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             period=12,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -389,7 +389,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             period={"a": 12, "b": 24},
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)
@@ -438,7 +438,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             period={"a": 12, "b": 24},
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         expected = expected_df.clone()
         native_backend = nw.get_native_namespace(expected)

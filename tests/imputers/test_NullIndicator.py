@@ -69,7 +69,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         columns = ["b", "c"]
         transformer = NullIndicator(columns=columns)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 

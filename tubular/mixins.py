@@ -37,6 +37,7 @@ class CheckNumericMixin:
     def check_numeric_columns(
         self,
         X: DataFrame,
+        *,
         return_native: bool = True,
     ) -> DataFrame:
         """Check column args are numeric for numeric transformers.
@@ -73,7 +74,7 @@ class CheckNumericMixin:
             msg = f"{self.classname()}: The following columns are not numeric in X; {non_numeric_columns}"
             raise TypeError(msg)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 class DropOriginalMixin:
@@ -99,8 +100,9 @@ class DropOriginalMixin:
     def drop_original_column(
         self,
         X: DataFrame,
-        drop_original: bool,
         columns: Optional[Union[list[str], str]],
+        *,
+        drop_original: bool,
         return_native: bool = True,
     ) -> DataFrame:
         """Drop input columns from X if drop_original set to True.
@@ -151,6 +153,7 @@ class WeightColumnMixin:
     def _create_unit_weights_column(
         X: DataFrame,
         backend: Literal["pandas", "polars"],
+        *,
         return_native: bool = True,
     ) -> tuple[DataFrame, str]:
         """Create unit weights column.
@@ -198,8 +201,7 @@ class WeightColumnMixin:
             # if exists already and is valid, return
             if all_one:
                 return _return_narwhals_or_native_dataframe(
-                    X,
-                    return_native,
+                    X, return_native=return_native
                 ), unit_weights_column
 
             # error if column already exists but is not suitable
@@ -218,8 +220,7 @@ class WeightColumnMixin:
         )
 
         return _return_narwhals_or_native_dataframe(
-            X,
-            return_native,
+            X, return_native=return_native
         ), unit_weights_column
 
     @nw.narwhalify

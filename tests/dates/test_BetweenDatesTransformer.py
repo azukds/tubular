@@ -197,7 +197,7 @@ class TestTransform(
             upper_inclusive=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -226,7 +226,7 @@ class TestTransform(
             upper_inclusive=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -255,7 +255,7 @@ class TestTransform(
             upper_inclusive=True,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -284,7 +284,7 @@ class TestTransform(
             upper_inclusive=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -313,7 +313,7 @@ class TestTransform(
             upper_inclusive=True,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -329,7 +329,7 @@ class TestTransform(
             upper_inclusive=True,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = d.create_is_between_dates_df_2()
         df = nw.from_native(df)
@@ -372,7 +372,7 @@ class TestTransform(
             upper_inclusive=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = d.create_is_between_dates_df_3(library=library)
         output = [False, False, True, True, False, False]
@@ -424,7 +424,7 @@ class TestTransform(
             new_column_name="c",
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df = create_date_diff_different_dtypes(library=library)
 
@@ -485,7 +485,7 @@ class TestTransform(
             **args,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_dict = {
             "a": [
@@ -534,7 +534,7 @@ class TestTransform(
             **args,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df = d.create_is_between_dates_df_3(library=library)
 

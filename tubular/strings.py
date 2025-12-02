@@ -70,7 +70,6 @@ class SeriesStrMethodTransformer(BaseTransformer):
         new_column_name: str,
         pd_method_name: str,
         columns: ListOfOneStr,
-        copy: bool = False,
         pd_method_kwargs: Optional[GenericKwargs] = None,
         **kwargs: Optional[bool],
     ) -> None:
@@ -93,9 +92,6 @@ class SeriesStrMethodTransformer(BaseTransformer):
         pd_method_kwargs : dict, default = {}
             A dictionary of keyword arguments to be passed to the pd.Series.str method when it is called.
 
-        copy: bool
-            Perform transform on copy of df?
-
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.__init__().
 
@@ -105,7 +101,7 @@ class SeriesStrMethodTransformer(BaseTransformer):
             AttributeError: if pd_method_name is not pd.Series method
 
         """
-        super().__init__(columns=columns, copy=copy, **kwargs)
+        super().__init__(columns=columns, **kwargs)
 
         if pd_method_kwargs is None:
             pd_method_kwargs = {}

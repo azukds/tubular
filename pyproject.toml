@@ -83,6 +83,7 @@ select = [
     "EM",
     "F", # Pyflakes
     "FA",
+    "FBT",
     "FLY",
     "I",
     "INT",

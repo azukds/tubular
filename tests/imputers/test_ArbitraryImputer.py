@@ -93,7 +93,7 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         if col_type in ["Categorical", "String"]:
             msg_required_impute_value_type = "str"
@@ -153,7 +153,7 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed_native = transformer.transform(df_nw.to_native())
 
@@ -223,7 +223,7 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # for pandas, the all null column is inferred as string type
         # for polars, it is Unknown type, which triggers a warning
@@ -277,7 +277,7 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed_native = transformer.transform(df_nw.to_native())
 
@@ -333,7 +333,7 @@ class TestTransform(
 
         transformer.columns = ["b", "c"]
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # Transform the DataFrame
         df_transformed = transformer.transform(df2)
@@ -393,7 +393,7 @@ class TestTransform(
         transformer.impute_value = "z"
         transformer.columns = ["b", "c"]
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # Transform the DataFrame
         df_transformed = transformer.transform(df2)
@@ -448,7 +448,7 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=1, columns=[column])
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         bad_types = dict(nw.from_native(df).select(nw.col(column)).schema.items())
 

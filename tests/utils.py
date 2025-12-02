@@ -142,6 +142,7 @@ def dataframe_init_dispatch(
 def _check_if_skip_test(
     transformer: BaseTransformer,
     df: DataFrame,
+    *,
     lazy: bool,
     from_json: bool = False,
 ) -> bool:
@@ -180,7 +181,7 @@ def _check_if_skip_test(
     )
 
 
-def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
+def _convert_to_lazy(df: DataFrame, *, lazy: bool) -> DataFrame:
     """
     converts dataframe to lazy if dataframe is polars and test is for lazyframes
 
@@ -202,7 +203,7 @@ def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
     return df.lazy() if (lazy and polars) else df
 
 
-def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
+def _collect_frame(df: DataFrame, *, lazy: bool) -> DataFrame:
     """
     collect lazyframe if type is polars and test is for lazyframes
 
@@ -226,6 +227,7 @@ def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
 
 def _handle_from_json(
     transformer: BaseTransformer,
+    *,
     from_json: bool,
 ) -> BaseTransformer:
     """handle converting transformer to/from json pre-testing. Assumes

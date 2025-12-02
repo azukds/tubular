@@ -151,7 +151,7 @@ class TestTransform(
             include=["hour", "day"],
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
         transformed = transformer.transform(df.to_native())
 
         # Define the expected output DataFrame
@@ -294,7 +294,7 @@ class TestTransform(
         )
 
         # Handle JSON serialization and deserialization
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         transformed = transformer.transform(df.to_native())
 

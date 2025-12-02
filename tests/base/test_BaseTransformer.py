@@ -76,16 +76,16 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         df = nw.to_native(df)
         expected = nw.to_native(expected)
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
-        df_transformed = x.transform(X=_convert_to_lazy(df, lazy))
+        df_transformed = x.transform(X=_convert_to_lazy(df, lazy=lazy))
 
         if not x.return_native:
             df_transformed = nw.to_native(df_transformed)
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, lazy),
+            _collect_frame(df_transformed, lazy=lazy),
         )
 
 

@@ -62,6 +62,7 @@ class EqualityChecker(
         self,
         columns: ListOfTwoStrs,
         new_column_name: str,
+        *,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
@@ -131,6 +132,6 @@ class EqualityChecker(
         return DropOriginalMixin.drop_original_column(
             self,
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
         )

@@ -80,7 +80,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         df = create_ratio_test_df(library=library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformer = u._handle_from_json(transformer, from_json)
+        transformer = u._handle_from_json(transformer, from_json=from_json)
         transformed_df = transformer.transform(df)
 
         # Expected output for basic division
@@ -149,7 +149,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         )
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformer = u._handle_from_json(transformer, from_json)
+        transformer = u._handle_from_json(transformer, from_json=from_json)
         transformed_df = transformer.transform(single_row_df)
 
         # Expected output for a single-row DataFrame
@@ -206,7 +206,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformer = u._handle_from_json(transformer, from_json)
+        transformer = u._handle_from_json(transformer, from_json=from_json)
         transformed_df = transformer.transform(df_with_nulls)
 
         # Expected output for a DataFrame with null values

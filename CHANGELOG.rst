@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- turned on ruff FBT lint rule `#511 <https://github.com/azukds/tubular/issues/511>`_
 
 2.4.0 (01/12/2025)
 ------------------

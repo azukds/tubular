@@ -141,8 +141,9 @@ class BaseNominalTransformer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
         present_values: Optional[dict[str, set[Any]]] = None,
+        *,
+        return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Base nominal transformer transform method.  Checks that all the rows are able to be
         mapped according to the values in the mappings dict and calls the BaseTransformer transform method.
@@ -190,14 +191,16 @@ class BaseNominalTransformer(BaseTransformer):
         └─────┴─────┘
         """
 
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         # specify which class to prevent additional inheritance calls
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
         self.check_mappable_rows(X, present_values)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 @register
@@ -315,6 +318,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         cut_off_percent: FloatBetweenZeroOne = 0.01,
         weights_column: Optional[str] = None,
         rare_level_name: Union[str, ListOfStrs] = "rare",
+        *,
         record_rare_levels: bool = True,
         unseen_levels_to_rare: bool = True,
         **kwargs: bool,
@@ -698,7 +702,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         X = X.with_columns(**transform_expressions)
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register
@@ -854,6 +858,7 @@ class MeanResponseTransformer(
             Union[float, int, Literal["mean", "median", "min", "max"]]
         ] = None,
         return_type: Literal["Float32", "Float64"] = "Float32",
+        *,
         drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
@@ -1489,12 +1494,12 @@ class MeanResponseTransformer(
         X = DropOriginalMixin.drop_original_column(
             self,
             X,
-            self.drop_original,
             columns_to_drop,
+            drop_original=self.drop_original,
             return_native=False,
         )
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register
@@ -1575,15 +1580,14 @@ class OneHotEncodingTransformer(
         columns: Optional[Union[str, ListOfStrs]] = None,
         wanted_values: Optional[dict[str, ListOfStrs]] = None,
         separator: str = "_",
+        *,
         drop_original: bool = False,
-        copy: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         BaseTransformer.__init__(
             self,
             columns=columns,
-            verbose=verbose,
-            copy=copy,
+            **kwargs,
         )
 
         self.wanted_values = wanted_values
@@ -1856,6 +1860,7 @@ class OneHotEncodingTransformer(
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Create new dummy columns from categorical fields.
@@ -1899,7 +1904,9 @@ class OneHotEncodingTransformer(
         │ y   ┆ 2   ┆ false ┆ true  │
         └─────┴─────┴───────┴───────┘
         """
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         # Check that transformer has been fit before calling transform
         self.check_is_fitted(["categories_"])
@@ -1942,7 +1949,7 @@ class OneHotEncodingTransformer(
 
             for level in missing_levels[c]:
                 transform_expressions[c + self.separator + str(level)] = nw.lit(
-                    False,
+                    value=False,
                 ).alias(c + self.separator + str(level))
 
         # make column order consistent
@@ -1954,12 +1961,12 @@ class OneHotEncodingTransformer(
         X = DropOriginalMixin.drop_original_column(
             self,
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
             return_native=False,
         )
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 # DEPRECATED TRANSFORMERS

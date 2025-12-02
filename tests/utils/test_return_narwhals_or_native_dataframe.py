@@ -31,7 +31,7 @@ def test_outcomes(return_native, df_native_type, function_df_arg_type):
     if function_df_arg_type == "narwhals":
         df = nw.from_native(df)
 
-    output = _return_narwhals_or_native_dataframe(df, return_native)
+    output = _return_narwhals_or_native_dataframe(df, return_native=return_native)
 
     if return_native and df_native_type == "pandas":
         assert isinstance(output, pd.DataFrame)
