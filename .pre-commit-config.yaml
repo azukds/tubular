@@ -17,6 +17,7 @@ repos:
     hooks:
       - id: codespell
         files: \.(py|rst|md)$
+        args: [--ignore-words-list=ser]
 -   repo: https://github.com/crate-ci/typos
     rev: 'v1.39.0'
     hooks:

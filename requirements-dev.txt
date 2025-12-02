@@ -6,6 +6,8 @@ beartype==0.21.0
     # via tubular (pyproject.toml)
 cfgv==3.4.0
     # via pre-commit
+codespell==2.4.1
+    # via tubular (pyproject.toml)
 coverage==7.10.7
     # via pytest-cov
 distlib==0.4.0
@@ -84,6 +86,8 @@ typing-extensions==4.15.0
     #   tubular (pyproject.toml)
     #   exceptiongroup
     #   virtualenv
+typos==1.40.0
+    # via tubular (pyproject.toml)
 tzdata==2025.2
     # via pandas
 virtualenv==20.34.0

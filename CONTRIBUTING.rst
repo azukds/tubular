@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Thanks for your interest in contributing to this package! No contibution is too small! We're hoping it can be made even better through community contributions.
+Thanks for your interest in contributing to this package! No contribution is too small! We're hoping it can be made even better through community contributions.
 
 Requests and feedback
 ---------------------
@@ -30,7 +30,11 @@ Then install tubular and dependencies for development;
 
      pip install . -r requirements-dev.txt
 
-We use `pre-commit <https://pre-commit.com/>`_ for this project which is configured to check that code is formatted with `black <https://black.readthedocs.io/en/stable/>`_ and passes `ruff <https://beta.ruff.rs/docs/>`_ checks.  For a list of ruff rules follwed by this project check .ruff.toml.
+We use `pre-commit <https://pre-commit.com/>`_ for this project which is configured to check that code passed several lints:
+- `ruff <https://beta.ruff.rs/docs/>`_ - For a list of ruff rules followed by this project check pyproject.toml.
+- `codespell <https://github.com/codespell-project/codespell>`_
+- `typos <https://github.com/crate-ci/typos>`_
+- `auto-walrus <https://github.com/MarcoGorelli/auto-walrus/>`_
 
 To configure ``pre-commit`` for your local repository run the following;
 
@@ -191,7 +195,8 @@ For the full list of contributors see the `contributors page <https://github.com
 Prior to the open source release of the package there have been contributions from many individuals in the LV= GI (before becoming part of Allianz Personal) Data Science team:
 
 - Richard Angell
-- Ned Webster
+# typos:ignore
+- Ned Webster # codespell:ignore
 - Dapeng Wang
 - David Silverstone
 - Shreena Patel

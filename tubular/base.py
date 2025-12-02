@@ -56,7 +56,7 @@ def register(cls: BaseTransformer) -> BaseTransformer:
 
 @register
 class BaseTransformer(BaseEstimator, TransformerMixin):
-    """Base tranformer class which all other transformers in the package inherit from.
+    """Base transformer class which all other transformers in the package inherit from.
 
     Provides fit and transform methods (required by sklearn transformers), simple input
     checking and functionality to copy X prior to transform.
@@ -68,7 +68,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         transformer will be applied to.
 
     copy : bool
-        Should X be copied before tansforms are applied?
+        Should X be copied before transforms are applied?
         Copy argument no longer used and will be deprecated in a future release
 
     verbose : bool
@@ -144,7 +144,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             Value passed in columns is saved in the columns attribute on the object.
 
         copy : bool, default = False
-            Should X be copied before tansforms are applied?
+            Should X be copied before transforms are applied?
             Copy argument no longer used and will be deprecated in a future release
 
         verbose : bool, default = False
@@ -547,7 +547,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     """,
 )
 class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
-    """Tranformer that applies a pandas.DataFrame method.
+    """Transformer that applies a pandas.DataFrame method.
 
     Transformer assigns the output of the method to a new column or columns.
     It is possible to supply other key word arguments to the transform method,
