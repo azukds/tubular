@@ -30,11 +30,12 @@ class SetValueTransformer(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json, which limits it's
+        supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -108,7 +109,7 @@ class SetValueTransformer(BaseTransformer):
         {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
 
 
-        """
+        """  # noqa: E501
         json_dict = super().to_json()
 
         json_dict["init"]["value"] = self.value
@@ -175,11 +176,12 @@ class ColumnDtypeSetter(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -219,8 +221,8 @@ class ColumnDtypeSetter(BaseTransformer):
             Columns to set dtype. Must be set or transform will not run.
 
         dtype : type or string
-            dtype object to set columns to or a string interpretable as one by pd.api.types.pandas_dtype
-            e.g. float or 'float'
+            dtype object to set columns to or a string interpretable as one
+            by pd.api.types.pandas_dtype e.g. float or 'float'
 
         **kwargs: dict[str, Any]
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -262,5 +264,5 @@ class ColumnDtypeSetter(BaseTransformer):
         try:
             pd.api.types.pandas_dtype(dtype)
         except TypeError:
-            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"
+            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"  # noqa: E501
             raise TypeError(msg) from None

@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import warnings
 from collections import OrderedDict
-from functools import reduce
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -21,9 +20,6 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.types import DataFrame
-
-if TYPE_CHECKING:
-    from narwhals.typing import IntoDType
 
 
 @register
@@ -299,118 +295,6 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     jsonable = False
 
-    @staticmethod
-    def _create_mapping_conditions_and_outcomes(
-        input_col: str,
-        key: str,
-        mappings: dict[str, dict[str, Union[int, str, bool, float]]],
-        dtype: Optional[IntoDType] = None,
-        output_col: Optional[str] = None,
-    ) -> tuple[nw.Expr, nw.Expr]:
-        """Apply mapping defined in the mappings dict to each column in the columns attribute.
-
-        Parameters
-        ----------
-        input_col : str
-            column to be mapped
-
-        key: str
-            mapping key (value in column) to prepare condition/outcome pair for
-
-        mappings: dict[str, dict[str,Union[int, str, bool, float]]]
-            mappings  for column
-
-        dtype: Optional[nw.IntoDType]
-            dtype for values being mapped to. Generally narwhals will just infer this, but
-            has some issues with categorical variables so can be necessary to cast to string
-            for these (and then cast back after mapping).
-
-        output_col : Optional[str]
-            name of output column, which will be present in mappings.
-            If none then defaults to input_col.
-
-        Returns
-        -------
-        Tuple[nw.Expr, nw.Expr]: prepared pair of mapping condition/outcome
-
-        # currently not including doctests for this, as need to look into most meaningful
-        # way to doctest functions which output expressions
-
-        """
-        if output_col is None:
-            output_col = input_col
-
-        return (
-            (
-                nw.col(input_col) == key,
-                nw.lit(mappings[output_col][key]),
-            )
-            if dtype is None
-            else (
-                nw.col(input_col) == key,
-                nw.lit(mappings[output_col][key], dtype=dtype),
-            )
-        )
-
-    @staticmethod
-    def _combine_mappings_into_expression(
-        input_col: str,
-        conditions_and_outcomes: dict[str, tuple[nw.Expr, nw.Expr]],
-        output_col: Optional[str] = None,
-    ) -> nw.Expr:
-        """Combine mapping conditions/outcomes into one expr for given column.
-
-        Parameters
-        ----------
-        input_col : str
-            column to prepare mappings for
-
-        conditions_and_outcomes: List[Tuple[nw.Expr, nw.Expr]]
-            list of paired conditions/outcomes to be used in mapping expression
-
-        output_col : Optional[str]
-            name of column to output in expression. If none then defaults to input_col.
-
-        Returns
-        -------
-        nw.Expr: prepared mapping expression
-
-        # currently not including doctests for this, as need to look into most meaningful
-        # way to doctest functions which output expressions
-
-        """
-        if output_col is None:
-            output_col = input_col
-
-        if len(conditions_and_outcomes[output_col]) == 0:
-            return nw.col(input_col)
-
-        initial_condition = (
-            nw.when(conditions_and_outcomes[output_col][0][0])
-            .then(conditions_and_outcomes[output_col][0][1])
-            .otherwise(nw.col(input_col))
-            .alias(output_col)
-        )
-
-        if len(conditions_and_outcomes[output_col]) > 1:
-            # chain together list of conditions/outcomes
-            # e.g. [(condition1, outcome1), (condition2, outcome2)]
-            # nw.when(condition2).then(outcome2).otherwise(
-            # nw.when(condition1).then(outcome1).otherwise(nw.col(col))
-            # )
-            return reduce(
-                lambda expr, condition_and_outcome: nw.when(condition_and_outcome[0])
-                .then(condition_and_outcome[1])
-                .otherwise(expr),
-                conditions_and_outcomes[output_col][
-                    1:
-                ],  # start reduce logic after first entry
-                initial_condition,
-            )
-
-        # if only one condition, just return this
-        return initial_condition
-
     @beartype
     def transform(
         self,
@@ -445,60 +329,52 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        # if the column is categorical, narwhals struggles to infer a type
-        # during the when/then logic, so we need to record this so that we can
-        # tell polars to use string as a common type
-        # types are then corrected before returning at the end
-        schema = X.schema
-        column_is_categorical = {
-            col: bool(schema[col] in [nw.Categorical, nw.Enum]) for col in self.mappings
+        mappable_conditions = {
+            col: nw.col(col).is_in(self.mappings[col]) for col in self.mappings
         }
 
-        present_values = {col: set(X.get_column(col).unique()) for col in self.mappings}
-
-        # set up list of paired condition/outcome tuples for mapping
-        conditions_and_outcomes = {
-            col: [
-                self._create_mapping_conditions_and_outcomes(col, key, self.mappings)
-                if not column_is_categorical[col]
-                else self._create_mapping_conditions_and_outcomes(
-                    col,
-                    key,
-                    self.mappings,
-                    nw.String,
-                )
-                for key in self.mappings[col]
-                # nulls handled separately with fill_null call
-                if ((not pd.isna(key)) and (key in present_values[col]))
-            ]
+        # if the column is categorical, narwhals struggles to infer a type
+        # during the when/then logic, so we need to tell polars to use string
+        # as a common type.
+        # types are then corrected before returning at the end
+        schema = X.schema
+        mapping_exprs = {
+            col: nw.col(col).cast(nw.String)
+            if schema[col] in [nw.Categorical, nw.Enum]
+            else nw.col(col)
             for col in self.mappings
         }
 
-        # apply mapping using functools reduce to build expression
-        transform_expressions = {
-            col: self._combine_mappings_into_expression(col, conditions_and_outcomes)
+        mapping_exprs = {
+            col: nw.when(mappable_conditions[col])
+            .then(
+                # default here allows replace_strict to work, but the nulls are replaced
+                # in the otherwise section anyway
+                mapping_exprs[col].replace_strict(self.mappings[col], default=None)
+            )
+            .otherwise(mapping_exprs[col])
             for col in self.mappings
         }
 
         # finally, handle mappings from null (imputations)
-        transform_expressions = {
-            col: (transform_expressions[col].fill_null(self.mappings_from_null[col]))
+        mapping_exprs = {
+            col: (mapping_exprs[col].fill_null(self.mappings_from_null[col]))
             if self.mappings_from_null[col] is not None
-            else transform_expressions[col]
-            for col in transform_expressions
+            else mapping_exprs[col]
+            for col in mapping_exprs
         }
 
         # handle casting for non-bool return types
         # (bool has special handling at end)
-        transform_expressions = {
-            col: transform_expressions[col].cast(getattr(nw, self.return_dtypes[col]))
+        mapping_exprs = {
+            col: mapping_exprs[col].cast(getattr(nw, self.return_dtypes[col]))
             if self.return_dtypes[col] != "Boolean"
-            else transform_expressions[col]
-            for col in transform_expressions
+            else mapping_exprs[col]
+            for col in mapping_exprs
         }
 
         X = X.with_columns(
-            **transform_expressions,
+            **mapping_exprs,
         )
 
         # this last section is needed to ensure pandas bool columns
@@ -524,8 +400,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     Note, the MappingTransformer does not require 'self-mappings' to be defined i.e. if you want
     to map a value to itself, you can omit this value from the mappings rather than having to
-    map it to itself. This is because it uses the pandas replace method which only replaces values
-    which have a corresponding mapping.
+    map it to itself.
 
     This transformer inherits from BaseMappingTransformMixin as well as the BaseMappingTransformer,
     BaseMappingTransformer performs standard checks, while BasemappingTransformMixin handles the

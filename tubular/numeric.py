@@ -944,6 +944,8 @@ class CutTransformer(BaseNumericTransformer):
 
     lazyframe_compatible = False
 
+    jsonable = False
+
     FITS = False
 
     deprecated = True
