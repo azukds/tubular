@@ -1,9 +1,8 @@
-import re
-
 import narwhals as nw
 import numpy as np
 import polars as pl
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -29,7 +28,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         "non_string, cap_type",
         [(1, "capping_values"), (True, "quantiles")],
     )
-    def test_columns_list_element_error(
+    def test_columns_non_string_or_list_error(
         self,
         non_string,
         cap_type,
@@ -45,12 +44,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         if cap_type == "quantiles":
             args["capping_values"] = None
 
-        with pytest.raises(
-            TypeError,
-            match=re.escape(
-                f"{self.transformer_name}: all keys in {cap_type} should be str",
-            ),
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
     def test_capping_values_quantiles_both_none_error(
@@ -122,10 +116,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         if cap_type == "quantiles":
             args["capping_values"] = None
 
-        with pytest.raises(
-            TypeError,
-            match=f"{self.transformer_name}: {cap_type} should be dict of columns and capping values",
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
     @pytest.mark.parametrize("cap_type", ["capping_values", "quantiles"])
@@ -143,10 +134,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         if cap_type == "quantiles":
             args["capping_values"] = None
 
-        with pytest.raises(
-            TypeError,
-            match=rf"{self.transformer_name}: each item in {cap_type} should be a list, but got \<class 'tuple'\> for key b",
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
     @pytest.mark.parametrize("cap_type", ["capping_values", "quantiles"])
@@ -164,10 +152,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         if cap_type == "quantiles":
             args["capping_values"] = None
 
-        with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: each item in {cap_type} should be length 2, but got 1 for key b",
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
     @pytest.mark.parametrize("cap_type", ["capping_values", "quantiles"])
@@ -185,10 +170,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         if cap_type == "quantiles":
             args["capping_values"] = None
 
-        with pytest.raises(
-            TypeError,
-            match=rf"{self.transformer_name}: each item in {cap_type} lists must contain numeric values or None, got \<class 'str'\> for key b",
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
     @pytest.mark.parametrize("cap_type", ["capping_values", "quantiles"])

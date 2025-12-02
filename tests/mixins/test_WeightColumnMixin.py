@@ -107,23 +107,6 @@ class TestCreateUnitWeightsColumn:
             obj._create_unit_weights_column(df, backend=library)
 
 
-class TestCheckAndSetWeight:
-    @pytest.mark.parametrize("weights_column", (0, ["a"], {"a": 10}))
-    def test_weight_arg_errors(
-        self,
-        weights_column,
-    ):
-        """Test that appropriate errors are throw for bad weight arg."""
-
-        obj = WeightColumnMixin()
-
-        with pytest.raises(
-            TypeError,
-            match="weights_column should be str or None",
-        ):
-            obj.check_and_set_weight(weights_column)
-
-
 class TestCheckWeightsColumn:
     @pytest.mark.parametrize(
         "library",

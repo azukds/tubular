@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 import narwhals as nw
 import numpy as np
@@ -15,6 +15,7 @@ from tubular.numeric import BaseNumericTransformer
 if TYPE_CHECKING:
     from narwhals.typing import FrameT
 from beartype import beartype
+from beartype.vale import Is
 
 from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
@@ -23,6 +24,21 @@ from tubular._utils import (
 )
 from tubular.base import register
 from tubular.types import DataFrame, Series
+
+CappingValues = Annotated[
+    list[Optional[Union[int, float]]],
+    Is[
+        lambda list_arg: (
+            (len(list_arg) == 2)
+            & (
+                all(
+                    (isinstance(value, (int, float)) or value is None)
+                    for value in list_arg
+                )
+            )
+        )
+    ],
+]
 
 
 @register
@@ -73,12 +89,13 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        capping_values: dict[str, list[int | float | None]] | None = None,
-        quantiles: dict[str, list[int | float]] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        capping_values: Optional[dict[str, CappingValues]] = None,
+        quantiles: Optional[dict[str, CappingValues]] = None,
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -149,14 +166,15 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         self.quantiles = quantiles
         self.capping_values = capping_values
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         if capping_values:
             self._replacement_values = copy.deepcopy(self.capping_values)
 
+    @beartype
     def check_capping_values_dict(
         self,
-        capping_values_dict: dict[str, list[int | float | None]],
+        capping_values_dict: dict[str, CappingValues],
         dict_name: str,
     ) -> None:
         """Check passed dictionary.
@@ -171,8 +189,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            TypeError: if arguments have incorrect type (being lazy here as beartype will soon replace)
-
             ValueError: if capping values are invalid, e.g. lower_cap>upper_cap
 
         Examples
@@ -184,32 +200,13 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             >>> transformer.check_capping_values_dict(transformer.capping_values, 'capping_values')
 
         """
-        if type(capping_values_dict) is not dict:
-            msg = f"{self.classname()}: {dict_name} should be dict of columns and capping values"
-            raise TypeError(msg)
-
         for k, cap_values in capping_values_dict.items():
-            if type(k) is not str:
-                msg = f"{self.classname()}: all keys in {dict_name} should be str, but got {type(k)}"
-                raise TypeError(msg)
-
-            if type(cap_values) is not list:
-                msg = f"{self.classname()}: each item in {dict_name} should be a list, but got {type(cap_values)} for key {k}"
-                raise TypeError(msg)
-
-            if len(cap_values) != 2:
-                msg = f"{self.classname()}: each item in {dict_name} should be length 2, but got {len(cap_values)} for key {k}"
-                raise ValueError(msg)
-
             for cap_value in cap_values:
-                if cap_value is not None:
-                    if type(cap_value) not in [int, float]:
-                        msg = f"{self.classname()}: each item in {dict_name} lists must contain numeric values or None, got {type(cap_value)} for key {k}"
-                        raise TypeError(msg)
-
-                    if np.isnan(cap_value) or np.isinf(cap_value):
-                        msg = f"{self.classname()}: item in {dict_name} lists contains numpy NaN or Inf values"
-                        raise ValueError(msg)
+                if (cap_value is not None) and (
+                    np.isnan(cap_value) or np.isinf(cap_value)
+                ):
+                    msg = f"{self.classname()}: item in {dict_name} lists contains numpy NaN or Inf values"
+                    raise ValueError(msg)
 
             if all(cap_value is not None for cap_value in cap_values) and (
                 cap_values[0] >= cap_values[1]
