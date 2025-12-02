@@ -27,7 +27,29 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.3.0 (unreleased)
+2.5.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fixed unhandled error for nulls on GroupRareLevelsTransformer.fit
+
+2.4.0 (01/12/2025)
+------------------
+
+Changed
+^^^^^^^
+- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>_`
+- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>_`
+- copied optimisations/improvements from #484 into MedianImputer
+- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
+- feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
+- feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
+- feat: added a new transformer called DatetimeComponentExtractor
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
+- bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
+
+2.3.0 (18/11/2025)
 ------------------
 
 Changed
@@ -37,7 +59,9 @@ Changed
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
 - feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
-- bugfix: fixed unhandled error for nulls on GroupRareLevelsTransformer.fit
+- bugfix: MeanResponseTransformer approach was hitting a recursion depth limit error for many levels, have switched to more resilient (and generally better) approach
+- chore: add beartype decorator to transformers NullIndicator and SetValueTransformer - #563 <https://github.com/azukds/tubular/issues/563>
+- feat: optimisation changes to BaseCappingTransformer `#484 <https://github.com/azukds/tubular/issues/484>`
 
 2.2.0 (11/11/2025)
 ------------------
@@ -49,6 +73,7 @@ Changed
 - feat: added `to_json` method for `SetValueTransformer` `#542 <https://github.com/azukds/tubular/issues/542>`_
 - feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
 - removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- added a new transformer called DatetimeComponentExtractor
 
 2.1.0 (30/10/25)
 ------------------

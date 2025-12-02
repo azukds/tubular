@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional, Union
 
 import narwhals as nw
 import pandas as pd
+from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular._utils import (
@@ -13,10 +14,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
-from tubular.types import DataFrame
+from tubular.base import BaseTransformer, register
+from tubular.types import (
+    DataFrame,
+    NonEmptyListOfStrs,
+)
 
 
+@register
 class SetValueTransformer(BaseTransformer):
     """Transformer to set value of column(s) to a given value.
 
@@ -25,11 +30,12 @@ class SetValueTransformer(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json, which limits it's
+        supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -58,11 +64,15 @@ class SetValueTransformer(BaseTransformer):
 
     jsonable = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        value: type,
-        **kwargs: dict[str, bool],
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        value: Optional[Union[int, float, str, bool]],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -74,7 +84,7 @@ class SetValueTransformer(BaseTransformer):
         value : various
             Value to set.
 
-        **kwargs: dict[str, Any]
+        **kwargs: bool
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
         """
@@ -99,13 +109,14 @@ class SetValueTransformer(BaseTransformer):
         {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
 
 
-        """
+        """  # noqa: E501
         json_dict = super().to_json()
 
         json_dict["init"]["value"] = self.value
 
         return json_dict
 
+    @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
 
@@ -165,11 +176,12 @@ class ColumnDtypeSetter(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -204,8 +216,8 @@ class ColumnDtypeSetter(BaseTransformer):
             Columns to set dtype. Must be set or transform will not run.
 
         dtype : type or string
-            dtype object to set columns to or a string interpretable as one by pd.api.types.pandas_dtype
-            e.g. float or 'float'
+            dtype object to set columns to or a string interpretable as one
+            by pd.api.types.pandas_dtype e.g. float or 'float'
 
         **kwargs: dict[str, Any]
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -247,5 +259,5 @@ class ColumnDtypeSetter(BaseTransformer):
         try:
             pd.api.types.pandas_dtype(dtype)
         except TypeError:
-            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"
+            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"  # noqa: E501
             raise TypeError(msg) from None
