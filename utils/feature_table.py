@@ -1,4 +1,4 @@
-"""Script to run in pre-commit/CI in order to keep the README feature table up to date."""
+"""Run in pre-commit/CI in order to keep the README feature table up to date."""
 
 import pathlib
 import re
