@@ -23,7 +23,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer, DataFrameMethodTransformer
+from tubular.base import BaseTransformer, DataFrameMethodTransformer, register
 from tubular.mixins import (
     CheckNumericMixin,
     DropOriginalMixin,
@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT, IntoSeriesT
 
 
+@register
 class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     """Extends BaseTransformer for datetime scenarios.
 
@@ -189,6 +190,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     """Generates a new column based on kmeans algorithm.
 
@@ -469,6 +471,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         return self.drop_original_column(X, self.drop_original, self.columns[0])
 
 
+@register
 class DifferenceTransformer(BaseNumericTransformer):
     """Transformer that performs subtraction operation between two columns.
 
@@ -594,6 +597,7 @@ class DifferenceTransformer(BaseNumericTransformer):
         return [f"{self.columns[0]}_minus_{self.columns[1]}"]
 
 
+@register
 class RatioTransformer(BaseNumericTransformer):
     """Transformer that performs division operation between two columns.
 
@@ -931,6 +935,8 @@ class CutTransformer(BaseNumericTransformer):
     polars_compatible = False
 
     lazyframe_compatible = False
+
+    jsonable = False
 
     FITS = False
 

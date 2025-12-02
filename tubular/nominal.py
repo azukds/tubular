@@ -23,7 +23,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
@@ -35,6 +35,7 @@ from tubular.types import (
 )
 
 
+@register
 class BaseNominalTransformer(BaseTransformer):
     """
     Base Transformer extension for nominal transformers.
@@ -199,6 +200,7 @@ class BaseNominalTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """Transformer to group together rare levels of nominal variables into a new level,
     labelled 'rare' (by default).
@@ -699,6 +701,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class MeanResponseTransformer(
     BaseNominalTransformer,
     WeightColumnMixin,
@@ -1574,6 +1577,7 @@ class MeanResponseTransformer(
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class OneHotEncodingTransformer(
     DropOriginalMixin,
     BaseTransformer,
