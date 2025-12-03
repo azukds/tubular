@@ -4,16 +4,10 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import TYPE_CHECKING, Annotated, Optional, Union
+from typing import Annotated, Optional
 
 import narwhals as nw
 import numpy as np
-
-from tubular.mixins import WeightColumnMixin
-from tubular.numeric import BaseNumericTransformer
-
-if TYPE_CHECKING:
-    from narwhals.typing import FrameT
 from beartype import beartype
 from beartype.vale import Is
 
@@ -23,10 +17,12 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
 )
 from tubular.base import register
-from tubular.types import DataFrame, Series
+from tubular.mixins import WeightColumnMixin
+from tubular.numeric import BaseNumericTransformer
+from tubular.types import DataFrame, Number, Series
 
 CappingValues = Annotated[
-    list[Optional[Union[int, float]]],
+    list[Optional[Number]],
     Is[
         lambda list_arg: (
             (len(list_arg) == 2)
@@ -219,7 +215,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 raise ValueError(msg)
 
     @beartype
-    @nw.narwhalify
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
         """Learn capping values from input data X.
 
@@ -290,14 +285,14 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return self
 
-    @nw.narwhalify
+    @beartype
     def prepare_quantiles(
         self,
-        X: FrameT,
-        quantiles: list[float],
+        X: DataFrame,
+        quantiles: list[Optional[Number]],
         values_column: str,
         weights_column: str,
-    ) -> list[int | float]:
+    ) -> list[Optional[Number]]:
         """Call the weighted_quantile method and prepare the outputs.
 
         If there are no None values in the supplied quantiles then the outputs from weighted_quantile
@@ -307,10 +302,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : FrameT
+        X : DataFrame
             Dataframe with relevant columns to calculate quantiles from.
 
-        quantiles : list[float]
+        quantiles : list[Optional[Number]]
             Weighted quantiles to calculate. Must all be between 0 and 1.
 
         values_column: str
@@ -339,8 +334,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         if quantiles[0] is None:
-            quantiles = np.array([quantiles[1]])
+            quantiles = [quantiles[1]]
 
             results_no_none = self.weighted_quantile(
                 X,
@@ -352,7 +349,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             results = [None, *results_no_none]
 
         elif quantiles[1] is None:
-            quantiles = np.array([quantiles[0]])
+            quantiles = [quantiles[0]]
 
             results_no_none = self.weighted_quantile(
                 X,
@@ -373,14 +370,14 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return results
 
-    @nw.narwhalify
+    @beartype
     def weighted_quantile(
         self,
-        X: FrameT,
-        quantiles: list[float],
+        X: DataFrame,
+        quantiles: list[Number],
         values_column: str,
         weights_column: str,
-    ) -> list[int | float]:
+    ) -> list[Number]:
         """Calculate weighted quantiles.
 
         This method is adapted from the "Completely vectorized numpy solution" answer from user
@@ -397,10 +394,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : FrameT
+        X : DataFrame
             Dataframe with relevant columns to calculate quantiles from.
 
-        quantiles : None
+        quantiles : list[Number]
             Weighted quantiles to calculate. Must all be between 0 and 1.
 
         values_column: str
@@ -411,7 +408,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Returns
         -------
-        interp_quantiles : list
+        interp_quantiles : list[Number]
             List containing computed quantiles.
 
         Examples
@@ -445,6 +442,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         [np.float64(1.0), np.float64(2.0), np.float64(5.0)]
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         quantiles = np.array(quantiles)
 
         not_null_expr = ~(nw.col(values_column).is_null())
@@ -466,7 +465,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         weighted_quantiles = results_dict[weights_column].to_numpy()
         values = results_dict[values_column].to_numpy()
 
-        return list(np.interp(quantiles, weighted_quantiles, values))
+        return [
+            float(value) for value in np.interp(quantiles, weighted_quantiles, values)
+        ]
 
     @beartype
     def transform(
@@ -707,8 +708,8 @@ class CappingTransformer(BaseCappingTransformer):
         """
         super().__init__(capping_values, quantiles, weights_column, **kwargs)
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: None = None) -> CappingTransformer:
+    @beartype
+    def fit(self, X: DataFrame, y: Optional[Series] = None) -> CappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -741,6 +742,8 @@ class CappingTransformer(BaseCappingTransformer):
             CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         super().fit(X, y)
 
         return self
@@ -876,15 +879,22 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 self.capping_values,
             )
 
+    @beartype
     @staticmethod
-    def set_replacement_values(capping_values: dict[str, list[float]]) -> None:
+    def set_replacement_values(
+        capping_values: dict[str, list[Optional[Number]]],
+    ) -> dict[str, list[Optional[bool]]]:
         """Set the _replacement_values to have all null values.
 
         Keeps the existing keys in the _replacement_values dict and sets all values (except None) in the lists to np.NaN. Any None
         values remain in place.
 
-        Example:
+        Returns
         -------
+        replacement_values: replacement values for OutOfRangeNullTransformer
+
+        Examples
+        --------
         >>> import polars as pl
 
         >>> capping_values={"a": [0.1, 0.2], "b": [None, 10]}
@@ -905,8 +915,10 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         return replacement_values
 
-    @nw.narwhalify
-    def fit(self, X: FrameT, y: None = None) -> OutOfRangeNullTransformer:
+    @beartype
+    def fit(
+        self, X: DataFrame, y: Optional[Series] = None
+    ) -> OutOfRangeNullTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -939,6 +951,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         super().fit(X=X, y=y)
 
         backend = nw.get_native_namespace(X)
@@ -958,7 +972,6 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         if self.quantiles:
             BaseCappingTransformer.fit(self, X=X, y=y)
-
             self._replacement_values = OutOfRangeNullTransformer.set_replacement_values(
                 self.quantile_capping_values,
             )
