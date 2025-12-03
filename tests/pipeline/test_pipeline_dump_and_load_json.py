@@ -26,7 +26,9 @@ class TestDumpLoad:
 
         pipeline = load_pipeline_from_json(pipeline_json)
 
-        assert len(original_pipeline.steps) == len(pipeline.steps)
+        assert len(original_pipeline.steps) == len(pipeline.steps), (
+            f"number of steps in the pipeline does not match with that of original pipeline, expected {len(original_pipeline.steps)} steps but got {len(pipeline.steps)}"
+        )
         i = 0
         for x, y in zip(original_pipeline.steps, pipeline.steps):
             i = i + 1
@@ -67,7 +69,7 @@ class TestDumpLoad:
                     "verbose": False,
                     "weights_column": None,
                 },
-                "tubular_version": "dev",
+                "tubular_version": "...",
             },
             "MedianImputer": {
                 "classname": "MedianImputer",
@@ -79,7 +81,7 @@ class TestDumpLoad:
                     "verbose": False,
                     "weights_column": None,
                 },
-                "tubular_version": "dev",
+                "tubular_version": "...",
             },
         }
         transformers = ["MedianImputer", "MeanImputer"]
