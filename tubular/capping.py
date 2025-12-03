@@ -47,20 +47,20 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     Attributes
     ----------
-    capping_values : dict or None
+    capping_values : dict[str, CappingValues] or None
         Capping values to apply to each column, capping_values argument.
 
-    quantiles : dict or None
+    quantiles : dict[str, CappingValues] or None
         Quantiles to set capping values at from input data. Will be empty after init, values
         populated when fit is run.
 
-    quantile_capping_values : dict or None
+    quantile_capping_values : dict[str, CappingValues] or None
         Capping values learned from quantiles (if provided) to apply to each column.
 
     weights_column : str or None
         weights_column argument.
 
-    _replacement_values : dict
+    _replacement_values : dict[str, CappingValues]
         Replacement values when capping is applied. Will be a copy of capping_values.
 
     built_from_json: bool
@@ -101,7 +101,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        capping_values : dict or None, default = None
+        capping_values : dict[str, CappingValues] or None, default = None
             Dictionary of capping values to apply to each column. The keys in the dict should be the
             column names and each item in the dict should be a list of length 2. Items in the lists
             should be ints or floats or None. The first item in the list is the minimum capping value
@@ -109,7 +109,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             either value then that capping will not take place for that particular column. Both items
             in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
 
-        quantiles : dict or None, default = None
+        quantiles : dict[str, CappingValues] or None, default = None
             Dictionary of quantiles in the range [0, 1] to set capping values at for each column.
             The keys in the dict should be the column names and each item in the dict should be a
             list of length 2. Items in the lists should be ints or floats or None. The first item in the
@@ -602,20 +602,20 @@ class CappingTransformer(BaseCappingTransformer):
 
     Attributes:
     ----------
-    capping_values : dict or None
+    capping_values : dict[str, CappingValues] or None
         Capping values to apply to each column, capping_values argument.
 
-    quantiles : dict or None
+    quantiles : dict[str, CappingValues] or None
         Quantiles to set capping values at from input data. Will be empty after init, values
         populated when fit is run.
 
-    quantile_capping_values : dict or None
+    quantile_capping_values : dict[str, CappingValues] or None
         Capping values learned from quantiles (if provided) to apply to each column.
 
     weights_column : str or None
         weights_column argument.
 
-    _replacement_values : dict
+    _replacement_values : dict[str, CappingValues]
         Replacement values when capping is applied. Will be a copy of capping_values.
 
     built_from_json: bool
@@ -667,18 +667,19 @@ class CappingTransformer(BaseCappingTransformer):
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        capping_values: dict[str, list[int | float | None]] | None = None,
-        quantiles: dict[str, list[int | float]] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        capping_values: Optional[dict[str, CappingValues]] = None,
+        quantiles: Optional[dict[str, CappingValues]] = None,
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
         Parameters
         ----------
-        capping_values : dict or None, default = None
+        capping_values : dict[str, CappingValues] or None, default = None
             Dictionary of capping values to apply to each column. The keys in the dict should be the
             column names and each item in the dict should be a list of length 2. Items in the lists
             should be ints or floats or None. The first item in the list is the minimum capping value
@@ -686,7 +687,7 @@ class CappingTransformer(BaseCappingTransformer):
             either value then that capping will not take place for that particular column. Both items
             in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
 
-        quantiles : dict or None, default = None
+        quantiles : dict[str, CappingValues] or None, default = None
             Dictionary of quantiles in the range [0, 1] to set capping values at for each column.
             The keys in the dict should be the column names and each item in the dict should be a
             list of length 2. Items in the lists should be ints or floats or None. The first item in the
@@ -756,20 +757,20 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     Attributes:
     ----------
-    capping_values : dict or None
+    capping_values : dict[str, CappingValues] or None
         Capping values to apply to each column, capping_values argument.
 
-    quantiles : dict or None
+    quantiles : dict[str, CappingValues] or None
         Quantiles to set capping values at from input data. Will be empty after init, values
         populated when fit is run.
 
-    quantile_capping_values : dict or None
+    quantile_capping_values : dict[str, CappingValues] or None
         Capping values learned from quantiles (if provided) to apply to each column.
 
     weights_column : str or None
         weights_column argument.
 
-    _replacement_values : dict
+    _replacement_values : dict[str, CappingValues]
         Replacement values when capping is applied. This will contain nulls for each column.
 
     built_from_json: bool
@@ -826,18 +827,19 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     jsonable = False
 
+    @beartype
     def __init__(
         self,
-        capping_values: dict[str, list[int | float | None]] | None = None,
-        quantiles: dict[str, list[int | float]] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        capping_values: Optional[dict[str, CappingValues]] = None,
+        quantiles: Optional[dict[str, CappingValues]] = None,
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
         Parameters
         ----------
-        capping_values : dict or None, default = None
+        capping_values : dict[str, CappingValues] or None, default = None
             Dictionary of capping values to apply to each column. The keys in the dict should be the
             column names and each item in the dict should be a list of length 2. Items in the lists
             should be ints or floats or None. The first item in the list is the minimum capping value
@@ -845,7 +847,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             either value then that capping will not take place for that particular column. Both items
             in the lists cannot be None. Either one of capping_values or quantiles must be supplied.
 
-        quantiles : dict or None, default = None
+        quantiles : dict[str, CappingValues] or None, default = None
             Dictionary of quantiles to set capping values at for each column. The keys in the dict
             should be the column names and each item in the dict should be a list of length 2. Items
             in the lists should be ints or floats or None. The first item in the list is the lower
