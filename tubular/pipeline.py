@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from tubular.base import CLASS_REGISTRY
 
 
-def dump(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
+def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     """Serialize a pipeline into json dictionary.
 
     Parameters
@@ -28,15 +28,25 @@ def dump(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
 
     Examples
     --------
-    >>> from profiling.pipeline_generator import TubularPipelineGenerator
-    >>> from profiling import create_dataset as create
-    >>> pipe = TubularPipelineGenerator()
-    >>> pipe = pipe.generate_pipeline(["GroupRareLevelsTransformer"])
-    >>> df_1 = create.create_standard_pandas_dataset()
-    >>> a = pipe.fit(df_1, df_1["AveRooms"])
-    >>> pipeline_json = dump(pipe)
+    >>> import polars as pl
+    >>> from tubular.imputers import MeanImputer, MedianImputer
+    >>> from sklearn.pipeline import Pipeline
+
+
+    >>> df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
+    >>> median_imputer = MedianImputer(columns=["b"])
+    >>> mean_imputer = MeanImputer(columns=["b"])
+    >>> original_pipeline = Pipeline(
+    ...       [
+    ...            ("MedianImputer", median_imputer),
+    ...            ("MeanImputer", mean_imputer)
+    ...        ]
+    ...    )
+
+    >>> original_pipeline = original_pipeline.fit(df, df["a"])
+    >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
     >>> pipeline_json
-    {'GroupRareLevelsTransformer': {...}}
+    {'MedianImputer': {'tubular_version': 'dev', 'classname': 'MedianImputer', 'init': {'columns': ['b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'b': 15.0}}}, 'MeanImputer': {'tubular_version': 'dev', 'classname': 'MeanImputer', 'init': {'columns': ['b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'b': 15.0}}}}
 
     """
     steps = pipeline.steps
@@ -48,7 +58,7 @@ def dump(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     return {step_name: step.to_json() for step_name, step in steps}
 
 
-def load(pipeline_json: dict[str, dict[str, Any]]) -> Pipeline:
+def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipeline:
     """Deserialize a pipeline json structure into a pipeline.
 
     Parameters
@@ -62,17 +72,25 @@ def load(pipeline_json: dict[str, dict[str, Any]]) -> Pipeline:
 
     Examples
     --------
-    >>> from profiling.pipeline_generator import TubularPipelineGenerator
-    >>> from profiling import create_dataset as create
-    >>> pipe = TubularPipelineGenerator()
-    >>> pipe = pipe.generate_pipeline(["GroupRareLevelsTransformer"])
-    >>> df_1 = create.create_standard_pandas_dataset()
-    >>> a = pipe.fit(df_1, df_1["AveRooms"])
-    >>> pipeline_json = dump(pipe)
-    >>> pipeline = load(pipeline_json)
+    >>> import polars as pl
+    >>> from tubular.imputers import MeanImputer, MedianImputer
+    >>> from sklearn.pipeline import Pipeline
+    >>> df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
+    >>> median_imputer = MedianImputer(columns=["b"])
+    >>> mean_imputer = MeanImputer(columns=["b"])
+    >>> original_pipeline = Pipeline(
+    ...       [
+    ...            ("MedianImputer", median_imputer),
+    ...            ("MeanImputer", mean_imputer)
+    ...        ]
+    ...    )
+
+    >>> original_pipeline = original_pipeline.fit(df, df["a"])
+    >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
+    >>> pipeline = load_pipeline_from_json(pipeline_json)
     >>> pipeline
-    Pipeline(steps=[('GroupRareLevelsTransformer',
-                     GroupRareLevelsTransformer(columns=['categorical_4']))])
+    Pipeline(steps=[('MedianImputer', MedianImputer(columns=['b'])),
+                    ('MeanImputer', MeanImputer(columns=['b']))])
 
     """
     steps = [
