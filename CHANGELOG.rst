@@ -27,22 +27,29 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.4.0 (unreleased)
+2.5.0 (unreleased)
 ------------------
 
 Changed
 ^^^^^^^
-- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>_`
-- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>_`
+- switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
+- feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
+
+2.4.0 (01/12/2025)
+------------------
+
+Changed
+^^^^^^^
+- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>`_
+- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>`_
 - copied optimisations/improvements from #484 into MedianImputer
-- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
+- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>`_
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
+- feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
 - feat: added a new transformer called DatetimeComponentExtractor
 - feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
-- feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
 - bug: fix issue in to_json method of GroupRareLevelsTransformer
-
-
+- bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
 
 2.3.0 (18/11/2025)
 ------------------

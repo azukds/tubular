@@ -925,7 +925,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -977,6 +977,39 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[2]
         self.column_between = columns[2]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer = BetweenDatesTransformer(
+        ...     columns=['a', 'b', 'c'],
+        ...     new_column_name='b_between_a_c',
+        ...     lower_inclusive=True,
+        ...     upper_inclusive=False,
+        ... )
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "lower_inclusive": self.lower_inclusive,
+                "upper_inclusive": self.upper_inclusive,
+            },
+        )
+
+        return json_dict
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:

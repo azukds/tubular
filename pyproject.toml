@@ -46,7 +46,7 @@ dev = [
     "pytest-mock>=3.5.1",
     "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
-    "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
+    "prek",
     "ruff>=0.2.2",
     "auto-walrus==0.3.4",
     ]
@@ -115,7 +115,6 @@ select = [
 preview = true
 
 ignore = [
-    "E501", # ignore E501 - linelength limit (covered by black except in docstrings) 
     "B905", # this rule makes changes that error for python3.9, as the strict argument for zip() was introduced in python3.10
     "PYI041", # clashes with beartype
     "TC001", # clashes with beartype, was previously "TCH001"
@@ -138,16 +137,25 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 "tests/*" = [
-    "D",
-    "DOC",
     "ANN",
     "S101",
-    "PLC2701" # complains about private imports, which we test
+    "PLC2701", # complains about private imports, which we test
+    "E501",
+    "D",
+    "DOC",
     ]
-"profiling/*"=["D", "DOC"]
-# leaving this one for now or will have big conflicts with
-# upcoming PR
-"nominal.py"=["D", "DOC"]
+"profiling/*"=["D", "DOC", "E501"]
+# too much to turn on D/DOC and E501 lints in one go,
+# will tackle individual modules at a time
+"numeric.py"=["E501"]
+"nominal.py"=["D", "DOC","E501"]
+"mixins.py"=["E501"]
+"mapping.py"=["E501"]
+"imputers.py"=["E501"]
+"dates.py"=["E501"]
+"strings.py"=["E501"]
+"capping.py"=["E501"]
+"_utils.py"=["E501"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true
