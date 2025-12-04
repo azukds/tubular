@@ -243,10 +243,7 @@ class WeightColumnInitMixinTests:
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["weights_column"] = weights_column
 
-        with pytest.raises(
-            TypeError,
-            match="weights_column should be str or None",
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
 

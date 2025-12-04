@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- turned on beartype for WeightsColumnMixin and associated transformers `#561 <https://github.com/azukds/tubular/issues/561>`_
 - feat: added auto generated feature table to readme, to track transform support for e.g. polars/lazyframes/json `#595 <https://github.com/azukds/tubular/issues/595>`_
 - feat: added FEATURE_REGISTRY dict maintained by BaseTransfomer, which records per-transformer functionality info
 - feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
