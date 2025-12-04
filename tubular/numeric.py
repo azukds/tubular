@@ -1619,7 +1619,7 @@ class PCATransformer(BaseNumericTransformer):
                 run randomized SVD by the method of Halko et al.
             .. sklearn versionadded:: 0.18.0
 
-        random_state : int, RandomState instance or None, default=None
+        random_state : int or None, default=None
             Used when the 'arpack' or 'randomized' solvers are used. Pass an int
             for reproducible results across multiple function calls.
             .. sklearn versionadded:: 0.18.0
