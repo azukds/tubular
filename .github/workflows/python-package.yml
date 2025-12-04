@@ -76,22 +76,27 @@ jobs:
           with:
             python-version: ${{ matrix.python-version }}
 
-        - name: Install ruff
+        - name: Install linters
           run: |
             python -m pip install uv
-            uv venv -p ${{ matrix.python-version }} ruff
-            source ruff/bin/activate
+            uv venv -p ${{ matrix.python-version }} $HOME/lints
+            source $HOME/lints/bin/activate
             uv pip install -r requirements-dev.txt
           
         - name: Lint with ruff
           run: |
-            source ruff/bin/activate
+            source $HOME/lints/bin/activate
             ruff --version
             ruff check --output-format github .
 
-        - name: Check formatting with ruff
+        - name: Check for typos with codespell
           run: |
-            source ruff/bin/activate
-            ruff --version
-            ruff format --diff .
-            ruff format --check .
+            source $HOME/lints/bin/activate
+            codespell --version
+            codespell .
+
+        - name: Check for typos with typos
+          run: |
+            source $HOME/lints/bin/activate
+            typos --version
+            typos .
