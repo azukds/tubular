@@ -32,15 +32,15 @@ class TestBaseAggregationTransformerInit(
             uninitialized_transformers[self.transformer_name](**args)
 
     # NOTE - can delete this test once DropOriginalMixin is converted to beartype
-    @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
+    @pytest.mark.parametrize("drop_original_column", (0, "a", ["a"], {"a": 10}, None))
     def test_drop_column_arg_errors(
         self,
-        drop_orginal_column,
+        drop_original_column,
         minimal_attribute_dict,
         uninitialized_transformers,
     ):
         args = minimal_attribute_dict[self.transformer_name].copy()
-        args["drop_original"] = drop_orginal_column
+        args["drop_original"] = drop_original_column
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):  # Adjust to expect BeartypeCallHintParamViolation

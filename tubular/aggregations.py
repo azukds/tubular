@@ -18,7 +18,7 @@ from tubular.types import DataFrame, NumericTypes
 
 
 class ColumnsOverRowAggregationOptions(str, Enum):
-    """Aggregation options fo ColumnsOverRowAggregationTransformer."""
+    """Aggregation options for ColumnsOverRowAggregationTransformer."""
 
     MIN = "min"
     MAX = "max"
@@ -29,7 +29,7 @@ class ColumnsOverRowAggregationOptions(str, Enum):
 
 
 class RowsOverColumnsAggregationOptions(str, Enum):
-    """Aggregation options fo RowsOverColumnAggregationTransformer."""
+    """Aggregation options for RowsOverColumnAggregationTransformer."""
 
     MIN = "min"
     MAX = "max"

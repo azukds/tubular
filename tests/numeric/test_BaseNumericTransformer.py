@@ -174,7 +174,7 @@ class BaseNumericTransformerTransformTests(
         df = nw.from_native(df)
         native_backend = nw.get_native_namespace(df).__name__
 
-        # Add this as samples dont have enough volumn for 8 default clusters
+        # Add this as samples dont have enough volume for 8 default clusters
         if self.transformer_name == "OneDKmeansTransformer":
             # Add this as samples are less than the 8 default clusters
             x.n_clusters = 2
