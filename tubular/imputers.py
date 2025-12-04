@@ -626,11 +626,12 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -648,8 +649,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         """
         super().__init__(columns=columns, **kwargs)
-
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
     @block_from_json
     @beartype
@@ -809,11 +809,12 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -831,8 +832,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         """
         super().__init__(columns=columns, **kwargs)
-
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
     @block_from_json
     @beartype
@@ -967,11 +967,12 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -990,8 +991,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         """
         super().__init__(columns=columns, **kwargs)
-
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
     @block_from_json
     @beartype

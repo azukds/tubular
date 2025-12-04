@@ -152,16 +152,16 @@ class DropOriginalInitMixinTests:
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    @pytest.mark.parametrize("drop_orginal_column", (0, "a", ["a"], {"a": 10}, None))
+    @pytest.mark.parametrize("drop_original_column", (0, "a", ["a"], {"a": 10}, None))
     def test_drop_column_arg_errors(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,
-        drop_orginal_column,
+        drop_original_column,
     ):
         """Test that appropriate errors are throwm for non boolean arg."""
         args = minimal_attribute_dict[self.transformer_name].copy()
-        args["drop_original"] = drop_orginal_column
+        args["drop_original"] = drop_original_column
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -243,10 +243,7 @@ class WeightColumnInitMixinTests:
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["weights_column"] = weights_column
 
-        with pytest.raises(
-            TypeError,
-            match="weights_column should be str or None",
-        ):
+        with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
 
