@@ -35,8 +35,8 @@ Changed
 - feat: added `to_json` method to BaseCappingTransformer to enable dumping transformer state, including init attributes (`capping_values`, `quantiles`, `weights_column`) and fitted attributes (`quantile_capping_values`, `_replacement_values`) `#540 <https://github.com/azukds/tubular/pull/594>_`
 - feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>_`
 - chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>_`
-
 - switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
+- feat: optimisation changes to fit method of MeanResponseTransformer `#565 <https://github.com/azukds/tubular/issues/565>`_
 
 2.4.0 (01/12/2025)
 ------------------
@@ -59,7 +59,6 @@ Changed
 Changed
 ^^^^^^^
 
-- feat: optimisation changes to fit method of MeanResponseTransformer
 - feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
