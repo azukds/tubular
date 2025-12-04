@@ -372,10 +372,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return results
 
-    @staticmethod
     @block_from_json
     @beartype
-    def weighted_quantile(
+    def weighted_quantile(  # noqa: PLR6301, self is implicitly used by block_from_json
+        self,
         X: DataFrame,
         quantiles: list[Number],
         values_column: str,
