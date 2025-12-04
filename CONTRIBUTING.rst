@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Thanks for your interest in contributing to this package! No contibution is too small! We're hoping it can be made even better through community contributions.
+Thanks for your interest in contributing to this package! No contribution is too small! We're hoping it can be made even better through community contributions.
 
 Requests and feedback
 ---------------------
@@ -29,8 +29,11 @@ Then install tubular and dependencies for development;
    .. code::
 
      pip install . -r requirements-dev.txt
-
-We use `prek <https://github.com/j178/prek>`_ for this project which is configured to check that code passes `ruff <https://beta.ruff.rs/docs/>`_ checks.  For a list of ruff rules follwed by this project check pyproject.toml.
+We use `prek <https://github.com/j178/prek>`_ for this project which is configured to check that code passes several lints:
+- `ruff <https://beta.ruff.rs/docs/>`_ - For a list of ruff rules followed by this project check pyproject.toml.
+- `codespell <https://github.com/codespell-project/codespell>`_
+- `typos <https://github.com/crate-ci/typos>`_
+- `auto-walrus <https://github.com/MarcoGorelli/auto-walrus/>`_
 
 To configure ``prek`` for your local repository run the following;
 

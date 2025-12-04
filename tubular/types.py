@@ -62,6 +62,8 @@ ListOfThreeStrs = Annotated[
     Is[lambda list_arg: len(list_arg) == 3],
 ]
 
+Number = Union[int, float]
+
 PositiveNumber = Annotated[
     Union[int, float],
     Is[lambda v: v > 0],
