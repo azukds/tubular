@@ -16,7 +16,7 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
-from tubular.base import register
+from tubular.base import block_from_json, register
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
 from tubular.types import DataFrame, Number, Series
@@ -83,7 +83,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     FITS = True
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -214,6 +214,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 msg = f"{self.classname()}: both values are None for key {k}"
                 raise ValueError(msg)
 
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
         """Learn capping values from input data X.
@@ -285,6 +286,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return self
 
+    @block_from_json
     @beartype
     def prepare_quantiles(
         self,
@@ -370,6 +372,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         return results
 
+    @block_from_json
     @beartype
     def weighted_quantile(
         self,
@@ -592,6 +595,36 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X = X.with_columns(**exprs)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
+    def to_json(self) -> dict:
+        """Return a JSON-serializable representation of the transformer.
+
+        Returns
+        -------
+         dict
+        Dictionary containing all necessary attributes to recreate the transformer with
+        `from_json`. Keys include 'init' (initialization parameters) and 'fit' (fitted values).
+
+        """
+        data = super().to_json()
+
+        data["init"].pop("columns", None)
+        data["init"].update(
+            {
+                "capping_values": self.capping_values,
+                "quantiles": self.quantiles,
+                "weights_column": self.weights_column,
+            },
+        )
+
+        data["fit"].update(
+            {
+                "quantile_capping_values": self.quantile_capping_values,
+                "_replacement_values": self._replacement_values,
+            },
+        )
+
+        return data
 
 
 @register
