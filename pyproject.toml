@@ -61,7 +61,10 @@ Changelog = "https://github.com/azukds/tubular/CHANGELOG.md"
 
 [tool.codespell]
 skip = "_typos.toml"
-ignore-words-list = "ser" # codespell:ignore
+ignore-words-list = [
+    "ser", # codespell:ignore
+    "Ned", # codespell:ignore
+ ]
 
 [tool.ruff]
 # Same as Black.

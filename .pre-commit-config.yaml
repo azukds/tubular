@@ -16,6 +16,8 @@ repos:
     rev: 'v2.4.1'
     hooks:
       - id: codespell
+        additional_dependencies:
+          - tomli
 -   repo: https://github.com/crate-ci/typos
     rev: 'v1.39.0'
     hooks:
