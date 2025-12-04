@@ -324,7 +324,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.cut_off_percent = cut_off_percent
 
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         self.rare_level_name = rare_level_name
 
@@ -858,7 +858,7 @@ class MeanResponseTransformer(
         drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
@@ -2029,13 +2029,14 @@ class OrdinalEncoderTransformer(
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 
