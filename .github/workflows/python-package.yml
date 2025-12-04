@@ -70,18 +70,18 @@ jobs:
           
         - name: Lint with ruff
           run: |
-            source lints/bin/activate
+            source $HOME/lints/bin/activate
             ruff --version
             ruff check --output-format github .
 
         - name: Check for typos with codespell
           run: |
-            source lints/bin/activate
+            source $HOME/lints/bin/activate
             codespell --version
             codespell . --files \.(py|rst|md)$ --ignore-words-list=ser
 
         - name: Check for typos with typos
           run: |
-            source lints/bin/activate
+            source $HOME/lints/bin/activate
             typos --version
             typos .
