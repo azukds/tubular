@@ -60,7 +60,7 @@ Issues = "https://github.com/azukds/tubular/issues"
 Changelog = "https://github.com/azukds/tubular/CHANGELOG.md"
 
 [tool.codespell]
-skip = "_typos.toml"|
+skip = "_typos.toml"
 ignore-words-list = "ser" # codespell:ignore
 
 [tool.ruff]
