@@ -20,7 +20,7 @@ from tubular.types import GenericKwargs, ListOfOneStr
     """,
 )
 class SeriesStrMethodTransformer(BaseTransformer):
-    """Tranformer that applies a pandas.Series.str method.
+    """Transformer that applies a pandas.Series.str method.
 
     Transformer assigns the output of the method to a new column. It is possible to
     supply other key word arguments to the transform method, which will be passed to the

@@ -1,4 +1,4 @@
-"""Cntains transformers that apply capping to numeric columns."""
+"""Contains transformers that apply capping to numeric columns."""
 
 from __future__ import annotations
 

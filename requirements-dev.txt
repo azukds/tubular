@@ -4,6 +4,8 @@ auto-walrus==0.3.4
     # via tubular (pyproject.toml)
 beartype==0.21.0
     # via tubular (pyproject.toml)
+codespell==2.4.1
+    # via tubular (pyproject.toml)
 coverage==7.10.7
     # via pytest-cov
 exceptiongroup==1.3.0
@@ -69,5 +71,7 @@ typing-extensions==4.15.0
     # via
     #   tubular (pyproject.toml)
     #   exceptiongroup
+typos==1.40.0
+    # via tubular (pyproject.toml)
 tzdata==2025.2
     # via pandas

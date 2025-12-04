@@ -94,7 +94,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         minimal_attribute_dict,
         uninitialized_transformers,
     ):
-        """Test that an exception is raised if quanties contain values outisde [0, 1] range."""
+        """Test that an exception is raised if quantiles contain values outside [0, 1] range."""
 
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["quantiles"] = {"e": [0.1, 0.9], "f": [out_range_value, None]}
