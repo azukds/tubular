@@ -93,7 +93,7 @@ def get_all_classes(
 
 @pytest.fixture()
 def minimal_attribute_dict():
-    """defines minmal attributes (values) needed to initiate each transformer named (key).
+    """defines minimal attributes (values) needed to initiate each transformer named (key).
     New transformers need to be added here"""
     return {
         "ArbitraryImputer": {

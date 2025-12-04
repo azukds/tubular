@@ -949,11 +949,11 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         drop_original: bool
             indicates whether to drop original columns.
 
-        lower_inclusive : bool, defualt = True
+        lower_inclusive : bool, default = True
             If lower_inclusive is True the comparison to column_lower will be column_lower <=
             column_between, otherwise the comparison will be column_lower < column_between.
 
-        upper_inclusive : bool, defualt = True
+        upper_inclusive : bool, default = True
             If upper_inclusive is True the comparison to column_upper will be column_between <=
             column_upper, otherwise the comparison will be column_between < column_upper.
 
@@ -2170,7 +2170,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         )
 
         # Compute difference between integers and if the difference is negative then adjust.
-        # Finally devide by 10000 to get the years.
+        # Finally divide by 10000 to get the years.
         X = X.with_columns(
             nw.when(nw.col("col1") < nw.col("col0"))
             .then(((nw.col("col0") - nw.col("col1")) // 10000) * (-1))
@@ -2211,7 +2211,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
     """,
 )
 class SeriesDtMethodTransformer(BaseDatetimeTransformer):
-    """Tranformer that applies a pandas.Series.dt method.
+    """Transformer that applies a pandas.Series.dt method.
 
     Transformer assigns the output of the method to a new column. It is possible to
     supply other key word arguments to the transform method, which will be passed to the

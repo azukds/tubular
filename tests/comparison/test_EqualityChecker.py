@@ -46,7 +46,7 @@ class TestTransform(GenericTransformTests):
     )
     @staticmethod
     def test_expected_output(test_dataframe):
-        """Tests that the output given by EqualityChecker tranformer is as you would expect
+        """Tests that the output given by EqualityChecker transformer is as you would expect
         when all cases are neither all True nor False.
         """
         expected = test_dataframe
@@ -71,7 +71,7 @@ class TestTransform(GenericTransformTests):
     )
     @staticmethod
     def test_expected_output_dropped(test_dataframe):
-        """Tests that the output given by EqualityChecker tranformer is as you would expect
+        """Tests that the output given by EqualityChecker transformer is as you would expect
         when all cases are neither all True nor False.
         """
         expected = test_dataframe.copy()
@@ -97,7 +97,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

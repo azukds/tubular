@@ -127,9 +127,9 @@ class TestTransform(GenericTransformTests):
         cls.transformer_name = "PCATransformer"
 
     @staticmethod
-    def create_svd_sovler_output():
-        svd_sovler_output = {}
-        svd_sovler_output["full"] = pd.DataFrame(
+    def create_svd_solver_output():
+        svd_solver_output = {}
+        svd_solver_output["full"] = pd.DataFrame(
             {
                 "a": [34.48, 21.71, 32.83, 1.08, 32.93, 4.74, 2.76, 75.7, 14.08, 61.31],
                 "b": [12.03, 20.32, 24.12, 24.18, 68.99, 0.0, 0.0, 59.46, 11.02, 60.68],
@@ -185,7 +185,7 @@ class TestTransform(GenericTransformTests):
             },
         )
 
-        svd_sovler_output["randomized"] = pd.DataFrame(
+        svd_solver_output["randomized"] = pd.DataFrame(
             {
                 "a": [34.48, 21.71, 32.83, 1.08, 32.93, 4.74, 2.76, 75.7, 14.08, 61.31],
                 "b": [12.03, 20.32, 24.12, 24.18, 68.99, 0.0, 0.0, 59.46, 11.02, 60.68],
@@ -241,7 +241,7 @@ class TestTransform(GenericTransformTests):
             },
         )
 
-        svd_sovler_output["arpack"] = pd.DataFrame(
+        svd_solver_output["arpack"] = pd.DataFrame(
             {
                 "a": [34.48, 21.71, 32.83, 1.08, 32.93, 4.74, 2.76, 75.7, 14.08, 61.31],
                 "b": [12.03, 20.32, 24.12, 24.18, 68.99, 0.0, 0.0, 59.46, 11.02, 60.68],
@@ -296,7 +296,7 @@ class TestTransform(GenericTransformTests):
                 ],
             },
         )
-        return svd_sovler_output
+        return svd_solver_output
 
     @pytest.mark.parametrize(
         ("svd_solver", "svd_solver_output_str"),
@@ -320,7 +320,7 @@ class TestTransform(GenericTransformTests):
         x.fit(df)
         df_transformed = x.transform(df)
 
-        pca_transform_output = self.create_svd_sovler_output()
+        pca_transform_output = self.create_svd_solver_output()
 
         mocker.patch(
             "sklearn.decomposition.PCA.transform",

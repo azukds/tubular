@@ -315,7 +315,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         Returns
         -------
         X : pd/pl.DataFrame
-            Transformed input X with levels mapped accoriding to mappings dict.
+            Transformed input X with levels mapped according to mappings dict.
 
         #  not currently including doctest for this, as is not intended to be used
         #  independently (should be inherited as a mixin)
@@ -498,7 +498,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         Returns
         -------
         X : pd/pl.DataFrame
-            Transformed input X with levels mapped accoriding to mappings dict.
+            Transformed input X with levels mapped according to mappings dict.
 
         Example:
         --------

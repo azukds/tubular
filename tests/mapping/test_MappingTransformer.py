@@ -411,7 +411,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_warnings_silenced_with_verbose_false(library, from_json):
-        """Test that warnings are silenced when verbose is set to defualt value False."""
+        """Test that warnings are silenced when verbose is set to default value False."""
         df = d.create_df_1(library=library)
 
         mapping = {"a": {99: 99, 98: 98}, "b": {"z": "99", "y": "98"}}
@@ -434,7 +434,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

@@ -281,7 +281,7 @@ class TestTransform(
 
     def test_non_mappable_rows_exception_raised(self):
         """Test inherited from GenericBaseNominalTransformerTests needs to be overwritten,
-        inherited test tests the mapping attribute, which OHE transfomer doesn't have.
+        inherited test tests the mapping attribute, which OHE transformer doesn't have.
         """
 
     @pytest.mark.parametrize(
