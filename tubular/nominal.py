@@ -323,7 +323,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.cut_off_percent = cut_off_percent
 
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         self.rare_level_name = rare_level_name
 
@@ -771,11 +771,11 @@ class MeanResponseTransformer(
 
     level : str, int, float, list or None, default = None
         Parameter to control encoding against a multi-level categorical response. If None the response will be
-        treated as binary or continous, if 'all' all response levels will be encoded against and if it is a list of
+        treated as binary or continuous, if 'all' all response levels will be encoded against and if it is a list of
         levels then only the levels specified will be encoded against.
 
     response_levels : list
-        Only created in the mutli-level case. Generated from level, list of all the response levels to encode against.
+        Only created in the multi-level case. Generated from level, list of all the response levels to encode against.
 
     mappings : dict
         Created in fit. A nested Dict of {column names : column specific mapping dictionary} pairs.  Column
@@ -786,7 +786,7 @@ class MeanResponseTransformer(
         against multiple response levels, of the form {column}_{level}.
 
     transformer_dict : dict
-        Only created in the mutli-level case. A dictionary of the form level : transformer containing the mean response
+        Only created in the multi-level case. A dictionary of the form level : transformer containing the mean response
         transformers for each level to be encoded against.
 
     unseen_levels_encoding_dict: dict
@@ -858,7 +858,7 @@ class MeanResponseTransformer(
         drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
@@ -1092,7 +1092,7 @@ class MeanResponseTransformer(
             Data with catgeorical variable columns to transform, and target to encode against.
 
         columns : list(str)
-            Post transform names of columns to be encoded. In the binary or continous case
+            Post transform names of columns to be encoded. In the binary or continuous case
             this is just self.columns. In the multi-level case this should be of the form
             {column_in_original_data}_{response_level}, where response_level is the level
             being encoded against in this call of _fit_binary_response.
@@ -1365,7 +1365,7 @@ class MeanResponseTransformer(
         all rows can be mapped then transform from BaseMappingTransformMixin to apply the
         standard pd.Series.map method.
 
-        N.B. In the mutli-level case, this method briefly overwrites the self.columns attribute, but sets
+        N.B. In the multi-level case, this method briefly overwrites the self.columns attribute, but sets
         it back to the original value at the end.
 
         Parameters
@@ -1376,7 +1376,7 @@ class MeanResponseTransformer(
         Returns
         -------
         X : pd/pl.DataFrame
-            Transformed input X with levels mapped accoriding to mappings dict.
+            Transformed input X with levels mapped according to mappings dict.
 
         Example:
         --------
@@ -1776,7 +1776,7 @@ class OneHotEncodingTransformer(
         c: str,
         missing_levels: dict[str, list[Any]],
     ) -> dict[str, list[Any]]:
-        """Logs a warning for user-specifed levels that are not found in the dataset and updates "missing_levels[c]" with those missing levels.
+        """Logs a warning for user-specified levels that are not found in the dataset and updates "missing_levels[c]" with those missing levels.
 
         Parameters
         ----------
@@ -2031,13 +2031,14 @@ class OrdinalEncoderTransformer(
 
     FITS = True
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 

@@ -1,0 +1,3 @@
+[default.extend-words]
+ser = "ser"  # common abbreviation for Series
+Ned = "Ned"
