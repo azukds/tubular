@@ -436,7 +436,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 
@@ -489,7 +489,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         learnt_values = getattr(transformer, fit_value)
 
@@ -535,7 +535,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # convert column to non-numeric
         df = nw.from_native(df)
@@ -606,7 +606,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
         transformer.quantile_capping_values = {}
 
         with pytest.raises(
@@ -640,7 +640,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
         transformer.capping_values = {}
 
         with pytest.raises(
@@ -704,7 +704,7 @@ class GenericCappingTransformTests(GenericTransformTests):
         transformer.quantile_capping_values = {"a": [1, 4]}
         transformer._replacement_values = {}
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         with pytest.raises(
             ValueError,
@@ -738,7 +738,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         transformer2 = uninitialized_transformers[self.transformer_name](**args)
 
@@ -746,7 +746,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer2.fit(df)
-        transformer2 = _handle_from_json(transformer2, from_json)
+        transformer2 = _handle_from_json(transformer2, from_json=from_json)
 
         transformer2.transform(df)
 
@@ -790,7 +790,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             return
 
         transformer.fit(df)
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 
