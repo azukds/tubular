@@ -78,7 +78,7 @@ jobs:
           run: |
             source $HOME/lints/bin/activate
             codespell --version
-            codespell . --ignore-words-list=ser
+            codespell .
 
         - name: Check for typos with typos
           run: |

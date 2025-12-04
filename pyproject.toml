@@ -59,13 +59,16 @@ Repository = "https://github.com/azukds/tubular"
 Issues = "https://github.com/azukds/tubular/issues"
 Changelog = "https://github.com/azukds/tubular/CHANGELOG.md"
 
+[tool.codespell]
+skip = "_typos.toml"|
+ignore-words-list = "ser" # codespell:ignore
+
 [tool.ruff]
 # Same as Black.
 line-length = 88
 
 # Assume Python 3.9.
 target-version = "py39"
-
 
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
