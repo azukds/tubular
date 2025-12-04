@@ -573,13 +573,11 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("from_json", [True, False])
     def test_quantile_capping_values_not_fit_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
-        from_json,
     ):
         """Test that transform will raise an error if capping_values attr has not fit"""
         df = d.create_df_9(library=library)
@@ -590,14 +588,9 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
-            return
-
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
-
-        transformer = _handle_from_json(transformer, from_json)
 
         with pytest.raises(
             ValueError,
@@ -675,13 +668,11 @@ class GenericCappingTransformTests(GenericTransformTests):
             transformer.transform(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("from_json", [True, False])
     def test_replacement_values_not_fit_error(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
-        from_json,
     ):
         """Test that transform will raise an error if replacement values attr has not fit"""
         df = d.create_df_9(library=library)
@@ -692,14 +683,9 @@ class GenericCappingTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
-            return
-
         # if transformer is not polars compatible, skip polars test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
             return
-
-        transformer = _handle_from_json(transformer, from_json)
 
         with pytest.raises(
             ValueError,
