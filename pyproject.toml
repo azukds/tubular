@@ -46,9 +46,11 @@ dev = [
     "pytest-mock>=3.5.1",
     "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
-    "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
+    "prek",
     "ruff>=0.2.2",
     "auto-walrus==0.3.4",
+    "codespell",
+    "typos"
     ]
 
 [project.urls]
@@ -57,13 +59,19 @@ Repository = "https://github.com/azukds/tubular"
 Issues = "https://github.com/azukds/tubular/issues"
 Changelog = "https://github.com/azukds/tubular/CHANGELOG.md"
 
+[tool.codespell]
+skip = "_typos.toml"
+ignore-words-list = [
+    "ser", # codespell:ignore
+    "Ned", # codespell:ignore
+ ]
+
 [tool.ruff]
 # Same as Black.
 line-length = 88
 
 # Assume Python 3.9.
 target-version = "py39"
-
 
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
@@ -176,7 +184,7 @@ show_missing = true
 fail_under = 80
 
 # Pytest Configs
-# Allows users to pass arguments in to pytest without needing to provide them as cmd options everytime
+# Allows users to pass arguments in to pytest without needing to provide them as cmd options every time
 # https://docs.pytest.org/en/7.1.x/reference/customize.html
 [tool.pytest.ini_options]
 
