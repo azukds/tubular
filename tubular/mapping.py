@@ -340,7 +340,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         schema = X.schema
         mapping_exprs = {
             col: nw.col(col).cast(nw.String)
-            if schema[col] in [nw.Categorical, nw.Enum]
+            if schema[col] in {nw.Categorical, nw.Enum}
             else nw.col(col)
             for col in self.mappings
         }
@@ -858,7 +858,7 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
 
         for j in mappings.values():
             for k in j.values():
-                if type(k) not in [int, float]:
+                if type(k) not in {int, float}:
                     msg = f"{self.classname()}: mapping values must be numeric"
                     raise TypeError(msg)
 

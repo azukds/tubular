@@ -54,12 +54,22 @@ ListOfOneStr = Annotated[
 
 ListOfTwoStrs = Annotated[
     list[str],
-    Is[lambda list_arg: len(list_arg) == 2],
+    Is[lambda list_arg: len(list_arg) == 2],  # noqa: PLR2004
 ]
 
 ListOfThreeStrs = Annotated[
     list[str],
-    Is[lambda list_arg: len(list_arg) == 3],
+    Is[lambda list_arg: len(list_arg) == 3],  # noqa: PLR2004
+]
+
+ListOfMoreThanOneStrings = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) > 1],
+]
+
+ListOfThreeStrs = Annotated[
+    list[str],
+    Is[lambda list_arg: len(list_arg) == 3],  # noqa: PLR2004
 ]
 
 Number = Union[int, float]
@@ -72,6 +82,8 @@ PositiveNumber = Annotated[
 PositiveInt = Annotated[int, Is[lambda i: i >= 0]]
 
 FloatBetweenZeroOne = Annotated[float, Is[lambda i: (i > 0) & (i < 1)]]
+
+StrictlyPositiveInt = Annotated[int, Is[lambda i: (i >= 1)]]
 
 GenericKwargs = Annotated[
     dict[str, Union[int, float, str, list[int], list[str], list[float]]],
@@ -91,11 +103,6 @@ class TimeUnitsOptions(str, Enum):
 TimeUnitsOptionsStr = Annotated[
     str,
     Is[lambda s: s in TimeUnitsOptions._value2member_map_],
-]
-
-ListOfTwoStrs = Annotated[
-    list[str],
-    Is[lambda list_arg: len(list_arg) == 2],
 ]
 
 

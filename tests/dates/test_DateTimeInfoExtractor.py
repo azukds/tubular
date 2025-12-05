@@ -52,7 +52,8 @@ class TestInit(
         "incorrect_type_include",
         [2, 3.0, "invalid", ["invalid", "timeofday"]],
     )
-    def test_error_for_bad_include_type(self, incorrect_type_include):
+    @staticmethod
+    def test_error_for_bad_include_type(incorrect_type_include):
         """Test that an exception is raised when value include variable
         is incorrect type."""
         with pytest.raises(
@@ -60,7 +61,8 @@ class TestInit(
         ):
             DatetimeInfoExtractor(columns=["a"], include=incorrect_type_include)
 
-    def test_error_when_invalid_include_option(self):
+    @staticmethod
+    def test_error_when_invalid_include_option():
         """Test that an exception is raised when include contains incorrect values."""
         print("invalid_option" in DatetimeInfoOptions._value2member_map_)
         with pytest.raises(
@@ -75,8 +77,8 @@ class TestInit(
         "incorrect_type_datetime_mappings",
         [2, 3.0, ["a", "b"], "dayofweek"],
     )
+    @staticmethod
     def test_error_when_datetime_mappings_not_dict(
-        self,
         incorrect_type_datetime_mappings,
     ):
         """Test that an exception is raised when datetime_mappings is not a dict."""
@@ -92,8 +94,8 @@ class TestInit(
         "incorrect_type_datetime_mappings_values",
         [{"timeofday": 2}],
     )
+    @staticmethod
     def test_error_when_datetime_mapping_value_not_dict(
-        self,
         incorrect_type_datetime_mappings_values,
     ):
         """Test that an exception is raised when values in datetime_mappings are not dict."""
@@ -112,8 +114,8 @@ class TestInit(
             (["timeofmonth"], {"bla": {"day": range(7)}}),
         ],
     )
+    @staticmethod
     def test_error_when_datetime_mapping_key_not_allowed(
-        self,
         include,
         incorrect_datetime_mappings_keys,
     ):
@@ -140,8 +142,8 @@ class TestInit(
             ),
         ],
     )
+    @staticmethod
     def test_error_when_datetime_mapping_key_not_in_include(
-        self,
         include,
         incorrect_datetime_mappings_keys,
     ):
@@ -177,8 +179,8 @@ class TestInit(
             ),
         ],
     )
+    @staticmethod
     def test_error_when_incomplete_mappings_passed(
-        self,
         incomplete_mappings,
         expected_exception,
     ):
@@ -202,7 +204,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_single_column_output_for_all_options(self, library):
+    @staticmethod
+    def test_single_column_output_for_all_options(library):
         """Test that correct df is returned after transformation."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -378,7 +381,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_multi_column_output(self, library):
+    @staticmethod
+    def test_multi_column_output(library):
         "test output for multiple columns"
 
         df = d.create_date_test_df(library=library)
@@ -586,7 +590,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_custom_mappings_can_be_used(self, library):
+    @staticmethod
+    def test_custom_mappings_can_be_used(library):
         "test output when custom mappings provided"
 
         df_dict = {
@@ -764,7 +769,8 @@ class TestTransform(
                 df_expected_row,
             )
 
-    def test_is_serialisable(self, tmp_path):
+    @staticmethod
+    def test_is_serialisable(tmp_path):
         transformer = DatetimeInfoExtractor(columns=["b"], include=["timeofyear"])
 
         # pickle transformer

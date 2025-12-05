@@ -125,7 +125,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             ListOfRowsOverColumnsAggregations,
         ],
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -138,11 +138,11 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             'mean', 'median', and 'count'.
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
-        verbose : bool, optional
-            If True, enables verbose output for debugging purposes. Default is False.
+        kwargs: bool
+            parameters for base class, e.g. verbose
 
         """
-        super().__init__(columns=columns, verbose=verbose)
+        super().__init__(columns=columns, **kwargs)
 
         self.aggregations = aggregations
 
@@ -284,7 +284,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -302,15 +302,15 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
 
-        verbose: bool
-            Controls verbosity of transformer
+        kwargs: bool
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(
             columns=columns,
             aggregations=aggregations,
             drop_original=drop_original,
-            verbose=verbose,
+            **kwargs,
         )
         self.key = key
 
@@ -399,7 +399,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**expr_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.drop_original,
             self.columns,
@@ -427,9 +427,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
-
-    verbose : bool, optional
-        Indicator for verbose output.
 
     built_from_json: bool
         indicates if transformer was reconstructed from json,
@@ -472,7 +469,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         columns: Union[str, list[str]],
         aggregations: ListOfColumnsOverRowAggregations,
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -487,15 +484,15 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
 
-        verbose: bool
-            Controls  verbosity  of transformer
+        kwargs: bool
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(
             columns=columns,
             aggregations=aggregations,
             drop_original=drop_original,
-            verbose=verbose,
+            **kwargs,
         )
 
     def get_feature_names_out(self) -> list[str]:
@@ -579,7 +576,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**transform_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.drop_original,
             self.columns,

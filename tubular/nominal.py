@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
+import numpy as np
 import pandas as pd
 from beartype import beartype
 from narwhals._utils import no_default  # noqa: PLC2701, need private import
@@ -309,7 +310,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     FITS = True
 
     @beartype
-    def __init__(
+    def __init__(  # noqa: PLR0917, PLR0913
         self,
         columns: Optional[Union[str, ListOfStrs]] = None,
         cut_off_percent: FloatBetweenZeroOne = 0.01,
@@ -673,7 +674,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             c: nw.col(c).cast(
                 nw.String,
             )
-            if schema[c] in [nw.Categorical, nw.Enum]
+            if schema[c] in {nw.Categorical, nw.Enum}
             else nw.col(c)
             for c in self.columns
         }
@@ -691,7 +692,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             c: transform_expressions[c].cast(
                 nw.Enum(self.non_rare_levels[c] + [self.rare_level_name]),
             )
-            if (schema[c] in [nw.Categorical, nw.Enum])
+            if (schema[c] in {nw.Categorical, nw.Enum})
             else transform_expressions[c]
             for c in self.columns
         }
@@ -844,7 +845,7 @@ class MeanResponseTransformer(
     FITS = True
 
     @beartype
-    def __init__(
+    def __init__(  # noqa: PLR0917, PLR0913
         self,
         columns: Optional[Union[str, list[str]]] = None,
         weights_column: Optional[str] = None,
@@ -1316,7 +1317,7 @@ class MeanResponseTransformer(
             )
 
             for c in self.encoded_columns:
-                if self.unseen_level_handling in ["mean", "median"]:
+                if self.unseen_level_handling in {"mean", "median"}:
                     group_weights = X_temp.group_by(c).agg(
                         nw.col(weights_column).sum(),
                     )
@@ -1487,7 +1488,6 @@ class MeanResponseTransformer(
         ]
 
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             columns_to_drop,
@@ -1569,6 +1569,8 @@ class OneHotEncodingTransformer(
 
     FITS = True
 
+    MAX_LEVELS = 100
+
     @beartype
     def __init__(
         self,
@@ -1576,14 +1578,12 @@ class OneHotEncodingTransformer(
         wanted_values: Optional[dict[str, ListOfStrs]] = None,
         separator: str = "_",
         drop_original: bool = False,
-        copy: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         BaseTransformer.__init__(
             self,
             columns=columns,
-            verbose=verbose,
-            copy=copy,
+            **kwargs,
         )
 
         self.wanted_values = wanted_values
@@ -1745,9 +1745,9 @@ class OneHotEncodingTransformer(
         for c in self.columns:
             level_count = len(present_levels[c])
 
-            if level_count > 100:
+            if level_count > self.MAX_LEVELS:
                 raise ValueError(
-                    f"{self.classname()}: column %s has over 100 unique values - consider another type of encoding"
+                    f"{self.classname()}: column %s has over {self.MAX_LEVELS} unique values - consider another type of encoding"
                     % c,
                 )
             # categories if 'values' is provided
@@ -1952,7 +1952,6 @@ class OneHotEncodingTransformer(
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -2123,7 +2122,7 @@ class OrdinalEncoderTransformer(
 
         for col in self.columns:
             # if more levels than int8 type can handle, then error
-            if len(self.mappings[col]) > 127:
+            if len(self.mappings[col]) > np.iinfo(np.int8).max:
                 msg = f"{self.classname()}: column {c} has too many levels to encode"
                 raise ValueError(
                     msg,
@@ -2274,7 +2273,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
             }
 
             # if more levels than int8 type can handle, then error
-            if len(self.mappings[c]) > 127:
+            if len(self.mappings[c]) > np.iinfo(np.int8).max:
                 msg = f"{self.classname()}: column {c} has too many levels to encode"
                 raise ValueError(
                     msg,
