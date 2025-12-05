@@ -200,6 +200,7 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "OneDKmeansTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -213,7 +214,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_without_drop(self, df, expected):
+    def test_expected_output_without_drop(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are no negative numbers and dont drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -223,10 +224,13 @@ class TestTransform(
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
+        x = u._handle_from_json(x, from_json)
+
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -240,7 +244,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_with_drop(self, df, expected):
+    def test_expected_output_with_drop(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are no negative numbers and drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -250,10 +254,12 @@ class TestTransform(
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
+        x = u._handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -267,7 +273,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_without_drop_negatives(self, df, expected):
+    def test_expected_output_without_drop_negatives(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are negative numbers and dont drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -276,11 +282,12 @@ class TestTransform(
             drop_original=False,
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
-
+        x = u._handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
         [
@@ -294,7 +301,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_with_drop_negatives(self, df, expected):
+    def test_expected_output_with_drop_negatives(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are negative numbers and drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -304,6 +311,7 @@ class TestTransform(
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
+        x = u._handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
