@@ -33,7 +33,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         cls.transformer_name = "MeanImputer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values(self, library):
+    @staticmethod
+    def test_learnt_values(library):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
@@ -52,7 +53,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weighted(self, library):
+    @staticmethod
+    def test_learnt_values_weighted(library):
         """Test that the impute values learnt during fit are expected - when weights are used."""
         df = d.create_df_9(library=library)
 

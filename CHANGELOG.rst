@@ -38,6 +38,7 @@ Changed
 - chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>_`
 - feat: switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
 - bugfix: fixed unhandled error for nulls on GroupRareLevelsTransformer.fit
+- turned on ruff PLR rule `#509 <https://github.com/azukds/tubular/issues/509>`_
 
 2.4.0 (01/12/2025)
 ------------------

@@ -20,7 +20,8 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
     """Inheritable tests for DataFrameMethodTransformer.init()."""
 
     @pytest.mark.parametrize("not_dictionary", ["a", [1, 2], True, 1.5])
-    def test_exception_raised_pd_method_kwargs_not_dict(self, not_dictionary):
+    @staticmethod
+    def test_exception_raised_pd_method_kwargs_not_dict(not_dictionary):
         """Test an exception is raised if pd_method_kwargs not a dict"""
 
         with pytest.raises(
@@ -34,7 +35,8 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
             )
 
     @pytest.mark.parametrize("not_string", [1, True, 1.5])
-    def test_exception_raised_pd_method_kwargs_key_not_string(self, not_string):
+    @staticmethod
+    def test_exception_raised_pd_method_kwargs_key_not_string(not_string):
         """Test an exception is raised if a pd_method_kwarg key is not a string"""
 
         pd_method_kwargs = {
@@ -53,7 +55,8 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
             )
 
     @pytest.mark.parametrize("not_string", [{"a": 1}, [1, 2], 1, True, 1.5])
-    def test_exception_raised_pd_method_name_not_string(self, not_string):
+    @staticmethod
+    def test_exception_raised_pd_method_name_not_string(not_string):
         """Test an exception is raised if pd_method_name is not a string"""
 
         with pytest.raises(
@@ -65,7 +68,8 @@ class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
                 columns=["b", "c"],
             )
 
-    def test_exception_raised_non_pandas_method_passed(self):
+    @staticmethod
+    def test_exception_raised_non_pandas_method_passed():
         """Test an exception is raised if a non pd.DataFrame method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
@@ -126,7 +130,8 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_1()),
     )
-    def test_expected_output_single_columns_assignment(self, df, expected):
+    @staticmethod
+    def test_expected_output_single_columns_assignment(df, expected):
         """Test a single column output from transform gives expected results."""
         x = DataFrameMethodTransformer(
             new_column_names="d",
@@ -147,7 +152,8 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_2()),
     )
-    def test_expected_output_multi_columns_assignment(self, df, expected):
+    @staticmethod
+    def test_expected_output_multi_columns_assignment(df, expected):
         """Test a multiple column output from transform gives expected results."""
         x = DataFrameMethodTransformer(
             new_column_names=["d", "e"],
