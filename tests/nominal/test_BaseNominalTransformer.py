@@ -1,7 +1,6 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
 from sklearn.exceptions import NotFittedError
 
@@ -12,7 +11,11 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+)
 
 
 # The first part of this file builds out the tests for BaseNominalTransformer so that they can be
@@ -31,26 +34,26 @@ class GenericNominalTransformTests(GenericTransformTests):
 
             transformer = initialized_transformers[self.transformer_name]
 
-            # skip polars test if transformer not yet converted for polars
-            if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+            if _check_if_skip_test(transformer, df, lazy=False, from_json=False):
                 return
 
             with pytest.raises(NotFittedError):
                 initialized_transformers[self.transformer_name].transform(df)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_non_mappable_rows_exception_raised(
         self,
         initialized_transformers,
         library,
+        from_json,
     ):
         """Test an exception is raised if non-mappable rows are present in X."""
         df = d.create_df_1(library=library)
 
         transformer = initialized_transformers[self.transformer_name]
 
-        # skip polars test if transformer not yet converted for polars
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
         transformer.fit(df)
@@ -60,32 +63,42 @@ class GenericNominalTransformTests(GenericTransformTests):
             "b": {"a": 1, "c": 2, "d": 3, "e": 4, "f": 5},
         }
 
+        transformer = _handle_from_json(transformer, from_json)
+
         with pytest.raises(
             ValueError,
             match=f"{self.transformer_name}: nulls would be introduced into columns b from levels not present in mapping",
         ):
             transformer.transform(df)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_original_df_not_updated(self, initialized_transformers, library):
+    def test_original_df_not_updated(
+        self,
+        initialized_transformers,
+        library,
+        from_json,
+    ):
         """Test that the original dataframe is not transformed when transform method used."""
 
         df = d.create_df_1(library=library)
 
         transformer = initialized_transformers[self.transformer_name]
 
-        # skip polars test if transformer not yet converted for polars
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
         transformer = transformer.fit(df)
 
         transformer.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
 
+        transformer = _handle_from_json(transformer, from_json)
+
         _ = transformer.transform(df)
 
         assert_frame_equal_dispatch(df, d.create_df_1(library=library))
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -95,19 +108,21 @@ class GenericNominalTransformTests(GenericTransformTests):
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
+        from_json,
     ):
         """Test transforming empty frame returns empty frame"""
 
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        # skip polars test if transformer not yet converted for polars
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
             return
 
         x.fit(df)
 
         x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
+
+        x = _handle_from_json(x, from_json)
 
         df = nw.from_native(df)
         # take 0 rows from df
@@ -123,6 +138,7 @@ class GenericNominalTransformTests(GenericTransformTests):
             "expected empty frame transform to return empty frame"
         )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas"],
@@ -131,6 +147,7 @@ class GenericNominalTransformTests(GenericTransformTests):
         self,
         initialized_transformers,
         library,
+        from_json,
     ):
         """Test that the original (pandas) dataframe index is not transformed when transform method used."""
 
@@ -138,9 +155,14 @@ class GenericNominalTransformTests(GenericTransformTests):
 
         x = initialized_transformers[self.transformer_name]
 
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
+            return
+
         x = x.fit(df)
 
         x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
+
+        x = _handle_from_json(x, from_json)
 
         # update to abnormal index
         df.index = [2 * i for i in df.index]
