@@ -278,7 +278,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
         >>> x.fit(test_df)
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
-                          n_clusters=2, new_column_name='new')
+                              n_clusters=2, new_column_name='new')
         >>> x.to_json()
         {'tubular_version': '2.2.1.dev39+gd54fa526f.d20251114', 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': array([3, 4])}}
         """
