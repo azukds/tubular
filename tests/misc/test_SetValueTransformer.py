@@ -48,8 +48,9 @@ class TestInit(ColumnStrListInitTests):
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
 
+    @staticmethod
     @pytest.mark.parametrize("value", [{"a": 1}, [1, 2]])
-    def test_value_arg_type(self, value):
+    def test_value_arg_type(value):
         """Tests that check arg value type."""
 
         with pytest.raises(BeartypeCallHintParamViolation):
@@ -77,8 +78,9 @@ class TestTransform(GenericTransformTests):
     )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_value_set_in_transform(self, library, value, from_json, lazy):
+    def test_value_set_in_transform(library, value, from_json, lazy):
         """Test that transform sets the value as expected."""
 
         df = d.create_df_2(library)
@@ -111,8 +113,9 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
 
+    @staticmethod
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
-    def test_to_json_returns_correct_dict(self, value):
+    def test_to_json_returns_correct_dict(value):
         """Test that to_json is working as expected."""
         transformer = SetValueTransformer(columns="a", value=value)
 
