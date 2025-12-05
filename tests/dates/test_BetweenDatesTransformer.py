@@ -46,7 +46,8 @@ class TestInit(
             ("lower_inclusive", "hi"),
         ],
     )
-    def test_inclusive_args_non_bool_error(self, param, value):
+    @staticmethod
+    def test_inclusive_args_non_bool_error(param, value):
         """Test that an exception is raised if upper_inclusive not a bool."""
 
         param_dict = {param: value}
@@ -66,7 +67,8 @@ class TestInit(
             ["a", "b", "c", "d"],
         ],
     )
-    def test_wrong_col_count_error(self, columns):
+    @staticmethod
+    def test_wrong_col_count_error(columns):
         """Test that an exception is raised if too many/too few columns."""
 
         with pytest.raises(
@@ -187,8 +189,9 @@ class TestTransform(
             ),
         ],
     )
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output(self, df, expected, from_json):
+    def test_output(df, expected, from_json):
         """Test the output of transform is as expected."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -216,8 +219,9 @@ class TestTransform(
             ),
         ],
     )
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_both_exclusive(self, df, expected, from_json):
+    def test_output_both_exclusive(df, expected, from_json):
         """Test the output of transform is as expected if both limits are exclusive."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -245,8 +249,9 @@ class TestTransform(
             ),
         ],
     )
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_lower_exclusive(self, df, expected, from_json):
+    def test_output_lower_exclusive(df, expected, from_json):
         """Test the output of transform is as expected if the lower limits are exclusive only."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -274,8 +279,9 @@ class TestTransform(
             ),
         ],
     )
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_upper_exclusive(self, df, expected, from_json):
+    def test_output_upper_exclusive(df, expected, from_json):
         """Test the output of transform is as expected if the upper limits are exclusive only."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -303,8 +309,9 @@ class TestTransform(
             ),
         ],
     )
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_both_inclusive(self, df, expected, from_json):
+    def test_output_both_inclusive(df, expected, from_json):
         """Test the output of transform is as expected if the both limits are inclusive."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -319,8 +326,9 @@ class TestTransform(
 
         assert_frame_equal_dispatch(expected, df_transformed)
 
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_warning_message(self, from_json):
+    def test_warning_message(from_json):
         """Test a warning is generated if not all the values in column_upper are greater than or equal to column_lower."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -362,8 +370,9 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_different_date_dtypes(self, columns, library, from_json):
+    def test_output_different_date_dtypes(columns, library, from_json):
         """Test the output of transform is as expected if both limits are exclusive."""
         x = BetweenDatesTransformer(
             columns=columns,
@@ -397,10 +406,10 @@ class TestTransform(
 
     # overloading below test as column count is different for this one
     @pytest.mark.parametrize(
-        ("columns, datetime_col, date_col"),
+        ("columns, datetime_col"),
         [
-            (["date_col_1", "datetime_col_2", "date_col_2"], 1, 0),
-            (["datetime_col_1", "date_col_2", "datetime_col_2"], 0, 1),
+            (["date_col_1", "datetime_col_2", "date_col_2"], 1),
+            (["datetime_col_1", "date_col_2", "datetime_col_2"], 0),
         ],
     )
     @pytest.mark.parametrize(
@@ -412,7 +421,6 @@ class TestTransform(
         self,
         columns,
         datetime_col,
-        date_col,
         uninitialized_transformers,
         library,
         from_json,

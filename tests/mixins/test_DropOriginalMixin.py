@@ -10,8 +10,8 @@ class TestDropOriginalColumn:
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("drop_original", [True, False])
+    @staticmethod
     def test_drop_original_arg_handling(
-        self,
         library,
         drop_original,
     ):
@@ -40,8 +40,8 @@ class TestDropOriginalColumn:
                 assert col in remaining_cols, "original columns not kept"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @staticmethod
     def test_other_columns_not_modified(
-        self,
         library,
     ):
         """Test transformer does not modify unspecified columns."""
