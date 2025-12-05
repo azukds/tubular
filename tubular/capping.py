@@ -476,6 +476,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Apply capping to columns in X.
@@ -529,7 +530,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = super().transform(X, return_native_override=False)
 
@@ -594,7 +597,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = X.with_columns(**exprs)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
     def to_json(self) -> dict:
         """Return a JSON-serializable representation of the transformer.

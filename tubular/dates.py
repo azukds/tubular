@@ -88,6 +88,7 @@ class BaseGenericDateTransformer(
         self,
         columns: Union[list[str], str],
         new_column_name: str,
+        *,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
@@ -185,6 +186,7 @@ class BaseGenericDateTransformer(
     def check_columns_are_date_or_datetime(
         self,
         X: DataFrame,
+        *,
         datetime_only: bool,
     ) -> None:
         """Check types of provided columns.
@@ -278,6 +280,7 @@ class BaseGenericDateTransformer(
     def transform(
         self,
         X: DataFrame,
+        *,
         datetime_only: bool = False,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
@@ -330,7 +333,9 @@ class BaseGenericDateTransformer(
         └────────────┴────────────┘
 
         """
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = super().transform(X, return_native_override=False)
 
@@ -338,7 +343,7 @@ class BaseGenericDateTransformer(
 
         self.check_columns_are_date_or_datetime(X, datetime_only=datetime_only)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 @register
@@ -386,6 +391,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         self,
         columns: Union[list[str], str],
         new_column_name: str,
+        *,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
@@ -417,6 +423,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Check types of selected columns in provided data.
@@ -465,13 +472,15 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         └─────────────────────┴─────────────────────┘
 
         """
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
         X = super().transform(X, datetime_only=True, return_native_override=False)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 class DateDifferenceUnitsOptions(str, Enum):
@@ -555,8 +564,9 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         columns: ListOfTwoStrs,
         new_column_name: str,
         units: DateDifferenceUnitsOptionsStr = "D",
-        drop_original: bool = False,
         custom_days_divider: Optional[int] = None,
+        *,
+        drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -724,12 +734,12 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
             return_native=False,
         )
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register
@@ -931,6 +941,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         self,
         columns: ListOfThreeStrs,
         new_column_name: str,
+        *,
         drop_original: bool = False,
         lower_inclusive: bool = True,
         upper_inclusive: bool = True,
@@ -1089,8 +1100,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
         )
 
 
@@ -1222,6 +1233,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         columns: Union[str, list[str]],
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
+        *,
         drop_original: Optional[bool] = False,
         **kwargs: bool,
     ) -> None:
@@ -1454,12 +1466,12 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
             return_native=False,
+            drop_original=self.drop_original,
         )
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 class DatetimeComponentOptions(str, Enum):
@@ -1684,7 +1696,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
             **transform_dict,
         )
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 class DatetimeSinusoidUnitsOptions(str, Enum):
@@ -1808,6 +1820,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             dict[str, DatetimeSinusoidUnitsOptionStr],
         ],
         period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
+        *,
         drop_original: bool = False,
         **kwargs: Union[bool, str],
     ) -> None:
@@ -1932,6 +1945,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Transform - creates column containing sine or cosine of another datetime column.
@@ -1983,7 +1997,9 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         """
         X = _convert_dataframe_to_narwhals(X)
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = super().transform(X, return_native_override=False)
 
@@ -2029,11 +2045,11 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
             return_native=False,
         )
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 # DEPRECATED TRANSFORMERS
@@ -2094,6 +2110,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         columns: ListOfTwoStrs,
         new_column_name: str,
         missing_replacement: Optional[Union[float, int, str]] = None,
+        *,
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -2199,8 +2216,8 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
         )
 
 
@@ -2280,6 +2297,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
             str,
         ],
         pd_method_kwargs: Optional[GenericKwargs] = None,
+        *,
         drop_original: bool = False,
         **kwargs: Optional[bool],
     ) -> None:
@@ -2382,6 +2400,6 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
         )

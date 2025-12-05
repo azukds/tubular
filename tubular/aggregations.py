@@ -124,6 +124,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             ListOfColumnsOverRowAggregations,
             ListOfRowsOverColumnsAggregations,
         ],
+        *,
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -198,7 +199,9 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             └─────┴─────┘
 
         """
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -283,6 +286,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         columns: Union[str, list[str]],
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
+        *,
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -401,13 +405,13 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
             return_native=False,
         )
 
         # Use mixin method to drop original columns
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register
@@ -468,6 +472,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         self,
         columns: Union[str, list[str]],
         aggregations: ListOfColumnsOverRowAggregations,
+        *,
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -578,10 +583,10 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = DropOriginalMixin.drop_original_column(
             X,
-            self.drop_original,
             self.columns,
+            drop_original=self.drop_original,
             return_native=False,
         )
 
         # Use mixin method to drop original columns
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)

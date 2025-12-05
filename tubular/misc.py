@@ -71,6 +71,7 @@ class SetValueTransformer(BaseTransformer):
             NonEmptyListOfStrs,
             str,
         ],
+        *,
         value: Optional[Union[int, float, str, bool]],
         **kwargs: bool,
     ) -> None:
@@ -160,7 +161,7 @@ class SetValueTransformer(BaseTransformer):
 
         X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 # DEPRECATED TRANSFORMERS

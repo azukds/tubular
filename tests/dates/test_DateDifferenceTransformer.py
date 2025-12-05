@@ -389,7 +389,7 @@ class TestTransform(
             custom_days_divider=25 if unit == "custom_days" else None,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -419,7 +419,7 @@ class TestTransform(
             verbose=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -449,7 +449,7 @@ class TestTransform(
             verbose=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 

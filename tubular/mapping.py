@@ -207,6 +207,7 @@ class BaseMappingTransformer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Check mappings dict has been fitted.
@@ -251,13 +252,15 @@ class BaseMappingTransformer(BaseTransformer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         self.check_is_fitted(["mappings", "return_dtypes"])
 
         X = super().transform(X, return_native_override=False)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 @register
@@ -299,6 +302,7 @@ class BaseMappingTransformMixin(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Apply mapping defined in the mappings dict to each column in the columns attribute.
@@ -325,7 +329,9 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = super().transform(X, return_native_override=False)
 
@@ -391,7 +397,7 @@ class BaseMappingTransformMixin(BaseTransformer):
                 for col in self.mappings
             )
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 @register
@@ -553,7 +559,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
             return_native_override=False,
         )
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 # DEPRECATED TRANSFORMERS

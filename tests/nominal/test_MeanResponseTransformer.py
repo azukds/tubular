@@ -1256,7 +1256,7 @@ class TestTransform(GenericTransformTests):
         x.encoded_columns = list(x.mappings.keys())
         x.return_dtypes = dict.fromkeys(x.encoded_columns, "Float32")
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -1329,7 +1329,7 @@ class TestTransform(GenericTransformTests):
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -1372,7 +1372,7 @@ class TestTransform(GenericTransformTests):
 
         x.fit(df, df["a"])
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = nw.from_native(df)
         df = df.with_columns(nw.lit("z").alias("b"))
@@ -1419,7 +1419,7 @@ class TestTransform(GenericTransformTests):
 
         x.fit(df, df[target])
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         output_df = nw.from_native(x.transform(df))
 
@@ -1455,7 +1455,7 @@ class TestTransform(GenericTransformTests):
 
         x2.fit(df, df["a"])
 
-        x2 = _handle_from_json(x2, from_json)
+        x2 = _handle_from_json(x2, from_json=from_json)
 
         x2.transform(df)
 
