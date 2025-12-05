@@ -29,7 +29,8 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "SeriesDtMethodTransformer"
 
-    def test_invalid_input_type_errors(self):
+    @staticmethod
+    def test_invalid_input_type_errors():
         """Test that an exceptions are raised for invalid input types."""
         bad_columns = ["b", "c"]
         with pytest.raises(
@@ -70,7 +71,8 @@ class TestInit(
                 pd_method_kwargs={"a": 1, 2: "b"},
             )
 
-    def test_exception_raised_non_pandas_method_passed(self):
+    @staticmethod
+    def test_exception_raised_non_pandas_method_passed():
         """Test and exception is raised if a non pd.Series.dt method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
@@ -131,7 +133,8 @@ class TestTransform(
             expected_df_1(),
         ),
     )
-    def test_expected_output_no_overwrite(self, df, expected):
+    @staticmethod
+    def test_expected_output_no_overwrite(df, expected):
         """Test a single column output from transform gives expected results, when not overwriting the original column."""
         x = SeriesDtMethodTransformer(
             new_column_name="a_year",
@@ -155,7 +158,8 @@ class TestTransform(
             expected_df_2(),
         ),
     )
-    def test_expected_output_overwrite(self, df, expected):
+    @staticmethod
+    def test_expected_output_overwrite(df, expected):
         """Test a single column output from transform gives expected results, when overwriting the original column."""
         x = SeriesDtMethodTransformer(
             new_column_name="a",
@@ -179,7 +183,8 @@ class TestTransform(
             expected_df_3(),
         ),
     )
-    def test_expected_output_callable(self, df, expected):
+    @staticmethod
+    def test_expected_output_callable(df, expected):
         """Test transform gives expected results, when pd_method_name is a callable."""
         x = SeriesDtMethodTransformer(
             new_column_name="b_new",

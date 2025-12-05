@@ -332,10 +332,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     @block_from_json
     @beartype
     def _combine_X_y(
-        self,
-        X: DataFrame,
-        y: Series,
-        return_native_override: bool = True,
+        self, X: DataFrame, y: Series, return_native_override: bool = True
     ) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
@@ -716,7 +713,6 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,

@@ -79,7 +79,9 @@ target-version = "py39"
 # McCabe complexity (`C901`) by default.
 select = [
     "A",
+    "AIR",
     "ANN",
+    "ARG",
     "ASYNC",
     "B", # bugbear 
     "C4",
@@ -89,12 +91,18 @@ select = [
     "DTZ",
     "E", # pycodestyle
     "EM",
+    "EXE",
     "F", # Pyflakes
     "FA",
+    "FAST",
+    "FURB",
     "FLY",
+    "G",
     "I",
     "INT",
     "ISC",
+    "ICN",
+    "LOG",
     "NPY",
     "PD",
     "PERF",
@@ -102,6 +110,7 @@ select = [
     "PIE",
     "PLC",
     "PLE",
+    "PLR",
     "PLW",
     "PYI",
     "Q",
@@ -151,6 +160,12 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "E501",
     "D",
     "DOC",
+    # below two complain about n arguments, with fixtures our tests
+    # often have many args and am less concerned about this than in 
+    # main code
+    "PLR0917",
+    "PLR0913",
+    "PLR0914",
     ]
 "profiling/*"=["D", "DOC", "E501"]
 # too much to turn on D/DOC and E501 lints in one go,
