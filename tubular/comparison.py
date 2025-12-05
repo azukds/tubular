@@ -130,7 +130,6 @@ class EqualityChecker(
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             drop_original=self.drop_original,

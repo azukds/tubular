@@ -324,7 +324,7 @@ class ArbitraryImputer(BaseImputer):
         """
         return expr.cast(nw.Enum({*categories, self.impute_value}))
 
-    def _check_impute_value_type_works_with_columns(
+    def _check_impute_value_type_works_with_columns(  # noqa: PLR0912
         self,
         X: DataFrame,
         schema: nw.Schema,
@@ -368,14 +368,14 @@ class ArbitraryImputer(BaseImputer):
                 object_columns.add(col)
             elif dtype == nw.Categorical:
                 cat_columns.add(col)
-            elif dtype in [
+            elif dtype in {
                 nw.Float32,
                 nw.Float64,
                 nw.Int64,
                 nw.Int32,
                 nw.Int16,
                 nw.Int8,
-            ]:
+            }:
                 num_columns.add(col)
             elif dtype == nw.Boolean:
                 bool_columns.add(col)

@@ -41,7 +41,8 @@ class TestInit(ColumnStrListInitTests, NewColumnNameInitMixintests):
         ):
             uninitialized_transformers[self.transformer_name](**args)
 
-    def test_list_length(self):
+    @staticmethod
+    def test_list_length():
         """Test that an error is raised if columns list contains more than a single element"""
 
         with pytest.raises(
@@ -53,7 +54,8 @@ class TestInit(ColumnStrListInitTests, NewColumnNameInitMixintests):
                 columns=["b", "c"],
             )
 
-    def test_exception_raised_non_pandas_method_passed(self):
+    @staticmethod
+    def test_exception_raised_non_pandas_method_passed():
         """Test and exception is raised if a non pd.Series.str method is passed for pd_method_name."""
         with pytest.raises(
             AttributeError,
@@ -133,7 +135,8 @@ class TestTransform(GenericTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_7(), expected_df_1()),
     )
-    def test_expected_output_no_overwrite(self, df, expected):
+    @staticmethod
+    def test_expected_output_no_overwrite(df, expected):
         """Test a single column output from transform gives expected results, when not overwriting the original column."""
         x = SeriesStrMethodTransformer(
             new_column_name="b_new",
@@ -154,7 +157,8 @@ class TestTransform(GenericTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_7(), expected_df_2()),
     )
-    def test_expected_output_overwrite(self, df, expected):
+    @staticmethod
+    def test_expected_output_overwrite(df, expected):
         """Test a single column output from transform gives expected results, when overwriting the original column."""
         x = SeriesStrMethodTransformer(
             new_column_name="b",

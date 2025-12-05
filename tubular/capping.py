@@ -25,7 +25,7 @@ CappingValues = Annotated[
     list[Optional[Number]],
     Is[
         lambda list_arg: (
-            (len(list_arg) == 2)
+            (len(list_arg) == 2)  # noqa: PLR2004
             & (
                 all(
                     (isinstance(value, (int, float)) or value is None)
@@ -374,7 +374,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def weighted_quantile(
+    def weighted_quantile(  # noqa: PLR6301, self is implicitly used by block_from_json
         self,
         X: DataFrame,
         quantiles: list[Number],

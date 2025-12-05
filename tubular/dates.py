@@ -175,10 +175,10 @@ class BaseGenericDateTransformer(
         return (
             [*self.columns]
             if type(self)
-            in [
+            in {
                 BaseGenericDateTransformer,
                 BaseDatetimeTransformer,
-            ]
+            }
             else [self.new_column_name]
         )
 
@@ -733,7 +733,6 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             drop_original=self.drop_original,
@@ -1100,7 +1099,6 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             drop_original=self.drop_original,
@@ -1467,7 +1465,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             return_native=False,
@@ -1749,7 +1746,7 @@ NumberNotBool = Annotated[
     Union[int, float],
     Is[
         # exclude bools which would pass isinstance(..., (float, int))
-        lambda value: type(value) in [int, float]
+        lambda value: type(value) in {int, float}
     ],
 ]
 
@@ -2047,7 +2044,6 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         X = X.with_columns(**exprs)
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             drop_original=self.drop_original,
@@ -2219,7 +2215,6 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             drop_original=self.drop_original,
@@ -2404,7 +2399,6 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.columns,
             drop_original=self.drop_original,

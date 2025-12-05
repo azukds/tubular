@@ -42,51 +42,65 @@ class TubularPipelineGenerator:
             "LogTransformer",
         ]
 
-    def get_CappingTransformer(self) -> CappingTransformer:
+    @staticmethod
+    def get_CappingTransformer() -> CappingTransformer:
         return CappingTransformer(capping_values={"AveOccup": [1, 5.5]})
 
-    def get_OutOfRangeNullTransformer(self) -> OutOfRangeNullTransformer:
+    @staticmethod
+    def get_OutOfRangeNullTransformer() -> OutOfRangeNullTransformer:
         return OutOfRangeNullTransformer(capping_values={"AveOccup": [1, 5.5]})
 
-    def get_ArbitraryImputer(self) -> ArbitraryImputer:
+    @staticmethod
+    def get_ArbitraryImputer() -> ArbitraryImputer:
         return ArbitraryImputer(
             columns=["HouseAge_1", "AveOccup_1", "Population_1"],
             impute_value=-1,
         )
 
-    def get_MedianImputer(self) -> MedianImputer:
+    @staticmethod
+    def get_MedianImputer() -> MedianImputer:
         return MedianImputer(columns=["HouseAge_2", "AveOccup_2", "Population_2"])
 
-    def get_MeanImputer(self) -> MeanImputer:
+    @staticmethod
+    def get_MeanImputer() -> MeanImputer:
         return MeanImputer(columns=["HouseAge_3", "AveOccup_3", "Population_3"])
 
-    def get_ModeImputer(self) -> ModeImputer:
+    @staticmethod
+    def get_ModeImputer() -> ModeImputer:
         return ModeImputer(columns=["HouseAge_4", "AveOccup_4", "Population_4"])
 
-    def get_NearestMeanResponseImputer(self) -> NearestMeanResponseImputer:
+    @staticmethod
+    def get_NearestMeanResponseImputer() -> NearestMeanResponseImputer:
         return NearestMeanResponseImputer(
             columns=["HouseAge_5", "AveOccup_5", "Population_5"],
         )
 
-    def get_NullIndicator(self) -> NullIndicator:
+    @staticmethod
+    def get_NullIndicator() -> NullIndicator:
         return NullIndicator(columns=["HouseAge_6", "AveOccup_6", "Population_6"])
 
-    def get_MappingTransformer(self) -> MappingTransformer:
+    @staticmethod
+    def get_MappingTransformer() -> MappingTransformer:
         return MappingTransformer(mappings={"categorical_1": {"a": "c", "b": "d"}})
 
-    def get_NominalToIntegerTransformer(self) -> NominalToIntegerTransformer:
+    @staticmethod
+    def get_NominalToIntegerTransformer() -> NominalToIntegerTransformer:
         return NominalToIntegerTransformer(columns=["categorical_2"])
 
-    def get_MeanResponseTransformer(self) -> MeanResponseTransformer:
+    @staticmethod
+    def get_MeanResponseTransformer() -> MeanResponseTransformer:
         return MeanResponseTransformer(columns=["categorical_3"])
 
-    def get_GroupRareLevelsTransformer(self) -> GroupRareLevelsTransformer:
+    @staticmethod
+    def get_GroupRareLevelsTransformer() -> GroupRareLevelsTransformer:
         return GroupRareLevelsTransformer(columns=["categorical_4"])
 
-    def get_OneHotEncodingTransformer(self) -> OneHotEncodingTransformer:
+    @staticmethod
+    def get_OneHotEncodingTransformer() -> OneHotEncodingTransformer:
         return OneHotEncodingTransformer(columns=["categorical_ohe"])
 
-    def get_LogTransformer(self) -> LogTransformer:
+    @staticmethod
+    def get_LogTransformer() -> LogTransformer:
         return LogTransformer(columns=["HouseAge_7", "AveOccup_7", "Population_7"])
 
     def generate_pipeline(

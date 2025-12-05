@@ -140,7 +140,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
         kwargs: bool
-            arguments for base class, e.g. 'verbose'.
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -307,7 +307,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             Whether to drop the original columns after transformation. Default is False.
 
         kwargs: bool
-            arguments for base class, e.g. 'verbose'
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(
@@ -403,7 +403,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**expr_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.columns,
             drop_original=self.drop_original,
@@ -431,9 +431,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
-
-    verbose : bool, optional
-        Indicator for verbose output.
 
     built_from_json: bool
         indicates if transformer was reconstructed from json,
@@ -493,7 +490,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
             Whether to drop the original columns after transformation. Default is False.
 
         kwargs: bool
-            arguments for base class, e.g. 'verbose'
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(
@@ -584,7 +581,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**transform_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.columns,
             drop_original=self.drop_original,

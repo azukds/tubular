@@ -29,18 +29,20 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "DatetimeComponentExtractor"
 
+    @staticmethod
     @pytest.mark.parametrize(
         "incorrect_type_include",
         [2, 3.0, "invalid", ["invalid", "hour"]],
     )
-    def test_error_for_bad_include_type(self, incorrect_type_include):
+    def test_error_for_bad_include_type(incorrect_type_include):
         """Test that an exception is raised when include variable is incorrect type."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             DatetimeComponentExtractor(columns=["a"], include=incorrect_type_include)
 
-    def test_error_when_invalid_include_option(self):
+    @staticmethod
+    def test_error_when_invalid_include_option():
         """Test that an exception is raised when include contains incorrect values."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -61,12 +63,13 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DatetimeComponentExtractor"
 
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_output_for_subset_of_options(self, library, from_json):
+    def test_output_for_subset_of_options(library, from_json):
         """Test that correct df is returned after transformation."""
         # Create test data with explicit datetime values
         df = nw.from_native(d.create_date_test_df(library=library))
@@ -203,12 +206,13 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_output_for_all_options(self, library, from_json):
+    def test_output_for_all_options(library, from_json):
         """Test that correct df is returned after transformation for all options, including JSON serialization."""
         # Create test data with explicit datetime values
         df = nw.from_native(d.create_date_test_df(library=library))
