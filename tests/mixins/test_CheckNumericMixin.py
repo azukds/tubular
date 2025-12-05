@@ -24,7 +24,8 @@ class TestCheckNumericMixin:
             (create_df_with_none_and_nan_cols, ["b"]),  # None
         ],
     )
-    def test_check_numeric_columns_errors(self, library, df_generator, bad_cols):
+    @staticmethod
+    def test_check_numeric_columns_errors(library, df_generator, bad_cols):
         "test check_numeric_columns method raises appropriate error"
 
         df = df_generator(library=library)
@@ -51,7 +52,8 @@ class TestCheckNumericMixin:
             (create_df_with_none_and_nan_cols, ["a"]),  # nan
         ],
     )
-    def test_check_numeric_columns_passes(self, library, df_generator, cols):
+    @staticmethod
+    def test_check_numeric_columns_passes(library, df_generator, cols):
         "test check_numeric_columns method passes for numeric columns"
 
         df = df_generator(library=library)

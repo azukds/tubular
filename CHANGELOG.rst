@@ -38,6 +38,7 @@ Changed
 - chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>_`
 - feat: switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
 - feat: added `to_json` method for OneHotEncodingTransformer `#550 <https://github.com/azukds/tubular/issues/550>`_
+- turned on ruff PLR rule `#509 <https://github.com/azukds/tubular/issues/509>`_
 
 2.4.0 (01/12/2025)
 ------------------
