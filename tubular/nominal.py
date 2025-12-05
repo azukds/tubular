@@ -2019,6 +2019,9 @@ class OrdinalEncoderTransformer(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -2028,6 +2031,8 @@ class OrdinalEncoderTransformer(
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -2210,6 +2215,9 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -2219,6 +2227,8 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     def __init__(
         self,
