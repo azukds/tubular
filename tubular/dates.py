@@ -77,7 +77,7 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -375,7 +375,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -543,7 +543,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -768,7 +768,7 @@ class ToDatetimeTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -1165,7 +1165,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -1501,6 +1501,9 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     polars_compatible : bool
         Indicates whether transformer has been converted to polars/pandas agnostic framework
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     jsonable: bool
         Indicates if transformer supports to/from_json methods
 
@@ -1529,7 +1532,11 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     INCLUDE_OPTIONS: ClassVar[list[str]] = ["hour", "day", "month", "year"]
 
     polars_compatible = True
+
+    lazyframe_compatible = True
+
     FITS = False
+
     jsonable = True
 
     @beartype

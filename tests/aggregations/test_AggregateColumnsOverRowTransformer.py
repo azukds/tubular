@@ -27,6 +27,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
     def setup_class(cls):
         cls.transformer_name = "AggregateColumnsOverRowTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "aggregations, expected_data",
@@ -52,6 +53,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         expected_data,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test transform method aggregates rows correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -68,20 +70,29 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         # transformer = transformer_setup(columns, aggregations, key, drop_original)
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformed_df = transformer.transform(df)
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
+        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Create expected DataFrame using the library parameter
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         # Compare the transformed DataFrame with the expected DataFrame using the dispatch function
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, lazy),
+            expected_df,
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_single_row(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -103,7 +114,11 @@ class TestAggregateColumnsOverRowTransformerTransform(
         ).to_native()
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformed_df = transformer.transform(single_row_df)
+
+        if u._check_if_skip_test(transformer, single_row_df, lazy):
+            return
+
+        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -123,14 +138,19 @@ class TestAggregateColumnsOverRowTransformerTransform(
             .to_native()
         )
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, lazy),
+            expected_df,
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_with_nulls(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -146,7 +166,11 @@ class TestAggregateColumnsOverRowTransformerTransform(
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformed_df = transformer.transform(df_with_nulls)
+
+        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
+            return
+
+        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -160,4 +184,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, lazy),
+            expected_df,
+        )

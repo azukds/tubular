@@ -80,7 +80,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = False
 
@@ -137,7 +137,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         """
         super().fit(X, y)
 
-        CheckNumericMixin.check_numeric_columns(self, X[self.columns])
+        CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
         return self
 
@@ -520,7 +520,7 @@ class DifferenceTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     @beartype
     def __init__(
@@ -651,7 +651,7 @@ class RatioTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:

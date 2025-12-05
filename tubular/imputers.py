@@ -66,7 +66,7 @@ class BaseImputer(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     # this class is not by itself jsonable, as needs attrs
     # which are set in the child classes
@@ -269,7 +269,7 @@ class ArbitraryImputer(BaseImputer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -1136,7 +1136,7 @@ class NullIndicator(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 

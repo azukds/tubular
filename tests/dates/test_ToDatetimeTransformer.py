@@ -10,7 +10,13 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import ToDatetimeTransformer
 
 
@@ -124,6 +130,10 @@ class TestTransform(GenericTransformTests):
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
@@ -135,7 +145,7 @@ class TestTransform(GenericTransformTests):
             (["e"], None),
         ],
     )
-    def test_expected_output_year_parsing(self, library, columns, time_format):
+    def test_expected_output_year_parsing(self, library, columns, time_format, lazy):
         """Test input data is transformed as expected."""
 
         df = self.create_to_datetime_test_df(library=library)
@@ -145,9 +155,16 @@ class TestTransform(GenericTransformTests):
             columns=columns,
             time_format=time_format,
         )
-        df_transformed = to_dt.transform(df)
 
-        assert_frame_equal_dispatch(expected[columns], df_transformed[columns])
+        if _check_if_skip_test(to_dt, df, lazy):
+            return
+
+        df_transformed = to_dt.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            expected[columns],
+            _collect_frame(df_transformed, lazy)[columns],
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

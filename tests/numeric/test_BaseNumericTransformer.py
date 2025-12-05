@@ -1,12 +1,15 @@
 import re
 
 import narwhals as nw
-import polars as pl
 import pytest
 
 import tests.test_data as d
 from tests.base_tests import GenericFitTests, GenericInitTests, GenericTransformTests
-from tests.utils import dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _convert_to_lazy,
+    dataframe_init_dispatch,
+)
 
 
 class BaseNumericTransformerInitTests(GenericInitTests):
@@ -22,6 +25,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("df_generator", "bad_cols"),
@@ -38,16 +42,17 @@ class BaseNumericTransformerFitTests(GenericFitTests):
         df_generator,
         bad_cols,
         library,
+        lazy,
     ):
         """Test an exception is raised if self.columns are non-numeric in X."""
         df = df_generator(library=library)
 
         x = initialized_transformers[self.transformer_name]
-        x.columns = bad_cols
 
-        # if transformer is not polars compatible, skip polars test
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(x, df, lazy):
             return
+
+        x.columns = bad_cols
 
         # add in 'target column' for fit
         df = nw.from_native(df)
@@ -66,8 +71,9 @@ class BaseNumericTransformerFitTests(GenericFitTests):
                 f"{self.transformer_name}: The following columns are not numeric in X; {bad_cols}",
             ),
         ):
-            x.fit(df, df["c"])
+            x.fit(_convert_to_lazy(df, lazy), df["c"])
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("df_generator", "cols"),
@@ -83,6 +89,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
         df_generator,
         cols,
         library,
+        lazy,
     ):
         """Test check passes if self.columns numeric in X."""
         df = df_generator(library=library)
@@ -90,8 +97,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
         x = initialized_transformers[self.transformer_name]
         x.columns = cols
 
-        # if transformer is not polars compatible, skip polars test
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         # add in 'target column' for fit
@@ -125,7 +131,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
             ),
         ).to_native()
 
-        x.fit(df, df["c"])
+        x.fit(_convert_to_lazy(df, lazy), df["c"])
 
 
 class BaseNumericTransformerTransformTests(
@@ -136,6 +142,7 @@ class BaseNumericTransformerTransformTests(
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("df_generator", "bad_cols"),
@@ -152,6 +159,7 @@ class BaseNumericTransformerTransformTests(
         df_generator,
         bad_cols,
         library,
+        lazy,
     ):
         """Test an exception is raised if self.columns are non-numeric in X."""
         df = df_generator(library=library)
@@ -159,8 +167,7 @@ class BaseNumericTransformerTransformTests(
         x = initialized_transformers[self.transformer_name]
         x.columns = bad_cols
 
-        # if transformer is not polars compatible, skip polars test
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         # add in 'target column' for and additional numeric column fit
@@ -196,8 +203,9 @@ class BaseNumericTransformerTransformTests(
                 rf"{self.transformer_name}: The following columns are not numeric in X; {x.columns}",
             ),
         ):
-            x.transform(df)
+            x.transform(_convert_to_lazy(df, lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("df_generator"),
@@ -207,15 +215,20 @@ class BaseNumericTransformerTransformTests(
             d.create_df_with_none_and_nan_cols,  # nan
         ],
     )
-    def test_numeric_passes(self, initialized_transformers, df_generator, library):
+    def test_numeric_passes(
+        self,
+        initialized_transformers,
+        df_generator,
+        library,
+        lazy,
+    ):
         """Test check passes if self.columns numeric in X."""
         df = df_generator(library=library)
 
         x = initialized_transformers[self.transformer_name]
         x.columns = ["a", "b"]
 
-        # if transformer is not polars compatible, skip polars test
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(x, df, lazy):
             return
 
         # add in 'target column' for and additional numeric column fit
@@ -263,7 +276,7 @@ class BaseNumericTransformerTransformTests(
             )
             x.fit(numeric_df, numeric_df["c"])
 
-        x.transform(df)
+        x.transform(_convert_to_lazy(df, lazy))
 
 
 class TestInit(BaseNumericTransformerInitTests):
