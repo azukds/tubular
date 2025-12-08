@@ -34,6 +34,8 @@ Changed
 ^^^^^^^
 - switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
 - feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
+- bug: fix issue in to_json method of GroupRareLevelsTransformer
 
 2.4.0 (01/12/2025)
 ------------------
@@ -47,8 +49,6 @@ Changed
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
 - feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
 - feat: added a new transformer called DatetimeComponentExtractor
-- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
-- bug: fix issue in to_json method of GroupRareLevelsTransformer
 - bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
 
 2.3.0 (18/11/2025)

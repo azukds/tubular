@@ -45,8 +45,34 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
 
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
-    >>> pipeline_json
-    {'MedianImputer': {'tubular_version': '...', 'classname': 'MedianImputer', 'init': {'columns': ['b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'b': 15.0}}}, 'MeanImputer': {'tubular_version': '...', 'classname': 'MeanImputer', 'init': {'columns': ['b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'b': 15.0}}}}
+    >>> expected_pipeline_json = {
+    ...     "MedianImputer": {
+    ...         "tubular_version": "...",
+    ...        "classname": "MedianImputer",
+    ...         "init": {
+    ...             "columns": ["b"],
+    ...             "copy": False,
+    ...             "verbose": False,
+    ...             "return_native": True,
+    ...             "weights_column": None,
+    ...         },
+    ...         "fit": {"impute_values_": {"b": 15.0}},
+    ...     },
+    ...     "MeanImputer": {
+    ...         "tubular_version": "...",
+    ...         "classname": "MeanImputer",
+    ...         "init": {
+    ...             "columns": ["b"],
+    ...             "copy": False,
+    ...             "verbose": False,
+    ...             "return_native": True,
+    ...             "weights_column": None,
+    ...         },
+    ...         "fit": {"impute_values_": {"b": 15.0}},
+    ...     },
+    ... }
+    >>> pipeline_json == expected_pipeline_json
+    True
 
     """
     steps = pipeline.steps

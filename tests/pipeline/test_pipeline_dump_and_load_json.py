@@ -7,7 +7,7 @@ from tubular.imputers import MeanImputer, MedianImputer
 from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
 
 
-class TestDumpLoad:
+class TestPipelineDumpAndLoadJson:
     """Tests for dump_pipeline_to_json() and load_pipeline_from_json()."""
 
     def test_dump_pipeline_then_load_pipeline(self):
@@ -29,9 +29,8 @@ class TestDumpLoad:
         assert len(original_pipeline.steps) == len(pipeline.steps), (
             f"number of steps in the pipeline does not match with that of original pipeline, expected {len(original_pipeline.steps)} steps but got {len(pipeline.steps)}"
         )
-        i = 0
-        for x, y in zip(original_pipeline.steps, pipeline.steps):
-            i = i + 1
+
+        for i, (x, y) in enumerate(zip(original_pipeline.steps, pipeline.steps)):
             assert x[0] == y[0], (
                 f"loaded pipeline does not match the original pipeline at step {i}, expected step name {x[0]} but got {y[0]}"
             )
@@ -41,7 +40,7 @@ class TestDumpLoad:
             y1 = y[1].__dict__
             y1.pop("built_from_json", None)
             assert x1 == y1, (
-                f"loaded pipeline does not match the original pipeline at step {i}, expected step name {x1} but got {y1}"
+                f"loaded pipeline does not match the original pipeline at step {i}, expected step {x1} but got {y1}"
             )
 
     def test_dump_pipeline_to_json_output(self):
@@ -61,49 +60,34 @@ class TestDumpLoad:
         expected_json = {
             "MeanImputer": {
                 "classname": "MeanImputer",
-                "fit": {"impute_values_": {"b": 15.0}},
+                "fit": {"impute_values_": mean_imputer.impute_values_},
                 "init": {
-                    "columns": ["b"],
-                    "copy": False,
-                    "return_native": True,
-                    "verbose": False,
-                    "weights_column": None,
+                    "columns": mean_imputer.columns,
+                    "copy": mean_imputer.copy,
+                    "return_native": mean_imputer.return_native,
+                    "verbose": mean_imputer.verbose,
+                    "weights_column": mean_imputer.weights_column,
                 },
                 "tubular_version": "...",
             },
             "MedianImputer": {
                 "classname": "MedianImputer",
-                "fit": {"impute_values_": {"b": 15.0}},
+                "fit": {"impute_values_": median_imputer.impute_values_},
                 "init": {
-                    "columns": ["b"],
-                    "copy": False,
-                    "return_native": True,
-                    "verbose": False,
-                    "weights_column": None,
+                    "columns": median_imputer.columns,
+                    "copy": median_imputer.copy,
+                    "return_native": median_imputer.return_native,
+                    "verbose": median_imputer.verbose,
+                    "weights_column": median_imputer.weights_column,
                 },
                 "tubular_version": "...",
             },
         }
         transformers = ["MedianImputer", "MeanImputer"]
 
-        i = 0
-        for transformer in transformers:
-            i = i + 1
-            assert (
-                actual_json[transformer]["classname"]
-                == expected_json[transformer]["classname"]
-            ), (
-                f"loaded json pipeline does not match the original pipeline at step {i}, expected step name {expected_json[transformer]['classname']} but got {actual_json[transformer]['classname']}"
-            )
-            assert (
-                actual_json[transformer]["init"] == expected_json[transformer]["init"]
-            ), (
-                f"loaded json pipeline does not match the original pipeline at step {i}, expected step name {expected_json[transformer]['init']} but got {actual_json[transformer]['init']}"
-            )
-            assert (
-                actual_json[transformer]["fit"] == expected_json[transformer]["fit"]
-            ), (
-                f"loaded json pipeline does not match the original pipeline at step {i}, expected step name {expected_json[transformer]['fit']} but got {actual_json[transformer]['fit']}"
+        for i, transformer in enumerate(transformers):
+            assert actual_json[transformer] == expected_json[transformer], (
+                f"loaded json pipeline does not match the original pipeline at step {i}, expected step {expected_json[transformer]} but got {actual_json[transformer]}"
             )
 
     def test_dump_transformer_not_jsonable(self):

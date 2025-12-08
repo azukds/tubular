@@ -156,7 +156,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "strings.py"=["E501"]
 "capping.py"=["E501"]
 "_utils.py"=["E501"]
-"pipeline.py"=["E501"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true
