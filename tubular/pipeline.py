@@ -44,9 +44,10 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
 
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
+    >>> del pipeline_json['MedianImputer']['tubular_version']
+    >>> del pipeline_json['MeanImputer']['tubular_version']
     >>> expected_pipeline_json =  {
     ...     'MedianImputer': {
-    ...         'tubular_version': '...',
     ...         'classname': 'MedianImputer',
     ...         'init': {
     ...             'columns': ['b'],
@@ -62,7 +63,6 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     ...         }
     ...      },
     ...     'MeanImputer': {
-    ...         'tubular_version': '...',
     ...         'classname': 'MeanImputer',
     ...         'init': {
     ...             'columns': ['b'],
