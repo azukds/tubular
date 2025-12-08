@@ -52,7 +52,8 @@ class TestTransform(GenericTransformTests):
         cls.transformer_name = "BaseMappingTransformMixin"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_for_str_and_int(self, mapping, library):
+    @staticmethod
+    def test_expected_output_for_str_and_int(mapping, library):
         """Test outputs for str/int type inputs."""
 
         df = d.create_df_1(library=library)
@@ -89,7 +90,8 @@ class TestTransform(GenericTransformTests):
         assert_frame_equal_dispatch(expected, df_transformed)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_for_cat(self, library):
+    @staticmethod
+    def test_expected_output_for_cat(library):
         """Test that output for cat input"""
 
         df = d.create_df_2(library=library)
@@ -141,7 +143,8 @@ class TestTransform(GenericTransformTests):
         assert_frame_equal_dispatch(expected, df_transformed)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_boolean_with_nulls(self, library):
+    @staticmethod
+    def test_expected_output_boolean_with_nulls(library):
         """Test that output is as expected for tricky bool cases:
         e.g. mapping {True:1, False:0, None: 0}, potential causes of failure:
             - None being cast to False when these values are inserted into bool series
@@ -251,7 +254,8 @@ class TestTransform(GenericTransformTests):
         assert_frame_equal_dispatch(expected, df_transformed)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_can_map_values_to_none(self, library):
+    @staticmethod
+    def test_can_map_values_to_none(library):
         """replace_strict  does  not support mappings values to None, so additional
         logic has been added. Explicitly test a case of mapping to None here.
 
@@ -300,7 +304,8 @@ class TestTransform(GenericTransformTests):
         assert_frame_equal_dispatch(expected, df_transformed)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_mappings_unchanged(self, mapping, library):
+    @staticmethod
+    def test_mappings_unchanged(mapping, library):
         """Test that mappings is unchanged in transform."""
         df = d.create_df_1(library=library)
 
@@ -332,8 +337,8 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("non_df", [1, True, "a", [1, 2], {"a": 1}, None])
+    @staticmethod
     def test_non_pd_type_error(
-        self,
         non_df,
         mapping,
         library,
@@ -368,8 +373,9 @@ class TestTransform(GenericTransformTests):
         ):
             x_fitted.transform(X=non_df)
 
+    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_original_df_not_updated(self, mapping, library):
+    def test_original_df_not_updated(mapping, library):
         """Test that the original dataframe is not transformed when transform method used."""
 
         df = d.create_df_10(library=library)
@@ -480,11 +486,12 @@ class TestTransform(GenericTransformTests):
             "expected empty frame transform to return empty frame"
         )
 
+    @staticmethod
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_can_handle_lots_of_mappings(self, library):
+    def test_can_handle_lots_of_mappings(library):
         """older implementations had issues erroring for too many mappings, include
         this stress test
         """
@@ -519,7 +526,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     # overload test as class needs special  handling to run

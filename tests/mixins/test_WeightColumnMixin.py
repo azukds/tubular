@@ -11,11 +11,9 @@ from tubular.mixins import WeightColumnMixin
 
 class TestCreateUnitWeightsColumn:
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("i", [-1, 0, 1, 2, 3, 4])
+    @staticmethod
     def test_new_column_output(
-        self,
         library,
-        i,
     ):
         """Test unit weights column created as expected"""
 
@@ -48,8 +46,8 @@ class TestCreateUnitWeightsColumn:
         assert unit_weights_column == "unit_weights_column"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @staticmethod
     def test_existing_column_used_if_possible(
-        self,
         library,
     ):
         """Test existing unit weights column used if possible"""
@@ -83,8 +81,8 @@ class TestCreateUnitWeightsColumn:
         assert unit_weights_column == "unit_weights_column"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @staticmethod
     def test_errors_if_bad_column_exists(
-        self,
         library,
     ):
         """Test that error is raised if unit_weights_column exists but is not all 1"""
@@ -107,23 +105,6 @@ class TestCreateUnitWeightsColumn:
             obj._create_unit_weights_column(df, backend=library)
 
 
-class TestCheckAndSetWeight:
-    @pytest.mark.parametrize("weights_column", (0, ["a"], {"a": 10}))
-    def test_weight_arg_errors(
-        self,
-        weights_column,
-    ):
-        """Test that appropriate errors are throw for bad weight arg."""
-
-        obj = WeightColumnMixin()
-
-        with pytest.raises(
-            TypeError,
-            match="weights_column should be str or None",
-        ):
-            obj.check_and_set_weight(weights_column)
-
-
 class TestCheckWeightsColumn:
     @pytest.mark.parametrize(
         "library",
@@ -141,8 +122,8 @@ class TestCheckWeightsColumn:
             (-1, "weight column must be positive"),
         ],
     )
+    @staticmethod
     def test_bad_values_in_weights_error(
-        self,
         bad_weight_value,
         expected_message,
         library,
@@ -175,8 +156,8 @@ class TestCheckWeightsColumn:
         "library",
         ["pandas", "polars"],
     )
+    @staticmethod
     def test_weight_col_non_numeric(
-        self,
         library,
     ):
         """Test an error is raised if weight is not numeric."""
@@ -203,8 +184,8 @@ class TestCheckWeightsColumn:
         "library",
         ["pandas", "polars"],
     )
+    @staticmethod
     def test_weight_not_in_X_error(
-        self,
         library,
     ):
         """Test an error is raised if weight is not in X"""
@@ -228,8 +209,8 @@ class TestCheckWeightsColumn:
         "library",
         ["pandas", "polars"],
     )
+    @staticmethod
     def test_zero_total_weight_error(
-        self,
         library,
     ):
         """Test that an exception is raised if the total sample weights are 0."""

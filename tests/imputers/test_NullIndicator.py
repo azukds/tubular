@@ -31,8 +31,9 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
     def setup_class(cls):
         cls.transformer_name = "NullIndicator"
 
+    @staticmethod
     @pytest.fixture()
-    def expected_df_1(self, request):
+    def expected_df_1(request):
         """Expected output for test_null_indicator_columns_correct."""
         library = request.param
 
@@ -62,7 +63,8 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         [("pandas", "pandas"), ("polars", "polars")],
         indirect=["expected_df_1"],
     )
-    def test_null_indicator_columns_correct(self, expected_df_1, library, from_json):
+    @staticmethod
+    def test_null_indicator_columns_correct(expected_df_1, library, from_json):
         """Test that the created indicator column is correct - and unrelated columns are unchanged."""
         df = d.create_df_9(library=library)
 
@@ -98,7 +100,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

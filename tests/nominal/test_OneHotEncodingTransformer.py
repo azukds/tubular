@@ -129,7 +129,8 @@ class TestFit(GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_nulls_in_X_error(self, library):
+    @staticmethod
+    def test_nulls_in_X_error(library):
         """Test that an exception is raised if X has nulls in column to be fit on."""
         df = d.create_df_2(library=library)
 
@@ -145,7 +146,8 @@ class TestFit(GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_fit_missing_levels_warning(self, library):
+    @staticmethod
+    def test_fit_missing_levels_warning(library):
         """Test OneHotEncodingTransformer.fit triggers a warning for missing levels."""
         df = d.create_df_1(library=library)
 
@@ -166,7 +168,8 @@ class TestFit(GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_fields_with_over_100_levels_error(self, library):
+    @staticmethod
+    def test_fields_with_over_100_levels_error(library):
         """Test that OneHotEncodingTransformer.fit on fields with more than 100 levels raises error."""
         df_dict = {"a": [1] * 101, "b": list(range(101))}
 
@@ -184,7 +187,8 @@ class TestFit(GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_fit_no_warning_if_all_wanted_values_present(self, library, recwarn):
+    @staticmethod
+    def test_fit_no_warning_if_all_wanted_values_present(library, recwarn):
         """Test that OneHotEncodingTransformer.fit does NOT raise a warning when all levels in wanted_levels are present in the data."""
         df = d.create_df_1(library=library)
 
@@ -210,7 +214,8 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "OneHotEncodingTransformer"
 
-    def create_OneHotEncoderTransformer_test_df_1(self, library="pandas"):
+    @staticmethod
+    def create_OneHotEncoderTransformer_test_df_1(library="pandas"):
         """Create DataFrame to test OneHotEncoderTransformer
 
         binary columns are representative of transformed output of column b
@@ -238,7 +243,8 @@ class TestTransform(
 
         return df.to_native()
 
-    def create_OneHotEncoderTransformer_test_df_2(self, library="pandas"):
+    @staticmethod
+    def create_OneHotEncoderTransformer_test_df_2(library="pandas"):
         """Create DataFrame to test OneHotEncoderTransformer
 
         binary columns are representative of transformed output of all columns
@@ -275,14 +281,15 @@ class TestTransform(
 
     def test_non_mappable_rows_exception_raised(self):
         """Test inherited from GenericBaseNominalTransformerTests needs to be overwritten,
-        inherited test tests the mapping attribute, which OHE transfomer doesn't have.
+        inherited test tests the mapping attribute, which OHE transformer doesn't have.
         """
 
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_non_numeric_column_error_1(self, library):
+    @staticmethod
+    def test_non_numeric_column_error_1(library):
         """Test that transform will raise an error if a column to transform has nulls."""
         df_train = d.create_df_1(library=library)
         df_test = d.create_df_2(library=library)
@@ -345,7 +352,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_categories_not_modified(self, library):
+    @staticmethod
+    def test_categories_not_modified(library):
         """Test that the categories from fit are not changed in transform."""
         df_train = d.create_df_1(library=library)
         df_test = d.create_df_7(library=library)
@@ -366,7 +374,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_renaming_feature_works_as_expected(self, library):
+    @staticmethod
+    def test_renaming_feature_works_as_expected(library):
         """Test OneHotEncodingTransformer.transform() is renaming features correctly."""
         df = d.create_df_7(library=library)
         df = df[["b", "c"]]
@@ -394,7 +403,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_warning_generated_by_unseen_categories(self, library):
+    @staticmethod
+    def test_warning_generated_by_unseen_categories(library):
         """Test OneHotEncodingTransformer.transform triggers a warning for unseen categories."""
         df_train = d.create_df_7(library=library)
         df_test = d.create_df_8(library=library)
@@ -410,7 +420,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_transform_missing_levels_warning(self, library):
+    @staticmethod
+    def test_transform_missing_levels_warning(library):
         """Test OneHotEncodingTransformer.transform triggers a warning for missing levels."""
         df_train = d.create_df_7(library=library)
         df_test = d.create_df_8(library=library)
@@ -476,7 +487,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_transform_output_with_wanted_values_arg(self, library):
+    @staticmethod
+    def test_transform_output_with_wanted_values_arg(library):
         """
         Test to verify OneHotEncodingTransformer.transform zero-filled levels from user-specified "wanted_levels" and encodes only those listed in "wanted_levels".
 
@@ -521,7 +533,8 @@ class TestTransform(
         "library",
         ["pandas", "polars"],
     )
-    def test_transform_no_warning_if_all_wanted_values_present(self, library, recwarn):
+    @staticmethod
+    def test_transform_no_warning_if_all_wanted_values_present(library, recwarn):
         """Test that OneHotEncodingTransformer.transform does NOT raise a warning when all levels in wanted_levels are present in the data."""
         df_train = d.create_df_8(library=library)
         df_test = d.create_df_7(library=library)

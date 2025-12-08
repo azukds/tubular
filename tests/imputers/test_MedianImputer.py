@@ -36,7 +36,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         cls.transformer_name = "MedianImputer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values(self, library):
+    @staticmethod
+    def test_learnt_values(library):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
@@ -66,7 +67,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weighted(self, library):
+    @staticmethod
+    def test_learnt_values_weighted(library):
         """Test that the impute values learnt during fit are expected - when using weights."""
         df = d.create_df_9(library=library)
 
@@ -94,7 +96,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_fit_not_changing_data(self, library):
+    @staticmethod
+    def test_fit_not_changing_data(library):
         """Test fit does not change X."""
         df = d.create_df_1(library=library)
 
@@ -125,7 +128,7 @@ class TestTransform(
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour behaviour outside the three standard methods.
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod
