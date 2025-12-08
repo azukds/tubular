@@ -37,6 +37,7 @@ Changed
 - feat: added lazyframe testing for BaseTransfomer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
 - feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
+- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
 
 2.2.0 (11/11/2025)
 ------------------
