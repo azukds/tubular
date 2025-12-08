@@ -10,7 +10,7 @@ from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
 class TestPipelineDumpAndLoadJson:
     """Tests for dump_pipeline_to_json() and load_pipeline_from_json()."""
 
-    def test_dump_pipeline_then_load_pipeline(self):    # noqa: PLR6301
+    def test_dump_pipeline_then_load_pipeline(self):  # noqa: PLR6301
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
 
         median_imputer = MedianImputer(columns=["b"])
@@ -43,7 +43,7 @@ class TestPipelineDumpAndLoadJson:
                 f"loaded pipeline does not match the original pipeline at step {i}, expected step {x1} but got {y1}"
             )
 
-    def test_dump_pipeline_to_json_output(self):    # noqa: PLR6301
+    def test_dump_pipeline_to_json_output(self):  # noqa: PLR6301
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
 
         median_imputer = MedianImputer(columns=["b"])
@@ -56,7 +56,9 @@ class TestPipelineDumpAndLoadJson:
         original_pipeline.fit(df, df["a"])
 
         actual_json = dump_pipeline_to_json(original_pipeline)
-
+        transformers = ["MedianImputer", "MeanImputer"]
+        for transformer in transformers:
+            del actual_json[transformer]["tubular_version"]
         expected_json = {
             "MeanImputer": {
                 "classname": "MeanImputer",
@@ -68,7 +70,6 @@ class TestPipelineDumpAndLoadJson:
                     "verbose": mean_imputer.verbose,
                     "weights_column": mean_imputer.weights_column,
                 },
-                "tubular_version": "...",
             },
             "MedianImputer": {
                 "classname": "MedianImputer",
@@ -80,7 +81,6 @@ class TestPipelineDumpAndLoadJson:
                     "verbose": median_imputer.verbose,
                     "weights_column": median_imputer.weights_column,
                 },
-                "tubular_version": "...",
             },
         }
         transformers = ["MedianImputer", "MeanImputer"]
@@ -90,7 +90,7 @@ class TestPipelineDumpAndLoadJson:
                 f"loaded json pipeline does not match the original pipeline at step {i}, expected step {expected_json[transformer]} but got {actual_json[transformer]}"
             )
 
-    def test_dump_transformer_not_jsonable(self):   # noqa: PLR6301
+    def test_dump_transformer_not_jsonable(self):  # noqa: PLR6301
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
         capping_transformer = CappingTransformer(capping_values={"b": [0, 15]})
 
