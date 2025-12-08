@@ -25,14 +25,16 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    def test_time_format_type_error(self):
+    @staticmethod
+    def test_time_format_type_error():
         """Test that an exception is raised for bad time_zone arg."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             ToDatetimeTransformer(column="a", time_format=1)
 
-    def test_warning_for_none_time_format(self):
+    @staticmethod
+    def test_warning_for_none_time_format():
         "test appropriate warning raised when time_format not provided"
 
         with pytest.warns(
@@ -49,7 +51,8 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    def expected_df_1(self, library="pandas"):
+    @staticmethod
+    def expected_df_1(library="pandas"):
         """Expected output for test_expected_output."""
 
         df_dict = {
@@ -99,7 +102,8 @@ class TestTransform(GenericTransformTests):
 
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    def create_to_datetime_test_df(self, library="pandas"):
+    @staticmethod
+    def create_to_datetime_test_df(library="pandas"):
         """Create DataFrame to be used in the ToDatetimeTransformer tests."""
 
         df_dict = {
@@ -150,7 +154,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

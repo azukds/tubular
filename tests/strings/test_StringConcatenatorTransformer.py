@@ -55,7 +55,8 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "StringConcatenator"
 
-    def test_correct_df_returned_1(self):
+    @staticmethod
+    def test_correct_df_returned_1():
         """Test that correct df is returned after transformation."""
         df = d.create_df_1()
         expected_df = df.copy()
@@ -74,7 +75,8 @@ class TestTransform(GenericTransformTests):
             "Incorrect dataframe returned after StringConcatenator transform",
         )
 
-    def test_correct_df_returned_2(self):
+    @staticmethod
+    def test_correct_df_returned_2():
         """Test that correct df is returned after transformation."""
         df = d.create_df_1()
         expected_df = df.copy()
@@ -99,7 +101,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

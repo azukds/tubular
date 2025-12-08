@@ -56,7 +56,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "OrdinalEncoderTransformer"
 
-    def test_learnt_values(self):
+    @staticmethod
+    def test_learnt_values():
         """Test that the ordinal encoder values learnt during fit are expected."""
         df = create_OrdinalEncoderTransformer_test_df()
 
@@ -76,7 +77,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
             msg="mappings attribute",
         )
 
-    def test_learnt_values_weight(self):
+    @staticmethod
+    def test_learnt_values_weight():
         """Test that the ordinal encoder values learnt during fit are expected if a weights column is specified."""
         df = create_OrdinalEncoderTransformer_test_df()
 
@@ -96,7 +98,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
             msg="mappings attribute",
         )
 
-    def test_response_column_nulls_error(self):
+    @staticmethod
+    def test_response_column_nulls_error():
         """Test that an exception is raised if nulls are present in response_column."""
         df = d.create_df_4()
 
@@ -108,7 +111,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         ):
             x.fit(df, df["a"])
 
-    def test_error_for_too_many_levels(self):
+    @staticmethod
+    def test_error_for_too_many_levels():
         "test that transformer.transform errors for column with too many levels"
         transformer = OrdinalEncoderTransformer(columns=["a"])
 
@@ -152,7 +156,8 @@ class TestTransform(GenericTransformTests):
 
         return df
 
-    def test_learnt_values_not_modified(self):
+    @staticmethod
+    def test_learnt_values_not_modified():
         """Test that the mappings from fit are not changed in transform."""
         df = create_OrdinalEncoderTransformer_test_df()
 
@@ -179,7 +184,8 @@ class TestTransform(GenericTransformTests):
             expected_df_1(),
         ),
     )
-    def test_expected_output(self, df, expected):
+    @staticmethod
+    def test_expected_output(df, expected):
         """Test that the output is expected from transform."""
         x = OrdinalEncoderTransformer(columns=["b", "d", "f"])
 
@@ -210,7 +216,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for OrdinalEncoderTransformer outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod
