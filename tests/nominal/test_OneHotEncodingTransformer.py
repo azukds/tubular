@@ -375,9 +375,9 @@ class TestTransform(
         transformer.fit(df_train)
         transformer2.fit(df_train)
 
-        transformer.transform(df_test)
-
         transformer = _handle_from_json(transformer, from_json)
+
+        transformer.transform(df_test)
 
         assert transformer2.categories_ == transformer.categories_, (
             f"categories_ modified during transform, pre transform had {transformer2.categories_} but post transform has {transformer.categories_}"
