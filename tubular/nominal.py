@@ -1875,7 +1875,6 @@ class OneHotEncodingTransformer(
 
         return missing_levels
 
-    @block_from_json
     @beartype
     def _get_feature_names(
         self,
