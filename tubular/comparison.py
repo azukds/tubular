@@ -47,6 +47,9 @@ class EqualityChecker(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -56,6 +59,8 @@ class EqualityChecker(
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(
