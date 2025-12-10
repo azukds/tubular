@@ -20,11 +20,15 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v3
+      - if: ${{ github.event_name=="pull_request" }}
+        uses: actions/checkout@v3
         with:
           # run on RESULT of PR merge
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch_depth: 0
+      
+      - if: ${{ github.event_name!="pull_request" }}
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -73,11 +77,15 @@ jobs:
         python-version: ["3.9"]
 
     steps:
-        - uses: actions/checkout@v3
-          with:
-            # run on RESULT of PR merge
-            ref: refs/pull/${{ github.event.pull_request.number }}/merge
-            fetch_depth: 0
+        - if: ${{ github.event_name=="pull_request" }}
+          uses: actions/checkout@v3
+            with:
+              # run on RESULT of PR merge
+              ref: refs/pull/${{ github.event.pull_request.number }}/merge
+              fetch_depth: 0
+      
+      - if: ${{ github.event_name!="pull_request" }}
+        uses: actions/checkout@v3
 
         - name: Set up Python ${{ matrix.python-version }}
           uses: actions/setup-python@v4
