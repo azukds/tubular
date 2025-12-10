@@ -22,6 +22,13 @@ repos:
     rev: 'v1.39.0'
     hooks:
       - id: typos
+-   repo: https://github.com/adamchainz/blacken-docs
+    rev: "1.20.0" 
+    hooks:
+    -   id: blacken-docs
+        args: [--skip-errors]
+        additional_dependencies:
+        - black==22.12.0
 -   repo: local
     hooks:
       - id: generate-feature-table

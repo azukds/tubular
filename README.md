@@ -2,7 +2,7 @@
   <img src="https://github.com/azukds/tubular/raw/main/logo.png">
 </p>
 
-Feature engineering on polars and pandas dataframes for machine learning!
+Feature engineering on polars and pandas dataframes for machine learning! 
 
 ----
 
@@ -34,11 +34,11 @@ Here is a simple example of applying capping to two columns;
 ```python
 import polars as pl
 
-transformer=CappingTransformer(
-capping_values={'a': [10, 20], 'b': [1,3]},
-  )
+transformer = CappingTransformer(
+    capping_values={"a": [10, 20], "b": [1, 3]},
+)
 
-test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
 transformer.transform(test_df)
 # ->
