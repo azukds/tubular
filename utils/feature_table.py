@@ -2,12 +2,12 @@
 
 import pathlib
 import re
+import sys
 
 import pandas as pd
 
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from tubular.base import FEATURE_REGISTRY
-
-ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def get_feature_table(feature_dict: dict[str, dict[str, bool]]) -> str:
