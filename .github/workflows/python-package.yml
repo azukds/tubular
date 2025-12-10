@@ -20,7 +20,15 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v3
+      - name: Debug: print event info
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
+          echo "base_ref=${{ github.base_ref }}"
+          echo "head_ref=${{ github.head_ref }}"
+
+      - name: checkout
+        uses: actions/checkout@v3
       
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -69,7 +77,8 @@ jobs:
         python-version: ["3.9"]
 
     steps:
-        - uses: actions/checkout@v3
+        - name: checkout
+          uses: actions/checkout@v3
 
         - name: Set up Python ${{ matrix.python-version }}
           uses: actions/setup-python@v4
