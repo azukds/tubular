@@ -20,13 +20,6 @@ jobs:
 
     steps:
 
-      - name: DEBUG: Print event info
-        run: |
-          echo "event_name=${{ github.event_name }}"
-          echo "ref=${{ github.ref }}"
-          echo "base_ref=${{ github.base_ref }}"
-          echo "head_ref=${{ github.head_ref }}"
-
       - uses: actions/checkout@v3
       
       - name: Set up Python ${{ matrix.python-version }}
@@ -40,6 +33,13 @@ jobs:
           uv venv -p  ${{ matrix.python-version }} ${{ matrix.python-version }}
           source ${{ matrix.python-version }}/bin/activate
           uv pip install .[dev]
+
+      - name: DEBUG: Print event info
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
+          echo "base_ref=${{ github.base_ref }}"
+          echo "head_ref=${{ github.head_ref }}"
 
       - name: Test with pytest
         if: always()
