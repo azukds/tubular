@@ -34,7 +34,7 @@ jobs:
           source ${{ matrix.python-version }}/bin/activate
           uv pip install .[dev]
 
-      - name: DEBUG: Print event info
+      - name: debug Print event info
         run: |
           echo "event_name=${{ github.event_name }}"
           echo "ref=${{ github.ref }}"
