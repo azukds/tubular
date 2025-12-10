@@ -2,8 +2,11 @@
 
 import pathlib
 import re
+import sys
 
 import pandas as pd
+
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from tubular.base import FEATURE_REGISTRY
 
