@@ -1383,6 +1383,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         """
         if datetime_mappings:
             for key in datetime_mappings:
+                print(key, datetime_mappings)
                 if key not in self.include:
                     msg = f"{self.classname()}: keys in datetime_mappings should be in include"
                     raise ValueError(msg)
