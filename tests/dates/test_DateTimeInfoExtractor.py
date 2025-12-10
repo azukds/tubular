@@ -139,7 +139,7 @@ class TestInit(
             (
                 ["timeofyear"],
                 {
-                    "timeofyear": dict.fromkeys(range(12), "month"),
+                    "timeofyear": dict.fromkeys(range(1, 13), "month"),
                     "timeofday": dict.fromkeys(range(24), "hour"),
                 },
             ),
