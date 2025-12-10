@@ -55,6 +55,39 @@ transformer.transform(test_df)
 # └─────┴─────┴─────┘
 ```
 
+We are currently in the process of rolling out support for some new features:
+- to/from json methods for our transformers to allow json storage
+- polars lazyframe support
+
+You can track our progress here:
+<!-- AUTO-GENERATED feature table -->
+|                                    | polars_compatible   | pandas_compatible   | jsonable           | lazyframe_compatible   |
+|------------------------------------|---------------------|---------------------|--------------------|------------------------|
+| AggregateColumnsOverRowTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| AggregateRowsOverColumnTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| ArbitraryImputer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| DateDifferenceTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeComponentExtractor         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeInfoExtractor              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeSinusoidCalculator         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DifferenceTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| GroupRareLevelsTransformer         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MeanImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MedianImputer                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OneDKmeansTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| SetValueTransformer                | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| ToDatetimeTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+<!-- /AUTO-GENERATED feature table -->
+
 ## Installation
 
 The easiest way to get `tubular` is directly from [pypi](https://pypi.org/project/tubular/) with;
