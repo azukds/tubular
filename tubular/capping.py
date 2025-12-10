@@ -699,7 +699,7 @@ class CappingTransformer(BaseCappingTransformer):
 
     FITS = True
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -741,6 +741,7 @@ class CappingTransformer(BaseCappingTransformer):
         """
         super().__init__(capping_values, quantiles, weights_column, **kwargs)
 
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> CappingTransformer:
         """Learn capping values from input data X.
