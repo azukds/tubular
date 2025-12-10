@@ -1387,10 +1387,10 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                     msg = f"{self.classname()}: keys in datetime_mappings should be in include"
                     raise ValueError(msg)
 
-            # check provided mappings fit required format
-            if set(datetime_mappings[key].keys()) != self.RANGE_TO_MAP[key]:
-                msg = f"{self.classname()}: {key} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[key])}-{max(self.RANGE_TO_MAP[key])}. {self.RANGE_TO_MAP[key] - set(datetime_mappings[key].keys())} are missing"
-                raise ValueError(msg)
+                # check provided mappings fit required format
+                if set(datetime_mappings[key].keys()) != self.RANGE_TO_MAP[key]:
+                    msg = f"{self.classname()}: {key} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[key])}-{max(self.RANGE_TO_MAP[key])}. {self.RANGE_TO_MAP[key] - set(datetime_mappings[key].keys())} are missing"
+                    raise ValueError(msg)
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
