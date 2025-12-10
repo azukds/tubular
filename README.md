@@ -81,8 +81,8 @@ You can track our progress here:
 | ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | OneDKmeansTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
-| OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
-| OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | SetValueTransformer                | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | ToDatetimeTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
