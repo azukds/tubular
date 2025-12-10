@@ -1322,7 +1322,6 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             {
                 "include": self.include,
                 "datetime_mappings": self.datetime_mappings,
-                "drop_original": self.drop_original,
             },
         )
 
