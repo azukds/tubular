@@ -31,11 +31,12 @@ class EqualityChecker(
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -46,6 +47,9 @@ class EqualityChecker(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -55,6 +59,8 @@ class EqualityChecker(
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -128,7 +134,6 @@ class EqualityChecker(
 
         # Drop original columns if self.drop_original is True
         return DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,

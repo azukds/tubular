@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-import tubular.base as base
 from tests.test_data import (
     create_aggregate_over_rows_test_df,
     create_is_between_dates_df_1,
@@ -16,6 +15,7 @@ from tests.test_data import (
     create_numeric_df_2,
     create_object_df,
 )
+from tubular import base
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -93,7 +93,7 @@ def get_all_classes(
 
 @pytest.fixture()
 def minimal_attribute_dict():
-    """defines minmal attributes (values) needed to initiate each transformer named (key).
+    """defines minimal attributes (values) needed to initiate each transformer named (key).
     New transformers need to be added here"""
     return {
         "ArbitraryImputer": {
@@ -186,6 +186,10 @@ def minimal_attribute_dict():
         },
         "DatetimeInfoExtractor": {
             "columns": ["a"],
+        },
+        "DatetimeComponentExtractor": {
+            "columns": ["a"],
+            "include": ["hour", "day", "month", "year"],
         },
         "DatetimeSinusoidCalculator": {
             "columns": ["a"],
@@ -346,9 +350,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     object_modules = ["tubular.mapping", "tubular.nominal", "tubular.strings"]
     object_transformers = []
     for module in object_modules:
-        object_transformers = object_transformers + [
-            x[0] for x in get_all_classes(wanted_module=module)
-        ]
+        object_transformers += [x[0] for x in get_all_classes(wanted_module=module)]
 
     for transformer in object_transformers:
         min_df_dict[transformer] = object_df

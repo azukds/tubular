@@ -10,6 +10,7 @@ import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
+from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
@@ -19,7 +20,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.imputers import MeanImputer, MedianImputer
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, WeightColumnMixin
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
     from narwhals.typing import FrameT
 
 
+@register
 class BaseNominalTransformer(BaseTransformer):
     """
     Base Transformer extension for nominal transformers.
@@ -199,6 +201,7 @@ class BaseNominalTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """Transformer to group together rare levels of nominal variables into a new level,
     labelled 'rare' (by default).
@@ -307,7 +310,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     FITS = True
 
     @beartype
-    def __init__(
+    def __init__(  # noqa: PLR0917, PLR0913
         self,
         columns: Optional[Union[str, ListOfStrs]] = None,
         cut_off_percent: FloatBetweenZeroOne = 0.01,
@@ -321,7 +324,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.cut_off_percent = cut_off_percent
 
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         self.rare_level_name = rare_level_name
 
@@ -671,7 +674,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             c: nw.col(c).cast(
                 nw.String,
             )
-            if schema[c] in [nw.Categorical, nw.Enum]
+            if schema[c] in {nw.Categorical, nw.Enum}
             else nw.col(c)
             for c in self.columns
         }
@@ -689,7 +692,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             c: transform_expressions[c].cast(
                 nw.Enum(self.non_rare_levels[c] + [self.rare_level_name]),
             )
-            if (schema[c] in [nw.Categorical, nw.Enum])
+            if (schema[c] in {nw.Categorical, nw.Enum})
             else transform_expressions[c]
             for c in self.columns
         }
@@ -699,10 +702,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class MeanResponseTransformer(
     BaseNominalTransformer,
     WeightColumnMixin,
-    BaseMappingTransformMixin,
     DropOriginalMixin,
 ):
     """Transformer to apply mean response encoding. This converts categorical variables to
@@ -768,11 +771,11 @@ class MeanResponseTransformer(
 
     level : str, int, float, list or None, default = None
         Parameter to control encoding against a multi-level categorical response. If None the response will be
-        treated as binary or continous, if 'all' all response levels will be encoded against and if it is a list of
+        treated as binary or continuous, if 'all' all response levels will be encoded against and if it is a list of
         levels then only the levels specified will be encoded against.
 
     response_levels : list
-        Only created in the mutli-level case. Generated from level, list of all the response levels to encode against.
+        Only created in the multi-level case. Generated from level, list of all the response levels to encode against.
 
     mappings : dict
         Created in fit. A nested Dict of {column names : column specific mapping dictionary} pairs.  Column
@@ -783,7 +786,7 @@ class MeanResponseTransformer(
         against multiple response levels, of the form {column}_{level}.
 
     transformer_dict : dict
-        Only created in the mutli-level case. A dictionary of the form level : transformer containing the mean response
+        Only created in the multi-level case. A dictionary of the form level : transformer containing the mean response
         transformers for each level to be encoded against.
 
     unseen_levels_encoding_dict: dict
@@ -791,9 +794,6 @@ class MeanResponseTransformer(
 
     return_type: Literal['float32', 'float64']
         What type to cast return column as. Defaults to float32.
-
-    cast_method: Literal[np.float32, np,float64]
-        Store the casting method associated to return_type
 
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
@@ -813,24 +813,39 @@ class MeanResponseTransformer(
 
     Example:
     --------
-    >>> MeanResponseTransformer(
+    >>> import polars as pl
+
+    >>> transformer = MeanResponseTransformer(
     ... columns='a',
     ... prior=1,
     ... unseen_level_handling='mean',
     ...    )
+    >>> transformer
+    MeanResponseTransformer(columns=['a'], prior=1, unseen_level_handling='mean')
+
+    >>> # once fit, transformer can also be dumped to json and reinitialised
+
+    >>> test_df=pl.DataFrame({'a': ['x', 'y'], 'b': [0, 1]})
+
+    >>> _ = transformer.fit(test_df[['a']], test_df['b'])
+
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 1, 'level': None, 'unseen_level_handling': 'mean', 'return_type': 'Float32', 'drop_original': True}, 'fit': {'mappings': {'a': {'x': 0.25, 'y': 0.75}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a'], 'unseen_levels_encoding_dict': {'a': 0.5}}}
+    >>> MeanResponseTransformer.from_json(json_dump)
     MeanResponseTransformer(columns=['a'], prior=1, unseen_level_handling='mean')
     """
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    jsonable = True
 
-    jsonable = False
+    lazyframe_compatible = False
 
     FITS = True
 
     @beartype
-    def __init__(
+    def __init__(  # noqa: PLR0917, PLR0913
         self,
         columns: Optional[Union[str, list[str]]] = None,
         weights_column: Optional[str] = None,
@@ -843,7 +858,7 @@ class MeanResponseTransformer(
         drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
@@ -862,13 +877,80 @@ class MeanResponseTransformer(
 
         self.level = level
 
-        # self.cast_method is used to cast mapping values, so uses numpy types
-        if return_type == "Float64":
-            self.cast_method = np.float64
-        else:
-            self.cast_method = np.float32
-
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> import polars as pl
+
+        >>> transformer=MeanResponseTransformer(columns=['a'])
+
+        >>> test_df=pl.DataFrame({'a': ['x', 'y'], 'b': [0, 1]})
+
+        >>> _ = transformer.fit(test_df[['a']], test_df['b'])
+
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 0, 'level': None, 'unseen_level_handling': None, 'return_type': 'Float32', 'drop_original': True}, 'fit': {'mappings': {'a': {'x': 0.0, 'y': 1.0}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a']}}
+
+
+        """
+
+        self.check_is_fitted(
+            [
+                "mappings",
+                "return_dtypes",
+                "column_to_encoded_columns",
+                "encoded_columns",
+            ],
+        )
+
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "weights_column": self.weights_column,
+                "prior": self.prior,
+                "level": self.level,
+                "unseen_level_handling": self.unseen_level_handling,
+                "return_type": self.return_type,
+                "drop_original": self.drop_original,
+            },
+        )
+
+        # make sure mappings dict is sorted for consistent repr
+        mappings = {
+            key: {
+                value: self.mappings[key][value] for value in sorted(self.mappings[key])
+            }
+            for key in sorted(self.mappings)
+        }
+
+        json_dict["fit"].update(
+            {
+                "mappings": mappings,
+                "return_dtypes": self.return_dtypes,
+                "column_to_encoded_columns": self.column_to_encoded_columns,
+                "encoded_columns": self.encoded_columns,
+            },
+        )
+
+        if self.unseen_level_handling:
+            self.check_is_fitted(["unseen_levels_encoding_dict"])
+            json_dict["fit"]["unseen_levels_encoding_dict"] = (
+                self.unseen_levels_encoding_dict
+            )
+
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer
@@ -939,6 +1021,7 @@ class MeanResponseTransformer(
             ]
         )
 
+    @block_from_json
     @nw.narwhalify
     def _prior_regularisation(
         self,
@@ -992,6 +1075,7 @@ class MeanResponseTransformer(
             ),
         )
 
+    @block_from_json
     @nw.narwhalify
     def _fit_binary_response(
         self,
@@ -1008,7 +1092,7 @@ class MeanResponseTransformer(
             Data with catgeorical variable columns to transform, and target to encode against.
 
         columns : list(str)
-            Post transform names of columns to be encoded. In the binary or continous case
+            Post transform names of columns to be encoded. In the binary or continuous case
             this is just self.columns. In the multi-level case this should be of the form
             {column_in_original_data}_{response_level}, where response_level is the level
             being encoded against in this call of _fit_binary_response.
@@ -1052,10 +1136,7 @@ class MeanResponseTransformer(
                 response_column=response_column,
             )
 
-            # to_dict changes types
-            for key in self.mappings[c]:
-                self.mappings[c][key] = self.cast_method(self.mappings[c][key])
-
+    @block_from_json
     @nw.narwhalify
     def fit(self, X: FrameT, y: nw.Series) -> FrameT:
         """Identify mapping of categorical levels to mean response values.
@@ -1195,6 +1276,7 @@ class MeanResponseTransformer(
 
         return self
 
+    @block_from_json
     @nw.narwhalify
     def _fit_unseen_level_handling_dict(
         self,
@@ -1222,15 +1304,20 @@ class MeanResponseTransformer(
 
         if isinstance(self.unseen_level_handling, (int, float)):
             for c in self.encoded_columns:
-                self.unseen_levels_encoding_dict[c] = self.cast_method(
-                    self.unseen_level_handling,
-                )
+                self.unseen_levels_encoding_dict[c] = self.unseen_level_handling
 
         elif isinstance(self.unseen_level_handling, str):
-            X_temp = nw.from_native(BaseMappingTransformMixin.transform(self, X_y))
+            X_temp = X_y.with_columns(
+                nw.col(col)
+                .replace_strict(
+                    self.mappings[col],
+                )
+                .cast(getattr(nw, self.return_dtypes[col]))
+                for col in self.encoded_columns
+            )
 
             for c in self.encoded_columns:
-                if self.unseen_level_handling in ["mean", "median"]:
+                if self.unseen_level_handling in {"mean", "median"}:
                     group_weights = X_temp.group_by(c).agg(
                         nw.col(weights_column).sum(),
                     )
@@ -1269,10 +1356,6 @@ class MeanResponseTransformer(
                         self.unseen_level_handling,
                     )()
 
-                self.unseen_levels_encoding_dict[c] = self.cast_method(
-                    self.unseen_levels_encoding_dict[c],
-                )
-
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Transform method to apply mean response encoding stored in the mappings attribute to
@@ -1282,7 +1365,7 @@ class MeanResponseTransformer(
         all rows can be mapped then transform from BaseMappingTransformMixin to apply the
         standard pd.Series.map method.
 
-        N.B. In the mutli-level case, this method briefly overwrites the self.columns attribute, but sets
+        N.B. In the multi-level case, this method briefly overwrites the self.columns attribute, but sets
         it back to the original value at the end.
 
         Parameters
@@ -1293,7 +1376,7 @@ class MeanResponseTransformer(
         Returns
         -------
         X : pd/pl.DataFrame
-            Transformed input X with levels mapped accoriding to mappings dict.
+            Transformed input X with levels mapped according to mappings dict.
 
         Example:
         --------
@@ -1343,7 +1426,14 @@ class MeanResponseTransformer(
         └──────┴─────┴────────┘
         """
 
-        self.check_is_fitted(["mappings", "return_dtypes"])
+        self.check_is_fitted(
+            [
+                "mappings",
+                "return_dtypes",
+                "column_to_encoded_columns",
+                "encoded_columns",
+            ],
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -1375,52 +1465,18 @@ class MeanResponseTransformer(
             )
             self.mappings = original_mappings
 
-        # set up list of paired condition/outcome tuples for mapping
-        conditions_and_outcomes = {
-            output_col: [
-                self._create_mapping_conditions_and_outcomes(
-                    input_col,
-                    key,
-                    self.mappings,
-                    output_col=output_col,
-                )
-                for key in self.mappings[output_col]
-                if key in present_values[input_col]
-            ]
-            for input_col in self.columns
-            for output_col in self.column_to_encoded_columns[input_col]
-        }
-
-        if self.unseen_level_handling:
-            unseen_level_condition_and_outcomes = {
-                output_col: (
-                    ~nw.col(input_col).is_in(self.mappings[output_col].keys()),
-                    (nw.lit(self.unseen_levels_encoding_dict[output_col])),
-                )
-                for input_col in self.columns
-                for output_col in self.column_to_encoded_columns[input_col]
-            }
-
-            conditions_and_outcomes = {
-                col: conditions_and_outcomes[col]
-                + [unseen_level_condition_and_outcomes[col]]
-                for col in self.encoded_columns
-            }
-
-        # apply mapping using functools reduce to build expression
         transform_expressions = {
-            output_col: self._combine_mappings_into_expression(
-                input_col,
-                conditions_and_outcomes,
-                output_col,
+            encoded_col: nw.col(col)
+            .alias(encoded_col)
+            .replace_strict(
+                self.mappings[encoded_col],
+                default=self.unseen_levels_encoding_dict[encoded_col]
+                if self.unseen_level_handling
+                else no_default,
             )
-            for input_col in self.columns
-            for output_col in self.column_to_encoded_columns[input_col]
-        }
-
-        transform_expressions = {
-            col: transform_expressions[col].cast(getattr(nw, self.return_dtypes[col]))
-            for col in self.encoded_columns
+            .cast(getattr(nw, self.return_dtypes[encoded_col]))
+            for col in self.columns
+            for encoded_col in self.column_to_encoded_columns[col]
         }
 
         X = X.with_columns(
@@ -1432,7 +1488,6 @@ class MeanResponseTransformer(
         ]
 
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             columns_to_drop,
@@ -1442,6 +1497,7 @@ class MeanResponseTransformer(
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class OneHotEncodingTransformer(
     DropOriginalMixin,
     BaseTransformer,
@@ -1463,12 +1519,6 @@ class OneHotEncodingTransformer(
 
     drop_original : bool, default = False
         Should original columns be dropped after creating dummy fields?
-
-    copy : bool, default = False
-        Should X be copied prior to transform? Should X be copied prior to transform? Copy argument no longer used and will be deprecated in a future release
-
-    verbose : bool, default = True
-        Should warnings/checkmarks get displayed?
 
     **kwargs
         Arbitrary keyword arguments passed onto sklearn OneHotEncoder.init method.
@@ -1499,9 +1549,24 @@ class OneHotEncodingTransformer(
 
     Example:
     --------
-    >>> OneHotEncodingTransformer(
+    >>> import polars as pl
+
+    >>> transformer = OneHotEncodingTransformer(
     ... columns='a',
     ...    )
+    >>> transformer
+    OneHotEncodingTransformer(columns=['a'])
+
+    >>> test_df=pl.DataFrame({'a':['x', 'y'], 'b': ['w', 'z']})
+
+    >>> _ = transformer.fit(test_df)
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+
+    >>> OneHotEncodingTransformer.from_json(json_dump)
     OneHotEncodingTransformer(columns=['a'])
     """
 
@@ -1509,9 +1574,11 @@ class OneHotEncodingTransformer(
 
     lazyframe_compatible = False
 
-    jsonable = False
+    jsonable = True
 
     FITS = True
+
+    MAX_LEVELS = 100
 
     @beartype
     def __init__(
@@ -1520,19 +1587,63 @@ class OneHotEncodingTransformer(
         wanted_values: Optional[dict[str, ListOfStrs]] = None,
         separator: str = "_",
         drop_original: bool = False,
-        copy: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         BaseTransformer.__init__(
             self,
             columns=columns,
-            verbose=verbose,
-            copy=copy,
+            **kwargs,
         )
 
         self.wanted_values = wanted_values
         self.drop_original = drop_original
         self.separator = separator
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """dump transformer to json dict
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> import polars as pl
+
+        >>> transformer=OneHotEncodingTransformer(columns=['a'])
+
+        >>> test_df=pl.DataFrame({'a':['x', 'y'], 'b': ['w', 'z']})
+
+        >>> _ = transformer.fit(test_df)
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+
+        """
+
+        self.check_is_fitted(["categories_", "new_feature_names_"])
+
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "wanted_values": self.wanted_values,
+                "separator": self.separator,
+                "drop_original": self.drop_original,
+            },
+        )
+        json_dict["fit"].update(
+            {
+                "categories_": self.categories_,
+                "new_feature_names_": self.new_feature_names_,
+            },
+        )
+
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """list features modified/created by the transformer
@@ -1636,6 +1747,7 @@ class OneHotEncodingTransformer(
                 msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
                 raise ValueError(msg)
 
+    @block_from_json
     @beartype
     def fit(
         self,
@@ -1689,9 +1801,9 @@ class OneHotEncodingTransformer(
         for c in self.columns:
             level_count = len(present_levels[c])
 
-            if level_count > 100:
+            if level_count > self.MAX_LEVELS:
                 raise ValueError(
-                    f"{self.classname()}: column %s has over 100 unique values - consider another type of encoding"
+                    f"{self.classname()}: column %s has over {self.MAX_LEVELS} unique values - consider another type of encoding"
                     % c,
                 )
             # categories if 'values' is provided
@@ -1719,7 +1831,7 @@ class OneHotEncodingTransformer(
         c: str,
         missing_levels: dict[str, list[Any]],
     ) -> dict[str, list[Any]]:
-        """Logs a warning for user-specifed levels that are not found in the dataset and updates "missing_levels[c]" with those missing levels.
+        """Logs a warning for user-specified levels that are not found in the dataset and updates "missing_levels[c]" with those missing levels.
 
         Parameters
         ----------
@@ -1846,7 +1958,7 @@ class OneHotEncodingTransformer(
         return_native = self._process_return_native(return_native_override)
 
         # Check that transformer has been fit before calling transform
-        self.check_is_fitted(["categories_"])
+        self.check_is_fitted(["categories_", "new_feature_names_"])
 
         X = _convert_dataframe_to_narwhals(X)
         X = BaseTransformer.transform(self, X, return_native_override=False)
@@ -1896,7 +2008,6 @@ class OneHotEncodingTransformer(
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
-            self,
             X,
             self.drop_original,
             self.columns,
@@ -1964,6 +2075,9 @@ class OrdinalEncoderTransformer(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1974,13 +2088,16 @@ class OrdinalEncoderTransformer(
 
     FITS = True
 
+    deprecated = True
+
+    @beartype
     def __init__(
         self,
-        columns: str | list[str] | None = None,
-        weights_column: str | None = None,
-        **kwargs: dict[str, bool],
+        columns: Union[str, list[str]],
+        weights_column: Optional[str] = None,
+        **kwargs: bool,
     ) -> None:
-        WeightColumnMixin.check_and_set_weight(self, weights_column)
+        self.weights_column = weights_column
 
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
 
@@ -2061,7 +2178,7 @@ class OrdinalEncoderTransformer(
 
         for col in self.columns:
             # if more levels than int8 type can handle, then error
-            if len(self.mappings[col]) > 127:
+            if len(self.mappings[col]) > np.iinfo(np.int8).max:
                 msg = f"{self.classname()}: column {c} has too many levels to encode"
                 raise ValueError(
                     msg,
@@ -2154,6 +2271,9 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -2163,6 +2283,8 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     def __init__(
         self,
@@ -2207,7 +2329,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
             }
 
             # if more levels than int8 type can handle, then error
-            if len(self.mappings[c]) > 127:
+            if len(self.mappings[c]) > np.iinfo(np.int8).max:
                 msg = f"{self.classname()}: column {c} has too many levels to encode"
                 raise ValueError(
                     msg,

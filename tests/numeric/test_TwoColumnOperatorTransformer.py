@@ -23,7 +23,8 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "TwoColumnOperatorTransformer"
 
-    def test_axis_not_present_error(self):
+    @staticmethod
+    def test_axis_not_present_error():
         """Checks that an error is raised if no axis element present in pd_method_kwargs dict."""
         with pytest.raises(
             ValueError,
@@ -31,7 +32,8 @@ class TestInit(
         ):
             TwoColumnOperatorTransformer("mul", ["a", "b"], "c", pd_method_kwargs={})
 
-    def test_axis_not_valid_error(self):
+    @staticmethod
+    def test_axis_not_valid_error():
         """Checks that an error is raised if no axis element present in pd_method_kwargs dict."""
         with pytest.raises(ValueError, match="pd_method_kwargs 'axis' must be 0 or 1"):
             TwoColumnOperatorTransformer(
@@ -60,7 +62,8 @@ class TestTransform(BaseNumericTransformerTransformTests):
             ("pow", [1, 32, 729]),
         ],
     )
-    def test_expected_output(self, pd_method_name, output):
+    @staticmethod
+    def test_expected_output(pd_method_name, output):
         """Tests that the output given by TwoColumnOperatorTransformer is as you would expect."""
         expected = d.create_df_11()
         expected["c"] = output
@@ -81,7 +84,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

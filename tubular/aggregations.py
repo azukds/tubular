@@ -12,13 +12,13 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, NumericTypes
 
 
 class ColumnsOverRowAggregationOptions(str, Enum):
-    """Aggregation options fo ColumnsOverRowAggregationTransformer."""
+    """Aggregation options for ColumnsOverRowAggregationTransformer."""
 
     MIN = "min"
     MAX = "max"
@@ -29,7 +29,7 @@ class ColumnsOverRowAggregationOptions(str, Enum):
 
 
 class RowsOverColumnsAggregationOptions(str, Enum):
-    """Aggregation options fo RowsOverColumnAggregationTransformer."""
+    """Aggregation options for RowsOverColumnAggregationTransformer."""
 
     MIN = "min"
     MAX = "max"
@@ -60,6 +60,7 @@ ListOfRowsOverColumnsAggregations = Annotated[
 ]
 
 
+@register
 class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     """Base class for aggregation transformers.
 
@@ -82,8 +83,8 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         Indicator for verbose output.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible: bool
         Indicates if transformer will work with polars frames
@@ -124,7 +125,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             ListOfRowsOverColumnsAggregations,
         ],
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -137,11 +138,11 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             'mean', 'median', and 'count'.
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
-        verbose : bool, optional
-            If True, enables verbose output for debugging purposes. Default is False.
+        kwargs: bool
+            parameters for base class, e.g. verbose
 
         """
-        super().__init__(columns=columns, verbose=verbose)
+        super().__init__(columns=columns, **kwargs)
 
         self.aggregations = aggregations
 
@@ -161,8 +162,8 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
             DataFrame to transform by aggregating specified columns.
 
         return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
+            option to override return_native attr in transformer,
+            useful when calling parent methods
 
         Returns
         -------
@@ -213,14 +214,18 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         non_numerical_columns = list(non_numerical_columns)
         non_numerical_columns.sort()
         if len(non_numerical_columns) != 0:
-            msg = f"{self.classname}: attempting to call transformer on non-numeric columns {non_numerical_columns}, which is not supported"
+            msg = f"{self.classname}: attempting to call transformer on non-numeric columns {non_numerical_columns}, which is not supported"  # noqa:E501
             raise TypeError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
+@register
 class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
-    """Aggregate rows over specified columns, where rows are grouped by provided key column.
+    """Aggregation transformer.
+
+    Aggregate rows over specified columns,
+    where rows are grouped by provided key column.
 
     Attributes:
     ----------
@@ -237,8 +242,8 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         Whether to drop the original columns after transformation. Default is False.
 
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible: bool
         Indicates if transformer will work with polars frames
@@ -279,7 +284,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -297,15 +302,15 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
 
-        verbose: bool
-            Controls verbosity of transformer
+        kwargs: bool
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(
             columns=columns,
             aggregations=aggregations,
             drop_original=drop_original,
-            verbose=verbose,
+            **kwargs,
         )
         self.key = key
 
@@ -394,7 +399,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**expr_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.drop_original,
             self.columns,
@@ -405,6 +410,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """Aggregate provided columns over each row.
 
@@ -422,12 +428,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     drop_original : bool, optional
         Whether to drop the original columns after transformation. Default is False.
 
-    verbose : bool, optional
-        Indicator for verbose output.
-
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible: bool
         Indicates if transformer will work with polars frames
@@ -466,7 +469,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         columns: Union[str, list[str]],
         aggregations: ListOfColumnsOverRowAggregations,
         drop_original: bool = False,
-        verbose: bool = False,
+        **kwargs: bool,
     ) -> None:
         """Initialise class.
 
@@ -481,15 +484,15 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         drop_original : bool, optional
             Whether to drop the original columns after transformation. Default is False.
 
-        verbose: bool
-            Controls  verbosity  of transformer
+        kwargs: bool
+            parameters for base class, e.g. verbose
 
         """
         super().__init__(
             columns=columns,
             aggregations=aggregations,
             drop_original=drop_original,
-            verbose=verbose,
+            **kwargs,
         )
 
     def get_feature_names_out(self) -> list[str]:
@@ -573,7 +576,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**transform_dict)
 
-        X = self.drop_original_column(
+        X = DropOriginalMixin.drop_original_column(
             X,
             self.drop_original,
             self.columns,

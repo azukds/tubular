@@ -14,7 +14,11 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import MeanResponseTransformer
 
@@ -111,71 +115,52 @@ def learnt_mapping_dict():
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_mean():
-    return_dict = {
+    return {
         "b": (1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0) / 6,
         "b_blue": (1.0 + 1.0 + 0.0 + 0.0 + 0.0 + 0.0) / 6,
         "b_yellow": (0.0 + 0.0 + 1.0 + 1.0 + 0.0 + 0.0) / 6,
         "b_green": (0.0 + 0.0 + 0.0 + 0.0 + 1.0 + 1.0) / 6,
     }
 
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-
-    return return_dict
-
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_median():
-    return_dict = {
+    return {
         "b": 3.0,
         "b_blue": 0.0,
         "b_yellow": 0.0,
         "b_green": 0.0,
     }
 
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
-
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_highest():
-    return_dict = {
+    return {
         "b": 6.0,
         "b_blue": 1.0,
         "b_yellow": 1.0,
         "b_green": 1.0,
     }
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
 
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_lowest():
-    return_dict = {
+    return {
         "b": 1.0,
         "b_blue": 0.0,
         "b_yellow": 0.0,
         "b_green": 0.0,
     }
 
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
-
 
 @pytest.fixture()
 def learnt_unseen_levels_encoding_dict_arbitrary():
-    return_dict = {
+    return {
         "b": 22.0,
         "b_blue": 22.0,
         "b_yellow": 22.0,
         "b_green": 22.0,
     }
-    for key, value in return_dict.items():
-        return_dict[key] = np.float32(value)
-    return return_dict
 
 
 class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
@@ -190,7 +175,8 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
     def test_weight_arg_errors(self):
         pass
 
-    def test_prior_not_positive_int_error(self):
+    @staticmethod
+    def test_prior_not_positive_int_error():
         """Test that an exception is raised if prior is not a positive int."""
         with pytest.raises(BeartypeCallHintParamViolation):
             MeanResponseTransformer(prior=-1)
@@ -199,8 +185,9 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
 class TestPriorRegularisation:
     "tests for _prior_regularisation method."
 
+    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_output1(self, library):
+    def test_output1(library):
         "Test output of method."
         x = MeanResponseTransformer(columns="a", prior=3)
 
@@ -242,7 +229,8 @@ class TestPriorRegularisation:
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_output2(self, library):
+    @staticmethod
+    def test_output2(library):
         "Test output of method - for category dtypes"
         x = MeanResponseTransformer(columns="a", prior=0)
 
@@ -289,7 +277,8 @@ class TestPriorRegularisation:
         )
 
     @pytest.mark.parametrize("library", ["pandas"])
-    def test_output3(self, library):
+    @staticmethod
+    def test_output3(library):
         "Test output of method - for pandas object dtype"
         x = MeanResponseTransformer(columns="a", prior=0)
 
@@ -340,7 +329,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         cls.transformer_name = "MeanResponseTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_weights_column_missing_error(self, library):
+    @staticmethod
+    def test_weights_column_missing_error(library):
         """Test that an exception is raised if weights_column is specified but not present in data for fit."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -364,8 +354,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
+    @staticmethod
     def test_response_column_nulls_error(
-        self,
         level,
         target_column,
         unseen_level_handling,
@@ -404,8 +394,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             (None, "a", "min"),
         ],
     )
+    @staticmethod
     def test_correct_mappings_stored_numeric_response(
-        self,
         learnt_mapping_dict,
         level,
         target_column,
@@ -438,8 +428,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
+    @staticmethod
     def test_correct_mappings_stored_categorical_response(
-        self,
         learnt_mapping_dict,
         level,
         target_column,
@@ -493,8 +483,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             (["yellow", "blue"], "multi_level_response", "mean"),
         ],
     )
-    def test_correct_unseen_levels_encoding_dict_stored(
-        self,
+    @staticmethod
+    def test_correct_unseen_levels_encoding_dict_stored(  # noqa: PLR0912
         learnt_unseen_levels_encoding_dict_mean,
         learnt_unseen_levels_encoding_dict_median,
         learnt_unseen_levels_encoding_dict_lowest,
@@ -569,7 +559,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
                     assert actual == expected
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_missing_categories_ignored(self, library):
+    @staticmethod
+    def test_missing_categories_ignored(library):
         "test that where a categorical column has missing levels, these do not make it into the encoding dict"
 
         df = create_MeanResponseTransformer_test_df(library=library)
@@ -616,7 +607,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
                     "f": {False: 2.0, True: 5.0},
                 },
-                np.float64(3.5),
+                3.5,
             ),
             # no weight, prior
             (
@@ -642,7 +633,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     },
                     "f": {False: 47 / 16, True: 65 / 16},
                 },
-                np.float64(3.5),
+                3.5,
             ),
             # weight, no prior
             (
@@ -654,7 +645,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
                     "f": {False: 14 / 6, True: 77 / 15},
                 },
-                np.float64(13 / 3),
+                13 / 3,
             ),
             # prior and weight
             (
@@ -665,12 +656,12 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     "d": {1: 7 / 2, 2: 11 / 3, 3: 23 / 6, 4: 4.0, 5: 30 / 7, 6: 32 / 7},
                     "f": {False: 13 / 4, True: 50 / 11},
                 },
-                np.float64(4.0),
+                4.0,
             ),
         ],
     )
+    @staticmethod
     def test_learnt_values(
-        self,
         library,
         columns,
         weights_values,
@@ -699,12 +690,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             response_column="a",
         )
 
-        for key in expected_mappings:
-            for value in expected_mappings[key]:
-                expected_mappings[key][value] = x.cast_method(
-                    expected_mappings[key][value],
-                )
-
         assert x.global_mean == expected_mean, (
             f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
         )
@@ -715,7 +700,8 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
-    def test_prior_logic(self, prior, library):
+    @staticmethod
+    def test_prior_logic(prior, library):
         "Test that for prior>0 encodings are closer to global mean than for prior=0."
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -786,7 +772,8 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         ("low_weight", "high_weight"),
         ((1, 2), (2, 3), (3, 4), (10, 20)),
     )
-    def test_prior_logic_for_weights(self, low_weight, high_weight, library):
+    @staticmethod
+    def test_prior_logic_for_weights(low_weight, high_weight, library):  # noqa: PLR0914
         "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -1180,6 +1167,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         (
@@ -1233,14 +1221,15 @@ class TestTransform(GenericTransformTests):
             ),
         ],
     )
+    @staticmethod
     def test_expected_outputs(
-        self,
         library,
         columns,
         level,
         mappings,
         column_to_encoded_columns,
         expected_getter,
+        from_json,
     ):
         """Test that the output is expected from transform with various parametrized setups."""
 
@@ -1266,6 +1255,8 @@ class TestTransform(GenericTransformTests):
         x.response_levels = level
         x.encoded_columns = list(x.mappings.keys())
         x.return_dtypes = dict.fromkeys(x.encoded_columns, "Float32")
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -1300,6 +1291,7 @@ class TestTransform(GenericTransformTests):
 
     # NOTE - this currently is more of a Fit test imo, but will leave in place for now
     # as does also test Transform
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("columns", "target", "unseen_level_handling", "level", "expected_getter"),
@@ -1313,14 +1305,15 @@ class TestTransform(GenericTransformTests):
             (["b", "f"], "multi_level_response", "max", "all", expected_df_10),
         ],
     )
+    @staticmethod
     def test_expected_outputs_with_unseen_level_handling(
-        self,
         library,
         columns,
         target,
         unseen_level_handling,
         level,
         expected_getter,
+        from_json,
     ):
         """Test that the output is expected from transform with various configs and unseen level handling"""
 
@@ -1335,6 +1328,8 @@ class TestTransform(GenericTransformTests):
 
         initial_df = create_MeanResponseTransformer_test_df()
         x.fit(initial_df, initial_df[target])
+
+        x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(df)
 
@@ -1366,14 +1361,18 @@ class TestTransform(GenericTransformTests):
                 df_expected_row[column_order],
             )
 
+    @staticmethod
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_nulls_introduced_in_transform_error(self, library):
+    def test_nulls_introduced_in_transform_error(library, from_json):
         """Test that transform will raise an error if nulls are introduced."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
         x = MeanResponseTransformer(columns=["b", "d", "f"])
 
         x.fit(df, df["a"])
+
+        x = _handle_from_json(x, from_json)
 
         df = nw.from_native(df)
         df = df.with_columns(nw.lit("z").alias("b"))
@@ -1385,6 +1384,7 @@ class TestTransform(GenericTransformTests):
         ):
             x.transform(df)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "prior, level, target, unseen_level_handling",
@@ -1395,13 +1395,14 @@ class TestTransform(GenericTransformTests):
             (0, None, "a", "median"),
         ],
     )
+    @staticmethod
     def test_return_type_can_be_changed(
-        self,
         prior,
         level,
         target,
         unseen_level_handling,
         library,
+        from_json,
     ):
         "Test that output return types are controlled by return_type param, this defaults to float32 so test float64 here"
 
@@ -1417,6 +1418,8 @@ class TestTransform(GenericTransformTests):
         )
 
         x.fit(df, df[target])
+
+        x = _handle_from_json(x, from_json)
 
         output_df = nw.from_native(x.transform(df))
 
@@ -1437,8 +1440,10 @@ class TestTransform(GenericTransformTests):
                 f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
             )
 
+    @staticmethod
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(self, library):
+    def test_learnt_values_not_modified(library, from_json):
         """Test that the mappings from fit are not changed in transform."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -1449,6 +1454,8 @@ class TestTransform(GenericTransformTests):
         x2 = MeanResponseTransformer(columns="b")
 
         x2.fit(df, df["a"])
+
+        x2 = _handle_from_json(x2, from_json)
 
         x2.transform(df)
 
@@ -1461,7 +1468,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

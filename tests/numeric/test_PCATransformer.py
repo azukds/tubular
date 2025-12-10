@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 import test_aide as ta
+from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -21,63 +22,64 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "PCATransformer"
 
-    def test_to_random_state_type_error(self):
+    @staticmethod
+    def test_to_random_state_type_error():
         """Test that an exception is raised if random_state is not a int or None."""
         with pytest.raises(
-            TypeError,
-            match=r"""PCATransformer:unexpected type <class 'str'> for random_state, must be int or None.""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", random_state="2")
 
-    def test_to_svd_solver_type_error(self):
+    @staticmethod
+    def test_to_svd_solver_type_error():
         """Test that an exception is raised if svd_solver is not a str."""
         with pytest.raises(
-            TypeError,
-            match=r"""PCATransformer:unexpected type <class 'int'> for svd_solver, must be str""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", svd_solver=2)
 
-    def test_to_n_components_type_error(self):
+    @staticmethod
+    def test_to_n_components_type_error():
         """Test that an exception is raised if n_components is not a int or 'mle'."""
         with pytest.raises(
-            TypeError,
-            match=r"""PCATransformer:unexpected type <class 'str'> for n_components, must be int, float \(0-1\) or equal to 'mle'.""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components="3")
 
-    def test_to_pca_prefix_type_error(self):
+    @staticmethod
+    def test_to_pca_prefix_type_error():
         """Test that an exception is raised if pca_column_prefix is not str."""
         with pytest.raises(
-            TypeError,
-            match=r"""PCATransformer:unexpected type <class 'int'> for pca_column_prefix, must be str""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components=2, pca_column_prefix=3)
 
-    def test_to_svd_solver_value_error(self):
+    @staticmethod
+    def test_to_svd_solver_value_error():
         """Test that an exception is raised if svd_solver is not one of the allowed values."""
         with pytest.raises(
-            ValueError,
-            match=r"""PCATransformer:svd_solver zzz is unknown. Please select among 'auto', 'full', 'arpack', 'randomized'.""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", svd_solver="zzz")
 
-    def test_to_n_components_value_error(self):
+    @staticmethod
+    def test_to_n_components_value_error():
         """Test that an exception is raised if n_components is not one of the allowed values."""
         with pytest.raises(
-            ValueError,
-            match=r"""PCATransformer:n_components must be strictly positive got -1""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components=-1)
 
-    def test_to_n_components_float_value_error(self):
+    @staticmethod
+    def test_to_n_components_float_value_error():
         """Test that an exception is raised if n_components is not one of the allowed float values."""
         with pytest.raises(
-            ValueError,
-            match=r"""PCATransformer:n_components must be strictly positive and must be of type int when greater than or equal to 1. Got 1.4""",
+            BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components=1.4)
 
-    def test_to_arpack_mle_value_error(self):
+    @staticmethod
+    def test_to_arpack_mle_value_error():
         """Test that an exception is raised if svd solver is arpack and n_components is "mle"."""
         with pytest.raises(
             ValueError,
@@ -85,7 +87,8 @@ class TestInit(
         ):
             PCATransformer(columns="b", n_components="mle", svd_solver="arpack")
 
-    def test_to_arpack_randomized_float_type_error(self):
+    @staticmethod
+    def test_to_arpack_randomized_float_type_error():
         """Test that an exception is raised if svd solver is arpack or randomized and n_components is float ."""
         with pytest.raises(
             TypeError,
@@ -101,7 +104,8 @@ class TestFit(CheckNumericFitMixinTests, GenericFitTests):
     def setup_class(cls):
         cls.transformer_name = "PCATransformer"
 
-    def test_to_arpack_n_compontes_value_error(self):
+    @staticmethod
+    def test_to_arpack_n_compontes_value_error():
         """Test that an exception is raised if svd solver is arpack and n_components greater than nb samples or features."""
         with pytest.raises(
             ValueError,
@@ -122,9 +126,10 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "PCATransformer"
 
-    def create_svd_sovler_output(self):
-        svd_sovler_output = {}
-        svd_sovler_output["full"] = pd.DataFrame(
+    @staticmethod
+    def create_svd_solver_output():
+        svd_solver_output = {}
+        svd_solver_output["full"] = pd.DataFrame(
             {
                 "a": [34.48, 21.71, 32.83, 1.08, 32.93, 4.74, 2.76, 75.7, 14.08, 61.31],
                 "b": [12.03, 20.32, 24.12, 24.18, 68.99, 0.0, 0.0, 59.46, 11.02, 60.68],
@@ -180,7 +185,7 @@ class TestTransform(GenericTransformTests):
             },
         )
 
-        svd_sovler_output["randomized"] = pd.DataFrame(
+        svd_solver_output["randomized"] = pd.DataFrame(
             {
                 "a": [34.48, 21.71, 32.83, 1.08, 32.93, 4.74, 2.76, 75.7, 14.08, 61.31],
                 "b": [12.03, 20.32, 24.12, 24.18, 68.99, 0.0, 0.0, 59.46, 11.02, 60.68],
@@ -236,7 +241,7 @@ class TestTransform(GenericTransformTests):
             },
         )
 
-        svd_sovler_output["arpack"] = pd.DataFrame(
+        svd_solver_output["arpack"] = pd.DataFrame(
             {
                 "a": [34.48, 21.71, 32.83, 1.08, 32.93, 4.74, 2.76, 75.7, 14.08, 61.31],
                 "b": [12.03, 20.32, 24.12, 24.18, 68.99, 0.0, 0.0, 59.46, 11.02, 60.68],
@@ -291,7 +296,7 @@ class TestTransform(GenericTransformTests):
                 ],
             },
         )
-        return svd_sovler_output
+        return svd_solver_output
 
     @pytest.mark.parametrize(
         ("svd_solver", "svd_solver_output_str"),
@@ -315,7 +320,7 @@ class TestTransform(GenericTransformTests):
         x.fit(df)
         df_transformed = x.transform(df)
 
-        pca_transform_output = self.create_svd_sovler_output()
+        pca_transform_output = self.create_svd_solver_output()
 
         mocker.patch(
             "sklearn.decomposition.PCA.transform",
@@ -329,7 +334,8 @@ class TestTransform(GenericTransformTests):
         )
 
     @pytest.mark.parametrize("columns", [("b"), ("c"), (["b", "c"])])
-    def test_return_type(self, columns):
+    @staticmethod
+    def test_return_type(columns):
         """Test that transform returns a pd.DataFrame."""
         df = d.create_numeric_df_1()
 

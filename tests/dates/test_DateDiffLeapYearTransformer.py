@@ -33,7 +33,8 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "DateDiffLeapYearTransformer"
 
-    def test_missing_replacement_type_error(self):
+    @staticmethod
+    def test_missing_replacement_type_error():
         """Test that an exception is raised if missing_replacement is not the correct type."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -112,7 +113,7 @@ def expected_df_2(library="pandas"):
 
     # ensure types line up with test data
     df = nw.from_native(df)
-    for col in [col for col in df.columns if col not in ["c"]]:
+    for col in [col for col in df.columns if col != "c"]:
         df = df.with_columns(
             nw.col(col).cast(nw.Date),
         )
@@ -189,7 +190,8 @@ class TestTransform(
             (d.create_date_test_df(library="polars"), expected_df_1(library="polars")),
         ],
     )
-    def test_expected_output_drop_original_true(self, df, expected):
+    @staticmethod
+    def test_expected_output_drop_original_true(df, expected):
         """Test that the output is expected from transform, when drop_original is True.
 
         This tests positive year gaps, negative year gaps, and missing values.
@@ -212,7 +214,8 @@ class TestTransform(
             (d.create_date_test_df(library="polars"), expected_df_2(library="polars")),
         ],
     )
-    def test_expected_output_drop_original_false(self, df, expected):
+    @staticmethod
+    def test_expected_output_drop_original_false(df, expected):
         """Test that the output is expected from transform, when drop_original is False.
 
         This tests positive year gaps , negative year gaps, and missing values.
@@ -236,7 +239,8 @@ class TestTransform(
             ["datetime_col_1", "datetime_col_2"],
         ],
     )
-    def test_expected_output_nans_in_data(self, columns, library):
+    @staticmethod
+    def test_expected_output_nans_in_data(columns, library):
         "Test that transform works for different date datatype combinations with nans in data"
         x = DateDiffLeapYearTransformer(
             columns=columns,
@@ -253,7 +257,8 @@ class TestTransform(
         assert_frame_equal_dispatch(df_transformed, expected)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_nans_in_data_with_replace(self, library):
+    @staticmethod
+    def test_expected_output_nans_in_data_with_replace(library):
         "Test that transform works for different date datatype combinations with nans in data and replace nans"
         x = DateDiffLeapYearTransformer(
             columns=["date_col_1", "date_col_2"],
@@ -275,7 +280,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

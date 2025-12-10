@@ -6,9 +6,7 @@ from beartype import beartype
 
 @beartype
 def _get_median_calculation_expression(
-    column: str,
-    weights_column: Optional[str] = None,
-    initial_column_expr: Optional[nw.Expr] = None,
+    initial_column_expr: nw.Expr = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> nw.Expr:
     """Produce expressions for calculating medians in provided dataframe.
@@ -26,17 +24,11 @@ def _get_median_calculation_expression(
 
     Parameters
     ----------
-    column: list[str]
-        column to find median for
-
-    weights_column: str
-        name of weights column
-
     initial_column_expr: nw.Expr
         initial column expressions to build on. Defaults to None,
         and in this case nw.col(column) is taken as the initial expr
 
-    initial_weights_expr: nw.Expr
+    initial_weights_expr: Optional[nw.Expr]
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
 
@@ -46,17 +38,12 @@ def _get_median_calculation_expression(
         dict of format col: expression for calculating median
 
     """
-    if initial_column_expr is None:
-        initial_column_expr = nw.col(column)
+    if initial_weights_expr is not None:
+        weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
 
-    if initial_weights_expr is None:
-        initial_weights_expr = nw.col(weights_column)
-
-    if weights_column is not None:
-        cumsum_weights_expr = initial_weights_expr.cum_sum()
-
+        QUANTILE_50 = 0.5
         median_expr = initial_column_expr.filter(
-            cumsum_weights_expr >= (initial_weights_expr.sum() / 2.0),
+            weighted_quantile_expr >= QUANTILE_50
         ).min()
 
     else:
@@ -69,7 +56,7 @@ def _get_median_calculation_expression(
 def _get_mean_calculation_expressions(
     columns: list[str],
     weights_column: str,
-    initial_columns_exprs: Optional[list[nw.Expr]] = None,
+    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating means in provided dataframe.
@@ -93,7 +80,7 @@ def _get_mean_calculation_expressions(
     weights_column: str
         name of weights column
 
-    initial_columns_exprs: dict[str, nw.Expr]
+    initial_columns_exprs: Optional[dict[str, nw.Expr]]
         dict containing initial column expressions to build on. Defaults to None,
         and in this case nw.col(c) is taken as the initial expr for each column c.
 
@@ -101,7 +88,7 @@ def _get_mean_calculation_expressions(
         the mean, so we are not restricted to working with nw.col(c) and
         could pass e.g. (nw.col(c) * 2) if this was of interest.
 
-    initial_weights_expr: nw.Expr
+    initial_weights_expr: Optional[nw.Expr]
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
 
@@ -149,7 +136,7 @@ def _get_mean_calculation_expressions(
 def _get_mode_calculation_expressions(
     columns: list[str],
     weights_column: str,
-    initial_columns_exprs: Optional[list[nw.Expr]] = None,
+    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
     initial_weights_expr: Optional[nw.Expr] = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating modes in provided dataframe.
@@ -173,11 +160,11 @@ def _get_mode_calculation_expressions(
     weights_column: str
         name of weights column
 
-    initial_columns_exprs: dict[str, nw.Expr]
+    initial_columns_exprs: Optional[dict[str, nw.Expr]]
         dict containing initial column expressions to build on. Defaults to None,
         and in this case nw.col(c) is taken as the initial expr for each column c
 
-    initial_weights_expr: nw.Expr
+    initial_weights_expr: Optional[nw.Expr]
         initial expression for weights column. Defaults to None,
         and in this case nw.col(weights_column) is taken as the initial expr
 
@@ -212,3 +199,54 @@ def _get_mode_calculation_expressions(
         )
         for c in columns
     }
+
+
+@beartype
+def _weighted_quantile_expr(
+    initial_weights_expr: nw.Expr,
+) -> nw.Expr:
+    """Produce an expression that computes the cumulative fraction of weights.
+
+    The returned expression calculates the running cumulative sum of the weights column,
+    divided by the total sum of weights in the same column:
+    ``cum_sum(initial_weights_expr) / sum(initial_weights_expr)``.
+
+    This expression assumes that the data has already been sorted by the
+    weight column (and any other columns of interest) before evaluation.
+
+    Parameters
+    ----------
+    initial_weights_expr : nw.Expr
+        initial expression for weights column.
+
+    Returns
+    -------
+    nw.Expr
+        An expression computing the cumulative fraction of weights:
+        ``(cum_sum(weights_column)) / (sum(weights_column))``.
+
+    Examples
+    --------
+    >>> import polars as pl
+    >>> import narwhals as nw
+    >>> expr = _weighted_quantile_expr(nw.col("w"))
+    >>> df = pl.DataFrame({"w": [1, 2, 3]})
+    >>> df = nw.from_native(df)
+    >>> df.select(expr)
+    ┌──────────────────┐
+    |Narwhals DataFrame|
+    |------------------|
+    |  shape: (3, 1)   |
+    |  ┌──────────┐    |
+    |  │ w        │    |
+    |  │ ---      │    |
+    |  │ f64      │    |
+    |  ╞══════════╡    |
+    |  │ 0.166667 │    |
+    |  │ 0.5      │    |
+    |  │ 1.0      │    |
+    |  └──────────┘    |
+    └──────────────────┘
+
+    """
+    return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()

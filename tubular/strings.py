@@ -20,7 +20,7 @@ from tubular.types import GenericKwargs, ListOfOneStr
     """,
 )
 class SeriesStrMethodTransformer(BaseTransformer):
-    """Tranformer that applies a pandas.Series.str method.
+    """Transformer that applies a pandas.Series.str method.
 
     Transformer assigns the output of the method to a new column. It is possible to
     supply other key word arguments to the transform method, which will be passed to the
@@ -56,6 +56,9 @@ class SeriesStrMethodTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -63,6 +66,8 @@ class SeriesStrMethodTransformer(BaseTransformer):
     lazyframe_compatible = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -185,6 +190,9 @@ class StringConcatenator(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -192,6 +200,8 @@ class StringConcatenator(BaseTransformer):
     lazyframe_compatible = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(

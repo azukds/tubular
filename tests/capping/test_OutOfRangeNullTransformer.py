@@ -84,7 +84,8 @@ class TestTransform(GenericCappingTransformTests):
     def setup_class(cls):
         cls.transformer_name = "OutOfRangeNullTransformer"
 
-    def expected_df_1(self, library="pandas"):
+    @staticmethod
+    def expected_df_1(library="pandas"):
         """Expected output from test_expected_output_min_and_max."""
 
         df_dict = {
@@ -133,7 +134,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod
@@ -155,8 +156,8 @@ class TestSetReplacementValues:
             ({"a": [None, 0.1]}, {"a": [False, None]}),
         ],
     )
+    @staticmethod
     def test_expected_replacement_values_output(
-        self,
         capping_values,
         expected_replacement_values,
     ):
