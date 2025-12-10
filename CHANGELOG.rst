@@ -36,12 +36,13 @@ Changed
 - feat: added `to_json` method to BaseCappingTransformer to enable dumping transformer state, including init attributes (`capping_values`, `quantiles`, `weights_column`) and fitted attributes (`quantile_capping_values`, `_replacement_values`) `#540 <https://github.com/azukds/tubular/pull/594>`_
 - feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>`_
 - chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>`_
-- feat: switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
+- feat: switched pre-commit for `prek <https://github.com/j178/prek>`_ `#634 <https://github.com/azukds/tubular/issues/634>`_
 - feat: added `to_json` method for OneHotEncodingTransformer `#550 <https://github.com/azukds/tubular/issues/550>`_
 - turned on ruff PLR rule `#509 <https://github.com/azukds/tubular/issues/509>`_
 - feat: added auto generated feature table to readme, to track transform support for e.g. polars/lazyframes/json `#595 <https://github.com/azukds/tubular/issues/595>`_
 - feat: added FEATURE_REGISTRY dict maintained by BaseTransformer, which records per-transformer functionality info
 - feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
+- feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
 
 2.4.0 (01/12/2025)
 ------------------

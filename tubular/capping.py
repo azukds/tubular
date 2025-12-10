@@ -861,7 +861,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     FITS = True
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -948,6 +948,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         return replacement_values
 
+    @block_from_json
     @beartype
     def fit(
         self, X: DataFrame, y: Optional[Series] = None
