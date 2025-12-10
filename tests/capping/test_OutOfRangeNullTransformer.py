@@ -8,7 +8,11 @@ from tests.capping.test_BaseCappingTransformer import (
     GenericCappingInitTests,
     GenericCappingTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch, _handle_from_json
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.capping import OutOfRangeNullTransformer
 
 
@@ -116,7 +120,7 @@ class TestTransform(GenericCappingTransformTests):
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         transformer = _handle_from_json(transformer, from_json=from_json)
-        
+
         df_transformed = transformer.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
