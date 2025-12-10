@@ -21,13 +21,6 @@ jobs:
     steps:
 
       - uses: actions/checkout@v3
-
-      - name: Debug: print event info
-        run: |
-          echo "event_name=${{ github.event_name }}"
-          echo "ref=${{ github.ref }}"
-          echo "base_ref=${{ github.base_ref }}"
-          echo "head_ref=${{ github.head_ref }}"
       
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
