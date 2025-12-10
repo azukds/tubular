@@ -47,6 +47,21 @@ jobs:
           name: coverage-html-pytest-results-${{ matrix.python-version }}
           path: htmlcov
 
+      - name: Update feature table
+        run: |
+          source ${{ matrix.python-version }}/bin/activate
+          python utils/feature_table.py
+
+      - name: Fail if update feature table produced changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+          echo "Changes detected: "
+          git status --porcelain
+          echo "README.md may be out of date, run script feature_table.py and commit the results (or enable pre-commit to do this automatically)"
+          git --no-pager diff README.md
+          exit 1
+          fi
+
   lint:
     runs-on: "ubuntu-22.04"
     strategy:
