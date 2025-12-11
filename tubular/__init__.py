@@ -22,7 +22,7 @@ from tubular.imputers import (
     NullIndicator,
 )
 from tubular.mapping import MappingTransformer
-from tubular.misc import SetValueTransformer
+from tubular.misc import RenameColumnsTransformer, SetValueTransformer
 from tubular.nominal import (
     GroupRareLevelsTransformer,
     MeanResponseTransformer,
@@ -56,6 +56,7 @@ __all__ = [
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
     "RatioTransformer",
+    "RenameColumnsTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",
 ]

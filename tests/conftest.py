@@ -255,6 +255,10 @@ def minimal_attribute_dict():
         "PCATransformer": {
             "columns": ["a", "c"],
         },
+        "RenameColumnsTransformer": {
+            "columns": "a",
+            "new_column_names": {"a": "new_a"},
+        },
         "ScalingTransformer": {
             "scaler_type": "standard",
             "columns": ["a", "b"],
