@@ -617,12 +617,16 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             },
         )
 
-        data["fit"].update(
-            {
-                "quantile_capping_values": self.quantile_capping_values,
-                "_replacement_values": self._replacement_values,
-            },
-        )
+        # transformer only fits for quantiles setting
+        if self.quantiles is not None:
+            self.check_is_fitted(["quantile_capping_values", "_replacement_values"])
+
+            data["fit"].update(
+                {
+                    "quantile_capping_values": self.quantile_capping_values,
+                    "_replacement_values": self._replacement_values,
+                },
+            )
 
         return data
 
@@ -691,6 +695,15 @@ class CappingTransformer(BaseCappingTransformer):
     │ 20  ┆ 1   ┆ 4   │
     └─────┴─────┴─────┘
 
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'CappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+
+    >>> CappingTransformer.from_json(json_dump)
+    CappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+
     """
 
     polars_compatible = True
@@ -699,7 +712,7 @@ class CappingTransformer(BaseCappingTransformer):
 
     FITS = True
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -741,6 +754,7 @@ class CappingTransformer(BaseCappingTransformer):
         """
         super().__init__(capping_values, quantiles, weights_column, **kwargs)
 
+    @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> CappingTransformer:
         """Learn capping values from input data X.

@@ -45,6 +45,7 @@ Changed
 - feat: added FEATURE_REGISTRY dict maintained by BaseTransformer, which records per-transformer functionality info
 - feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
+- feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
 
 2.4.0 (01/12/2025)
 ------------------
