@@ -46,23 +46,24 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
     >>> pipeline_json #doctest: +NORMALIZE_WHITESPACE
     {'MedianImputer': {'tubular_version':...,
-		'classname': 'MedianImputer',
-		'init': {'columns': ['b'],
-			'copy': False,
-			'verbose': False,
-			'return_native': True,
-			'weights_column': None},
-		'fit': {'impute_values_': {'b': 15.0}}},
-	'MeanImputer': {'tubular_version':...,
-		'classname': 'MeanImputer',
-		'init': {'columns': ['b'],
-			'copy': False,
-			'verbose': False,
-			'return_native': True,
-			'weights_column': None},
+    'classname': 'MedianImputer',
+    'init': {'columns': ['b'],
+    'copy': False,
+    'verbose': False,
+    'return_native': True,
+    'weights_column': None},
+    'fit': {'impute_values_': {'b': 15.0}}},
+    'MeanImputer': {'tubular_version':...,
+    'classname': 'MeanImputer',
+    'init': {'columns': ['b'],
+    'copy': False,
+    'verbose': False,
+    'return_native': True,
+    'weights_column': None},
         'fit': {'impute_values_': {'b': 15.0}}}}
 
     ```
+
     """
     steps = pipeline.steps
     non_jsonable_steps = [step[0] for step in steps if step[1].jsonable is False]
@@ -109,6 +110,7 @@ def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipelin
                     ('MeanImputer', MeanImputer(columns=['b']))])
 
     ```
+
     """
     steps = [
         (step_name, CLASS_REGISTRY[step_name].from_json(json_dict))
