@@ -18,6 +18,7 @@ from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
     _convert_to_lazy,
+    _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
@@ -141,7 +142,7 @@ class TestInit(
             (
                 ["timeofyear"],
                 {
-                    "timeofyear": dict.fromkeys(range(12), "month"),
+                    "timeofyear": dict.fromkeys(range(1, 13), "month"),
                     "timeofday": dict.fromkeys(range(24), "hour"),
                 },
             ),
@@ -205,6 +206,7 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DatetimeInfoExtractor"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -214,7 +216,7 @@ class TestTransform(
         ["pandas", "polars"],
     )
     @staticmethod
-    def test_single_column_output_for_all_options(library, lazy):
+    def test_single_column_output_for_all_options(library, from_json, lazy):
         """Test that correct df is returned after transformation."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -298,10 +300,12 @@ class TestTransform(
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
         )
 
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy))
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy=lazy))
 
         expected = df.clone()
         expected = df.with_columns(
@@ -395,6 +399,7 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -404,7 +409,7 @@ class TestTransform(
         ["pandas", "polars"],
     )
     @staticmethod
-    def test_multi_column_output(library, lazy):
+    def test_multi_column_output(library, from_json, lazy):
         "test output for multiple columns"
 
         df = d.create_date_test_df(library=library)
@@ -560,10 +565,12 @@ class TestTransform(
             include=["timeofmonth"],
         )
 
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy))
+        transformer = _handle_from_json(transformer, from_jsom=from_json)
+
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy=lazy))
 
         expected = df.clone()
         expected = df.with_columns(
@@ -617,6 +624,7 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -626,7 +634,7 @@ class TestTransform(
         ["pandas", "polars"],
     )
     @staticmethod
-    def test_custom_mappings_can_be_used(library, lazy):
+    def test_custom_mappings_can_be_used(library, from_json, lazy):
         "test output when custom mappings provided"
 
         df_dict = {
@@ -707,10 +715,12 @@ class TestTransform(
             },
         )
 
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformed = transformer.transform(_convert_to_lazy(df, lazy))
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         expected = nw.from_native(df).clone()
         expected = expected.with_columns(
             nw.new_series(

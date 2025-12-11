@@ -100,11 +100,14 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     Example:
     -------
+    ```pycon
     >>> BaseAggregationTransformer(
-    ... columns='a',
-    ... aggregations=['min', 'max'],
-    ...    )
+    ...     columns="a",
+    ...     aggregations=["min", "max"],
+    ... )
     BaseAggregationTransformer(aggregations=['min', 'max'], columns=['a'])
+
+    ```
 
     """
 
@@ -176,26 +179,29 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         Examples
         --------
-            >>> import polars as pl
+        ```pycon
+        >>> import polars as pl
 
-            >>> transformer=BaseAggregationTransformer(
-            ... columns='a',
-            ... aggregations=['min', 'max'],
-            ...    )
+        >>> transformer = BaseAggregationTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ... )
 
-            >>> test_df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> test_df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
-            >>> # base transformers have no effect on data
-            >>> transformer.transform(test_df)
-            shape: (2, 2)
-            ┌─────┬─────┐
-            │ a   ┆ b   │
-            │ --- ┆ --- │
-            │ i64 ┆ i64 │
-            ╞═════╪═════╡
-            │ 1   ┆ 3   │
-            │ 2   ┆ 4   │
-            └─────┴─────┘
+        >>> # base transformers have no effect on data
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
+
+        ```
 
         """
         return_native = self._process_return_native(return_native_override)
@@ -259,13 +265,16 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     Example:
     -------
-        >>> AggregateRowsOverColumnTransformer(
-        ... columns='a',
-        ... aggregations=['min', 'max'],
-        ... key='b',
-        ... )
-        AggregateRowsOverColumnTransformer(aggregations=['min', 'max'], columns=['a'],
-                                           key='b')
+    ```pycon
+    >>> AggregateRowsOverColumnTransformer(
+    ...     columns="a",
+    ...     aggregations=["min", "max"],
+    ...     key="b",
+    ... )
+    AggregateRowsOverColumnTransformer(aggregations=['min', 'max'], columns=['a'],
+                                       key='b')
+
+    ```
 
     """
 
@@ -324,14 +333,17 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         Examples
         --------
-        >>> transformer  = AggregateRowsOverColumnTransformer(
-        ... columns='a',
-        ... aggregations=['min', 'max'],
-        ... key='b',
+        ```pycon
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ...     key="b",
         ... )
 
         >>> transformer.get_feature_names_out()
         ['a_min', 'a_max']
+
+        ```
 
         """
         return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
@@ -360,27 +372,30 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         Examples
         --------
-            >>> import polars as pl
+        ```pycon
+        >>> import polars as pl
 
-            >>> transformer=AggregateRowsOverColumnTransformer(
-            ... columns='a',
-            ... aggregations=['min', 'max'],
-            ... key='b',
-            ...    )
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ...     key="b",
+        ... )
 
-            >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [1,1,2], 'c':[1,2,3]})
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3], "b": [1, 1, 2], "c": [1, 2, 3]})
 
-            >>> transformer.transform(test_df)
-            shape: (3, 5)
-            ┌─────┬─────┬─────┬───────┬───────┐
-            │ a   ┆ b   ┆ c   ┆ a_min ┆ a_max │
-            │ --- ┆ --- ┆ --- ┆ ---   ┆ ---   │
-            │ i64 ┆ i64 ┆ i64 ┆ i64   ┆ i64   │
-            ╞═════╪═════╪═════╪═══════╪═══════╡
-            │ 1   ┆ 1   ┆ 1   ┆ 1     ┆ 2     │
-            │ 2   ┆ 1   ┆ 2   ┆ 1     ┆ 2     │
-            │ 3   ┆ 2   ┆ 3   ┆ 3     ┆ 3     │
-            └─────┴─────┴─────┴───────┴───────┘
+        >>> transformer.transform(test_df)
+        shape: (3, 5)
+        ┌─────┬─────┬─────┬───────┬───────┐
+        │ a   ┆ b   ┆ c   ┆ a_min ┆ a_max │
+        │ --- ┆ --- ┆ --- ┆ ---   ┆ ---   │
+        │ i64 ┆ i64 ┆ i64 ┆ i64   ┆ i64   │
+        ╞═════╪═════╪═════╪═══════╪═══════╡
+        │ 1   ┆ 1   ┆ 1   ┆ 1     ┆ 2     │
+        │ 2   ┆ 1   ┆ 2   ┆ 1     ┆ 2     │
+        │ 3   ┆ 2   ┆ 3   ┆ 3     ┆ 3     │
+        └─────┴─────┴─────┴───────┴───────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -446,12 +461,15 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     Example:
     -------
+    ```pycon
     >>> AggregateColumnsOverRowTransformer(
-    ... columns=['a', 'b'],
-    ... aggregations=['min', 'max'],
+    ...     columns=["a", "b"],
+    ...     aggregations=["min", "max"],
     ... )
     AggregateColumnsOverRowTransformer(aggregations=['min', 'max'],
                                        columns=['a', 'b'])
+
+    ```
 
     """
 
@@ -505,13 +523,16 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         Examples
         --------
-        >>> transformer  = AggregateColumnsOverRowTransformer(
-        ... columns=['a', 'b'],
-        ... aggregations=['min', 'max'],
+        ```pycon
+        >>> transformer = AggregateColumnsOverRowTransformer(
+        ...     columns=["a", "b"],
+        ...     aggregations=["min", "max"],
         ... )
 
         >>> transformer.get_feature_names_out()
         ['a_b_min', 'a_b_max']
+
+        ```
 
         """
         return ["_".join(self.columns) + "_" + agg for agg in self.aggregations]
@@ -535,14 +556,15 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         Example:
         --------
+        ```pycon
         >>> import polars as pl
 
         >>> transformer = AggregateColumnsOverRowTransformer(
-        ... columns=['a', 'b'],
-        ... aggregations=['min', 'max'],
+        ...     columns=["a", "b"],
+        ...     aggregations=["min", "max"],
         ... )
 
-        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4], 'c':[5,6]})
+        >>> test_df = pl.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]})
 
         >>> transformer.transform(test_df)
         shape: (2, 5)
@@ -554,6 +576,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         │ 1   ┆ 3   ┆ 5   ┆ 1       ┆ 3       │
         │ 2   ┆ 4   ┆ 6   ┆ 2       ┆ 4       │
         └─────┴─────┴─────┴─────────┴─────────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
