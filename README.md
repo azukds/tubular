@@ -67,7 +67,7 @@ You can track our progress here:
 | AggregateRowsOverColumnTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
 | ArbitraryImputer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
-| CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | DateDifferenceTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | DatetimeComponentExtractor         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | DatetimeInfoExtractor              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
