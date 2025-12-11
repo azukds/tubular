@@ -568,7 +568,7 @@ class TestTransform(
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_jsom=from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy=lazy))
 
