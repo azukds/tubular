@@ -36,6 +36,7 @@ def get_feature_table(feature_dict: dict[str, dict[str, bool]]) -> str:
     |--------|--------------------|------------|
     | class1 | :heavy_check_mark: | :x:        |
     | class2 | :x:                | :x:        |
+
     ```
 
     """

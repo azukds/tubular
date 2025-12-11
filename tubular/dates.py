@@ -1420,7 +1420,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         ...     include="timeofday",
         ... )
 
-        >>> transformer._process_provided_mappings(
+        >>> transformer._check_provided_mappings(
         ...     {
         ...         "timeofday": {
         ...             **{i: "start" for i in range(0, 12)},

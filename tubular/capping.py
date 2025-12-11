@@ -198,6 +198,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         ... )
 
         >>> transformer.check_capping_values_dict(transformer.capping_values, "capping_values")
+
         ```
 
         """
