@@ -2,8 +2,8 @@ import polars as pl
 import pytest
 from sklearn.pipeline import Pipeline
 
-from tubular.capping import CappingTransformer
 from tubular.imputers import MeanImputer, MedianImputer
+from tubular.nominal import NominalToIntegerTransformer
 from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
 
 
@@ -94,9 +94,11 @@ class TestPipelineDumpAndLoadJson:
 
     def test_dump_transformer_not_jsonable(self):  # noqa: PLR6301
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
-        capping_transformer = CappingTransformer(capping_values={"b": [0, 15]})
+        nominal_to_integer_transformer = NominalToIntegerTransformer(columns=["a"])
 
-        original_pipeline = Pipeline([("CappingTransformer", capping_transformer)])
+        original_pipeline = Pipeline(
+            [("NominalToIntegerTransformer", nominal_to_integer_transformer)]
+        )
 
         original_pipeline.fit(df, df["a"])
         with pytest.raises(
