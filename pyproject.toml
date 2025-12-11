@@ -49,8 +49,10 @@ dev = [
     "prek",
     "ruff>=0.2.2",
     "auto-walrus==0.3.4",
+    "tabulate>=0.9.0",
     "codespell",
-    "typos"
+    "typos",
+    "blacken-docs",
     ]
 
 [project.urls]
