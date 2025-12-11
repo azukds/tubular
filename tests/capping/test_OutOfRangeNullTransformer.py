@@ -8,7 +8,11 @@ from tests.capping.test_BaseCappingTransformer import (
     GenericCappingInitTests,
     GenericCappingTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.capping import OutOfRangeNullTransformer
 
 
@@ -96,12 +100,14 @@ class TestTransform(GenericCappingTransformTests):
 
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_min_and_max_combinations(
         self,
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        from_json,
     ):
         """Test that capping is applied correctly in transform."""
 
@@ -112,6 +118,8 @@ class TestTransform(GenericCappingTransformTests):
         args["capping_values"] = {"a": [2, 5], "b": [None, 7], "c": [0, None]}
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 

@@ -227,6 +227,7 @@ def _weighted_quantile_expr(
 
     Examples
     --------
+    ```pycon
     >>> import polars as pl
     >>> import narwhals as nw
     >>> expr = _weighted_quantile_expr(nw.col("w"))
@@ -247,6 +248,8 @@ def _weighted_quantile_expr(
     |  │ 1.0      │    |
     |  └──────────┘    |
     └──────────────────┘
+
+    ```
 
     """
     return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()
