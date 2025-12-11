@@ -867,6 +867,15 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     │ null ┆ 1    ┆ 4   │
     └──────┴──────┴─────┘
 
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'OutOfRangeNullTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+
+    >>> OutOfRangeNullTransformer.from_json(json_dump)
+    OutOfRangeNullTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+
     """
 
     polars_compatible = True
@@ -875,7 +884,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     FITS = True
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -962,6 +971,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         return replacement_values
 
+    @block_from_json
     @beartype
     def fit(
         self, X: DataFrame, y: Optional[Series] = None
