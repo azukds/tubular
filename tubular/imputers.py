@@ -36,7 +36,7 @@ class BaseImputer(BaseTransformer):
 
     Other imputers in this module should inherit from this class.
 
-    Attributes:
+    Attributes
     ----------
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
@@ -57,10 +57,13 @@ class BaseImputer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> BaseImputer(columns=["a", "b"])
     BaseImputer(columns=['a', 'b'])
+
+    ```
 
     """
 
@@ -91,20 +94,23 @@ class BaseImputer(BaseTransformer):
 
         Examples
         --------
-        >>> arbitrary_imputer=ArbitraryImputer(columns=['a', 'b'], impute_value=1)
+        ```pycon
+        >>> arbitrary_imputer = ArbitraryImputer(columns=["a", "b"], impute_value=1)
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> arbitrary_imputer.to_json()
         {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 1}, 'fit': {'impute_values_': {'a': 1, 'b': 1}}}
 
-        >>> mean_imputer=MeanImputer(columns=['a', 'b'])
+        >>> mean_imputer = MeanImputer(columns=["a", "b"])
 
-        >>> test_df=pl.DataFrame({'a': [1, None],  'b': [None, 2]})
+        >>> test_df = pl.DataFrame({"a": [1, None], "b": [None, 2]})
 
         >>> _ = mean_imputer.fit(test_df)
 
         >>> mean_imputer.to_json()
         {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 1.0, 'b': 2.0}}}
+
+        ```
 
         """
         if not self.jsonable:
@@ -181,15 +187,16 @@ class BaseImputer(BaseTransformer):
         X : FrameT
             Transformed input X with nulls imputed with the median value for the specified columns.
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
 
         >>> imputer = BaseImputer(columns=["a", "b"])
 
-        >>> imputer.impute_values_= {"a":2, "b":3.5}
+        >>> imputer.impute_values_ = {"a": 2, "b": 3.5}
 
-        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
 
         >>> imputer.transform(test_df)
         shape: (3, 2)
@@ -202,6 +209,8 @@ class BaseImputer(BaseTransformer):
         │ 2   ┆ 3.5 │
         │ 2   ┆ 4.0 │
         └─────┴─────┘
+
+        ```
 
         """
         self.check_is_fitted("impute_values_")
@@ -254,19 +263,20 @@ class ArbitraryImputer(BaseImputer):
 
     Examples
     --------
-    >>> arbitrary_imputer = ArbitraryImputer(
-    ... columns=["a", "b"], impute_value= 5
-    ... )
+    ```pycon
+    >>> arbitrary_imputer = ArbitraryImputer(columns=["a", "b"], impute_value=5)
     >>> arbitrary_imputer
     ArbitraryImputer(columns=['a', 'b'], impute_value=5)
 
     >>> # transformer can also be dumped to json and reinitialised
-    >>> json_dump=arbitrary_imputer.to_json()
+    >>> json_dump = arbitrary_imputer.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 5}, 'fit': {'impute_values_': {'a': 5, 'b': 5}}}
 
     >>> ArbitraryImputer.from_json(json_dump)
     ArbitraryImputer(columns=['a', 'b'], impute_value=5)
+
+    ```
 
     """
 
@@ -487,10 +497,11 @@ class ArbitraryImputer(BaseImputer):
 
         Example:
         --------
+        ```pycon
         >>> import polars as pl
-        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
-        >>> imputer = ArbitraryImputer(columns=["a", "b"], impute_value= 5)
-        >>> imputer= imputer.fit(test_df)
+        >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
+        >>> imputer = ArbitraryImputer(columns=["a", "b"], impute_value=5)
+        >>> imputer = imputer.fit(test_df)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -502,6 +513,8 @@ class ArbitraryImputer(BaseImputer):
         │ 5   ┆ 5   │
         │ 2   ┆ 4   │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -570,7 +583,7 @@ class ArbitraryImputer(BaseImputer):
 class MedianImputer(BaseImputer, WeightColumnMixin):
     """Transformer to impute missing values with the median of the supplied columns.
 
-    Attributes:
+    Attributes
     ----------
     impute_values_ : dict
         Created during fit method. Dictionary of float / int (median) values of columns
@@ -595,26 +608,29 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> median_imputer = MedianImputer(
-    ... columns=["a", "b"],
+    ...     columns=["a", "b"],
     ... )
     >>> median_imputer
     MedianImputer(columns=['a', 'b'])
 
     >>> # once fit, transformer can also be dumped to json and reinitialised
 
-    >>> test_df=pl.DataFrame({'a': [0, None], 'b': [None, 1]})
+    >>> test_df = pl.DataFrame({"a": [0, None], "b": [None, 1]})
 
     >>> _ = median_imputer.fit(test_df)
 
-    >>> json_dump=median_imputer.to_json()
+    >>> json_dump = median_imputer.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
 
     >>> MedianImputer.from_json(json_dump)
     MedianImputer(columns=['a', 'b'])
+
+    ```
 
     """
 
@@ -671,10 +687,11 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
-        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
         >>> imputer = MedianImputer(columns=["a", "b"])
-        >>> imputer= imputer.fit(test_df)
+        >>> imputer = imputer.fit(test_df)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -686,6 +703,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         │ 1.5 ┆ 3.5 │
         │ 2.0 ┆ 4.0 │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -753,7 +772,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 class MeanImputer(WeightColumnMixin, BaseImputer):
     """Transformer to impute missing values with the mean of the supplied columns.
 
-    Attributes:
+    Attributes
     ----------
     impute_values_ : dict
         Created during fit method. Dictionary of float / int (mean) values of columns
@@ -778,26 +797,29 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> mean_imputer = MeanImputer(
-    ... columns=["a", "b"],
+    ...     columns=["a", "b"],
     ... )
     >>> mean_imputer
     MeanImputer(columns=['a', 'b'])
 
     >>> # once fit, transformer can also be dumped to json and reinitialised
 
-    >>> test_df=pl.DataFrame({'a': [0, None], 'b': [None, 1]})
+    >>> test_df = pl.DataFrame({"a": [0, None], "b": [None, 1]})
 
     >>> _ = mean_imputer.fit(test_df)
 
-    >>> json_dump=mean_imputer.to_json()
+    >>> json_dump = mean_imputer.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
 
     >>> MeanImputer.from_json(json_dump)
     MeanImputer(columns=['a', 'b'])
+
+    ```
 
     """
 
@@ -854,10 +876,11 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
-        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
         >>> imputer = MeanImputer(columns=["a", "b"])
-        >>> imputer= imputer.fit(test_df)
+        >>> imputer = imputer.fit(test_df)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -869,6 +892,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         │ 1.5 ┆ 3.5 │
         │ 2.0 ┆ 4.0 │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -911,7 +936,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     If mode is NaN, a warning will be raised.
 
-    Attributes:
+    Attributes
     ----------
     impute_values_ : dict
         Created during fit method. Dictionary of float / int (mode) values of columns
@@ -936,26 +961,29 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> mode_imputer = ModeImputer(
-    ... columns=["a", "b"],
+    ...     columns=["a", "b"],
     ... )
     >>> mode_imputer
     ModeImputer(columns=['a', 'b'])
 
     >>> # once fit, transformer can also be dumped to json and reinitialised
 
-    >>> test_df=pl.DataFrame({'a': [0, None], 'b': [None, 1]})
+    >>> test_df = pl.DataFrame({"a": [0, None], "b": [None, 1]})
 
     >>> _ = mode_imputer.fit(test_df)
 
-    >>> json_dump=mode_imputer.to_json()
+    >>> json_dump = mode_imputer.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'ModeImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0, 'b': 1}}}
 
     >>> ModeImputer.from_json(json_dump)
     ModeImputer(columns=['a', 'b'])
+
+    ```
 
     """
 
@@ -1015,10 +1043,11 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
-        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
         >>> imputer = ModeImputer(columns=["a", "b"])
-        >>> imputer= imputer.fit(test_df)
+        >>> imputer = imputer.fit(test_df)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -1030,6 +1059,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         │ 2   ┆ 4   │
         │ 2   ┆ 4   │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -1099,7 +1130,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 class NullIndicator(BaseTransformer):
     """Class to create a binary indicator column for null values.
 
-    Attributes:
+    Attributes
     ----------
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
@@ -1120,21 +1151,24 @@ class NullIndicator(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> null_indicator = NullIndicator(
-    ... columns=["a", "b"],
+    ...     columns=["a", "b"],
     ... )
     >>> null_indicator
     NullIndicator(columns=['a', 'b'])
 
     >>> # transformer can also be dumped to json and reinitialised
-    >>> json_dump=null_indicator.to_json()
+    >>> json_dump = null_indicator.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'NullIndicator', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
 
     >>> NullIndicator.from_json(json_dump)
     NullIndicator(columns=['a', 'b'])
+
+    ```
 
     """
 
@@ -1185,8 +1219,10 @@ class NullIndicator(BaseTransformer):
 
         Examples
         --------
+        --------,
+        ```pycon
         >>> import polars as pl
-        >>> test_df = pl.DataFrame({'a': [1, None, 2], 'b': [3, None, 4]})
+        >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
         >>> imputer = NullIndicator(columns=["a", "b"])
         >>> imputer.transform(test_df)
         shape: (3, 4)
@@ -1199,6 +1235,8 @@ class NullIndicator(BaseTransformer):
         │ null ┆ null ┆ true    ┆ true    │
         │ 2    ┆ 4    ┆ false   ┆ false   │
         └──────┴──────┴─────────┴─────────┘
+
+        ```
 
         """
         X = super().transform(X, return_native_override=False)
@@ -1245,6 +1283,9 @@ class NearestMeanResponseImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = True
@@ -1254,6 +1295,8 @@ class NearestMeanResponseImputer(BaseImputer):
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     def __init__(
         self,

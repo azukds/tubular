@@ -48,7 +48,7 @@ if TYPE_CHECKING:
 class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     """Extends BaseTransformer for datetime scenarios.
 
-    Attributes:
+    Attributes
     ----------
     columns : List[str]
         List of columns to be operated on
@@ -69,12 +69,15 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> BaseNumericTransformer(
-    ... columns='a',
-    ...    )
+    ...     columns="a",
+    ... )
     BaseNumericTransformer(columns=['a'])
+
+    ```
 
     """
 
@@ -123,16 +126,19 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
 
         >>> transformer = BaseNumericTransformer(
-        ... columns='a',
-        ...    )
+        ...     columns="a",
+        ... )
 
-        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> test_df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
         >>> transformer.fit(test_df)
         BaseNumericTransformer(columns=['a'])
+
+        ```
 
         """
         super().fit(X, y)
@@ -164,13 +170,16 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         X : pd/pl.DataFrame
             Validated data
 
+        Examples
+        --------
+        ```pycon
         >>> import polars as pl
 
         >>> transformer = BaseNumericTransformer(
-        ... columns='a',
-        ...    )
+        ...     columns="a",
+        ... )
 
-        >>> test_df = pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> test_df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
         >>> # base class has no effect on datag
         >>> transformer.transform(test_df)
@@ -183,6 +192,8 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         │ 1   ┆ 3   │
         │ 2   ┆ 4   │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -203,7 +214,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
     Finally it passes them into the a cut function.
 
-    Attributes:
+    Attributes
     ----------
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
@@ -221,17 +232,20 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> OneDKmeansTransformer(
-    ... columns='a',
-    ... n_clusters=2,
-    ... new_column_name="new",
-    ... drop_original=False,
-    ... kmeans_kwargs={"random_state": 42},
-    ...    )
+    ...     columns="a",
+    ...     n_clusters=2,
+    ...     new_column_name="new",
+    ...     drop_original=False,
+    ...     kmeans_kwargs={"random_state": 42},
+    ... )
     OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                           n_clusters=2, new_column_name='new')
+
+    ```
 
     """
 
@@ -316,16 +330,19 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
         Examples
         --------
+        ```pycon
         >>> transformer = OneDKmeansTransformer(
-        ... columns='a',
-        ... n_clusters=2,
-        ... new_column_name="kmeans_column",
-        ... drop_original=False,
-        ... kmeans_kwargs={"random_state": 42},
-        ...  )
+        ...     columns="a",
+        ...     n_clusters=2,
+        ...     new_column_name="kmeans_column",
+        ...     drop_original=False,
+        ...     kmeans_kwargs={"random_state": 42},
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['kmeans_column']
+
+        ```
 
         """
         return [
@@ -356,21 +373,24 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> transformer=OneDKmeansTransformer(
-        ... columns='a',
-        ... n_clusters=2,
-        ... new_column_name="new",
-        ... drop_original=False,
-        ... kmeans_kwargs={"random_state": 42},
-        ...    )
+        >>> transformer = OneDKmeansTransformer(
+        ...     columns="a",
+        ...     n_clusters=2,
+        ...     new_column_name="new",
+        ...     drop_original=False,
+        ...     kmeans_kwargs={"random_state": 42},
+        ... )
 
-        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
 
         >>> transformer.fit(test_df)
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
+
+        ```
 
         """
         super().fit(X, y)
@@ -428,21 +448,22 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         X : pl/pd.DataFrame
             Input X with additional cluster column added.
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> transformer=OneDKmeansTransformer(
-        ... columns='a',
-        ... n_clusters=2,
-        ... new_column_name="new",
-        ... drop_original=False,
-        ... kmeans_kwargs={"random_state": 42},
-        ...    )
+        >>> transformer = OneDKmeansTransformer(
+        ...     columns="a",
+        ...     n_clusters=2,
+        ...     new_column_name="new",
+        ...     drop_original=False,
+        ...     kmeans_kwargs={"random_state": 42},
+        ... )
 
-        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
 
-        >>> _=transformer.fit(test_df)
+        >>> _ = transformer.fit(test_df)
         >>> transformer.transform(test_df)
         shape: (4, 3)
         ┌─────┬─────┬─────┐
@@ -455,6 +476,8 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         │ 3   ┆ 7   ┆ 0   │
         │ 4   ┆ 8   ┆ 1   │
         └─────┴─────┴─────┘
+
+        ```
 
         """
         X = super().transform(X)
@@ -510,9 +533,12 @@ class DifferenceTransformer(BaseNumericTransformer):
 
     Examples
     --------
-    >>> transformer = DifferenceTransformer(columns=['a', 'b'])
+    ```pycon
+    >>> transformer = DifferenceTransformer(columns=["a", "b"])
     >>> transformer.columns
     ['a', 'b']
+
+    ```
 
     """
 
@@ -565,11 +591,12 @@ class DifferenceTransformer(BaseNumericTransformer):
             Transformed DataFrame with the new column containing the subtraction results.
 
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
-        >>> transformer = DifferenceTransformer(columns=['a', 'b'])
-        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
+        >>> transformer = DifferenceTransformer(columns=["a", "b"])
+        >>> test_df = pl.DataFrame({"a": [100, 200, 300], "b": [80, 150, 200]})
         >>> transformer.transform(test_df)
         shape: (3, 3)
         ┌─────┬─────┬───────────┐
@@ -581,6 +608,8 @@ class DifferenceTransformer(BaseNumericTransformer):
         │ 200 ┆ 150 ┆ 50        │
         │ 300 ┆ 200 ┆ 100       │
         └─────┴─────┴───────────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -639,11 +668,14 @@ class RatioTransformer(BaseNumericTransformer):
 
     Examples
     --------
-    >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+    ```pycon
+    >>> transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
     >>> transformer.columns
     ['a', 'b']
     >>> transformer.return_dtype
     'Float32'
+
+    ```
 
     """
 
@@ -666,9 +698,12 @@ class RatioTransformer(BaseNumericTransformer):
 
         Examples
         --------
-        >>> ratio_transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
+        ```pycon
+        >>> ratio_transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
         >>> ratio_transformer.to_json()
         {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -717,11 +752,12 @@ class RatioTransformer(BaseNumericTransformer):
         pd.DataFrame or pl.DataFrame
             Transformed DataFrame with the new column containing the division results.
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
-        >>> transformer = RatioTransformer(columns=['a', 'b'], return_dtype='Float32')
-        >>> test_df = pl.DataFrame({'a': [100, 200, 300], 'b': [80, 150, 200]})
+        >>> transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
+        >>> test_df = pl.DataFrame({"a": [100, 200, 300], "b": [80, 150, 200]})
         >>> transformer.transform(test_df)
         shape: (3, 3)
         ┌─────┬─────┬────────────────┐
@@ -733,6 +769,8 @@ class RatioTransformer(BaseNumericTransformer):
         │ 200 ┆ 150 ┆ 1.333333       │
         │ 300 ┆ 200 ┆ 1.5            │
         └─────┴─────┴────────────────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -805,6 +843,9 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -814,6 +855,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -942,6 +985,9 @@ class CutTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -951,6 +997,8 @@ class CutTransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -1069,6 +1117,9 @@ class TwoColumnOperatorTransformer(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1078,6 +1129,8 @@ class TwoColumnOperatorTransformer(
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -1192,6 +1245,9 @@ class ScalingTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1201,6 +1257,8 @@ class ScalingTransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
     scaler_options: ClassVar[
@@ -1376,6 +1434,9 @@ class InteractionTransformer(BaseNumericTransformer):
         lazyframe_compatible: bool
             class attribute, indicates whether transformer works with lazyframes
 
+        deprecated: bool
+            indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1385,6 +1446,8 @@ class InteractionTransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     MIN_DEGREE_VALUE = 2
 
@@ -1554,6 +1617,9 @@ class PCATransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1563,6 +1629,8 @@ class PCATransformer(BaseNumericTransformer):
     jsonable = False
 
     FITS = True
+
+    deprecated = True
 
     @beartype
     def __init__(

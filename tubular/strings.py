@@ -56,6 +56,9 @@ class SeriesStrMethodTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -63,6 +66,8 @@ class SeriesStrMethodTransformer(BaseTransformer):
     lazyframe_compatible = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(
@@ -181,6 +186,9 @@ class StringConcatenator(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -188,6 +196,8 @@ class StringConcatenator(BaseTransformer):
     lazyframe_compatible = False
 
     jsonable = False
+
+    deprecated = True
 
     @beartype
     def __init__(
