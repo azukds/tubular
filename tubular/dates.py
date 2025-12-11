@@ -21,7 +21,6 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.mapping import MappingTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
@@ -1155,11 +1154,16 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     Example:
     -------
-    >>> DatetimeInfoExtractor(
+    >>> transformer = DatetimeInfoExtractor(
     ... columns='a',
     ... include='timeofday',
     ...    )
-    DatetimeInfoExtractor(columns=['a'], include=['timeofday'])
+    >>> transformer
+    DatetimeInfoExtractor(columns=['a'], datetime_mappings={},
+                          include=['timeofday'])
+
+    >>> transformer.to_json()
+    {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday'], 'datetime_mappings': {}}, 'fit': {}}
 
     """
 
@@ -1169,27 +1173,27 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     DEFAULT_MAPPINGS: ClassVar[dict[str, dict[int, str]]] = {
-        DatetimeInfoOptions.TIME_OF_DAY: {
+        DatetimeInfoOptions.TIME_OF_DAY.value: {
             **dict.fromkeys(range(6), "night"),  # Midnight - 6am
             **dict.fromkeys(range(6, 12), "morning"),  # 6am - Noon
             **dict.fromkeys(range(12, 18), "afternoon"),  # Noon - 6pm
             **dict.fromkeys(range(18, 24), "evening"),  # 6pm - Midnight
         },
-        DatetimeInfoOptions.TIME_OF_MONTH: {
+        DatetimeInfoOptions.TIME_OF_MONTH.value: {
             **dict.fromkeys(range(1, 11), "start"),
             **dict.fromkeys(range(11, 21), "middle"),
             **dict.fromkeys(range(21, 32), "end"),
         },
-        DatetimeInfoOptions.TIME_OF_YEAR: {
+        DatetimeInfoOptions.TIME_OF_YEAR.value: {
             **dict.fromkeys(range(3, 6), "spring"),  # Mar, Apr, May
             **dict.fromkeys(range(6, 9), "summer"),  # Jun, Jul, Aug
             **dict.fromkeys(range(9, 12), "autumn"),  # Sep, Oct, Nov
             **dict.fromkeys([12, 1, 2], "winter"),  # Dec, Jan, Feb
         },
-        DatetimeInfoOptions.DAY_OF_WEEK: {
+        DatetimeInfoOptions.DAY_OF_WEEK.value: {
             1: "monday",
             2: "tuesday",
             3: "wednesday",
@@ -1203,17 +1207,17 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     INCLUDE_OPTIONS: ClassVar[list[str]] = list(DEFAULT_MAPPINGS.keys())
 
     RANGE_TO_MAP: ClassVar[dict[str, set[int]]] = {
-        DatetimeInfoOptions.TIME_OF_DAY: set(range(24)),
-        DatetimeInfoOptions.TIME_OF_MONTH: set(range(1, 32)),
-        DatetimeInfoOptions.TIME_OF_YEAR: set(range(1, 13)),
-        DatetimeInfoOptions.DAY_OF_WEEK: set(range(1, 8)),
+        DatetimeInfoOptions.TIME_OF_DAY.value: set(range(24)),
+        DatetimeInfoOptions.TIME_OF_MONTH.value: set(range(1, 32)),
+        DatetimeInfoOptions.TIME_OF_YEAR.value: set(range(1, 13)),
+        DatetimeInfoOptions.DAY_OF_WEEK.value: set(range(1, 8)),
     }
 
     DATETIME_ATTR: ClassVar[dict[str, str]] = {
-        DatetimeInfoOptions.TIME_OF_DAY: "hour",
-        DatetimeInfoOptions.TIME_OF_MONTH: "day",
-        DatetimeInfoOptions.TIME_OF_YEAR: "month",
-        DatetimeInfoOptions.DAY_OF_WEEK: "weekday",
+        DatetimeInfoOptions.TIME_OF_DAY.value: "hour",
+        DatetimeInfoOptions.TIME_OF_MONTH.value: "day",
+        DatetimeInfoOptions.TIME_OF_YEAR.value: "month",
+        DatetimeInfoOptions.DAY_OF_WEEK.value: "weekday",
     }
 
     @beartype
@@ -1223,7 +1227,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
         drop_original: Optional[bool] = False,
-        **kwargs: bool,
+        **kwargs: Union[str, bool],
     ) -> None:
         """Initialise class instance.
 
@@ -1267,6 +1271,14 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         if include is None:
             include = self.INCLUDE_OPTIONS
 
+        if "new_column_name" in kwargs:
+            warnings.warn(
+                f"{self.classname()}: new_column_name argument is not used for this class",
+                stacklevel=2,
+            )
+
+            kwargs.pop("new_column_name")
+
         super().__init__(
             columns=columns,
             drop_original=drop_original,
@@ -1278,31 +1290,42 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             include = [include]
 
         self.include = include
+
+        self._check_provided_mappings(datetime_mappings=datetime_mappings)
+
         self.datetime_mappings = datetime_mappings
-        self._process_provided_mappings(datetime_mappings=datetime_mappings)
 
-        # this is a situation where we know the values our mappings allow,
-        # so enum type is more appropriate than categorical and we
-        # will cast to this at the end
-        self.enums = {
-            include_option: nw.Enum(
-                sorted(set(self.final_datetime_mappings[include_option].values())),
-            )
-            for include_option in self.include
-        }
+        if self.datetime_mappings is None:
+            self.datetime_mappings = {}
 
-        self.mapping_transformer = MappingTransformer(
-            mappings={
-                col + "_" + include_option: self.final_datetime_mappings[include_option]
-                for col in self.columns
-                for include_option in self.include
-            },
-            return_dtypes={
-                col + "_" + include_option: "Categorical"
-                for col in self.columns
-                for include_option in self.include
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        >>> transformer=DatetimeInfoExtractor(columns='a')
+
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'], 'datetime_mappings': {}}, 'fit': {}}
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "include": self.include,
+                "datetime_mappings": self.datetime_mappings,
             },
         )
+
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -1329,7 +1352,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             for include_option in self.include
         ]
 
-    def _process_provided_mappings(
+    def _check_provided_mappings(
         self,
         datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]],
     ) -> None:
@@ -1348,7 +1371,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         ... include='timeofday',
         ...    )
 
-        >>> transformer._process_provided_mappings(
+        >>> transformer._check_provided_mappings(
         ... {
         ... 'timeofday': {
         ... **{i: 'start' for i in range(0,12)},
@@ -1358,27 +1381,16 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         ... )
 
         """
-        # initialise mappings attr with defaults,
-        # and overwrite with user provided mappings
-        # where possible
-        self.final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
         if datetime_mappings:
             for key in datetime_mappings:
                 if key not in self.include:
                     msg = f"{self.classname()}: keys in datetime_mappings should be in include"
                     raise ValueError(msg)
-                self.final_datetime_mappings[key] = copy.deepcopy(
-                    datetime_mappings[key],
-                )
 
-        for include_option in self.include:
-            # check provided mappings fit required format
-            if (
-                set(self.final_datetime_mappings[include_option].keys())
-                != self.RANGE_TO_MAP[include_option]
-            ):
-                msg = f"{self.classname()}: {include_option.value} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[include_option])}-{max(self.RANGE_TO_MAP[include_option])}. {self.RANGE_TO_MAP[include_option] - set(self.final_datetime_mappings[include_option].keys())} are missing"
-                raise ValueError(msg)
+                # check provided mappings fit required format
+                if set(datetime_mappings[key].keys()) != self.RANGE_TO_MAP[key]:
+                    msg = f"{self.classname()}: {key} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[key])}-{max(self.RANGE_TO_MAP[key])}. {self.RANGE_TO_MAP[key] - set(datetime_mappings[key].keys())} are missing"
+                    raise ValueError(msg)
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -1425,13 +1437,38 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         """
         X = super().transform(X, return_native_override=False)
 
+        # initialise mappings attr with defaults,
+        # and overwrite with user provided mappings
+        # where possible
+        final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
+        for key in self.datetime_mappings:
+            final_datetime_mappings[key] = copy.deepcopy(
+                self.datetime_mappings[key],
+            )
+
+        # this is a situation where we know the values our mappings allow,
+        # so enum type is more appropriate than categorical and we
+        # will cast to this at the end
+        enums = {
+            include_option: nw.Enum(
+                sorted(set(final_datetime_mappings[include_option].values())),
+            )
+            for include_option in self.include
+        }
+
+        mappings_dict = {
+            col + "_" + include_option: final_datetime_mappings[include_option]
+            for col in self.columns
+            for include_option in self.include
+        }
+
         transform_dict = {
             col + "_" + include_option: (
                 getattr(
                     nw.col(col).dt,
                     self.DATETIME_ATTR[include_option],
                 )().replace_strict(
-                    self.mapping_transformer.mappings[col + "_" + include_option],
+                    mappings_dict[col + "_" + include_option],
                 )
             )
             for col in self.columns
@@ -1441,7 +1478,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         # final casts
         transform_dict = {
             col + "_" + include_option: transform_dict[col + "_" + include_option].cast(
-                self.enums[include_option],
+                enums[include_option],
             )
             for col in self.columns
             for include_option in self.include
