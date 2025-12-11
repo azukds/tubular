@@ -10,8 +10,6 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from tubular.base import FEATURE_REGISTRY
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-
 
 def get_feature_table(feature_dict: dict[str, dict[str, bool]]) -> str:
     r"""Process provided feature_dict into markdown table for README.
@@ -27,9 +25,10 @@ def get_feature_table(feature_dict: dict[str, dict[str, bool]]) -> str:
 
     Examples
     --------
-    >>> feature_dict={
-    ... 'class1': {'feature1': True, 'feature2': False},
-    ... 'class2': {'feature1': False, 'feature2': False},
+    ```pycon
+    >>> feature_dict = {
+    ...     "class1": {"feature1": True, "feature2": False},
+    ...     "class2": {"feature1": False, "feature2": False},
     ... }
 
     >>> print(get_feature_table(feature_dict))
@@ -37,6 +36,8 @@ def get_feature_table(feature_dict: dict[str, dict[str, bool]]) -> str:
     |--------|--------------------|------------|
     | class1 | :heavy_check_mark: | :x:        |
     | class2 | :x:                | :x:        |
+
+    ```
 
     """
     df = pd.DataFrame.from_dict(feature_dict, orient="index").sort_index()
@@ -55,20 +56,21 @@ def insert_table_to_readme(table: str, readme_text: str) -> None:
 
     Examples
     --------
-    >>> readme_text=(
-    ... "this is a fake readme\n"
-    ... "it contains info on stuff\n"
-    ... "<!-- AUTO-GENERATED feature table -->\n"
-    ... "placeholder\n"
-    ... "<!-- /AUTO-GENERATED feature table -->\n"
-    ... "and a conclusion"
+    ```pycon
+    >>> readme_text = (
+    ...     "this is a fake readme\n"
+    ...     "it contains info on stuff\n"
+    ...     "<!-- AUTO-GENERATED feature table -->\n"
+    ...     "placeholder\n"
+    ...     "<!-- /AUTO-GENERATED feature table -->\n"
+    ...     "and a conclusion"
     ... )
 
-    >>> table=(
-    ... "|        | feature1           | feature2   |\n"
-    ... "|--------|--------------------|------------|\n"
-    ... "| class1 | :heavy_check_mark: | :x:        |\n"
-    ... "| class2 | :x:                | :x:        |"
+    >>> table = (
+    ...     "|        | feature1           | feature2   |\n"
+    ...     "|--------|--------------------|------------|\n"
+    ...     "| class1 | :heavy_check_mark: | :x:        |\n"
+    ...     "| class2 | :x:                | :x:        |"
     ... )
 
     >>> print(insert_table_to_readme(table, readme_text))
@@ -81,6 +83,8 @@ def insert_table_to_readme(table: str, readme_text: str) -> None:
     | class2 | :x:                | :x:        |
     <!-- /AUTO-GENERATED feature table -->
     and a conclusion
+
+    ```
 
     """
     START = "<!-- AUTO-GENERATED feature table -->"
