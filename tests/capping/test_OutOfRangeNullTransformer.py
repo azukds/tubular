@@ -118,7 +118,6 @@ class TestTransform(GenericCappingTransformTests):
         args["capping_values"] = {"a": [2, 5], "b": [None, 7], "c": [0, None]}
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
-        transformer.quantile_capping_values = {}
 
         transformer = _handle_from_json(transformer, from_json=from_json)
 
