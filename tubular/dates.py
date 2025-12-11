@@ -67,11 +67,14 @@ class BaseGenericDateTransformer(
 
     Example:
     -------
+    ```pycon
     >>> BaseGenericDateTransformer(
-    ... columns=['a',  'b'],
-    ... new_column_name='bla',
-    ...    )
+    ...     columns=["a", "b"],
+    ...     new_column_name="bla",
+    ... )
     BaseGenericDateTransformer(columns=['a', 'b'], new_column_name='bla')
+
+    ```
 
     """
 
@@ -128,10 +131,13 @@ class BaseGenericDateTransformer(
 
         Examples
         --------
-        >>> transformer=BaseGenericDateTransformer(columns=['a', 'b'], new_column_name='bla')
+        ```pycon
+        >>> transformer = BaseGenericDateTransformer(columns=["a", "b"], new_column_name="bla")
 
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -151,23 +157,26 @@ class BaseGenericDateTransformer(
 
         Examples
         --------
+        ```pycon
         >>> # base classes just return inputs
-        >>> transformer  = BaseGenericDateTransformer(
-        ... columns=['a',  'b'],
-        ... new_column_name='bla',
-        ...    )
+        >>> transformer = BaseGenericDateTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['a', 'b']
 
         >>> # other classes return new columns
-        >>> transformer  = DateDifferenceTransformer(
-        ... columns=['a',  'b'],
-        ... new_column_name='bla',
-        ...    )
+        >>> transformer = DateDifferenceTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['bla']
+
+        ```
 
         """
         # base classes just return columns, so need special handling
@@ -209,24 +218,24 @@ class BaseGenericDateTransformer(
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> transformer=BaseGenericDateTransformer(
-        ... columns=["a",  "b"],
-        ... new_column_name='bla',
-        ...    )
-
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.date(1993, 9, 27), datetime.date(2005, 10, 7)],
-        ... "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)]
-        ... },
+        >>> transformer = BaseGenericDateTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
         ... )
 
-        >>> transformer.check_columns_are_date_or_datetime(
-        ... test_df,
-        ... datetime_only=False
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.date(1993, 9, 27), datetime.date(2005, 10, 7)],
+        ...         "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)],
+        ...     },
         ... )
+
+        >>> transformer.check_columns_are_date_or_datetime(test_df, datetime_only=False)
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -302,19 +311,20 @@ class BaseGenericDateTransformer(
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
-        >>> transformer=BaseGenericDateTransformer(
-        ... columns=["a",  "b"],
-        ... new_column_name='bla',
-        ...    )
+        >>> transformer = BaseGenericDateTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
 
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.date(1993, 9, 27), datetime.date(2005, 10, 7)],
-        ... "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)]
-        ... },
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.date(1993, 9, 27), datetime.date(2005, 10, 7)],
+        ...         "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)],
+        ...     },
         ... )
 
         >>> # base transform has no effect on data
@@ -328,6 +338,8 @@ class BaseGenericDateTransformer(
         │ 1993-09-27 ┆ 1991-05-22 │
         │ 2005-10-07 ┆ 2001-12-10 │
         └────────────┴────────────┘
+
+        ```
 
         """
         return_native = self._process_return_native(return_native_override)
@@ -365,11 +377,14 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     Example:
     -------
+    ```pycon
     >>> BaseDatetimeTransformer(
-    ... columns=['a',  'b'],
-    ... new_column_name='bla',
-    ...    )
+    ...     columns=["a", "b"],
+    ...     new_column_name="bla",
+    ... )
     BaseDatetimeTransformer(columns=['a', 'b'], new_column_name='bla')
+
+    ```
 
     """
 
@@ -437,19 +452,20 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
         Example:
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
-        >>> transformer=BaseDatetimeTransformer(
-        ... columns=["a",  "b"],
-        ... new_column_name='bla',
-        ...    )
+        >>> transformer = BaseDatetimeTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
 
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.datetime(1993, 9, 27), datetime.datetime(2005, 10, 7)],
-        ... "b": [datetime.datetime(1991, 5, 22), datetime.datetime(2001, 12, 10)]
-        ... },
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.datetime(1993, 9, 27), datetime.datetime(2005, 10, 7)],
+        ...         "b": [datetime.datetime(1991, 5, 22), datetime.datetime(2001, 12, 10)],
+        ...     },
         ... )
 
         >>> # base transform has no effect on data
@@ -463,6 +479,8 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 │
         │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 │
         └─────────────────────┴─────────────────────┘
+
+        ```
 
         """
         return_native = self._process_return_native(return_native_override)
@@ -520,24 +538,27 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     Example:
     -------
+    ```pycon
     >>> transformer = DateDifferenceTransformer(
-    ... columns=['a',  'b'],
-    ... new_column_name='bla',
-    ... units='common_year',
-    ...    )
+    ...     columns=["a", "b"],
+    ...     new_column_name="bla",
+    ...     units="common_year",
+    ... )
     >>> transformer
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
                               units='common_year')
 
     >>> # transformer can also be dumped to json and reinitialised
 
-    >>> json_dump=transformer.to_json()
+    >>> json_dump = transformer.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False, 'units': 'common_year', 'custom_days_divider': None}, 'fit': {}}
 
     >>> DateDifferenceTransformer.from_json(json_dump)
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
                               units='common_year')
+
+    ```
 
     """
 
@@ -609,11 +630,14 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         Examples
         --------
-        >>> transformer=DateDifferenceTransformer(columns=['a', 'b'], new_column_name='a_diff_b')
+        ```pycon
+        >>> transformer = DateDifferenceTransformer(columns=["a", "b"], new_column_name="a_diff_b")
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'drop_original': False, 'units': 'D', 'custom_days_divider': None}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -645,20 +669,21 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
-        >>> transformer=DateDifferenceTransformer(
-        ... columns=["a",  "b"],
-        ... new_column_name='a_b_difference_years',
-        ... units='common_year',
-        ...    )
+        >>> transformer = DateDifferenceTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="a_b_difference_years",
+        ...     units="common_year",
+        ... )
 
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.date(1993, 9, 27), datetime.date(2005, 10, 7)],
-        ... "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)]
-        ... },
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.date(1993, 9, 27), datetime.date(2005, 10, 7)],
+        ...         "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)],
+        ...     },
         ... )
 
         >>> transformer.transform(test_df)
@@ -671,6 +696,8 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         │ 1993-09-27 ┆ 1991-05-22 ┆ -2.353425            │
         │ 2005-10-07 ┆ 2001-12-10 ┆ -3.827397            │
         └────────────┴────────────┴──────────────────────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -758,11 +785,14 @@ class ToDatetimeTransformer(BaseTransformer):
 
     Example:
     -------
+    ```pycon
     >>> ToDatetimeTransformer(
-    ... columns='a',
-    ... time_format='%d/%m/%Y',
-    ...    )
+    ...     columns="a",
+    ...     time_format="%d/%m/%Y",
+    ... )
     ToDatetimeTransformer(columns=['a'], time_format='%d/%m/%Y')
+
+    ```
 
     """
 
@@ -824,14 +854,15 @@ class ToDatetimeTransformer(BaseTransformer):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
 
         >>> transformer = ToDatetimeTransformer(
-        ... columns='a',
-        ... time_format='%d/%m/%Y',
-        ...    )
+        ...     columns="a",
+        ...     time_format="%d/%m/%Y",
+        ... )
 
-        >>> test_df = pl.DataFrame({'a': ["01/02/2020", "10/12/1996"], 'b': [1,2]})
+        >>> test_df = pl.DataFrame({"a": ["01/02/2020", "10/12/1996"], "b": [1, 2]})
 
         >>> transformer.transform(test_df)
         shape: (2, 2)
@@ -843,6 +874,8 @@ class ToDatetimeTransformer(BaseTransformer):
         │ 2020-02-01 00:00:00 ┆ 1   │
         │ 1996-12-10 00:00:00 ┆ 2   │
         └─────────────────────┴─────┘
+
+        ```
 
         """
         X = nw.from_native(super().transform(X))
@@ -907,14 +940,17 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     Example:
     -------
+    ```pycon
     >>> BetweenDatesTransformer(
-    ... columns=['a', 'b', 'c'],
-    ... new_column_name='b_between_a_c',
-    ... lower_inclusive=True,
-    ... upper_inclusive=True,
-    ...    )
+    ...     columns=["a", "b", "c"],
+    ...     new_column_name="b_between_a_c",
+    ...     lower_inclusive=True,
+    ...     upper_inclusive=True,
+    ... )
     BetweenDatesTransformer(columns=['a', 'b', 'c'],
                             new_column_name='b_between_a_c')
+
+    ```
 
     """
 
@@ -989,14 +1025,17 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = BetweenDatesTransformer(
-        ...     columns=['a', 'b', 'c'],
-        ...     new_column_name='b_between_a_c',
+        ...     columns=["a", "b", "c"],
+        ...     new_column_name="b_between_a_c",
         ...     lower_inclusive=True,
         ...     upper_inclusive=False,
         ... )
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -1030,22 +1069,23 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
         Example:
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
         >>> transformer = BetweenDatesTransformer(
-        ... columns=['a', 'b', 'c'],
-        ... new_column_name='b_between_a_c',
-        ... lower_inclusive=True,
-        ... upper_inclusive=True,
-        ...    )
+        ...     columns=["a", "b", "c"],
+        ...     new_column_name="b_between_a_c",
+        ...     lower_inclusive=True,
+        ...     upper_inclusive=True,
+        ... )
 
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.date(1990, 9, 27), datetime.date(2005, 10, 7)],
-        ... "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)],
-        ... "c": [datetime.date(1993, 4, 20), datetime.date(2007, 11, 8)],
-        ... },
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.date(1990, 9, 27), datetime.date(2005, 10, 7)],
+        ...         "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)],
+        ...         "c": [datetime.date(1993, 4, 20), datetime.date(2007, 11, 8)],
+        ...     },
         ... )
 
         >>> transformer.transform(test_df)
@@ -1058,6 +1098,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         │ 1990-09-27 ┆ 1991-05-22 ┆ 1993-04-20 ┆ true          │
         │ 2005-10-07 ┆ 2001-12-10 ┆ 2007-11-08 ┆ false         │
         └────────────┴────────────┴────────────┴───────────────┘
+
+        ```
 
         """
         X = nw.from_native(super().transform(X))
@@ -1155,11 +1197,14 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     Example:
     -------
+    ```pycon
     >>> DatetimeInfoExtractor(
-    ... columns='a',
-    ... include='timeofday',
-    ...    )
+    ...     columns="a",
+    ...     include="timeofday",
+    ... )
     DatetimeInfoExtractor(columns=['a'], include=['timeofday'])
+
+    ```
 
     """
 
@@ -1314,13 +1359,16 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
-        >>> transformer  = DatetimeInfoExtractor(
-        ... columns=['a', 'b'],
-        ... include=['timeofday', 'timeofmonth'],
-        ...    )
+        ```pycon
+        >>> transformer = DatetimeInfoExtractor(
+        ...     columns=["a", "b"],
+        ...     include=["timeofday", "timeofmonth"],
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['a_timeofday', 'a_timeofmonth', 'b_timeofday', 'b_timeofmonth']
+
+        ```
 
         """
         return [
@@ -1343,19 +1391,22 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = DatetimeInfoExtractor(
-        ... columns='a',
-        ... include='timeofday',
-        ...    )
+        ...     columns="a",
+        ...     include="timeofday",
+        ... )
 
         >>> transformer._process_provided_mappings(
-        ... {
-        ... 'timeofday': {
-        ... **{i: 'start' for i in range(0,12)},
-        ... **{i: 'end' for i in range(12,24)},
-        ... }
-        ... }
+        ...     {
+        ...         "timeofday": {
+        ...             **{i: "start" for i in range(0, 12)},
+        ...             **{i: "end" for i in range(12, 24)},
+        ...         }
+        ...     }
         ... )
+
+        ```
 
         """
         # initialise mappings attr with defaults,
@@ -1396,19 +1447,20 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Example:
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
         >>> transformer = DatetimeInfoExtractor(
-        ... columns='a',
-        ... include='timeofmonth',
-        ...    )
+        ...     columns="a",
+        ...     include="timeofmonth",
+        ... )
 
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.datetime(1993, 9, 27), datetime.datetime(2005, 10, 7)],
-        ... "b": [datetime.datetime(1991, 5, 22), datetime.datetime(2001, 12, 10)]
-        ... },
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.datetime(1993, 9, 27), datetime.datetime(2005, 10, 7)],
+        ...         "b": [datetime.datetime(1991, 5, 22), datetime.datetime(2001, 12, 10)],
+        ...     },
         ... )
 
         >>> transformer.transform(test_df)
@@ -1421,6 +1473,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 ┆ end           │
         │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ start         │
         └─────────────────────┴─────────────────────┴───────────────┘
+
+        ```
 
         """
         X = super().transform(X, return_native_override=False)
@@ -1509,10 +1563,11 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
     Example:
     -------
+    ```pycon
     >>> transformer = DatetimeComponentExtractor(
-    ... columns='a',
-    ... include=['hour', 'day'],
-    ...    )
+    ...     columns="a",
+    ...     include=["hour", "day"],
+    ... )
     >>> transformer
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
 
@@ -1523,6 +1578,8 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
     >>> DatetimeComponentExtractor.from_json(json_dump)
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
+
+    ```
 
     """
 
@@ -1585,13 +1642,16 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = DatetimeComponentExtractor(
-        ... columns=['a', 'b'],
-        ... include=['hour', 'day'],
-        ...    )
+        ...     columns=["a", "b"],
+        ...     include=["hour", "day"],
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['a_hour', 'a_day', 'b_hour', 'b_day']
+
+        ```
 
         """
         return [
@@ -1610,13 +1670,16 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = DatetimeComponentExtractor(
-        ... columns='a',
-        ... include=['hour', 'day'],
-        ...    )
+        ...     columns="a",
+        ...     include=["hour", "day"],
+        ... )
 
         >>> transformer.to_json()
         {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -1640,19 +1703,26 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
         >>> transformer = DatetimeComponentExtractor(
-        ... columns='a',
-        ... include=['hour', 'day'],
-        ...    )
+        ...     columns="a",
+        ...     include=["hour", "day"],
+        ... )
 
         >>> test_df = pl.DataFrame(
-        ... {
-        ... "a": [datetime.datetime(1993, 9, 27, 14, 30), datetime.datetime(2005, 10, 7, 9, 45)],
-        ... "b": [datetime.datetime(1991, 5, 22, 18, 0), datetime.datetime(2001, 12, 10, 23, 59)]
-        ... },
+        ...     {
+        ...         "a": [
+        ...             datetime.datetime(1993, 9, 27, 14, 30),
+        ...             datetime.datetime(2005, 10, 7, 9, 45),
+        ...         ],
+        ...         "b": [
+        ...             datetime.datetime(1991, 5, 22, 18, 0),
+        ...             datetime.datetime(2001, 12, 10, 23, 59),
+        ...         ],
+        ...     },
         ... )
 
         >>> transformer.transform(test_df)
@@ -1665,6 +1735,8 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         │ 1993-09-27 14:30:00 ┆ 1991-05-22 18:00:00 ┆ 14.0   ┆ 27.0  │
         │ 2005-10-07 09:45:00 ┆ 2001-12-10 23:59:00 ┆ 9.0    ┆ 7.0   │
         └─────────────────────┴─────────────────────┴────────┴───────┘
+
+        ```
 
         """
         X = super().transform(X, return_native_override=False)
@@ -1781,12 +1853,15 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
     Example:
     -------
+    ```pycon
     >>> DatetimeSinusoidCalculator(
-    ... columns='a',
-    ... method='sin',
-    ... units='month',
-    ...    )
+    ...     columns="a",
+    ...     method="sin",
+    ...     units="month",
+    ... )
     DatetimeSinusoidCalculator(columns=['a'], method=['sin'], units='month')
+
+    ```
 
     """
 
@@ -1879,14 +1954,17 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = DatetimeSinusoidCalculator(
-        ... columns='a',
-        ... method='sin',
-        ... units='month',
-        ...    )
+        ...     columns="a",
+        ...     method="sin",
+        ...     units="month",
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['sin_6.283185307179586_month_a']
+
+        ```
 
         """
         return [
@@ -1907,13 +1985,16 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = DatetimeSinusoidCalculator(
-        ...     columns='a',
-        ...     method='sin',
-        ...     units='month',
+        ...     columns="a",
+        ...     method="sin",
+        ...     units="month",
         ... )
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -1954,20 +2035,21 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Example:
         --------
+        ```pycon
         >>> import polars as pl
         >>> import datetime
 
         >>> transformer = DatetimeSinusoidCalculator(
-        ... columns='a',
-        ... method='sin',
-        ... units='month',
-        ...    )
+        ...     columns="a",
+        ...     method="sin",
+        ...     units="month",
+        ... )
 
-        >>> test_df=pl.DataFrame(
-        ... {
-        ... "a": [datetime.datetime(1993, 9, 27), datetime.datetime(2005, 10, 7)],
-        ... "b": [datetime.datetime(1991, 5, 22), datetime.datetime(2001, 12, 10)]
-        ... },
+        >>> test_df = pl.DataFrame(
+        ...     {
+        ...         "a": [datetime.datetime(1993, 9, 27), datetime.datetime(2005, 10, 7)],
+        ...         "b": [datetime.datetime(1991, 5, 22), datetime.datetime(2001, 12, 10)],
+        ...     },
         ... )
 
         >>> transformer.transform(test_df)
@@ -1980,6 +2062,8 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 ┆ 0.412118                      │
         │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ -0.544021                     │
         └─────────────────────┴─────────────────────┴───────────────────────────────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)

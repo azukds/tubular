@@ -43,6 +43,7 @@ Changed
 - feat: added auto generated feature table to readme, to track transform support for e.g. polars/lazyframes/json `#595 <https://github.com/azukds/tubular/issues/595>`_
 - feat: added FEATURE_REGISTRY dict maintained by BaseTransformer, which records per-transformer functionality info
 - feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
+- feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 
 2.4.0 (01/12/2025)
 ------------------

@@ -128,10 +128,13 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
-            >>> BaseCappingTransformer(
-            ... capping_values={'a': [10, 20], 'b': [1,3]},
-            ...    )
-            BaseCappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+        ```pycon
+        >>> BaseCappingTransformer(
+        ...     capping_values={"a": [10, 20], "b": [1, 3]},
+        ... )
+        BaseCappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
+
+        ```
 
         """
         if capping_values is None and quantiles is None:
@@ -189,11 +192,13 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
-            >>> transformer=BaseCappingTransformer(
-            ... capping_values={'a': [10, 20], 'b': [1,3]},
-            ...    )
+        ```pycon
+        >>> transformer = BaseCappingTransformer(
+        ...     capping_values={"a": [10, 20], "b": [1, 3]},
+        ... )
 
-            >>> transformer.check_capping_values_dict(transformer.capping_values, 'capping_values')
+        >>> transformer.check_capping_values_dict(transformer.capping_values, "capping_values")
+        ```
 
         """
         for k, cap_values in capping_values_dict.items():
@@ -237,17 +242,20 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> transformer=BaseCappingTransformer(
-        ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
-        ...    )
+        >>> transformer = BaseCappingTransformer(
+        ...     quantiles={"a": [0.01, 0.99], "b": [0.05, 0.95]},
+        ... )
 
-        >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
-        >>> test_target=pl.Series(name='target', values=[5,6,7,8])
+        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
+        >>> test_target = pl.Series(name="target", values=[5, 6, 7, 8])
 
         >>> transformer.fit(test_df, test_target)
         BaseCappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+
+        ```
 
         """
         super().fit(X, y)
@@ -323,17 +331,21 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
-            >>> import polars as pl
+        ```pycon
+        >>> import polars as pl
 
-            >>> x = BaseCappingTransformer(capping_values={"a": [2, 10]})
+        >>> x = BaseCappingTransformer(capping_values={"a": [2, 10]})
 
-            >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
+        >>> df = pl.DataFrame({"a": [1, 2, 3], "weight": [1, 1, 1]})
 
-            >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-            >>> computed_quantiles = x.prepare_quantiles(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
-            >>> [round(q, 1) for q in computed_quantiles]
-            [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
+        >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        >>> computed_quantiles = x.prepare_quantiles(
+        ...     X=df, values_column="a", weights_column="weight", quantiles=quantiles_to_compute
+        ... )
+        >>> [round(q, 1) for q in computed_quantiles]
+        [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
 
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -416,33 +428,46 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
         >>> x = CappingTransformer(capping_values={"a": [2, 10]})
-        >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,1]})
+        >>> df = pl.DataFrame({"a": [1, 2, 3], "weight": [1, 1, 1]})
         >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
+        >>> computed_quantiles = x.weighted_quantile(
+        ...     X=df, values_column="a", weights_column="weight", quantiles=quantiles_to_compute
+        ... )
         >>> [round(q, 1) for q in computed_quantiles]
         [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
 
-        >>> df=pl.DataFrame({'a': [1,2,3], 'weight': [0,1,0]})
-        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
+        >>> df = pl.DataFrame({"a": [1, 2, 3], "weight": [0, 1, 0]})
+        >>> computed_quantiles = x.weighted_quantile(
+        ...     X=df, values_column="a", weights_column="weight", quantiles=quantiles_to_compute
+        ... )
         >>> [round(q, 1) for q in computed_quantiles]
         [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
 
-        >>> df=pl.DataFrame({'a':[1,2,3], 'weight': [1,1,0]})
-        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
+        >>> df = pl.DataFrame({"a": [1, 2, 3], "weight": [1, 1, 0]})
+        >>> computed_quantiles = x.weighted_quantile(
+        ...     X=df, values_column="a", weights_column="weight", quantiles=quantiles_to_compute
+        ... )
         >>> [round(q, 1) for q in computed_quantiles]
         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
 
-        >>> df=pl.DataFrame({'a':[1,2,3,4,5], 'weight': [1,1,1,1,1]})
-        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = quantiles_to_compute)
+        >>> df = pl.DataFrame({"a": [1, 2, 3, 4, 5], "weight": [1, 1, 1, 1, 1]})
+        >>> computed_quantiles = x.weighted_quantile(
+        ...     X=df, values_column="a", weights_column="weight", quantiles=quantiles_to_compute
+        ... )
         >>> [round(q, 1) for q in computed_quantiles]
         [1.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 
-        >>> df=pl.DataFrame({'a': [1,2,3,4,5], 'weight': [1,0,1,0,1]})
-        >>> computed_quantiles = x.weighted_quantile(X=df, values_column='a', weights_column='weight', quantiles = [0, 0.5, 1.0])
+        >>> df = pl.DataFrame({"a": [1, 2, 3, 4, 5], "weight": [1, 0, 1, 0, 1]})
+        >>> computed_quantiles = x.weighted_quantile(
+        ...     X=df, values_column="a", weights_column="weight", quantiles=[0, 0.5, 1.0]
+        ... )
         >>> [round(q, 1) for q in computed_quantiles]
         [1.0, 2.0, 5.0]
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -503,26 +528,29 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Examples
         --------
-            >>> import polars as pl
+        ```pycon
+        >>> import polars as pl
 
-            >>> transformer=BaseCappingTransformer(
-            ... capping_values={'a': [10, 20], 'b': [1,3]},
-            ...    )
+        >>> transformer = BaseCappingTransformer(
+        ...     capping_values={"a": [10, 20], "b": [1, 3]},
+        ... )
 
-            >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
-            >>> transformer.transform(test_df)
-            shape: (4, 3)
-            ┌─────┬─────┬─────┐
-            │ a   ┆ b   ┆ c   │
-            │ --- ┆ --- ┆ --- │
-            │ i64 ┆ i64 ┆ i64 │
-            ╞═════╪═════╪═════╡
-            │ 10  ┆ 3   ┆ 1   │
-            │ 15  ┆ 2   ┆ 2   │
-            │ 18  ┆ 3   ┆ 3   │
-            │ 20  ┆ 1   ┆ 4   │
-            └─────┴─────┴─────┘
+        >>> transformer.transform(test_df)
+        shape: (4, 3)
+        ┌─────┬─────┬─────┐
+        │ a   ┆ b   ┆ c   │
+        │ --- ┆ --- ┆ --- │
+        │ i64 ┆ i64 ┆ i64 │
+        ╞═════╪═════╪═════╡
+        │ 10  ┆ 3   ┆ 1   │
+        │ 15  ┆ 2   ┆ 2   │
+        │ 18  ┆ 3   ┆ 3   │
+        │ 20  ┆ 1   ┆ 4   │
+        └─────┴─────┴─────┘
+
+        ```
 
         """
         self.check_is_fitted(["_replacement_values"])
@@ -670,13 +698,14 @@ class CappingTransformer(BaseCappingTransformer):
 
     Example:
     -------
+    ```pycon
     >>> import polars as pl
 
-    >>> transformer=CappingTransformer(
-    ... capping_values={'a': [10, 20], 'b': [1,3]},
-    ...    )
+    >>> transformer = CappingTransformer(
+    ...     capping_values={"a": [10, 20], "b": [1, 3]},
+    ... )
 
-    >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+    >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
     >>> transformer.transform(test_df)
     shape: (4, 3)
@@ -690,6 +719,8 @@ class CappingTransformer(BaseCappingTransformer):
     │ 18  ┆ 3   ┆ 3   │
     │ 20  ┆ 1   ┆ 4   │
     └─────┴─────┴─────┘
+
+    ```
 
     """
 
@@ -763,16 +794,19 @@ class CappingTransformer(BaseCappingTransformer):
 
         Example
         -------
-            >>> import polars as pl
+        ```pycon
+        >>> import polars as pl
 
-            >>> transformer=CappingTransformer(
-            ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
-            ...    )
+        >>> transformer = CappingTransformer(
+        ...     quantiles={"a": [0.01, 0.99], "b": [0.05, 0.95]},
+        ... )
 
-            >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
-            >>> transformer.fit(test_df)
-            CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+        >>> transformer.fit(test_df)
+        CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -827,18 +861,19 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     Example:
     -------
+    ```pycon
     >>> import polars as pl
 
-    >>> transformer=OutOfRangeNullTransformer(
-    ... capping_values={'a': [10, 20], 'b': [1,3]},
-    ...    )
+    >>> transformer = OutOfRangeNullTransformer(
+    ...     capping_values={"a": [10, 20], "b": [1, 3]},
+    ... )
     >>> transformer
     OutOfRangeNullTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
 
     # transform method is inherited so also demo that here
-    >>> test_df=pl.DataFrame()
+    >>> test_df = pl.DataFrame()
 
-    >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+    >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
     >>> transformer.transform(test_df)
     shape: (4, 3)
@@ -852,6 +887,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     │ 18   ┆ null ┆ 3   │
     │ null ┆ 1    ┆ 4   │
     └──────┴──────┴─────┘
+    ```
 
     """
 
@@ -928,12 +964,15 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> capping_values={"a": [0.1, 0.2], "b": [None, 10]}
+        >>> capping_values = {"a": [0.1, 0.2], "b": [None, 10]}
 
         >>> OutOfRangeNullTransformer.set_replacement_values(capping_values)
         {'a': [None, None], 'b': [False, None]}
+
+        ```
 
         """
         replacement_values = {}
@@ -972,16 +1011,19 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         Example
         -------
-            >>> import polars as pl
+        ```pycon
+        >>> import polars as pl
 
-            >>> transformer=OutOfRangeNullTransformer(
-            ... quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]},
-            ...    )
+        >>> transformer = OutOfRangeNullTransformer(
+        ...     quantiles={"a": [0.01, 0.99], "b": [0.05, 0.95]},
+        ... )
 
-            >>> test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
-            >>> transformer.fit(test_df)
-            OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+        >>> transformer.fit(test_df)
+        OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)

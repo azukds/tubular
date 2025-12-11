@@ -102,14 +102,17 @@ class EqualityChecker(
 
         Examples
         --------
+        ```pycon
         >>> # base classes just return inputs
-        >>> transformer  = EqualityChecker(
-        ... columns=['a',  'b'],
-        ... new_column_name='bla',
-        ...    )
+        >>> transformer = EqualityChecker(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['bla']
+
+        ```
 
         """
         return [self.new_column_name]
