@@ -1,6 +1,5 @@
 import datetime
 
-import joblib
 import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
@@ -15,7 +14,11 @@ from tests.base_tests import (
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
 
 
@@ -136,7 +139,7 @@ class TestInit(
             (
                 ["timeofyear"],
                 {
-                    "timeofyear": dict.fromkeys(range(12), "month"),
+                    "timeofyear": dict.fromkeys(range(1, 13), "month"),
                     "timeofday": dict.fromkeys(range(24), "hour"),
                 },
             ),
@@ -200,12 +203,13 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DatetimeInfoExtractor"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
     @staticmethod
-    def test_single_column_output_for_all_options(library):
+    def test_single_column_output_for_all_options(library, from_json):
         """Test that correct df is returned after transformation."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -288,6 +292,9 @@ class TestTransform(
             columns=["b"],
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         transformed = transformer.transform(df.to_native())
 
         expected = df.clone()
@@ -377,12 +384,13 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
     @staticmethod
-    def test_multi_column_output(library):
+    def test_multi_column_output(library, from_json):
         "test output for multiple columns"
 
         df = d.create_date_test_df(library=library)
@@ -537,6 +545,9 @@ class TestTransform(
             columns=["a", "b"],
             include=["timeofmonth"],
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         transformed = transformer.transform(df.to_native())
 
         expected = df.clone()
@@ -586,12 +597,13 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
     @staticmethod
-    def test_custom_mappings_can_be_used(library):
+    def test_custom_mappings_can_be_used(library, from_json):
         "test output when custom mappings provided"
 
         df_dict = {
@@ -671,6 +683,9 @@ class TestTransform(
                 },
             },
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         transformed = transformer.transform(df)
         expected = nw.from_native(df).clone()
         expected = expected.with_columns(
@@ -768,16 +783,6 @@ class TestTransform(
                 df_transformed_row,
                 df_expected_row,
             )
-
-    @staticmethod
-    def test_is_serialisable(tmp_path):
-        transformer = DatetimeInfoExtractor(columns=["b"], include=["timeofyear"])
-
-        # pickle transformer
-        path = tmp_path / "transformer.pkl"
-
-        # serialise without raising error
-        joblib.dump(transformer, path)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

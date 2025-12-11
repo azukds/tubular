@@ -31,6 +31,8 @@ from tubular.types import (
 
 pd.options.mode.copy_on_write = True
 
+FEATURE_REGISTRY = {}
+
 CLASS_REGISTRY = {}
 
 
@@ -43,11 +45,15 @@ def register(cls: BaseTransformer) -> BaseTransformer:
 
     Example:
     -------
+    ```pycon
     >>> @register
     ... class MyTransformer(BaseTransformer):
     ...     pass
+    ...
     >>> CLASS_REGISTRY["MyTransformer"]
     <class 'tubular.base.MyTransformer'>
+
+    ```
 
     """
     CLASS_REGISTRY[cls.__name__] = cls
@@ -96,10 +102,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     Example:
     -------
+    ```pycon
     >>> BaseTransformer(
-    ... columns='a',
-    ...    )
+    ...     columns="a",
+    ... )
     BaseTransformer(columns=['a'])
+
+    ```
 
     """
 
@@ -112,6 +121,26 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     FITS = True
 
     _version = _get_version()
+
+    def __init_subclass__(cls: BaseTransformer) -> None:
+        """Logic to be run when a new child class is defined.
+
+        This populates a dictionary, which will help us track which
+        transformers in the repo support which functionality.
+        """
+        deprecated = getattr(cls, "deprecated", False)
+
+        # ignore deprecated transformers and base classes
+        if deprecated or cls.__name__.startswith("Base"):
+            return
+
+        FEATURE_REGISTRY[cls.__name__] = {
+            "polars_compatible": cls.polars_compatible,
+            # repo was originally written in pandas, so the is a given
+            "pandas_compatible": True,
+            "jsonable": cls.jsonable,
+            "lazyframe_compatible": cls.lazyframe_compatible,
+        }
 
     def classname(self) -> str:
         """Return the name of the current class when called.
@@ -184,12 +213,15 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
-        >>> transformer  = BaseTransformer(
-        ... columns='a',
-        ...    )
+        ```pycon
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['a']
+
+        ```
 
         """
         return self.columns
@@ -211,11 +243,14 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
-            >>> transformer=BaseTransformer(columns=['a', 'b'])
+        ```pycon
+        >>> transformer = BaseTransformer(columns=["a", "b"])
 
-            >>> # version will vary for local vs CI, so use ... as generic match
-            >>> transformer.to_json()
-            {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+
+        ```
 
         """  # noqa: E501
         if not self.jsonable:
@@ -259,15 +294,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
-            >>> json_dict={
-            ... 'init': {
-            ...         'columns' :['a','b']
-            ...         },
-            ... 'fit': {}
-            ... }
+        ```pycon
+        >>> json_dict = {"init": {"columns": ["a", "b"]}, "fit": {}}
 
-            >>> BaseTransformer.from_json(json=json_dict)
-            BaseTransformer(columns=['a', 'b'])
+        >>> BaseTransformer.from_json(json=json_dict)
+        BaseTransformer(columns=['a', 'b'])
+
+        ```
 
         """
         if not cls.jsonable:
@@ -277,7 +310,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             raise RuntimeError(
                 msg,
             )
-
         instance = cls(**json["init"])
 
         for attr in json["fit"]:
@@ -310,13 +342,16 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
-            >>> import polars as pl
-            >>> transformer=BaseTransformer(
-            ... columns='a',
-            ...    )
-            >>> df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
-            >>> transformer.fit(df)
-            BaseTransformer(columns=['a'])
+        ```pycon
+        >>> import polars as pl
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
+        >>> df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+        >>> transformer.fit(df)
+        BaseTransformer(columns=['a'])
+
+        ```
 
         """
         if self.verbose:
@@ -353,32 +388,35 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
-            # correct usage
-            >>> import polars as pl
-            >>> transformer=BaseTransformer(
-            ... columns='a',
-            ...    )
-            >>> X=pl.DataFrame({'a': [1,2], 'b': [3,4]})
-            >>> y=pl.Series(name='a', values=[1,2])
-            >>> transformer._combine_X_y(X, y)
-            shape: (2, 3)
-            ┌─────┬─────┬─────────────────────┐
-            │ a   ┆ b   ┆ _temporary_response │
-            │ --- ┆ --- ┆ ---                 │
-            │ i64 ┆ i64 ┆ i64                 │
-            ╞═════╪═════╪═════════════════════╡
-            │ 1   ┆ 3   ┆ 1                   │
-            │ 2   ┆ 4   ┆ 2                   │
-            └─────┴─────┴─────────────────────┘
+        ```pycon
+        # correct usage
+        >>> import polars as pl
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
+        >>> X = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+        >>> y = pl.Series(name="a", values=[1, 2])
+        >>> transformer._combine_X_y(X, y)
+        shape: (2, 3)
+        ┌─────┬─────┬─────────────────────┐
+        │ a   ┆ b   ┆ _temporary_response │
+        │ --- ┆ --- ┆ ---                 │
+        │ i64 ┆ i64 ┆ i64                 │
+        ╞═════╪═════╪═════════════════════╡
+        │ 1   ┆ 3   ┆ 1                   │
+        │ 2   ┆ 4   ┆ 2                   │
+        └─────┴─────┴─────────────────────┘
 
-            # example error from mismatched X/y
-            >>> X=pl.DataFrame({'a': [1,2], 'b': [3,4]})
-            >>> y=pl.Series(name='a', values=[1])
-            >>> transformer._combine_X_y(X, y)
-            Traceback (most recent call last):
-            ...
-            narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
-            ...
+        # example error from mismatched X/y
+        >>> X = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+        >>> y = pl.Series(name="a", values=[1])
+        >>> transformer._combine_X_y(X, y)
+        Traceback (most recent call last):
+        ...
+        narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
+        ...
+
+        ```
 
         """  # noqa: E501
         X = _convert_dataframe_to_narwhals(X)
@@ -402,13 +440,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Example:
         --------
-        >>> transformer=BaseTransformer(
-        ... columns='a',
-        ... return_native=True
-        ... )
+        ```pycon
+        >>> transformer = BaseTransformer(columns="a", return_native=True)
 
         >>> transformer._process_return_native(return_native_override=False)
         False
+
+        ```
 
         """
         return (
@@ -444,23 +482,26 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
-            >>> import polars as pl
-            >>> transformer=BaseTransformer(
-            ... columns='a',
-            ...    )
+        ```pycon
+        >>> import polars as pl
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
 
-            >>> df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
-            >>> transformer.transform(df)
-            shape: (2, 2)
-            ┌─────┬─────┐
-            │ a   ┆ b   │
-            │ --- ┆ --- │
-            │ i64 ┆ i64 │
-            ╞═════╪═════╡
-            │ 1   ┆ 3   │
-            │ 2   ┆ 4   │
-            └─────┴─────┘
+        >>> transformer.transform(df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i64 ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 2   ┆ 4   │
+        └─────┴─────┘
+
+        ```
 
         """
         return_native = self._process_return_native(return_native_override)
@@ -493,11 +534,14 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Example
         -------
-        >>> transformer=BaseTransformer(
-        ... columns='a',
-        ...    )
+        ```pycon
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
 
-        >>> transformer.check_is_fitted('columns')
+        >>> transformer.check_is_fitted("columns")
+
+        ```
 
         """
         check_is_fitted(self, attribute)
@@ -517,14 +561,17 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
-        >>> transformer=BaseTransformer(
-        ... columns='a',
-        ...    )
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
 
-        >>> df=pl.DataFrame({'a': [1,2], 'b': [3,4]})
+        >>> df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
         >>> transformer.columns_check(df)
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -585,6 +632,9 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -592,6 +642,10 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     FITS = False
 
     jsonable = False
+
+    lazyframe_compatible = False
+
+    deprecated = True
 
     @beartype
     def __init__(

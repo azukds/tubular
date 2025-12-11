@@ -26,7 +26,7 @@ from tubular.types import DataFrame
 class BaseMappingTransformer(BaseTransformer):
     """Base Transformer Extension for mapping transformers.
 
-    Attributes:
+    Attributes
     ----------
     mappings : dict
         Dictionary of mappings for each column individually. The dict passed to mappings in
@@ -55,14 +55,17 @@ class BaseMappingTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
-    -------
+    Examples
+    --------
+    ```pycon
     >>> BaseMappingTransformer(
-    ...   mappings={'a': {'Y': 1, 'N': 0}},
-    ...   return_dtypes={"a":"Int8"},
-    ...    )
+    ...     mappings={"a": {"Y": 1, "N": 0}},
+    ...     return_dtypes={"a": "Int8"},
+    ... )
     BaseMappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
                            return_dtypes={'a': 'Int8'})
+
+    ```
 
     """
 
@@ -169,10 +172,13 @@ class BaseMappingTransformer(BaseTransformer):
 
         Examples
         --------
-        >>> mapping_transformer=BaseMappingTransformer(mappings={'a': {'x': 1}})
+        ```pycon
+        >>> mapping_transformer = BaseMappingTransformer(mappings={"a": {"x": 1}})
 
         >>> mapping_transformer.to_json()
         {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -198,8 +204,11 @@ class BaseMappingTransformer(BaseTransformer):
 
         Examples
         --------
-        >>> BaseMappingTransformer._infer_return_type({"a": {"Y": 1, "N":0}}, col="a")
+        ```pycon
+        >>> BaseMappingTransformer._infer_return_type({"a": {"Y": 1, "N": 0}}, col="a")
         'Int64'
+
+        ```
 
         """
         return str(pl.Series(mappings[col].values()).dtype)
@@ -225,16 +234,17 @@ class BaseMappingTransformer(BaseTransformer):
         X : pd/pl.DataFrame
             Input X, copied if specified by user.
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
 
         >>> transformer = BaseMappingTransformer(
-        ...   mappings={'a': {'Y': 1, 'N': 0}},
-        ...   return_dtypes={"a":"Int8"},
-        ...    )
+        ...     mappings={"a": {"Y": 1, "N": 0}},
+        ...     return_dtypes={"a": "Int8"},
+        ... )
 
-        >>> test_df=pl.DataFrame({'a': ["Y", "N"], 'b': [3,4]})
+        >>> test_df = pl.DataFrame({"a": ["Y", "N"], "b": [3, 4]})
 
         >>> # base class transform has no effect on data
         >>> transformer.transform(test_df)
@@ -247,6 +257,8 @@ class BaseMappingTransformer(BaseTransformer):
         │ Y   ┆ 3   │
         │ N   ┆ 4   │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -449,24 +461,27 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Example:
+    Examples
     --------
+    ```pycon
     >>> transformer = MappingTransformer(
-    ...   mappings={'a': {'Y': 1, 'N': 0}},
-    ...   return_dtypes={"a":"Int8"},
-    ...    )
+    ...     mappings={"a": {"Y": 1, "N": 0}},
+    ...     return_dtypes={"a": "Int8"},
+    ... )
     >>> transformer
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
                        return_dtypes={'a': 'Int8'})
 
     >>> # transformer can also be dumped to json and reinitialised
-    >>> json_dump=transformer.to_json()
+    >>> json_dump = transformer.to_json()
     >>> json_dump
     {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {}}
 
     >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
                        return_dtypes={'a': 'Int8'})
+
+    ```
 
     """
 
@@ -500,8 +515,9 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         X : pd/pl.DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
-        Example:
+        Examples
         --------
+        ``pycon
         >>> import polars as pl
 
         >>> transformer = MappingTransformer(
@@ -521,6 +537,8 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         │ 1   ┆ 3   │
         │ 0   ┆ 4   │
         └─────┴─────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -591,6 +609,9 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -600,6 +621,8 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -696,6 +719,9 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -705,6 +731,8 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
     jsonable = False
 
     FITS = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -804,6 +832,9 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -813,6 +844,8 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -909,6 +942,9 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -918,6 +954,8 @@ class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -1008,6 +1046,9 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -1017,6 +1058,8 @@ class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
