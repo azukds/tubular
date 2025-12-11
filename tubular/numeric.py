@@ -278,7 +278,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': array([3, 4])}}
+        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
 
         """
         self.check_is_fitted(["bins"])
@@ -471,6 +471,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             .select(self.columns[0])
             .to_numpy()
             .ravel()
+            .tolist()
         )
         return self
 
