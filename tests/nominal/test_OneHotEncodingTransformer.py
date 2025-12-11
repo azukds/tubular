@@ -303,7 +303,7 @@ class TestTransform(
 
         transformer.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         with pytest.raises(
             ValueError,
@@ -332,7 +332,7 @@ class TestTransform(
         transformer = OneHotEncodingTransformer(columns=columns)
         transformer.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df_test.to_native())
 
@@ -375,7 +375,7 @@ class TestTransform(
         transformer.fit(df_train)
         transformer2.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         transformer.transform(df_test)
 
@@ -402,7 +402,7 @@ class TestTransform(
 
         transformer.fit(df)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 
@@ -430,7 +430,7 @@ class TestTransform(
 
         transformer.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         with pytest.warns(UserWarning, match="unseen categories"):
             transformer.transform(df_test)
@@ -453,7 +453,7 @@ class TestTransform(
 
         transformer.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         with pytest.warns(
             UserWarning,
@@ -475,7 +475,7 @@ class TestTransform(
         x = OneHotEncodingTransformer(columns=columns, verbose=False)
         x.fit(df_train)
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_test = d.create_df_8(library=library)
         expected = self.create_OneHotEncoderTransformer_test_df_2(library=library)
@@ -529,7 +529,7 @@ class TestTransform(
 
         transformer.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df_test)
 
@@ -577,7 +577,7 @@ class TestTransform(
         )
         transformer.fit(df_train)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         transformer.transform(df_test)
 
