@@ -617,12 +617,16 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             },
         )
 
-        data["fit"].update(
-            {
-                "quantile_capping_values": self.quantile_capping_values,
-                "_replacement_values": self._replacement_values,
-            },
-        )
+        # transformer only fits for quantiles setting
+        if self.quantiles is not None:
+            self.check_is_fitted(["quantile_capping_values", "_replacement_values"])
+
+            data["fit"].update(
+                {
+                    "quantile_capping_values": self.quantile_capping_values,
+                    "_replacement_values": self._replacement_values,
+                },
+            )
 
         return data
 
@@ -690,6 +694,15 @@ class CappingTransformer(BaseCappingTransformer):
     │ 18  ┆ 3   ┆ 3   │
     │ 20  ┆ 1   ┆ 4   │
     └─────┴─────┴─────┘
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump=transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'CappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+
+    >>> CappingTransformer.from_json(json_dump)
+    CappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
 
     """
 
