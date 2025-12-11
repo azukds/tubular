@@ -100,3 +100,9 @@ jobs:
             source $HOME/lints/bin/activate
             typos --version
             typos .
+
+        - name: lint code examples in docs
+          run: |
+            source $HOME/lints/bin/activate
+            prek run blacken-docs --all-files
+            

@@ -48,11 +48,11 @@ class SetValueTransformer(BaseTransformer):
 
     Examples
     --------
-    >>> SetValueTransformer(
-    ... columns='a',
-    ... value=1
-    ...    )
+    ```pycon
+    >>> SetValueTransformer(columns="a", value=1)
     SetValueTransformer(columns=['a'], value=1)
+
+    ```
 
     """
 
@@ -104,10 +104,12 @@ class SetValueTransformer(BaseTransformer):
 
         Examples
         --------
-        >>> transformer = SetValueTransformer(columns='a', value=1)
+        ```pycon
+        >>> transformer = SetValueTransformer(columns="a", value=1)
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
 
+        ```
 
         """  # noqa: E501
         json_dict = super().to_json()
@@ -130,16 +132,14 @@ class SetValueTransformer(BaseTransformer):
         X : FrameT
             Transformed input X with columns set to value.
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> transformer=SetValueTransformer(
-        ... columns='a',
-        ... value=1
-        ...    )
+        >>> transformer = SetValueTransformer(columns="a", value=1)
 
-        >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [4,5,6]})
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
         >>> transformer.transform(test_df)
         shape: (3, 2)
@@ -152,6 +152,8 @@ class SetValueTransformer(BaseTransformer):
         │ 1   ┆ 5   │
         │ 1   ┆ 6   │
         └─────┴─────┘
+
+        ```
 
         """
         X = super().transform(X, return_native_override=False)
