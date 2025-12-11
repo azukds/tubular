@@ -28,6 +28,7 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
 
     Examples
     --------
+    ```pycon
     >>> import polars as pl
     >>> from tubular.imputers import MeanImputer, MedianImputer
     >>> from sklearn.pipeline import Pipeline
@@ -44,38 +45,24 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
     >>> pipeline_json #doctest: +NORMALIZE_WHITESPACE
-    { 'MedianImputer': {
-	    'tubular_version': 'dev',
+    {'MedianImputer': {'tubular_version':...,
 		'classname': 'MedianImputer',
-		'init': {
-			'columns': ['b'],
+		'init': {'columns': ['b'],
 			'copy': False,
 			'verbose': False,
 			'return_native': True,
-			'weights_column': None
-		},
-		'fit': {
-			'impute_values_': {
-			'b': 15.0
-			}
-		}
-	},
-	'MeanImputer': {
-	    'tubular_version': 'dev',
+			'weights_column': None},
+		'fit': {'impute_values_': {'b': 15.0}}},
+	'MeanImputer': {'tubular_version':...,
 		'classname': 'MeanImputer',
-		'init': {
-			'columns': ['b'],
+		'init': {'columns': ['b'],
 			'copy': False,
 			'verbose': False,
 			'return_native': True,
-			'weights_column': None
-        },
-        'fit': {
-			'impute_values_': {
-			'b': 15.0
-			}}}}
+			'weights_column': None},
+        'fit': {'impute_values_': {'b': 15.0}}}}
 
-
+    ```
     """
     steps = pipeline.steps
     non_jsonable_steps = [step[0] for step in steps if step[1].jsonable is False]
@@ -100,6 +87,7 @@ def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipelin
 
     Examples
     --------
+    ```pycon
     >>> import polars as pl
     >>> from tubular.imputers import MeanImputer, MedianImputer
     >>> from sklearn.pipeline import Pipeline
@@ -120,6 +108,7 @@ def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipelin
     Pipeline(steps=[('MedianImputer', MedianImputer(columns=['b'])),
                     ('MeanImputer', MeanImputer(columns=['b']))])
 
+    ```
     """
     steps = [
         (step_name, CLASS_REGISTRY[step_name].from_json(json_dict))

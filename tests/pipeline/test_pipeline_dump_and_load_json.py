@@ -36,6 +36,7 @@ class TestPipelineDumpAndLoadJson:
             )
 
             x1 = x[1].__dict__
+            # removing  built_from_json attr, as the two transformers are expected to differ here
             x1.pop("built_from_json", None)
             y1 = y[1].__dict__
             y1.pop("built_from_json", None)
@@ -58,6 +59,7 @@ class TestPipelineDumpAndLoadJson:
         actual_json = dump_pipeline_to_json(original_pipeline)
         transformers = ["MedianImputer", "MeanImputer"]
         for transformer in transformers:
+            # tubular version will differ locally vs in CI, so best to drop from test
             del actual_json[transformer]["tubular_version"]
         expected_json = {
             "MeanImputer": {
