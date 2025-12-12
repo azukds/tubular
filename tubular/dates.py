@@ -861,6 +861,7 @@ class ToDatetimeTransformer(BaseTransformer):
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
+
         ```
 
         """
