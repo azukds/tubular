@@ -80,7 +80,7 @@ You can track our progress here:
 | MedianImputer                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
-| OneDKmeansTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| OneDKmeansTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
