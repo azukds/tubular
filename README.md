@@ -85,7 +85,7 @@ You can track our progress here:
 | OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | SetValueTransformer                | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
-| ToDatetimeTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| ToDatetimeTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 <!-- /AUTO-GENERATED feature table -->
 
 ## Installation
