@@ -365,8 +365,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         return self
 
     @block_from_json
-    @nw.narwhalify
-    def _combine_X_y(self, X: DataFrame, y: nw.Series) -> DataFrame:  # noqa: PLR6301, block_from_json depends on self
+    @beartype
+    def _combine_X_y(
+        self, X: DataFrame, y: Series, return_native_override: bool = True
+    ) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
@@ -381,6 +383,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         y : pd/pl.Series
             Response variable.
+
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
 
         Returns
         -------
@@ -422,7 +428,11 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
 
-        return X.with_columns(_temporary_response=y)
+        return_native = self._process_return_native(return_native_override)
+
+        X = X.with_columns(_temporary_response=y)
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
     @beartype
     def _process_return_native(self, return_native_override: Optional[bool]) -> bool:

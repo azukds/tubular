@@ -47,7 +47,8 @@ Changed
 - feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
-- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
+- feat: optimisation changes to fit method of MeanResponseTransformer `#565 <https://github.com/azukds/tubular/issues/565>`_
+- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>`_
 
 2.4.0 (01/12/2025)
 ------------------
@@ -98,7 +99,6 @@ Changed
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
-- feat: optimisation changes to MeanResponseTransformer
 - feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
