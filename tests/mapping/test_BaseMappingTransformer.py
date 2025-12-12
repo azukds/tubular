@@ -134,7 +134,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         transformer.transform(df)
 

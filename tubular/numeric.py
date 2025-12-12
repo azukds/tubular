@@ -151,6 +151,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Validate data and attributes prior to the child objects transform logic.
@@ -196,12 +197,14 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         """
         X = _convert_dataframe_to_narwhals(X)
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
         X = super().transform(X, return_native_override=False)
 
         CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 @register
@@ -298,7 +301,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         return json_dict
 
     @beartype
-    def __init__(  # noqa: PLR0917, PLR0913
+    def __init__(  # noqa: PLR0913
         self,
         columns: Union[
             str,
@@ -307,8 +310,9 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         new_column_name: str,
         n_init: Union[str, int] = "auto",
         n_clusters: int = 8,
-        drop_original: bool = False,
         kmeans_kwargs: Optional[dict[str, object]] = None,
+        *,
+        drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -539,10 +543,8 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
                 backend=native_backend,
             ),
         )
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns[0],
+        return self.drop_original_column(
+            X, self.columns[0], drop_original=self.drop_original
         )
 
 
@@ -664,7 +666,7 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         X = X.with_columns(expr.alias(self.new_column_name))
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
     def get_feature_names_out(self) -> list[str]:
         """Get the names of the output features.
@@ -831,7 +833,7 @@ class RatioTransformer(BaseNumericTransformer):
         new_column_name = f"{self.columns[0]}_divided_by_{self.columns[1]}"
         X = X.with_columns(expr.alias(new_column_name))
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
     def get_feature_names_out(self) -> list[str]:
         """Get the names of the output features.
@@ -906,9 +908,10 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         self,
         columns: Optional[Union[str, list[str]]],
         base: Optional[PositiveNumber] = None,
+        suffix: str = "log",
+        *,
         add_1: bool = False,
         drop_original: bool = True,
-        suffix: str = "log",
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -992,10 +995,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
             else:
                 X[new_column_names] = np.log(X[self.columns]) / np.log(self.base)
 
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
+        return self.drop_original_column(
+            X, self.columns, drop_original=self.drop_original
         )
 
 

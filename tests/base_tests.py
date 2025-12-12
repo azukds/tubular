@@ -315,11 +315,11 @@ class GenericFitTests:
 
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         x_fitted = x.fit(
-            _convert_to_lazy(df, lazy),
+            _convert_to_lazy(df, lazy=lazy),
             df["a"],
         )
 
@@ -347,13 +347,13 @@ class GenericFitTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         original_df = copy.deepcopy(df)
 
         x.fit(
-            _convert_to_lazy(df, lazy),
+            _convert_to_lazy(df, lazy=lazy),
             df["a"],
         )
 
@@ -411,14 +411,14 @@ class GenericFitTests:
         x = initialized_transformers[self.transformer_name]
 
         # skip polars test if not narwhalified
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             x.fit(
-                _convert_to_lazy(df, lazy),
+                _convert_to_lazy(df, lazy=lazy),
                 y=non_series,
             )
 
@@ -444,7 +444,7 @@ class GenericFitTests:
         df = minimal_dataframe_lookup[self.transformer_name]
 
         # skip polars test if not narwhalified
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
         # skip test if transformer not yet jsonable
@@ -452,7 +452,7 @@ class GenericFitTests:
             return
 
         if transformer.FITS:
-            transformer.fit(_convert_to_lazy(df, lazy), df["a"])
+            transformer.fit(_convert_to_lazy(df, lazy=lazy), df["a"])
 
         transformer = transformer.from_json(transformer.to_json())
 
@@ -460,7 +460,7 @@ class GenericFitTests:
             RuntimeError,
             match=r"Transformers that are reconstructed from json only support .transform functionality, reinitialise a new transformer to use this method",
         ):
-            transformer.fit(_convert_to_lazy(df, lazy), df["a"])
+            transformer.fit(_convert_to_lazy(df, lazy=lazy), df["a"])
 
 
 class CheckNumericFitMixinTests:
@@ -835,7 +835,7 @@ class GenericTransformTests:
 
         x = x.fit(df, df["a"])
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -873,10 +873,10 @@ class GenericTransformTests:
 
         x = x.fit(df, df["a"])
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         _ = x.transform(
-            _convert_to_lazy(df, lazy),
+            _convert_to_lazy(df, lazy=lazy),
         )
 
         assert_frame_equal_dispatch(df, original_df)
@@ -908,7 +908,7 @@ class GenericTransformTests:
 
         x = x.fit(df, df["a"])
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         _ = x.transform(df)
 
@@ -947,15 +947,15 @@ class GenericTransformTests:
         # take 0 rows from df
         df = df.head(0).to_native()
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         output = x.transform(
-            _convert_to_lazy(df, lazy),
+            _convert_to_lazy(df, lazy=lazy),
         )
 
         output = nw.from_native(output)
 
-        assert _collect_frame(output, lazy).shape[0] == 0, (
+        assert _collect_frame(output, lazy=lazy).shape[0] == 0, (
             "expected empty frame transform to return empty frame"
         )
 
@@ -1163,7 +1163,7 @@ class ColumnsCheckTests:
         x.columns = ["a", "z"]
 
         with pytest.raises(ValueError):
-            x.columns_check(X=_convert_to_lazy(df, lazy))
+            x.columns_check(X=_convert_to_lazy(df, lazy=lazy))
 
 
 class CombineXYTests:

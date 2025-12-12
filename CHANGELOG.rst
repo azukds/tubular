@@ -47,7 +47,8 @@ Changed
 - feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
-- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
+- chore: turned on ruff FBT lint rule `#511 <https://github.com/azukds/tubular/issues/511>`_
+- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>`_
 
 2.4.0 (01/12/2025)
 ------------------

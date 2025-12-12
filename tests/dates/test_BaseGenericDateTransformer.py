@@ -61,7 +61,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         for i in range(len(columns)):
             col = columns[i]
@@ -110,7 +110,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df = (
             nw.from_native(df)
@@ -185,7 +185,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         msg = "a type should be in ['Datetime', 'Date'] but got Unknown. Note, Datetime columns should have time_unit in ['us', 'ns', 'ms'] and time_zones from zoneinfo.available_timezones()"
 
@@ -217,7 +217,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df = nw.from_native(df)
 

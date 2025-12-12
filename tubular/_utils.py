@@ -56,6 +56,7 @@ def _convert_series_to_narwhals(y: Optional[Series] = None) -> Optional[nw.Serie
 @beartype
 def _return_narwhals_or_native_dataframe(
     X: DataFrame,
+    *,
     return_native: bool,
 ) -> DataFrame:
     """Narwhalifies series, if series is not already narwhals.
