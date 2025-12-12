@@ -95,7 +95,7 @@ class TestTransform(
 
         transformer = _handle_from_json(transformer, from_json)
 
-        if col_type in ["Categorical", "String"]:
+        if col_type in {"Categorical", "String"}:
             msg_required_impute_value_type = "str"
             msg_col_type = "Categorical or String"
 
@@ -146,7 +146,7 @@ class TestTransform(
         df_nw = nw.from_native(df)
 
         # or just downcast easier types (String comes in correct type so leave)
-        if col_type in ["Float32", "Categorical"]:
+        if col_type in {"Float32", "Categorical"}:
             df_nw = df_nw.with_columns(
                 nw.col(column).cast(getattr(nw, col_type)),
             )

@@ -27,16 +27,43 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.4.0 (unreleased)
+2.5.0 (unreleased)
 ------------------
 
 Changed
 ^^^^^^^
+- turned on beartype for WeightsColumnMixin and associated transformers `#561 <https://github.com/azukds/tubular/issues/561>`_
+- feat: added `to_json` method to BaseCappingTransformer to enable dumping transformer state, including init attributes (`capping_values`, `quantiles`, `weights_column`) and fitted attributes (`quantile_capping_values`, `_replacement_values`) `#540 <https://github.com/azukds/tubular/pull/594>`_
+- feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>`_
+- chore: set `jsonable` class attribute to True for BaseCappingTransformer  `#540 <https://github.com/azukds/tubular/pull/594>`_
+- feat: switched pre-commit for `prek <https://github.com/j178/prek>`_ `#634 <https://github.com/azukds/tubular/issues/634>`_
+- feat: added `to_json` method for DatetimeInfoExtractor `#555 <https://github.com/azukds/tubular/issues/555>`_
+- bugfix: fixed unhandled error for nulls on GroupRareLevelsTransformer.fit
+- feat: added `to_json` method for OneHotEncodingTransformer `#550 <https://github.com/azukds/tubular/issues/550>`_
+- turned on ruff PLR rule `#509 <https://github.com/azukds/tubular/issues/509>`_
+- feat: added auto generated feature table to readme, to track transform support for e.g. polars/lazyframes/json `#595 <https://github.com/azukds/tubular/issues/595>`_
+- feat: added FEATURE_REGISTRY dict maintained by BaseTransformer, which records per-transformer functionality info
+- feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
+- feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
+- feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
+- feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
+- feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
+- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
 
+2.4.0 (01/12/2025)
+------------------
+
+Changed
+^^^^^^^
+- turned on DOC lints for remaining classes `#547 <https://github.com/azukds/tubular/issues/547>`_
+- turned on D lints for remaining classes `#115 <https://github.com/azukds/tubular/issues/115>`_
 - copied optimisations/improvements from #484 into MedianImputer
-- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>_`
+- feat: added `to_json` method for MeanResponseTransformer `#549 <https://github.com/azukds/tubular/issues/549>`_
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
-
+- feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
+- feat: added a new transformer called DatetimeComponentExtractor
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>`_
+- bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
 
 2.3.0 (18/11/2025)
 ------------------
@@ -44,8 +71,8 @@ Changed
 Changed
 ^^^^^^^
 
-- feat: converted BaseTransfomer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
-- feat: added lazyframe testing for BaseTransfomer
+- feat: converted BaseTransformer to support lazyframes, and added lazyframe testing `#535 <https://github.com/azukds/tubular/issues/535>_`
+- feat: added lazyframe testing for BaseTransformer
 - feat: introduced `lazyframe_compatible` class attr to all transformers
 - feat: as part of lazyframe work, transformers no longer error for emptyframes (they just return emptyframes)
 - bugfix: MeanResponseTransformer approach was hitting a recursion depth limit error for many levels, have switched to more resilient (and generally better) approach
@@ -62,6 +89,7 @@ Changed
 - feat: added `to_json` method for `SetValueTransformer` `#542 <https://github.com/azukds/tubular/issues/542>`_
 - feat: added 'to_json' method for GroupRareLevelsTransformer '#548 <https://github.com/azukds/tubular/issues/548>'
 - removed SeparatorColumnMixin `#562 <https://github.com/azukds/tubular/issues/562>_`
+- added a new transformer called DatetimeComponentExtractor
 
 2.1.0 (30/10/25)
 ------------------
@@ -94,8 +122,8 @@ Changed
 - feat: optimisation changes to DatetimeSinusoidCalculator, added 'return_native_override' argument to DatetimeSinusoidCalculator, reduced with_columns being called many times. `<#465 <https://github.com/azukds/tubular/issues/465>_`
 - chore: turned on doctest
 - chore: deprecated DataFrameMethodTransformer
-- chore: added doctest examples for BaseTransfomer
-- chore: deleted stale example notebooks for BaseTransfomer (replaced by doctest) and DataFrameMethodTransformer (deprecated)
+- chore: added doctest examples for BaseTransformer
+- chore: deleted stale example notebooks for BaseTransformer (replaced by doctest) and DataFrameMethodTransformer (deprecated)
 - bugfix: updated minimum narwhals version to 1.42.1 in toml, to avoid import issues for IntoDtype
 - chore: deprecated transformers that are not being converted to narwhals, and moved to bottom of their files. `#433 <https://github.com/azukds/tubular/issues/433>_`
 - chore: edited package init to only advertise non-deprecated transformers (and not base classes)
@@ -104,7 +132,7 @@ Changed
 - chore: doctests for misc module, deleted old/stale example notebooks `#505  <https://github.com/azukds/tubular/issues/505>_`
 - chore: doctests for mapping module, deleted old/stale example notebooks `#504 <https://github.com/azukds/tubular/issues/504>_`
 - chore: doctests for numeric module `#507 <https://github.com/azukds/tubular/issues/507>_`
-- feat: added to/from json functionality for BaseTransfomer and imputers file. 
+- feat: added to/from json functionality for BaseTransformer and imputers file. 
 - feat: introduced `jsonable` class attribute across package to control whether json tests run for given class
 - feat: introduced _version class attribute that stores package version
 - feat: introduced block_from_json decorator to block non-transform related methods for transformers which have been rebuilt from json
@@ -149,9 +177,9 @@ Changed
 - narwhalified DatetimeSinusoidCalculator '#425 <https://github.com/azukds/tubular/issues/425>_' 
 - Added deprecated warning for DateDiffLeapYearTransformer `#244 <https://github.com/azukds/tubular/issues/244>_`
 - Added new units 'week', 'fornight', 'lunar_month', 'common_year' and 'custom_days' to DateDifferenceTransformer. The time component will be truncated for these units and for unit 'D'.
-- feat: optimisation changes to BaseTransfomer and imputers file. Edited to reduce number of copies and type changes from to/from_native calls, and select/with_columns being called many times. `#444 <https://github.com/azukds/tubular/issues/444>_`
-- feat: added 'return_native' argument to BaseTransfomer to control whether native or narwhals types are returned, and limit type changes. Idea is for this to be rolled out across transformers.
-- feat: made creation of copies in BaseTransfomer optional, and default to False.
+- feat: optimisation changes to BaseTransformer and imputers file. Edited to reduce number of copies and type changes from to/from_native calls, and select/with_columns being called many times. `#444 <https://github.com/azukds/tubular/issues/444>_`
+- feat: added 'return_native' argument to BaseTransformer to control whether native or narwhals types are returned, and limit type changes. Idea is for this to be rolled out across transformers.
+- feat: made creation of copies in BaseTransformer optional, and default to False.
 - feat: optimisations to BaseDatetimeTransformer, BaseDateTransformer, DateDifferenceTransformer, DropOriginalMixin, CheckNumericMixin
 - feat: optimisation changes to BaseNominalTransformer, reduced select being called many times, added 'return_native_override' argument. `#450 <https://github.com/azukds/tubular/issues/450>_``
 - chore: import narwhals.typing.DType for Github in order to uncap narwhals `#455 <https://github.com/azukds/tubular/issues/455>`
@@ -159,7 +187,7 @@ Changed
 - feat: optimisations to BaseDatetimeTransformer, BaseDateTransformer, DateDifferenceTransformer, DropOriginalMixin
 - feat: optimisation changes to BaseNominalTransformer, reduced select being called many times, added 'return_native_override' argument.
 - feat: optimisation changes to WeightColumnMixin, combined all weight checks into a single .select call and used narhwals is_nan
-- feat: optimisation chnages to BaseCappingTransformer, added 'return_native_override' argument to BaseCappingTransformer and BaseNumericTransformer.
+- feat: optimisation changes to BaseCappingTransformer, added 'return_native_override' argument to BaseCappingTransformer and BaseNumericTransformer.
 - bugfix: make datetime transformers perform checks on only relevant columns
 
 1.4.4 (24/06/2025)
@@ -239,7 +267,7 @@ Changed
 Changed
 ^^^^^^^
 
-- Modified OneHotEncodingTransformer, made an instance of OneHotEncoder and assign it to attribut _encoder `#308 <https://github.com/azukds/tubular/pull/309>`
+- Modified OneHotEncodingTransformer, made an instance of OneHotEncoder and assign it to attribute _encoder `#308 <https://github.com/azukds/tubular/pull/309>`
 - Refactored BaseDateTransformer, BaseDateTwoColumnTransformer and associated testing  `#273 <https://github.com/azukds/tubular/pull/273>`_
 - BaseTwoColumnTransformer removed in favour of mixin classes TwoColumnMixin and NewColumnNameMixin to handle validation of two columns and new_column_name arguments `#273 <https://github.com/azukds/tubular/pull/273>`_
 - Refactored tests for InteractionTransformer  `#283 <https://github.com/azukds/tubular/pull/283>`_
@@ -293,7 +321,7 @@ Added
 Changed
 ^^^^^^^
 - Standardised naming of weight arg across transformers 
-- Update DataFrameMethodTransformer tests to have inheritable init class that can be used by othe test files.
+- Update DataFrameMethodTransformer tests to have inheritable init class that can be used by other test files.
 - Moved BaseTransformer, DataFrameMethodTransformer, BaseMappingTransformer, BaseMappingTransformerMixin, CrossColumnMappingTransformer and Mapping Transformer over to the new testing framework.
 - Refactored MappingTransformer by removing redundant init method.
 - Refactored tests for ColumnDtypeSetter, and renamed (from SetColumnDtype)
@@ -316,7 +344,7 @@ Changed
 - Refactored MeanImputer tests in new format `#250 <https://github.com/azukds/tubular/pull/250>`_
 - Refactored DatetimeInfoExtractor to condense and improve readability
 - added minimal_dataframe_lookup fixture to conftest, and edited generic tests to use this
-- Alphabetised the minimial attribute dictionary for readability.
+- Alphabetised the minimal attribute dictionary for readability.
 - Refactored OHE transformer tests to align with new testing framework. 
 - Moved fixtures relating only to a single test out of conftest and into testing script where utilised.
 - !!!Introduced dependency on Sklearn's OneHotEncoder by adding test to check OHE transformer (which we are calling from within our OHE wrapper) is fit before transform 
@@ -376,13 +404,13 @@ Changed
 ^^^^^^^
 - minor changes to comply with flake8_bugbear (B) ruff rules `#131 <https://github.com/azukds/tubular/pull/131>`_
 - minor changes to comply with flake8_datetimez (DTZ) ruff rules `#132 <https://github.com/azukds/tubular/pull/132>`_
-- BaseMappingTransformerMixin chnaged to use Dataframe.replace rather than looping over columns `#135 <https://github.com/azukds/tubular/pull/135>`_
+- BaseMappingTransformerMixin changed to use Dataframe.replace rather than looping over columns `#135 <https://github.com/azukds/tubular/pull/135>`_
 - MeanResponseTransformer.map_imputer_values() added to decouple from BaseMappingTransformerMixin `#135 <https://github.com/azukds/tubular/pull/135>`_
 - BaseDateTransformer added to standardise datetime data handling `#148 <https://github.com/azukds/tubular/pull/148>`_
 
 Removed
 ^^^^^^^
-- removed some unnescessary implementation tests `#130 <https://github.com/azukds/tubular/pull/130>`_
+- removed some unnecessary implementation tests `#130 <https://github.com/azukds/tubular/pull/130>`_
 - ReturnKeyDict class removed `#135 <https://github.com/azukds/tubular/pull/135>`_
 
 
@@ -418,7 +446,7 @@ Changed
 
 Added
 ^^^^^
-- added support for vscode dev container with python 3.8, requirments-dev.txt, pylance/gitlens extensions and precommit all preinstalled `#83 <https://github.com/azukds/tubular/pull/83>`_
+- added support for vscode dev container with python 3.8, requirements-dev.txt, pylance/gitlens extensions and precommit all preinstalled `#83 <https://github.com/azukds/tubular/pull/83>`_
 
 Changed
 ^^^^^^^
@@ -487,7 +515,7 @@ Fixed
 ^^^^^
 - updated black version to 22.3.0 and flake8 version to 5.0.4 to fix compatibility issues `#45 <https://github.com/azukds/tubular/pull/45>`_
 
-- removed kwargs argument from BaseTransfomer in ``tubular/base.py`` to avoid silent erroring if incorrect arguments passed to transformers. Fixed a few tests which were revealed to have incorrect arguments passed by change `#56 <https://github.com/azukds/tubular/pull/56>`_ 
+- removed kwargs argument from BaseTransformer in ``tubular/base.py`` to avoid silent erroring if incorrect arguments passed to transformers. Fixed a few tests which were revealed to have incorrect arguments passed by change `#56 <https://github.com/azukds/tubular/pull/56>`_ 
 
 
 0.3.2 (2022-01-13)

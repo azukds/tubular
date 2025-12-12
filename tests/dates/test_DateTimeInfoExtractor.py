@@ -1,6 +1,5 @@
 import datetime
 
-import joblib
 import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
@@ -15,7 +14,11 @@ from tests.base_tests import (
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
 
 
@@ -52,7 +55,8 @@ class TestInit(
         "incorrect_type_include",
         [2, 3.0, "invalid", ["invalid", "timeofday"]],
     )
-    def test_error_for_bad_include_type(self, incorrect_type_include):
+    @staticmethod
+    def test_error_for_bad_include_type(incorrect_type_include):
         """Test that an exception is raised when value include variable
         is incorrect type."""
         with pytest.raises(
@@ -60,7 +64,8 @@ class TestInit(
         ):
             DatetimeInfoExtractor(columns=["a"], include=incorrect_type_include)
 
-    def test_error_when_invalid_include_option(self):
+    @staticmethod
+    def test_error_when_invalid_include_option():
         """Test that an exception is raised when include contains incorrect values."""
         print("invalid_option" in DatetimeInfoOptions._value2member_map_)
         with pytest.raises(
@@ -75,8 +80,8 @@ class TestInit(
         "incorrect_type_datetime_mappings",
         [2, 3.0, ["a", "b"], "dayofweek"],
     )
+    @staticmethod
     def test_error_when_datetime_mappings_not_dict(
-        self,
         incorrect_type_datetime_mappings,
     ):
         """Test that an exception is raised when datetime_mappings is not a dict."""
@@ -92,8 +97,8 @@ class TestInit(
         "incorrect_type_datetime_mappings_values",
         [{"timeofday": 2}],
     )
+    @staticmethod
     def test_error_when_datetime_mapping_value_not_dict(
-        self,
         incorrect_type_datetime_mappings_values,
     ):
         """Test that an exception is raised when values in datetime_mappings are not dict."""
@@ -112,8 +117,8 @@ class TestInit(
             (["timeofmonth"], {"bla": {"day": range(7)}}),
         ],
     )
+    @staticmethod
     def test_error_when_datetime_mapping_key_not_allowed(
-        self,
         include,
         incorrect_datetime_mappings_keys,
     ):
@@ -134,14 +139,14 @@ class TestInit(
             (
                 ["timeofyear"],
                 {
-                    "timeofyear": dict.fromkeys(range(12), "month"),
+                    "timeofyear": dict.fromkeys(range(1, 13), "month"),
                     "timeofday": dict.fromkeys(range(24), "hour"),
                 },
             ),
         ],
     )
+    @staticmethod
     def test_error_when_datetime_mapping_key_not_in_include(
-        self,
         include,
         incorrect_datetime_mappings_keys,
     ):
@@ -177,8 +182,8 @@ class TestInit(
             ),
         ],
     )
+    @staticmethod
     def test_error_when_incomplete_mappings_passed(
-        self,
         incomplete_mappings,
         expected_exception,
     ):
@@ -198,11 +203,13 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DatetimeInfoExtractor"
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_single_column_output_for_all_options(self, library):
+    @staticmethod
+    def test_single_column_output_for_all_options(library, from_json):
         """Test that correct df is returned after transformation."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -285,6 +292,9 @@ class TestTransform(
             columns=["b"],
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         transformed = transformer.transform(df.to_native())
 
         expected = df.clone()
@@ -374,11 +384,13 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_multi_column_output(self, library):
+    @staticmethod
+    def test_multi_column_output(library, from_json):
         "test output for multiple columns"
 
         df = d.create_date_test_df(library=library)
@@ -533,6 +545,9 @@ class TestTransform(
             columns=["a", "b"],
             include=["timeofmonth"],
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         transformed = transformer.transform(df.to_native())
 
         expected = df.clone()
@@ -582,11 +597,13 @@ class TestTransform(
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_custom_mappings_can_be_used(self, library):
+    @staticmethod
+    def test_custom_mappings_can_be_used(library, from_json):
         "test output when custom mappings provided"
 
         df_dict = {
@@ -666,6 +683,9 @@ class TestTransform(
                 },
             },
         )
+
+        transformer = _handle_from_json(transformer, from_json)
+
         transformed = transformer.transform(df)
         expected = nw.from_native(df).clone()
         expected = expected.with_columns(
@@ -764,21 +784,12 @@ class TestTransform(
                 df_expected_row,
             )
 
-    def test_is_serialisable(self, tmp_path):
-        transformer = DatetimeInfoExtractor(columns=["b"], include=["timeofyear"])
-
-        # pickle transformer
-        path = tmp_path / "transformer.pkl"
-
-        # serialise without raising error
-        joblib.dump(transformer, path)
-
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

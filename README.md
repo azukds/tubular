@@ -34,11 +34,11 @@ Here is a simple example of applying capping to two columns;
 ```python
 import polars as pl
 
-transformer=CappingTransformer(
-capping_values={'a': [10, 20], 'b': [1,3]},
-  )
+transformer = CappingTransformer(
+    capping_values={"a": [10, 20], "b": [1, 3]},
+)
 
-test_df=pl.DataFrame({'a': [1,15,18,25], 'b': [6,2,7,1], 'c':[1,2,3,4]})
+test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
 
 transformer.transform(test_df)
 # ->
@@ -54,6 +54,39 @@ transformer.transform(test_df)
 # │ 20  ┆ 1   ┆ 4   │
 # └─────┴─────┴─────┘
 ```
+
+We are currently in the process of rolling out support for some new features:
+- to/from json methods for our transformers to allow json storage
+- polars lazyframe support
+
+You can track our progress here:
+<!-- AUTO-GENERATED feature table -->
+|                                    | polars_compatible   | pandas_compatible   | jsonable           | lazyframe_compatible   |
+|------------------------------------|---------------------|---------------------|--------------------|------------------------|
+| AggregateColumnsOverRowTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| AggregateRowsOverColumnTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :x:                    |
+| ArbitraryImputer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DateDifferenceTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeComponentExtractor         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeInfoExtractor              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DatetimeSinusoidCalculator         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| DifferenceTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| GroupRareLevelsTransformer         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MeanImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MedianImputer                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OneDKmeansTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| SetValueTransformer                | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| ToDatetimeTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+<!-- /AUTO-GENERATED feature table -->
 
 ## Installation
 

@@ -14,13 +14,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.types import (
     DataFrame,
     NonEmptyListOfStrs,
 )
 
 
+@register
 class SetValueTransformer(BaseTransformer):
     """Transformer to set value of column(s) to a given value.
 
@@ -29,11 +30,12 @@ class SetValueTransformer(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json, which limits it's
+        supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -46,11 +48,11 @@ class SetValueTransformer(BaseTransformer):
 
     Examples
     --------
-    >>> SetValueTransformer(
-    ... columns='a',
-    ... value=1
-    ...    )
+    ```pycon
+    >>> SetValueTransformer(columns="a", value=1)
     SetValueTransformer(columns=['a'], value=1)
+
+    ```
 
     """
 
@@ -102,12 +104,14 @@ class SetValueTransformer(BaseTransformer):
 
         Examples
         --------
-        >>> transformer = SetValueTransformer(columns='a', value=1)
+        ```pycon
+        >>> transformer = SetValueTransformer(columns="a", value=1)
         >>> transformer.to_json()
         {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
 
+        ```
 
-        """
+        """  # noqa: E501
         json_dict = super().to_json()
 
         json_dict["init"]["value"] = self.value
@@ -128,16 +132,14 @@ class SetValueTransformer(BaseTransformer):
         X : FrameT
             Transformed input X with columns set to value.
 
-        Example:
+        Examples
         --------
+        ```pycon
         >>> import polars as pl
 
-        >>> transformer=SetValueTransformer(
-        ... columns='a',
-        ... value=1
-        ...    )
+        >>> transformer = SetValueTransformer(columns="a", value=1)
 
-        >>> test_df=pl.DataFrame({'a': [1,2,3], 'b': [4,5,6]})
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
         >>> transformer.transform(test_df)
         shape: (3, 2)
@@ -150,6 +152,8 @@ class SetValueTransformer(BaseTransformer):
         │ 1   ┆ 5   │
         │ 1   ┆ 6   │
         └─────┴─────┘
+
+        ```
 
         """
         X = super().transform(X, return_native_override=False)
@@ -174,11 +178,12 @@ class ColumnDtypeSetter(BaseTransformer):
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
+        indicates if transformer was reconstructed from json,
+        which limits it's supported functionality to .transform
 
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
 
     jsonable: bool
         class attribute, indicates if transformer supports to/from_json methods
@@ -189,6 +194,9 @@ class ColumnDtypeSetter(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    deprecated: bool
+        indicates if class has been deprecated
+
     """
 
     polars_compatible = False
@@ -198,6 +206,8 @@ class ColumnDtypeSetter(BaseTransformer):
     FITS = False
 
     jsonable = False
+
+    deprecated = True
 
     def __init__(
         self,
@@ -213,8 +223,8 @@ class ColumnDtypeSetter(BaseTransformer):
             Columns to set dtype. Must be set or transform will not run.
 
         dtype : type or string
-            dtype object to set columns to or a string interpretable as one by pd.api.types.pandas_dtype
-            e.g. float or 'float'
+            dtype object to set columns to or a string interpretable as one
+            by pd.api.types.pandas_dtype e.g. float or 'float'
 
         **kwargs: dict[str, Any]
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -256,5 +266,5 @@ class ColumnDtypeSetter(BaseTransformer):
         try:
             pd.api.types.pandas_dtype(dtype)
         except TypeError:
-            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"
+            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"  # noqa: E501
             raise TypeError(msg) from None

@@ -25,7 +25,7 @@ def create_numeric_df_1(library="pandas"):
 
 
 def create_numeric_df_2(library="pandas"):
-    """Example with numeric dataframe that includes missings."""
+    """Example with numeric dataframe that includes missing values."""
 
     df_dict = {
         "a": [2, 3, 2, 1, 4, 1],
@@ -449,7 +449,7 @@ def create_is_between_dates_df_1(library="pandas"):
 
 
 def create_is_between_dates_df_2(library="pandas"):
-    """Create df to use in IsBetweenDates tests. Contains 3 columns of 5 datatime values, covers edge cases."""
+    """Create df to use in IsBetweenDates tests. Contains 3 columns of 5 datetime values, covers edge cases."""
 
     df_dict = {
         "a": [
@@ -482,7 +482,7 @@ def create_is_between_dates_df_2(library="pandas"):
 
 
 def create_is_between_dates_df_3(library="pandas"):
-    """Create df to use in IsBetweenDates tests. Contains 3 columns of 5 datatime values, covers edge cases, has mixed date data types."""
+    """Create df to use in IsBetweenDates tests. Contains 3 columns of 5 datetime values, covers edge cases, has mixed date data types."""
 
     df_dict = {
         "a_date": [

@@ -41,7 +41,10 @@ def _get_median_calculation_expression(
     if initial_weights_expr is not None:
         weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
 
-        median_expr = initial_column_expr.filter(weighted_quantile_expr >= 0.5).min()
+        QUANTILE_50 = 0.5
+        median_expr = initial_column_expr.filter(
+            weighted_quantile_expr >= QUANTILE_50
+        ).min()
 
     else:
         median_expr = initial_column_expr.drop_nulls().median()
@@ -224,6 +227,7 @@ def _weighted_quantile_expr(
 
     Examples
     --------
+    ```pycon
     >>> import polars as pl
     >>> import narwhals as nw
     >>> expr = _weighted_quantile_expr(nw.col("w"))
@@ -244,6 +248,8 @@ def _weighted_quantile_expr(
     |  │ 1.0      │    |
     |  └──────────┘    |
     └──────────────────┘
+
+    ```
 
     """
     return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()

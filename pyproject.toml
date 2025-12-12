@@ -46,9 +46,13 @@ dev = [
     "pytest-mock>=3.5.1",
     "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
-    "pre-commit<=6.1.1", # pytest was unable to run for 6.2.0, 6.2.1
+    "prek",
     "ruff>=0.2.2",
     "auto-walrus==0.3.4",
+    "tabulate>=0.9.0",
+    "codespell",
+    "typos",
+    "blacken-docs",
     ]
 
 [project.urls]
@@ -57,6 +61,13 @@ Repository = "https://github.com/azukds/tubular"
 Issues = "https://github.com/azukds/tubular/issues"
 Changelog = "https://github.com/azukds/tubular/CHANGELOG.md"
 
+[tool.codespell]
+skip = "_typos.toml"
+ignore-words-list = [
+    "ser", # codespell:ignore
+    "Ned", # codespell:ignore
+ ]
+
 [tool.ruff]
 # Same as Black.
 line-length = 88
@@ -64,14 +75,15 @@ line-length = 88
 # Assume Python 3.9.
 target-version = "py39"
 
-
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
 select = [
     "A",
+    "AIR",
     "ANN",
+    "ARG",
     "ASYNC",
     "B", # bugbear 
     "C4",
@@ -81,12 +93,18 @@ select = [
     "DTZ",
     "E", # pycodestyle
     "EM",
+    "EXE",
     "F", # Pyflakes
     "FA",
+    "FAST",
+    "FURB",
     "FLY",
+    "G",
     "I",
     "INT",
     "ISC",
+    "ICN",
+    "LOG",
     "NPY",
     "PD",
     "PERF",
@@ -94,6 +112,7 @@ select = [
     "PIE",
     "PLC",
     "PLE",
+    "PLR",
     "PLW",
     "PYI",
     "Q",
@@ -115,7 +134,6 @@ select = [
 preview = true
 
 ignore = [
-    "E501", # ignore E501 - linelength limit (covered by black except in docstrings) 
     "B905", # this rule makes changes that error for python3.9, as the strict argument for zip() was introduced in python3.10
     "PYI041", # clashes with beartype
     "TC001", # clashes with beartype, was previously "TCH001"
@@ -138,21 +156,30 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 "tests/*" = [
-    "D",
-    "DOC",
     "ANN",
     "S101",
-    "PLC2701" # complains about private imports, which we test
+    "PLC2701", # complains about private imports, which we test
+    "E501",
+    "D",
+    "DOC",
+    # below two complain about n arguments, with fixtures our tests
+    # often have many args and am less concerned about this than in 
+    # main code
+    "PLR0917",
+    "PLR0913",
     ]
-"profiling/*"=["D", "DOC"]
-# too much to turn on D/DOC lints in one go,
+"profiling/*"=["D", "DOC", "E501"]
+# too much to turn on D/DOC and E501 lints in one go,
 # will tackle individual modules at a time
-"numeric.py"=["D", "DOC"]
-"nominal.py"=["D", "DOC"]
-"mixins.py"=["D", "DOC"]
-"mapping.py"=["D", "DOC"]
-"imputers.py"=["D", "DOC"]
-"dates.py"=["D", "DOC"]
+"numeric.py"=["E501"]
+"nominal.py"=["D", "DOC","E501"]
+"mixins.py"=["E501"]
+"mapping.py"=["E501"]
+"imputers.py"=["E501"]
+"dates.py"=["E501"]
+"strings.py"=["E501"]
+"capping.py"=["E501"]
+"_utils.py"=["E501"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing=true
@@ -173,7 +200,7 @@ show_missing = true
 fail_under = 80
 
 # Pytest Configs
-# Allows users to pass arguments in to pytest without needing to provide them as cmd options everytime
+# Allows users to pass arguments in to pytest without needing to provide them as cmd options every time
 # https://docs.pytest.org/en/7.1.x/reference/customize.html
 [tool.pytest.ini_options]
 

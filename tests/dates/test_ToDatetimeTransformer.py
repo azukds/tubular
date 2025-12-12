@@ -10,7 +10,11 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import ToDatetimeTransformer
 
 
@@ -25,14 +29,16 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    def test_time_format_type_error(self):
+    @staticmethod
+    def test_time_format_type_error():
         """Test that an exception is raised for bad time_zone arg."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             ToDatetimeTransformer(column="a", time_format=1)
 
-    def test_warning_for_none_time_format(self):
+    @staticmethod
+    def test_warning_for_none_time_format():
         "test appropriate warning raised when time_format not provided"
 
         with pytest.warns(
@@ -49,7 +55,8 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    def expected_df_1(self, library="pandas"):
+    @staticmethod
+    def expected_df_1(library="pandas"):
         """Expected output for test_expected_output."""
 
         df_dict = {
@@ -99,7 +106,8 @@ class TestTransform(GenericTransformTests):
 
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    def create_to_datetime_test_df(self, library="pandas"):
+    @staticmethod
+    def create_to_datetime_test_df(library="pandas"):
         """Create DataFrame to be used in the ToDatetimeTransformer tests."""
 
         df_dict = {
@@ -131,17 +139,22 @@ class TestTransform(GenericTransformTests):
             (["e"], None),
         ],
     )
-    def test_expected_output_year_parsing(self, library, columns, time_format):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_year_parsing(
+        self, library, columns, time_format, from_json
+    ):
         """Test input data is transformed as expected."""
 
         df = self.create_to_datetime_test_df(library=library)
         expected = self.expected_df_1(library=library)
 
-        to_dt = ToDatetimeTransformer(
+        transformer = ToDatetimeTransformer(
             columns=columns,
             time_format=time_format,
         )
-        df_transformed = to_dt.transform(df)
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(df)
 
         assert_frame_equal_dispatch(expected[columns], df_transformed[columns])
 
@@ -150,7 +163,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
-    May need to overwite specific tests in this class if the tested transformer modifies this behaviour.
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod

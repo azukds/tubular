@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Thanks for your interest in contributing to this package! No contibution is too small! We're hoping it can be made even better through community contributions.
+Thanks for your interest in contributing to this package! No contribution is too small! We're hoping it can be made even better through community contributions.
 
 Requests and feedback
 ---------------------
@@ -29,16 +29,19 @@ Then install tubular and dependencies for development;
    .. code::
 
      pip install . -r requirements-dev.txt
+We use `prek <https://github.com/j178/prek>`_ for this project which is configured to check that code passes several lints:
+- `ruff <https://beta.ruff.rs/docs/>`_ - For a list of ruff rules followed by this project check pyproject.toml.
+- `codespell <https://github.com/codespell-project/codespell>`_
+- `typos <https://github.com/crate-ci/typos>`_
+- `auto-walrus <https://github.com/MarcoGorelli/auto-walrus/>`_
 
-We use `pre-commit <https://pre-commit.com/>`_ for this project which is configured to check that code is formatted with `black <https://black.readthedocs.io/en/stable/>`_ and passes `ruff <https://beta.ruff.rs/docs/>`_ checks.  For a list of ruff rules follwed by this project check .ruff.toml.
-
-To configure ``pre-commit`` for your local repository run the following;
+To configure ``prek`` for your local repository run the following;
 
    .. code::
 
-     pre-commit install
+     prek install
 
-If working in a codespace the dev requirements and precommit will be installed automatically in the dev container.
+If working in a codespace the dev requirements and prek will be installed automatically in the dev container.
 
 If you are building the documentation locally you will need the `docs/requirements.txt <https://github.com/azukds/tubular/blob/main/docs/requirements.txt>`_.
 
@@ -70,9 +73,9 @@ General
 Code formatting
 ^^^^^^^^^^^^^^^
 
-We use `black <https://black.readthedocs.io/en/stable/>`_ to format our code and follow `pep8 <https://www.python.org/dev/peps/pep-0008/>`_ conventions. 
+We use `ruff <https://beta.ruff.rs/docs/>`_ to format our code.
 
-As mentioned above we use ``pre-commit`` which streamlines checking that code has been formatted correctly.
+As mentioned above we use ``prek`` which streamlines checking that code has been formatted correctly.
 
 CI
 ^^
