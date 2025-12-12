@@ -13,6 +13,8 @@ from tests.base_tests import (
 )
 from tests.utils import (
     _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -103,18 +105,45 @@ class GenericImputerTransformTests:
 
         return narwhals_df.to_native()
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("test_fit_df", ["pandas", "polars"], indirect=True)
-    def test_not_fitted_error_raised(self, test_fit_df, initialized_transformers):
+    def test_not_fitted_error_raised(
+        self,
+        test_fit_df,
+        initialized_transformers,
+        lazy,
+    ):
+        transformer = initialized_transformers[self.transformer_name]
+
+        if _check_if_skip_test(transformer, test_fit_df, lazy):
+            return
+
         if initialized_transformers[self.transformer_name].FITS:
             with pytest.raises(NotFittedError):
-                initialized_transformers[self.transformer_name].transform(test_fit_df)
+                transformer.transform(_convert_to_lazy(test_fit_df, lazy))
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_impute_value_unchanged(self, library, initialized_transformers, from_json):
+    def test_impute_value_unchanged(
+        self,
+        library,
+        initialized_transformers,
+        lazy,
+        from_json,
+    ):
         """Test that self.impute_value is unchanged after transform."""
         df1 = d.create_df_1(library=library)
         transformer = initialized_transformers[self.transformer_name]
+
+        if _check_if_skip_test(transformer, df1, lazy, from_json):
+            return
 
         impute_value = "g"
         transformer.impute_values_ = {"b": impute_value}
@@ -124,18 +153,19 @@ class GenericImputerTransformTests:
 
         impute_values = deepcopy(transformer.impute_values_)
 
-        if _check_if_skip_test(transformer, df1, lazy=False, from_json=from_json):
-            return
-
         transformer = _handle_from_json(transformer, from_json)
 
-        transformer.transform(df1)
+        transformer.transform(_convert_to_lazy(df1, lazy))
 
         assert transformer.impute_values_ == impute_values, (
             "impute_values_ changed in transform"
         )
 
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("library", "expected_df_1"),
         [("pandas", "pandas"), ("polars", "polars")],
@@ -146,6 +176,7 @@ class GenericImputerTransformTests:
         library,
         expected_df_1,
         initialized_transformers,
+        lazy,
         from_json,
     ):
         """Test that transform is giving the expected output when applied to float column."""
@@ -155,6 +186,9 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
+        if _check_if_skip_test(transformer, df2, lazy, from_json):
+            return
+
         transformer.impute_values_ = {"a": 7}
 
         if self.transformer_name == "ArbitraryImputer":
@@ -162,32 +196,35 @@ class GenericImputerTransformTests:
 
         transformer.columns = ["a"]
 
-        if _check_if_skip_test(transformer, df2, lazy=False, from_json=from_json):
-            return
-
         transformer = _handle_from_json(transformer, from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(df2)
+        df_transformed = transformer.transform(_convert_to_lazy(df2, lazy))
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            df_transformed,
+            _collect_frame(df_transformed, lazy),
             expected_df_1,
         )
         df2 = nw.from_native(df2)
         expected_df_1 = nw.from_native(expected_df_1)
 
         for i in range(len(df2)):
-            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df2[[i]].to_native(), lazy),
+            )
             df_expected_row = expected_df_1[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("library", "expected_df_2"),
         [("pandas", "pandas"), ("polars", "polars")],
@@ -198,6 +235,7 @@ class GenericImputerTransformTests:
         library,
         expected_df_2,
         initialized_transformers,
+        lazy,
         from_json,
     ):
         """Test that transform is giving the expected output when applied to object column."""
@@ -207,6 +245,9 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
+        if _check_if_skip_test(transformer, df2, lazy, from_json):
+            return
+
         impute_value = "g"
         transformer.impute_values_ = {"b": impute_value}
 
@@ -215,32 +256,35 @@ class GenericImputerTransformTests:
 
         transformer.columns = ["b"]
 
-        if _check_if_skip_test(transformer, df2, lazy=False, from_json=from_json):
-            return
-
         transformer = _handle_from_json(transformer, from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(df2)
+        df_transformed = transformer.transform(_convert_to_lazy(df2, lazy))
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            df_transformed,
+            _collect_frame(df_transformed, lazy),
             expected_df_2,
         )
         df2 = nw.from_native(df2)
         expected_df_2 = nw.from_native(expected_df_2)
 
         for i in range(len(df2)):
-            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df2[[i]].to_native(), lazy),
+            )
             df_expected_row = expected_df_2[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         ("library", "expected_df_3", "impute_values_dict"),
         [
@@ -255,6 +299,7 @@ class GenericImputerTransformTests:
         expected_df_3,
         initialized_transformers,
         impute_values_dict,
+        lazy,
         from_json,
     ):
         """Test that transform is giving the expected output when applied to object and categorical columns."""
@@ -264,6 +309,9 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
+        if _check_if_skip_test(transformer, df2, lazy, from_json):
+            return
+
         transformer.impute_values_ = impute_values_dict
 
         if self.transformer_name == "ArbitraryImputer":
@@ -271,32 +319,35 @@ class GenericImputerTransformTests:
 
         transformer.columns = ["b", "c"]
 
-        if _check_if_skip_test(transformer, df2, lazy=False, from_json=from_json):
-            return
-
         transformer = _handle_from_json(transformer, from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(df2)
+        df_transformed = transformer.transform(_convert_to_lazy(df2, lazy))
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            df_transformed,
+            _collect_frame(df_transformed, lazy),
             expected_df_3,
         )
         df2 = nw.from_native(df2)
         expected_df_3 = nw.from_native(expected_df_3)
 
         for i in range(len(df2)):
-            df_transformed_row = transformer.transform(df2[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df2[[i]].to_native(), lazy),
+            )
             df_expected_row = expected_df_3[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
@@ -315,6 +366,7 @@ class GenericImputerTransformTests:
         column,
         impute_value,
         expected,
+        lazy,
         from_json,
     ):
         """Test that transform is giving the expected output when imputation value is falsey."""
@@ -335,15 +387,15 @@ class GenericImputerTransformTests:
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         if self.transformer_name == "ArbitraryImputer":
             transformer.impute_value = impute_value
 
         transformer.columns = [column]
 
         transformer.impute_values_ = dict.fromkeys(transformer.columns, impute_value)
-
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
-            return
 
         transformer = _handle_from_json(transformer, from_json)
 
@@ -363,10 +415,10 @@ class GenericImputerTransformTests:
         )
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
         assert_frame_equal_dispatch(
-            df_transformed[[column]],
+            _collect_frame(df_transformed, lazy)[[column]],
             expected_df.to_native()[[column]],
         )
 
@@ -424,25 +476,22 @@ class GenericImputerTransformTestsWeight:
 
         df_transformed = transformer.transform(df)
 
-        # Convert both DataFrames to a common format using Narwhals
-        df_transformed_common = nw.from_native(df_transformed)
-        expected_df_weights_common = nw.from_native(expected_df_weights)
+        assert_frame_equal_dispatch(
+            df_transformed,
+            expected_df_weights,
+        )
 
         # Check outcomes for single rows
-        for i in range(len(df_transformed_common)):
-            df_transformed_row = df_transformed_common[[i]].to_native()
-            df_expected_row = expected_df_weights_common[[i]].to_native()
+        df = nw.from_native(df)
+        expected_df_weights = nw.from_native(expected_df_weights)
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_expected_row = expected_df_weights[[i]].to_native()
 
             assert_frame_equal_dispatch(
                 df_transformed_row,
                 df_expected_row,
             )
-
-        # Check whole dataframes
-        assert_frame_equal_dispatch(
-            df_transformed_common.to_native(),
-            expected_df_weights_common.to_native(),
-        )
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
