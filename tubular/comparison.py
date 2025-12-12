@@ -3,16 +3,294 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
+import narwhals as nw
 
 from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
-from tubular.types import ListOfTwoStrs
+from tubular.types import (
+    DataFrame,
+    ListOfOneStr,
+    ListOfTwoStrs,
+    ListOfMoreThanOneStrings,
+)
+
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+    block_from_json,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
+
+
+class WhenThenOtherwiseTransformer(BaseTransformer):
+    """Transformer to apply conditional logic across multiple columns.
+
+    This transformer evaluates specified columns within a DataFrame and applies
+    conditions based on logical rules to update column values.
+
+    Attributes
+    ----------
+    polars_compatible : bool
+        Indicates whether transformer has been converted to polars/pandas agnostic narwhals framework.
+
+    FITS : bool
+        Indicates whether transform requires fit to be run first.
+
+    jsonable : bool
+        Indicates if transformer supports to/from_json methods.
+
+    lazyframe_compatible : bool
+        Indicates whether transformer works with lazyframes.
+
+    Examples
+    --------
+    ```pycon
+    >>> import pandas as pd
+    >>> from tubular.base import BaseTransformer
+
+    >>> df = pd.DataFrame({
+    ...     'col1': [1, 2, 3],
+    ...     'col2': [4, 5, 6],
+    ...     'condition_col': [True, False, True],
+    ...     'update_col': [10, 20, 30]
+    ... })
+
+    >>> transformer = WhenThenOtherwiseTransformer(
+    ...     columns=['col1', 'col2'],
+    ...     condition_column='condition_col',
+    ...     updated_values_column='update_col'
+    ... )
+
+    >>> transformer.transform(df)
+       col1  col2  condition_col  update_col
+    0    10    10          True         10
+    1     2     5         False         20
+    2    30    30          True         30
+
+    ```
+    """
+
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+    lazyframe_compatible = True
+
+    @beartype
+    def __init__(
+        self, 
+        columns: ListOfMoreThanOneStrings, 
+        condition_column: bool, 
+        updated_values_column: ListOfOneStr, 
+        **kwargs: dict[str, bool]) -> None:
+        """
+        Initialize the WhenThenOtherwiseTransformer.
+
+        Parameters
+        ----------
+        columns : ListOfMoreThanOneStrings
+            List of columns to be transformed.
+
+        condition_column : bool
+            Boolean column used to evaluate conditions.
+
+        updated_values_column : ListOfOneStr
+            Column containing values to update the specified columns based on the condition.
+
+        **kwargs : dict[str, bool]
+            Additional keyword arguments passed to the BaseTransformer.
+        """
+        
+        super().__init__(columns=columns, **kwargs)
+
+
+        self.condition_column = condition_column
+        self.updated_values_column = updated_values_column
+
+    @beartype
+    def transform(
+        self, 
+        X: DataFrame,
+        ) -> DataFrame:
+        """Apply conditional logic to transform specified columns.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            DataFrame containing the columns to be transformed.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed DataFrame with updated columns based on conditions.
+
+        Examples
+        --------
+        ```pycon
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     'col1': [1, 2, 3],
+        ...     'col2': [4, 5, 6],
+        ...     'condition_col': [True, False, True],
+        ...     'update_col': [10, 20, 30]
+        ... })
+
+        >>> transformer = WhenThenOtherwiseTransformer(
+        ...     columns=['col1', 'col2'],
+        ...     condition_column='condition_col',
+        ...     updated_values_column='update_col'
+        ... )
+
+        >>> transformer.transform(df)
+           col1  col2  condition_col  update_col
+        0    10    10          True         10
+        1     2     5         False         20
+        2    30    30          True         30
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+        X = super().transform(X, return_native_override=False)
+
+        expr = {}
+        for col in self.columns:
+            expr[col] = nw.when(nw.col(self.condition_column)).then(nw.col(self.updated_values_column)).otherwise(nw.col(col))
+        
+        X = X.with_columns(*expr.values())
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+class CompareTwoColumnsTransformer(BaseTransformer):
+    """Transformer to compare two columns and generate outcomes based on conditions.
+
+    This transformer evaluates a condition between two columns and generates an
+    outcome based on the result.
+
+    Attributes
+    ----------
+    polars_compatible : bool
+        Indicates whether transformer has been converted to polars/pandas agnostic narwhals framework.
+
+    FITS : bool
+        Indicates whether transform requires fit to be run first.
+
+    jsonable : bool
+        Indicates if transformer supports to/from_json methods.
+
+    lazyframe_compatible : bool
+        Indicates whether transformer works with lazyframes.
+
+    Examples
+    --------
+    ```pycon
+    >>> import pandas as pd
+    >>> from tubular.base import BaseTransformer
+
+    >>> df = pd.DataFrame({
+    ...     'col1': [1, 2, 3],
+    ...     'col2': [3, 2, 1]
+    ... })
+
+    >>> transformer = CompareTwoColumnsTransformer(
+    ...     columns=['col1', 'col2'],
+    ...     condition='row["col1"] > row["col2"]',
+    ...     outcome='comparison_result'
+    ... )
+
+    >>> transformer.transform(df)
+       col1  col2  comparison_result
+    0     1     3                  0
+    1     2     2                  0
+    2     3     1                  1
+
+    ```
+
+    """
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+    lazyframe_compatible = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: ListOfTwoStrs, 
+        condition: str, 
+        outcome: str, 
+        **kwargs: dict[str, bool]) -> None:
+        """
+        Initialize the CompareTwoColumnsTransformer.
+
+        Parameters
+        ----------
+        columns : ListOfTwoStrs
+            Tuple or list containing the names of the two columns to be compared.
+
+        condition : str
+            Logical condition to evaluate the relationship between the two columns.
+
+        outcome : str
+            Specification of the transformation or encoding to apply based on the evaluated condition.
+
+        **kwargs : dict[str, bool]
+            Additional keyword arguments passed to the BaseTransformer.
+        """
+        super().__init__(columns=columns, **kwargs)
+        self.condition = condition
+        self.outcome = outcome
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Transform two columns based on a condition to generate an outcome.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            DataFrame containing the columns to be transformed.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed DataFrame with the new outcome column.
+
+        Examples
+        --------
+        ```pycon
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     'col1': [1, 2, 3],
+        ...     'col2': [3, 2, 1]
+        ... })
+
+        >>> transformer = CompareTwoColumnsTransformer(
+        ...     columns=['col1', 'col2'],
+        ...     condition='row["col1"] > row["col2"]',
+        ...     outcome='comparison_result'
+        ... )
+
+        >>> transformer.transform(df)
+           col1  col2  comparison_result
+        0     1     3                  0
+        1     2     2                  0
+        2     3     1                  1
+        ```
+        """
+        X = _convert_dataframe_to_narwhals(X)
+        X = super().transform(X, return_native_override=False)
+
+        expr = nw.when(nw.expr(self.condition)).then(1).otherwise(0)
+
+        X = X.with_columns(expr.alias(self.outcome))
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 # DEPRECATED TRANSFORMERS
@@ -133,3 +411,5 @@ class EqualityChecker(
             self.drop_original,
             self.columns,
         )
+
+
