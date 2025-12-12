@@ -226,7 +226,7 @@ class TestTransform(
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
-        x = u._handle_from_json(x, from_json)
+        x = u._handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -257,7 +257,7 @@ class TestTransform(
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
-        x = u._handle_from_json(x, from_json)
+        x = u._handle_from_json(x, from_json=from_json)
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
@@ -286,7 +286,7 @@ class TestTransform(
             drop_original=False,
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
-        x = u._handle_from_json(x, from_json)
+        x = u._handle_from_json(x, from_json=from_json)
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
@@ -316,7 +316,7 @@ class TestTransform(
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
-        x = u._handle_from_json(x, from_json)
+        x = u._handle_from_json(x, from_json=from_json)
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
