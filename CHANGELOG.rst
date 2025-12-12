@@ -48,6 +48,7 @@ Changed
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
 - feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
+- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>`_
 
 2.4.0 (01/12/2025)
 ------------------

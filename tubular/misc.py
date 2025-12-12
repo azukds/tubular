@@ -197,6 +197,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> transformer = RenameColumnsTransformer(
     ...     columns="a", new_column_names={"a": "new_a"}
     ... )  # noqa: E501
@@ -206,16 +207,16 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
     >>> # transformer can also be dumped to json and reinitialised
 
     >>> json_dump = transformer.to_json()
-    >>> json_dump  # doctest: +NORMALIZE_WHITESPACE
-    {'tubular_version': ...,
-    'classname': 'RenameColumnsTransformer',
-    'init': {'columns': ['a'],
-    'copy': False,
-    'verbose': False,
-    'return_native': True,
-    'new_column_names': {'a': 'new_a'},
-    'drop_original': True},
-    'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'RenameColumnsTransformer',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'drop_original': True,
+              'new_column_names': {'a': 'new_a'},
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
 
     >>> RenameColumnsTransformer.from_json(json_dump)
     RenameColumnsTransformer(columns=['a'], new_column_names={'a': 'new_a'})
@@ -312,19 +313,20 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = RenameColumnsTransformer(
         ...     columns="a", new_column_names={"a": "new_a"}
         ... )  # noqa: E501
-        >>> transformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
-        {'tubular_version': ...,
-        'classname': 'RenameColumnsTransformer',
-        'init': {'columns': ['a'],
-        'copy': False,
-        'verbose': False,
-        'return_native': True,
-        'new_column_names': {'a': 'new_a'},
-        'drop_original': True},
-        'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'RenameColumnsTransformer',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': True,
+                  'new_column_names': {'a': 'new_a'},
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
