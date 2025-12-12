@@ -95,11 +95,19 @@ class BaseImputer(BaseTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> arbitrary_imputer = ArbitraryImputer(columns=["a", "b"], impute_value=1)
 
         >>> # version will vary for local vs CI, so use ... as generic match
-        >>> arbitrary_imputer.to_json()
-        {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 1}, 'fit': {'impute_values_': {'a': 1, 'b': 1}}}
+        >>> pprint(arbitrary_imputer.to_json(), sort_dicts=True)
+        {'classname': 'ArbitraryImputer',
+         'fit': {'impute_values_': {'a': 1, 'b': 1}},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'impute_value': 1,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         >>> mean_imputer = MeanImputer(columns=["a", "b"])
 
@@ -107,8 +115,15 @@ class BaseImputer(BaseTransformer):
 
         >>> _ = mean_imputer.fit(test_df)
 
-        >>> mean_imputer.to_json()
-        {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 1.0, 'b': 2.0}}}
+        >>> pprint(mean_imputer.to_json(), sort_dicts=True)
+        {'classname': 'MeanImputer',
+         'fit': {'impute_values_': {'a': 1.0, 'b': 2.0}},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'return_native': True,
+                  'verbose': False,
+                  'weights_column': None},
+         'tubular_version': ...}
 
         ```
 
@@ -261,14 +276,22 @@ class ArbitraryImputer(BaseImputer):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> arbitrary_imputer = ArbitraryImputer(columns=["a", "b"], impute_value=5)
     >>> arbitrary_imputer
     ArbitraryImputer(columns=['a', 'b'], impute_value=5)
 
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = arbitrary_imputer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 5}, 'fit': {'impute_values_': {'a': 5, 'b': 5}}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'ArbitraryImputer',
+     'fit': {'impute_values_': {'a': 5, 'b': 5}},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'impute_value': 5,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
 
     >>> ArbitraryImputer.from_json(json_dump)
     ArbitraryImputer(columns=['a', 'b'], impute_value=5)
@@ -607,6 +630,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> median_imputer = MedianImputer(
     ...     columns=["a", "b"],
     ... )
@@ -620,8 +644,15 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     >>> _ = median_imputer.fit(test_df)
 
     >>> json_dump = median_imputer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'MedianImputer',
+     'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
 
     >>> MedianImputer.from_json(json_dump)
     MedianImputer(columns=['a', 'b'])
@@ -796,6 +827,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> mean_imputer = MeanImputer(
     ...     columns=["a", "b"],
     ... )
@@ -809,8 +841,15 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     >>> _ = mean_imputer.fit(test_df)
 
     >>> json_dump = mean_imputer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'MeanImputer',
+     'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
 
     >>> MeanImputer.from_json(json_dump)
     MeanImputer(columns=['a', 'b'])
@@ -960,6 +999,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> mode_imputer = ModeImputer(
     ...     columns=["a", "b"],
     ... )
@@ -973,8 +1013,15 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     >>> _ = mode_imputer.fit(test_df)
 
     >>> json_dump = mode_imputer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'ModeImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0, 'b': 1}}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'ModeImputer',
+     'fit': {'impute_values_': {'a': 0, 'b': 1}},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
 
     >>> ModeImputer.from_json(json_dump)
     ModeImputer(columns=['a', 'b'])
@@ -1150,6 +1197,7 @@ class NullIndicator(BaseTransformer):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> null_indicator = NullIndicator(
     ...     columns=["a", "b"],
     ... )
@@ -1158,8 +1206,14 @@ class NullIndicator(BaseTransformer):
 
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = null_indicator.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'NullIndicator', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'NullIndicator',
+     'fit': {},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
 
     >>> NullIndicator.from_json(json_dump)
     NullIndicator(columns=['a', 'b'])

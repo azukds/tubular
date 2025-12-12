@@ -634,6 +634,29 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         Dictionary containing all necessary attributes to recreate the transformer with
         `from_json`. Keys include 'init' (initialization parameters) and 'fit' (fitted values).
 
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+
+        >>> transformer = BaseCappingTransformer(
+        ...     capping_values={"a": [10, 20], "b": [1, 3]},
+        ... )
+
+        >>> json_dump = transformer.to_json()
+        >>> pprint(json_dump, sort_dicts=True)
+        {'classname': 'BaseCappingTransformer',
+         'fit': {},
+         'init': {'capping_values': {'a': [10, 20], 'b': [1, 3]},
+                  'copy': False,
+                  'quantiles': None,
+                  'return_native': True,
+                  'verbose': False,
+                  'weights_column': None},
+         'tubular_version': ...}
+
+        ```
+
         """
         data = super().to_json()
 
@@ -705,6 +728,7 @@ class CappingTransformer(BaseCappingTransformer):
     -------
     ```pycon
     >>> import polars as pl
+    >>> from pprint import pprint
 
     >>> transformer = CappingTransformer(
     ...     capping_values={"a": [10, 20], "b": [1, 3]},
@@ -728,8 +752,16 @@ class CappingTransformer(BaseCappingTransformer):
     >>> # transformer can also be dumped to json and reinitialised
 
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'CappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'CappingTransformer',
+     'fit': {},
+     'init': {'capping_values': {'a': [10, 20], 'b': [1, 3]},
+              'copy': False,
+              'quantiles': None,
+              'return_native': True,
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
 
     >>> CappingTransformer.from_json(json_dump)
     CappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
@@ -878,6 +910,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     -------
     ```pycon
     >>> import polars as pl
+    >>> from pprint import pprint
 
     >>> transformer = OutOfRangeNullTransformer(
     ...     capping_values={"a": [10, 20], "b": [1, 3]},
@@ -906,8 +939,16 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     >>> # transformer can also be dumped to json and reinitialised
 
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'OutOfRangeNullTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'OutOfRangeNullTransformer',
+     'fit': {},
+     'init': {'capping_values': {'a': [10, 20], 'b': [1, 3]},
+              'copy': False,
+              'quantiles': None,
+              'return_native': True,
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
 
     >>> OutOfRangeNullTransformer.from_json(json_dump)
     OutOfRangeNullTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})

@@ -173,10 +173,18 @@ class BaseMappingTransformer(BaseTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> mapping_transformer = BaseMappingTransformer(mappings={"a": {"x": 1}})
 
-        >>> mapping_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
+        >>> pprint(mapping_transformer.to_json(), sort_dicts=True)
+        {'classname': 'BaseMappingTransformer',
+         'fit': {},
+         'init': {'copy': False,
+                  'mappings': {'a': {'x': 1}},
+                  'return_dtypes': {'a': 'Int64'},
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
@@ -464,6 +472,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> transformer = MappingTransformer(
     ...     mappings={"a": {"Y": 1, "N": 0}},
     ...     return_dtypes={"a": "Int8"},
@@ -474,8 +483,15 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'MappingTransformer',
+     'fit': {},
+     'init': {'copy': False,
+              'mappings': {'a': {'N': 0, 'Y': 1}},
+              'return_dtypes': {'a': 'Int8'},
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
 
     >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},

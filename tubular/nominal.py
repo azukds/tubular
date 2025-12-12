@@ -301,12 +301,39 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     Examples
     --------
     ```pycon
-    >>> GroupRareLevelsTransformer(
-    ...     columns="a",
+    >>> from pprint import pprint
+    >>> import tests.test_data as d
+
+    >>> transformer = GroupRareLevelsTransformer(
+    ...     columns="b",
     ...     cut_off_percent=0.02,
     ...     rare_level_name="rare_level",
     ... )
-    GroupRareLevelsTransformer(columns=['a'], cut_off_percent=0.02,
+    >>> transformer
+    GroupRareLevelsTransformer(columns=['b'], cut_off_percent=0.02,
+                               rare_level_name='rare_level')
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> df = d.create_df_8("polars")
+    >>> _ = transformer.fit(df)
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'GroupRareLevelsTransformer',
+     'fit': {'non_rare_levels': {'b': ['w', 'x', 'y', 'z']}},
+     'init': {'columns': ['b'],
+              'copy': False,
+              'cut_off_percent': 0.02,
+              'rare_level_name': 'rare_level',
+              'record_rare_levels': True,
+              'return_native': True,
+              'unseen_levels_to_rare': True,
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
+
+    >>> GroupRareLevelsTransformer.from_json(json_dump)
+    GroupRareLevelsTransformer(columns=['b'], cut_off_percent=0.02,
                                rare_level_name='rare_level')
 
     ```
@@ -356,9 +383,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> import tests.test_data as d
 
-        >>> df = d.create_df_8("pandas")
+        >>> df = d.create_df_8("polars")
 
         >>> x = GroupRareLevelsTransformer(
         ...     columns=["b", "c"], cut_off_percent=0.4, unseen_levels_to_rare=False
@@ -368,8 +396,21 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         GroupRareLevelsTransformer(columns=['b', 'c'], cut_off_percent=0.4,
                                    unseen_levels_to_rare=False)
 
-        >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}}}
+        >>> pprint(x.to_json(), sort_dicts=True)
+        {'classname': 'GroupRareLevelsTransformer',
+         'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']},
+                 'training_data_levels': {'b': ['w', 'x', 'y', 'z'],
+                                          'c': ['a', 'b', 'c']}},
+         'init': {'columns': ['b', 'c'],
+                  'copy': False,
+                  'cut_off_percent': 0.4,
+                  'rare_level_name': 'rare',
+                  'record_rare_levels': True,
+                  'return_native': True,
+                  'unseen_levels_to_rare': False,
+                  'verbose': False,
+                  'weights_column': None},
+         'tubular_version': 'dev'}
 
         ```
         """
@@ -842,6 +883,7 @@ class MeanResponseTransformer(
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> import polars as pl
 
     >>> transformer = MeanResponseTransformer(
@@ -859,8 +901,25 @@ class MeanResponseTransformer(
     >>> _ = transformer.fit(test_df[["a"]], test_df["b"])
 
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 1, 'level': None, 'unseen_level_handling': 'mean', 'return_type': 'Float32', 'drop_original': True}, 'fit': {'mappings': {'a': {'x': 0.25, 'y': 0.75}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a'], 'unseen_levels_encoding_dict': {'a': 0.5}}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'MeanResponseTransformer',
+     'fit': {'column_to_encoded_columns': {'a': ['a']},
+             'encoded_columns': ['a'],
+             'mappings': {'a': {'x': 0.25, 'y': 0.75}},
+             'return_dtypes': {'a': 'Float32'},
+             'unseen_levels_encoding_dict': {'a': 0.5}},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'drop_original': True,
+              'level': None,
+              'prior': 1,
+              'return_native': True,
+              'return_type': 'Float32',
+              'unseen_level_handling': 'mean',
+              'verbose': False,
+              'weights_column': None},
+     'tubular_version': ...}
+
     >>> MeanResponseTransformer.from_json(json_dump)
     MeanResponseTransformer(columns=['a'], prior=1, unseen_level_handling='mean')
 
@@ -923,6 +982,7 @@ class MeanResponseTransformer(
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> import polars as pl
 
         >>> transformer = MeanResponseTransformer(columns=["a"])
@@ -931,8 +991,23 @@ class MeanResponseTransformer(
 
         >>> _ = transformer.fit(test_df[["a"]], test_df["b"])
 
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 0, 'level': None, 'unseen_level_handling': None, 'return_type': 'Float32', 'drop_original': True}, 'fit': {'mappings': {'a': {'x': 0.0, 'y': 1.0}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a']}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'MeanResponseTransformer',
+         'fit': {'column_to_encoded_columns': {'a': ['a']},
+                 'encoded_columns': ['a'],
+                 'mappings': {'a': {'x': 0.0, 'y': 1.0}},
+                 'return_dtypes': {'a': 'Float32'}},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': True,
+                  'level': None,
+                  'prior': 0,
+                  'return_native': True,
+                  'return_type': 'Float32',
+                  'unseen_level_handling': None,
+                  'verbose': False,
+                  'weights_column': None},
+         'tubular_version': 'dev'}
 
         ```
         """
@@ -1590,6 +1665,7 @@ class OneHotEncodingTransformer(
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> import polars as pl
 
     >>> transformer = OneHotEncodingTransformer(
@@ -1604,8 +1680,18 @@ class OneHotEncodingTransformer(
 
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'OneHotEncodingTransformer',
+     'fit': {'categories_': {'a': ['x', 'y']},
+             'new_feature_names_': {'a': ['a_x', 'a_y']}},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'drop_original': False,
+              'return_native': True,
+              'separator': '_',
+              'verbose': False,
+              'wanted_values': None},
+     'tubular_version': ...}
 
     >>> OneHotEncodingTransformer.from_json(json_dump)
     OneHotEncodingTransformer(columns=['a'])
@@ -1655,6 +1741,7 @@ class OneHotEncodingTransformer(
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> import polars as pl
 
         >>> transformer = OneHotEncodingTransformer(columns=["a"])
@@ -1664,10 +1751,21 @@ class OneHotEncodingTransformer(
         >>> _ = transformer.fit(test_df)
 
         >>> # version will vary for local vs CI, so use ... as generic match
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'OneHotEncodingTransformer',
+         'fit': {'categories_': {'a': ['x', 'y']},
+                 'new_feature_names_': {'a': ['a_x', 'a_y']}},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': False,
+                  'return_native': True,
+                  'separator': '_',
+                  'verbose': False,
+                  'wanted_values': None},
+         'tubular_version': ...}
 
         ```
+
         """
 
         self.check_is_fitted(["categories_", "new_feature_names_"])

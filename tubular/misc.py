@@ -49,7 +49,25 @@ class SetValueTransformer(BaseTransformer):
     Examples
     --------
     ```pycon
-    >>> SetValueTransformer(columns="a", value=1)
+    >>> from pprint import pprint
+    >>> transformer = SetValueTransformer(columns="a", value=1)
+    >>> transformer
+    SetValueTransformer(columns=['a'], value=1)
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'SetValueTransformer',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'return_native': True,
+              'value': 1,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> SetValueTransformer.from_json(json_dump)
     SetValueTransformer(columns=['a'], value=1)
 
     ```
@@ -105,13 +123,21 @@ class SetValueTransformer(BaseTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = SetValueTransformer(columns="a", value=1)
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'SetValueTransformer',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'return_native': True,
+                  'value': 1,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
-        """  # noqa: E501
+        """
         json_dict = super().to_json()
 
         json_dict["init"]["value"] = self.value

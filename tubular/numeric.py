@@ -232,13 +232,39 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     Examples
     --------
     ```pycon
-    >>> OneDKmeansTransformer(
+    >>> from pprint import pprint
+    >>> import polars as pl
+    >>> transformer = OneDKmeansTransformer(
     ...     columns="a",
     ...     n_clusters=2,
     ...     new_column_name="new",
     ...     drop_original=False,
     ...     kmeans_kwargs={"random_state": 42},
     ... )
+    >>> transformer
+    OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
+                          n_clusters=2, new_column_name='new')
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> test_df = pl.DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    >>> _ = transformer.fit(test_df)
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'OneDKmeansTransformer',
+     'fit': {'bins': [3, 4]},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'drop_original': False,
+              'kmeans_kwargs': {'random_state': 42},
+              'n_clusters': 2,
+              'n_init': 'auto',
+              'new_column_name': 'new',
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> OneDKmeansTransformer.from_json(json_dump)
     OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                           n_clusters=2, new_column_name='new')
 
@@ -265,20 +291,35 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
         Examples
         --------
+        ```pycon
+        >>> from pprint import pprint
         >>> import polars as pl
         >>> x = OneDKmeansTransformer(
-        ... columns='a',
-        ... n_clusters=2,
-        ... new_column_name="new",
-        ... drop_original=False,
-        ... kmeans_kwargs={"random_state": 42},
-        ...    )
-        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+        ...     columns="a",
+        ...     n_clusters=2,
+        ...     new_column_name="new",
+        ...     drop_original=False,
+        ...     kmeans_kwargs={"random_state": 42},
+        ... )
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
         >>> x.fit(test_df)
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
-        >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
+        >>> pprint(x.to_json(), sort_dicts=True)
+        {'classname': 'OneDKmeansTransformer',
+         'fit': {'bins': [3, 4]},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': False,
+                  'kmeans_kwargs': {'random_state': 42},
+                  'n_clusters': 2,
+                  'n_init': 'auto',
+                  'new_column_name': 'new',
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
 
         """
         self.check_is_fitted(["bins"])
@@ -712,11 +753,26 @@ class RatioTransformer(BaseNumericTransformer):
     Examples
     --------
     ```pycon
+    >>> from pprint import pprint
     >>> transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
-    >>> transformer.columns
-    ['a', 'b']
-    >>> transformer.return_dtype
-    'Float32'
+    >>> transformer
+    RatioTransformer(columns=['a', 'b'])
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'RatioTransformer',
+     'fit': {},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'return_dtype': 'Float32',
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> RatioTransformer.from_json(json_dump)
+    RatioTransformer(columns=['a', 'b'])
 
     ```
 
@@ -742,9 +798,17 @@ class RatioTransformer(BaseNumericTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> ratio_transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
-        >>> ratio_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
+        >>> pprint(ratio_transformer.to_json(), sort_dicts=True)
+        {'classname': 'RatioTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'return_dtype': 'Float32',
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 

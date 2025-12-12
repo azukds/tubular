@@ -131,10 +131,19 @@ class BaseGenericDateTransformer(
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = BaseGenericDateTransformer(columns=["a", "b"], new_column_name="bla")
 
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'BaseGenericDateTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'drop_original': False,
+                  'new_column_name': 'bla',
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
@@ -538,6 +547,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     Example:
     -------
     ```pycon
+    >>> from pprint import pprint
     >>> transformer = DateDifferenceTransformer(
     ...     columns=["a", "b"],
     ...     new_column_name="bla",
@@ -550,8 +560,18 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     >>> # transformer can also be dumped to json and reinitialised
 
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False, 'units': 'common_year', 'custom_days_divider': None}, 'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'DateDifferenceTransformer',
+     'fit': {},
+     'init': {'columns': ['a', 'b'],
+              'copy': False,
+              'custom_days_divider': None,
+              'drop_original': False,
+              'new_column_name': 'bla',
+              'return_native': True,
+              'units': 'common_year',
+              'verbose': False},
+     'tubular_version': ...}
 
     >>> DateDifferenceTransformer.from_json(json_dump)
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
@@ -630,11 +650,22 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = DateDifferenceTransformer(columns=["a", "b"], new_column_name="a_diff_b")
 
         >>> # version will vary for local vs CI, so use ... as generic match
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'drop_original': False, 'units': 'D', 'custom_days_divider': None}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'DateDifferenceTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'custom_days_divider': None,
+                  'drop_original': False,
+                  'new_column_name': 'a_diff_b',
+                  'return_native': True,
+                  'units': 'D',
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
@@ -940,12 +971,34 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     Example:
     -------
     ```pycon
-    >>> BetweenDatesTransformer(
+    >>> from pprint import pprint
+    >>> transformer = BetweenDatesTransformer(
     ...     columns=["a", "b", "c"],
     ...     new_column_name="b_between_a_c",
     ...     lower_inclusive=True,
     ...     upper_inclusive=True,
     ... )
+    >>> transformer
+    BetweenDatesTransformer(columns=['a', 'b', 'c'],
+                            new_column_name='b_between_a_c')
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'BetweenDatesTransformer',
+     'fit': {},
+     'init': {'columns': ['a', 'b', 'c'],
+              'copy': False,
+              'drop_original': False,
+              'lower_inclusive': True,
+              'new_column_name': 'b_between_a_c',
+              'return_native': True,
+              'upper_inclusive': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> BetweenDatesTransformer.from_json(json_dump)
     BetweenDatesTransformer(columns=['a', 'b', 'c'],
                             new_column_name='b_between_a_c')
 
@@ -1025,14 +1078,25 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = BetweenDatesTransformer(
         ...     columns=["a", "b", "c"],
         ...     new_column_name="b_between_a_c",
         ...     lower_inclusive=True,
         ...     upper_inclusive=False,
         ... )
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'BetweenDatesTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b', 'c'],
+                  'copy': False,
+                  'drop_original': False,
+                  'lower_inclusive': True,
+                  'new_column_name': 'b_between_a_c',
+                  'return_native': True,
+                  'upper_inclusive': False,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
@@ -1197,6 +1261,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     Example:
     -------
     ```pycon
+    >>> from pprint import pprint
     >>> transformer = DatetimeInfoExtractor(
     ...     columns="a",
     ...     include="timeofday",
@@ -1205,8 +1270,25 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     DatetimeInfoExtractor(columns=['a'], datetime_mappings={},
                           include=['timeofday'])
 
-    >>> transformer.to_json()
-    {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday'], 'datetime_mappings': {}}, 'fit': {}}
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'DatetimeInfoExtractor',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'datetime_mappings': {},
+              'drop_original': False,
+              'include': ['timeofday'],
+              'new_column_name': 'dummy',
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> DatetimeInfoExtractor.from_json(json_dump)
+    DatetimeInfoExtractor(columns=['a'], datetime_mappings={},
+                          include=['timeofday'])
 
     ```
 
@@ -1355,10 +1437,24 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Examples
         --------
-        >>> transformer=DatetimeInfoExtractor(columns='a')
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = DatetimeInfoExtractor(columns="a")
 
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'], 'datetime_mappings': {}}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'DatetimeInfoExtractor',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'datetime_mappings': {},
+                  'drop_original': False,
+                  'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'],
+                  'new_column_name': 'dummy',
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -1601,6 +1697,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     Example:
     -------
     ```pycon
+    >>> from pprint import pprint
     >>> transformer = DatetimeComponentExtractor(
     ...     columns="a",
     ...     include=["hour", "day"],
@@ -1610,8 +1707,17 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'DatetimeComponentExtractor',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'drop_original': False,
+              'include': ['hour', 'day'],
+              'new_column_name': 'dummy',
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
 
     >>> DatetimeComponentExtractor.from_json(json_dump)
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
@@ -1708,13 +1814,23 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = DatetimeComponentExtractor(
         ...     columns="a",
         ...     include=["hour", "day"],
         ... )
 
-        >>> transformer.to_json()
-        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'DatetimeComponentExtractor',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': False,
+                  'include': ['hour', 'day'],
+                  'new_column_name': 'dummy',
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
@@ -2023,13 +2139,25 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = DatetimeSinusoidCalculator(
         ...     columns="a",
         ...     method="sin",
         ...     units="month",
         ... )
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'DatetimeSinusoidCalculator',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': False,
+                  'method': ['sin'],
+                  'new_column_name': 'dummy',
+                  'period': 6.283185307179586,
+                  'return_native': True,
+                  'units': 'month',
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 

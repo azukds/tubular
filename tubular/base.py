@@ -244,15 +244,22 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         Examples
         --------
         ```pycon
+        >>> from pprint import pprint
         >>> transformer = BaseTransformer(columns=["a", "b"])
 
         >>> # version will vary for local vs CI, so use ... as generic match
-        >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'BaseTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 
-        """  # noqa: E501
+        """
         if not self.jsonable:
             msg = (
                 "This transformer has not yet had to/from json functionality developed"
