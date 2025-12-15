@@ -195,10 +195,12 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         transformer = _handle_from_json(transformer, from_json)
 
-        df = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+        output = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        output = _collect_frame(output, lazy=lazy)
 
         column = next(iter(mapping.keys()))
-        actual_dtype = str(nw.from_native(df).get_column(column).dtype)
+        actual_dtype = str(nw.from_native(output).get_column(column).dtype)
         assert actual_dtype == return_dtypes[column], (
             f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
         )
