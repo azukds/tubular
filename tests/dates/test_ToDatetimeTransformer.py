@@ -14,6 +14,7 @@ from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
     _convert_to_lazy,
+    _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
@@ -145,21 +146,26 @@ class TestTransform(GenericTransformTests):
             (["e"], None),
         ],
     )
-    def test_expected_output_year_parsing(self, library, columns, time_format, lazy):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_year_parsing(
+        self, library, columns, time_format, from_json, lazy
+    ):
         """Test input data is transformed as expected."""
 
         df = self.create_to_datetime_test_df(library=library)
         expected = self.expected_df_1(library=library)
 
-        to_dt = ToDatetimeTransformer(
+        transformer = ToDatetimeTransformer(
             columns=columns,
             time_format=time_format,
         )
 
-        if _check_if_skip_test(to_dt, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        df_transformed = to_dt.transform(_convert_to_lazy(df, lazy))
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
         assert_frame_equal_dispatch(
             expected[columns],
