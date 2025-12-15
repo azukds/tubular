@@ -67,7 +67,7 @@ class GenericDatesMixinTransformTests:
 
         df = copy.deepcopy(minimal_dataframe_lookup[self.transformer_name])
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -121,7 +121,7 @@ class GenericDatesMixinTransformTests:
 
         df = create_date_diff_different_dtypes(library=library)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -201,7 +201,7 @@ class GenericDatesMixinTransformTests:
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -238,7 +238,7 @@ class GenericDatesMixinTransformTests:
 
         df = create_date_test_df(library=library)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
