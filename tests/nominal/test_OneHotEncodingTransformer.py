@@ -206,6 +206,20 @@ class TestFit(GenericFitTests):
             "OneHotEncodingTransformer.fit is raising unexpected warnings"
         )
 
+    @pytest.mark.parametrize(
+        "library",
+        ["pandas", "polars"],
+    )
+    @staticmethod
+    def test_fields_with_over_100_levels_do_not_error_with_wanted_levels(library):
+        """Test that OneHotEncodingTransformer.fit bypasses too many levels error if wanted_levels is provided"""
+        df_dict = {"a": [1] * 101, "b": list(range(101))}
+
+        df = dataframe_init_dispatch(library=library, dataframe_dict=df_dict)
+
+        transformer = OneHotEncodingTransformer(columns=["a"], wanted_levels={"a": [1]})
+        transformer.fit(df)
+
 
 class TestTransform(
     DropOriginalTransformMixinTests,
