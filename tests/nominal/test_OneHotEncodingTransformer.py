@@ -217,7 +217,9 @@ class TestFit(GenericFitTests):
 
         df = dataframe_init_dispatch(library=library, dataframe_dict=df_dict)
 
-        transformer = OneHotEncodingTransformer(columns=["a"], wanted_values={"a": [1]})
+        transformer = OneHotEncodingTransformer(
+            columns=["a"], wanted_values={"a": ["1"]}
+        )
         transformer.fit(df)
 
 
