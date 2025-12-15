@@ -12,7 +12,13 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.dates.test_BaseDatetimeTransformer import DatetimeMixinTransformTests
-from tests.utils import _handle_from_json, assert_frame_equal_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+)
 from tubular.dates import DatetimeSinusoidCalculator
 
 
@@ -211,6 +217,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         cls.transformer_name = "DatetimeSinusoidCalculator"
 
     @staticmethod
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "columns, method, units, period",
         [
@@ -227,6 +234,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         period,
         library,
         from_json,
+        lazy,
     ):
         """Test that the transformer produces the expected output for a single method."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
@@ -255,22 +263,29 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             )
 
         df = nw.from_native(d.create_datediff_test_df(library=library))
-        actual = transformer.transform(df)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        actual = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         assert_frame_equal_dispatch(
-            actual,
+            _collect_frame(actual, lazy=lazy),
             expected.to_native(),
         )
         # also check single rows
         for i in range(len(df)):
-            actual_row = transformer.transform(df[[i]].to_native())
+            actual_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                actual_row,
+                _collect_frame(actual_row, lazy=lazy),
                 expected_row,
             )
 
     @staticmethod
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "columns, method, units, period",
         [
@@ -286,6 +301,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         period,
         library,
         from_json,
+        lazy,
     ):
         """Test that the transformer produces the expected output for both methods on a single column."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
@@ -321,26 +337,33 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         )
 
         df = nw.from_native(d.create_datediff_test_df(library=library))
-        actual = transformer.transform(df)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        actual = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         assert_frame_equal_dispatch(
-            actual,
+            _collect_frame(actual, lazy=lazy),
             expected.to_native(),
         )
 
         # also check single rows
         for i in range(len(df)):
-            actual_row = transformer.transform(df[[i]].to_native())
+            actual_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                actual_row,
+                _collect_frame(actual_row, lazy=lazy),
                 expected_row,
             )
 
     @staticmethod
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_expected_output_dict_units(library, from_json):
+    def test_expected_output_dict_units(library, from_json, lazy):
         """Test that the transformer produces the expected output when units is a dictionary."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -373,25 +396,31 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
 
         df = nw.from_native(d.create_datediff_test_df(library=library))
 
-        actual = transformer.transform(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        actual = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         assert_frame_equal_dispatch(
-            actual,
+            _collect_frame(actual, lazy=lazy),
             expected.to_native(),
         )
         # also check single rows
         for i in range(len(df)):
-            actual_row = transformer.transform(df[[i]].to_native())
+            actual_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                actual_row,
+                _collect_frame(actual_row, lazy=lazy),
                 expected_row,
             )
 
     @staticmethod
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_expected_output_dict_period(library, from_json):
+    def test_expected_output_dict_period(library, from_json, lazy):
         """Test that the transformer produces the expected output when period is a dictionary."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -423,25 +452,32 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         )
 
         df = nw.from_native(d.create_datediff_test_df(library=library))
-        actual = transformer.transform(df)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        actual = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         assert_frame_equal_dispatch(
-            actual,
+            _collect_frame(actual, lazy=lazy),
             expected.to_native(),
         )
         # also check single rows
         for i in range(len(df)):
-            actual_row = transformer.transform(df[[i]].to_native())
+            actual_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                actual_row,
+                _collect_frame(actual_row, lazy=lazy),
                 expected_row,
             )
 
     @staticmethod
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_expected_output_dict_units_and_period(library, from_json):
+    def test_expected_output_dict_units_and_period(library, from_json, lazy):
         """Test that the transformer produces the expected output when both units and period are dictionaries."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -473,18 +509,24 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         )
 
         df = nw.from_native(d.create_datediff_test_df(library=library))
-        actual = transformer.transform(df)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        actual = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         assert_frame_equal_dispatch(
-            actual,
+            _collect_frame(actual, lazy=lazy),
             expected.to_native(),
         )
         # also check single rows
         for i in range(len(df)):
-            actual_row = transformer.transform(df[[i]].to_native())
+            actual_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                actual_row,
+                _collect_frame(actual_row, lazy=lazy),
                 expected_row,
             )
 
