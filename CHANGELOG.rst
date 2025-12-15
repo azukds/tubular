@@ -47,7 +47,7 @@ Changed
 - feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_.
-- feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDateTransformer, AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer, DatetimeComponentExtractor `#586 <https://github.com/azukds/tubular/issues/586>`_
+- feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDatetimeTransformer, AggregateColumnsOverRowTransformer, AggregateRowsOverColumnTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer, DatetimeComponentExtractor `#586 <https://github.com/azukds/tubular/issues/586>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>`_
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 
