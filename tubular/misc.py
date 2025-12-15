@@ -124,12 +124,12 @@ class SetValueTransformer(BaseTransformer):
 
         Parameters
         ----------
-        X : FrameT
+        X : DataFrame
             Data to apply mappings to.
 
         Returns
         -------
-        X : FrameT
+        X : DataFrame
             Transformed input X with columns set to value.
 
         Examples

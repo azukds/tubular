@@ -161,7 +161,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame to transform by aggregating specified columns.
 
         return_native_override: Optional[bool]
@@ -170,7 +170,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
+        DataFrame
             checked dataframe to transform.
 
         Raises
@@ -357,12 +357,12 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame to transform by aggregating specified columns.
 
         Returns
         -------
-            pd.DataFrame or pl.DataFrame
+            DataFrame
                 Transformed DataFrame with aggregated columns.
 
         Raises
@@ -546,12 +546,12 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame to transform by aggregating provided columns over each row
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
+        DataFrame
             Transformed DataFrame with aggregated columns.
 
         Example:

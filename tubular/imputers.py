@@ -174,7 +174,7 @@ class BaseImputer(BaseTransformer):
 
         Parameters
         ----------
-        X : FrameT
+        X : DataFrame
             Data to impute.
 
         return_native_override: Optional[bool]
@@ -183,7 +183,7 @@ class BaseImputer(BaseTransformer):
 
         Returns
         -------
-        X : FrameT
+        X : DataFrame
             Transformed input X with nulls imputed with the median value for the specified columns.
 
         Examples
@@ -340,7 +340,7 @@ class ArbitraryImputer(BaseImputer):
 
         Parameters
         ----------
-        X: pd/pl/nw.DataFrame
+        X: DataFrame
             DataFrame being imputed
 
         schema: nw.Schema
@@ -479,7 +479,7 @@ class ArbitraryImputer(BaseImputer):
 
         Parameters
         ----------
-        X : FrameT
+        X : DataFrame
             Data containing columns to impute.
 
         return_native_override: Optional[bool]
@@ -488,7 +488,7 @@ class ArbitraryImputer(BaseImputer):
 
         Returns
         -------
-        X : FrameT
+        X : DataFrame
             Transformed input X with nulls imputed with the specified impute_value, for the specified columns.
 
         Example:
