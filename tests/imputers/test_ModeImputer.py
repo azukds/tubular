@@ -5,6 +5,7 @@ import pytest
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -35,7 +36,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
         cls.transformer_name = "ModeImputer"
 
 
-class TestFit(WeightColumnFitMixinTests, GenericFitTests):
+class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterTest):
     """Generic tests for transformer.fit()"""
 
     @classmethod
@@ -276,6 +277,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             ([True, False, None, True, True], [4, 4, 1, 1, 1], True, False),
             # cat
             (["a", "b", "c", "c", None], [1, 2, 3, 4, 5], "c", True),
+            # float with invalid weight rows
+            ([1.0, 2.0, 2.0, np.nan, 3.0, 5.0], [2, 2, 2, 1, None, -1], 2.0, False),
         ],
     )
     @staticmethod

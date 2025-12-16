@@ -189,6 +189,21 @@ def create_df_9(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
+def create_df_9_with_null_weight_row(library="pandas"):
+    """Create simple DataFrame to use in other tests.
+
+    This is a slight hack, to retrofit older tests using
+    'create_df_9' to also test the weight filtering functionality.
+    """
+    df_dict = {
+        "a": [1, 2, None, 4, None, 6, 3],
+        "b": [None, 5, 4, 3, 2, 1, 2],
+        "c": [3, 2, 1, 4, 5, 6, -1],
+    }
+
+    return u.dataframe_init_dispatch(df_dict, library)
+
+
 def create_df_10(library="pandas"):
     """Create simple DataFrame to use in other tests."""
 

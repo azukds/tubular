@@ -1,3 +1,6 @@
+from typing import Literal
+
+import narwhals as nw
 import numpy as np
 import pandas as pd
 import pytest
@@ -12,33 +15,37 @@ from tests.base_tests import (
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
-from tests.utils import assert_frame_equal_dispatch
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import OrdinalEncoderTransformer
 
 
 # Dataframe used exclusively in this testing script
-def create_OrdinalEncoderTransformer_test_df():
+def create_OrdinalEncoderTransformer_test_df(
+    library: Literal["pandas", "polars"] = "pandas",
+):
     """Create DataFrame to use OrdinalEncoderTransformer tests that correct values are.
 
     DataFrame column a is the response, the other columns are categorical columns
     of types; object, category, int, float, bool.
 
     """
-    df = pd.DataFrame(
-        {
-            "a": [1, 2, 3, 4, 5, 6],
-            "b": ["a", "b", "c", "d", "e", "f"],
-            "c": ["a", "b", "c", "d", "e", "f"],
-            "d": [1, 2, 3, 4, 5, 6],
-            "e": [3, 4, 5, 6, 7, 8.0],
-            "f": [False, False, False, True, True, True],
-        },
-    )
+    df_dict = {
+        "a": [1, 2, 3, 4, 5, 6],
+        "b": ["a", "b", "c", "d", "e", "f"],
+        "c": ["a", "b", "c", "d", "e", "f"],
+        "d": [1, 2, 3, 4, 5, 6],
+        "e": [3, 4, 5, 6, 7, 8],
+        "f": [False, False, False, True, True, True],
+    }
 
-    df["c"] = df["c"].astype("category")
+    df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    return df
+    df = nw.from_native(df)
+
+    df = df.with_columns(nw.col("c").cast(nw.Categorical))
+
+    return df.to_native()
 
 
 class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
@@ -57,9 +64,10 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         cls.transformer_name = "OrdinalEncoderTransformer"
 
     @staticmethod
-    def test_learnt_values():
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values(library):
         """Test that the ordinal encoder values learnt during fit are expected."""
-        df = create_OrdinalEncoderTransformer_test_df()
+        df = create_OrdinalEncoderTransformer_test_df(library=library)
 
         x = OrdinalEncoderTransformer(columns=["b", "d", "f"])
 
@@ -78,9 +86,10 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         )
 
     @staticmethod
-    def test_learnt_values_weight():
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_weight(library):
         """Test that the ordinal encoder values learnt during fit are expected if a weights column is specified."""
-        df = create_OrdinalEncoderTransformer_test_df()
+        df = create_OrdinalEncoderTransformer_test_df(library=library)
 
         x = OrdinalEncoderTransformer(weights_column="e", columns=["b", "d", "f"])
 
@@ -99,9 +108,10 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
         )
 
     @staticmethod
-    def test_response_column_nulls_error():
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_response_column_nulls_error(library):
         """Test that an exception is raised if nulls are present in response_column."""
-        df = d.create_df_4()
+        df = d.create_df_4(library=library)
 
         x = OrdinalEncoderTransformer(columns=["b"])
 
@@ -112,16 +122,17 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
             x.fit(df, df["a"])
 
     @staticmethod
-    def test_error_for_too_many_levels():
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_error_for_too_many_levels(library):
         "test that transformer.transform errors for column with too many levels"
         transformer = OrdinalEncoderTransformer(columns=["a"])
 
-        df = pd.DataFrame(
-            {
-                "a": list(range(1000)),
-                "b": list(range(1000)),
-            },
-        )
+        df_dict = {
+            "a": range(1000),
+            "b": range(1000),
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
         with pytest.raises(
             ValueError,

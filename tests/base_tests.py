@@ -586,25 +586,15 @@ class WeightColumnFitMixinTests:
         ["pandas", "polars"],
         indirect=True,
     )
-    @pytest.mark.parametrize(
-        "bad_weight_value, expected_message",
-        [
-            (np.nan, "weight column must be non-null"),
-            (None, "weight column must be non-null"),
-            (np.inf, "weight column must not contain infinite values."),
-            (-np.inf, "weight column must be positive"),
-            (-1, "weight column must be positive"),
-        ],
-    )
-    def test_bad_values_in_weights_error(
+    @pytest.mark.parametrize("bad_weight_value", [np.nan, None, np.inf, -np.inf, -1, 0])
+    def test_bad_values_in_weights_are_handled_successfully(
         self,
         bad_weight_value,
-        expected_message,
         minimal_attribute_dict,
         uninitialized_transformers,
         minimal_dataframe_lookup,
     ):
-        """Test that an exception is raised if there are negative/nan/inf values in sample_weight."""
+        """Test that fit is able to filter out bad weight values and still run"""
 
         df = minimal_dataframe_lookup[self.transformer_name]
         uninitialized_transformer = uninitialized_transformers[self.transformer_name]
@@ -635,8 +625,7 @@ class WeightColumnFitMixinTests:
 
         transformer = uninitialized_transformer(**args)
 
-        with pytest.raises(ValueError, match=expected_message):
-            transformer.fit(df, df["a"])
+        transformer.fit(df, df["a"])
 
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
@@ -718,44 +707,6 @@ class WeightColumnFitMixinTests:
             transformer = uninitialized_transformer(**args)
             transformer.fit(df, df["a"])
 
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=True,
-    )
-    def test_zero_total_weight_error(
-        self,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test that an exception is raised if the total sample weights are 0."""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        weight_column = "weight_column"
-        args["weights_column"] = weight_column
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-        uninitialized_transformer = uninitialized_transformers[self.transformer_name]
-
-        # skip polars test if not narwhalified
-        if not uninitialized_transformer.polars_compatible and isinstance(
-            df,
-            pl.DataFrame,
-        ):
-            return
-
-        df = nw.from_native(df)
-        df = df.with_columns(nw.lit(0).alias("weight_column"))
-        df = nw.to_native(df)
-
-        transformer = uninitialized_transformer(**args)
-        with pytest.raises(
-            ValueError,
-            match="total sample weights are not greater than 0",
-        ):
-            transformer.fit(df, df["a"])
-
 
 class DummyWeightColumnMixinTests:
     @pytest.mark.parametrize(
@@ -802,6 +753,51 @@ class DummyWeightColumnMixinTests:
             RuntimeError,
             match=msg,
         ):
+            transformer.fit(df, df["a"])
+
+
+class FailedFitWeightFilterTest:
+    """Test that expected error is thrown during fit if all rows are filtered for invalid weights."""
+
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_failed_fit_error(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        minimal_dataframe_lookup,
+    ):
+        """Test error is thrown if all rows are filtered during fit"""
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        weight_column = "weight_column"
+        args["weights_column"] = weight_column
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        uninitialized_transformer = uninitialized_transformers[self.transformer_name]
+
+        df = nw.from_native(df)
+        df = df.with_columns(nw.lit(0).alias("weight_column"))
+        df = nw.to_native(df)
+
+        transformer = uninitialized_transformer(**args)
+
+        transformer.fit(df, df["a"])
+
+        # json_dict=transformer.to_json()
+        # for attr in json_dict["fit"]:
+        #     print(attr)
+        #     print(getattr(transformer, attr))
+        # print(transformer.rare_levels_record_)
+        # assert 1==2
+
+        msg = re.escape(
+            f"fit has failed for columns {transformer.columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+        )
+        with pytest.raises(ValueError, match=msg):
             transformer.fit(df, df["a"])
 
 

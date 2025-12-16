@@ -548,8 +548,21 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         super().fit(X, y)
 
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        backend = nw.get_native_namespace(X)
+
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=backend.__name__,
+                return_native=False,
+            )
+
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            self, weights_column
+        )
+        X = X.filter(valid_weights_filter_expr)
 
         schema = X.schema
 
@@ -566,16 +579,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         if self.record_rare_levels:
             self.rare_levels_record_ = {}
-
-        backend = nw.get_native_namespace(X)
-
-        weights_column = self.weights_column
-        if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_unit_weights_column(
-                X,
-                backend=backend.__name__,
-                return_native=False,
-            )
 
         level_weights_exprs = {
             c: (nw.col(weights_column).sum().over(c)) for c in self.columns
@@ -1224,6 +1227,9 @@ class MeanResponseTransformer(
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            self, weights_column
+        )
 
         if (response_null_count := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
@@ -1231,6 +1237,8 @@ class MeanResponseTransformer(
 
         X_y = nw.from_native(self._combine_X_y(X, y))
         response_column = "_temporary_response"
+
+        X_y = X_y.filter(valid_weights_filter_expr)
 
         self.response_levels = self.level
 
@@ -1269,7 +1277,11 @@ class MeanResponseTransformer(
             # create temporary single level response columns to individually encode
             # if nans are present then will error in previous handling, so can assume not here
             X_y = X_y.with_columns(
-                (y == level if self.MULTI_LEVEL else y).alias(response_column),
+                (
+                    nw.col(response_column) == level
+                    if self.MULTI_LEVEL
+                    else nw.col(response_column)
+                ).alias(response_column),
             )
 
             self._fit_binary_response(
@@ -2163,7 +2175,8 @@ class OrdinalEncoderTransformer(
         # if there are more levels than this, will get a type error
         self.return_dtypes = dict.fromkeys(self.columns, "Int8")
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+    @beartype
+    def fit(self, X: DataFrame, y: Series) -> OrdinalEncoderTransformer:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -2171,67 +2184,69 @@ class OrdinalEncoderTransformer(
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to with catgeorical variable columns to transform and response_column column
             specified when object was initialised.
 
-        y : pd.Series
+        y : Series
             Response column or target.
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         BaseNominalTransformer.fit(self, X, y)
 
         self.mappings = {}
 
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=nw.get_native_namespace(X).__name__,
+                return_native=False,
+            )
 
-        if (response_null_count := y.isna().sum()) > 0:
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            self, weights_column
+        )
+
+        if (response_null_count := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
-        X_y = self._combine_X_y(X, y)
+        X_y = self._combine_X_y(X, y, return_native=False)
         response_column = "_temporary_response"
 
+        X = X.filter(valid_weights_filter_expr)
+
+        # the need to sort for each c limits the optimisation we can do here,
+        # as it is still necessarily to materialise for each column
         for c in self.columns:
-            if self.weights_column is None:
-                # get the indexes of the sorted target mean-encoded dict
-                idx_target_mean = list(
-                    X_y.groupby([c])[response_column]
-                    .mean()
-                    .sort_values(ascending=True, kind="mergesort")
-                    .index,
+            groupby_sum = X_y.group_by([c]).agg(
+                nw.col(response_column).sum(), nw.col(weights_column).sum()
+            )
+            # get the indexes of the sorted target mean-encoded dict
+            encodings = (
+                groupby_sum.select(
+                    (nw.col(response_column) / nw.col(weights_column)).alias(
+                        "encodings"
+                    ),
+                    nw.col(c),
                 )
+                .sort(by="encodings", descending=False)
+                .to_dict()
+            )
 
-                # create a dictionary whose keys are the levels of the categorical variable
-                # sorted ascending by their target-mean value
-                # and whose values are ascending ordinal integers
-                ordinal_encoded_dict = {
-                    k: idx_target_mean.index(k) + 1 for k in idx_target_mean
-                }
+            # create a dictionary whose keys are the levels of the categorical variable
+            # sorted ascending by their target-mean value
+            # and whose values are ascending ordinal integers
+            ordinal_encoded_dict = {
+                encodings[c][k]: k + 1 for k in range(len(encodings[c]))
+            }
 
-                self.mappings[c] = ordinal_encoded_dict
-
-            else:
-                groupby_sum = X_y.groupby([c])[
-                    [response_column, self.weights_column]
-                ].sum()
-
-                # get the indexes of the sorted target mean-encoded dict
-                idx_target_mean = list(
-                    (groupby_sum[response_column] / groupby_sum[self.weights_column])
-                    .sort_values(ascending=True, kind="mergesort")
-                    .index,
-                )
-
-                # create a dictionary whose keys are the levels of the categorical variable
-                # sorted ascending by their target-mean value
-                # and whose values are ascending ordinal integers
-                ordinal_encoded_dict = {
-                    k: idx_target_mean.index(k) + 1 for k in idx_target_mean
-                }
-
-                self.mappings[c] = ordinal_encoded_dict
+            self.mappings[c] = ordinal_encoded_dict
 
         for col in self.columns:
             # if more levels than int8 type can handle, then error

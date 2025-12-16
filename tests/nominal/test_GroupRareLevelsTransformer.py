@@ -211,6 +211,12 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             "Training data values not correctly stored when unseen_levels_to_rare is false"
         )
 
+    # NOTE - have decided not to include the test for failed fit here,
+    # as in the case of fitting on an empty df finding no rare/non-rare levels
+    # is not actually an invalid result
+    # (compare this to an imputer, were finding None as the imputation value
+    # is nonsensical)
+
 
 class TestTransform(GenericNominalTransformTests):
     """Tests for GroupRareLevelsTransformer.transform()."""

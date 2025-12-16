@@ -6,6 +6,7 @@ import warnings
 from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
+import pandas as pd
 import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
@@ -163,6 +164,23 @@ class BaseImputer(BaseTransformer):
             if (self.impute_values_[col] is not None)
             else expr
         )
+
+    def _check_for_failed_fit(self) -> None:
+        """Check if fit failed to find needed attrs (if impute_values_ are None).
+
+        Raises
+        ------
+            ValueError: if impute_values_ have come out as None
+
+        """
+        for col in self.columns:
+            failed_columns = []
+            if pd.isna(self.impute_values_[col]):
+                failed_columns.append(col)
+
+        if failed_columns:
+            msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+            raise ValueError(msg)
 
     @beartype
     def transform(
@@ -732,6 +750,11 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         # approach, so have left as two separate logic flows
         if self.weights_column is not None:
             WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+            valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+                self, self.weights_column
+            )
+            X = X.filter(valid_weights_filter_expr)
+
             for c in not_all_null_columns:
                 col_not_null_expr = ~nw.col(c).is_null()
 
@@ -760,6 +783,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             self.impute_values_.update(
                 {col: value[0] for col, value in results_dict.items()},
             )
+
+        self._check_for_failed_fit()
 
         return self
 
@@ -910,6 +935,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            self, weights_column
+        )
+        X = X.filter(valid_weights_filter_expr)
 
         weighted_mean_exprs = _get_mean_calculation_expressions(
             self.columns,
@@ -922,6 +951,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         self.impute_values_.update(
             {col: value[0] for col, value in results_dict.items()},
         )
+
+        self._check_for_failed_fit()
 
         return self
 
@@ -1077,6 +1108,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            self, weights_column
+        )
+        X = X.filter(valid_weights_filter_expr)
 
         self.impute_values_ = {}
 
@@ -1118,6 +1153,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
                 )
 
             self.impute_values_[c] = mode_values.item(0)
+
+        self._check_for_failed_fit()
 
         return self
 

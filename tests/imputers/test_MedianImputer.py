@@ -6,6 +6,7 @@ import tests.test_data as d
 from tests import utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -28,7 +29,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
         cls.transformer_name = "MedianImputer"
 
 
-class TestFit(WeightColumnFitMixinTests, GenericFitTests):
+class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterTest):
     """Generic tests for transformer.fit()"""
 
     @classmethod
@@ -70,7 +71,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
     @staticmethod
     def test_learnt_values_weighted(library):
         """Test that the impute values learnt during fit are expected - when using weights."""
-        df = d.create_df_9(library=library)
+        df = d.create_df_9_with_null_weight_row(library=library)
 
         df = nw.from_native(df)
         native_backend = nw.get_native_namespace(df)

@@ -49,6 +49,8 @@ Changed
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
+- feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
+- feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
 
 2.4.0 (01/12/2025)
 ------------------
