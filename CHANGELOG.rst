@@ -49,6 +49,7 @@ Changed
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
+- bugfix: Fixed issue with OneHotEncodingTransformer when used with wanted_values and unseen levels at transform time
 
 2.4.0 (01/12/2025)
 ------------------
