@@ -560,7 +560,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            self, weights_column
+            weights_column
         )
         X = X.filter(valid_weights_filter_expr)
 

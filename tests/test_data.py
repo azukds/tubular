@@ -126,23 +126,6 @@ def create_df_5(library="pandas"):
     return df.to_native()
 
 
-def create_df_6(library="pandas"):
-    """Nulls in different positions to check summing weights by col with nulls."""
-
-    df_dict = {
-        "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
-        "b": ["a", "a", "a", "d", "e", "f", "g", None, None, None],
-        "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", None],
-    }
-
-    df = u.dataframe_init_dispatch(df_dict, library)
-
-    df = nw.from_native(df)
-    df = df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
-
-    return df.to_native()
-
-
 def create_df_7(library="pandas"):
     """Create simple DataFrame to use in other tests."""
 
