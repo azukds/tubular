@@ -593,6 +593,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
+    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("with_invalid_weights", [True, False])
     @pytest.mark.parametrize(
@@ -667,7 +668,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             ),
         ],
     )
-    @staticmethod
     def test_learnt_values(
         library,
         columns,
