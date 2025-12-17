@@ -1894,7 +1894,11 @@ class OneHotEncodingTransformer(
         # Check each field has less than 100 categories/levels
         missing_levels = {}
         for c in self.columns:
-            level_count = len(present_levels[c])
+            level_count = (
+                len(present_levels[c])
+                if not self.wanted_values
+                else len(self.wanted_values[c])
+            )
 
             if level_count > self.MAX_LEVELS:
                 raise ValueError(

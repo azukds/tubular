@@ -27,7 +27,17 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.5.0 (unreleased)
+2.6.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+
+- feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
+- feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
+- feat: added new `check_for_failed_fit` method to relevant fitting transformers. This will be helpful as we move to more of a filtering bad rows rather than erroring approach.
+
+2.5.0 (16/12/2025)
 ------------------
 
 Changed
@@ -49,9 +59,7 @@ Changed
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
-- feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
-- feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
-- feat: added new `check_for_failed_fit` method to relevant fitting transformers. This will be helpful as we move to more of a filtering bad rows rather than erroring approach.
+- bugfix: Fixed issue with OneHotEncodingTransformer when used with wanted_values and unseen levels at transform time
 
 2.4.0 (01/12/2025)
 ------------------
