@@ -9,6 +9,7 @@ import test_aide as ta
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -56,7 +57,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
         cls.transformer_name = "OrdinalEncoderTransformer"
 
 
-class TestFit(GenericFitTests, WeightColumnFitMixinTests):
+class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterTest):
     """Tests for OrdinalEncoderTransformer.fit()."""
 
     @classmethod
@@ -88,8 +89,24 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests):
     @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight(library):
-        """Test that the ordinal encoder values learnt during fit are expected if a weights column is specified."""
-        df = create_OrdinalEncoderTransformer_test_df(library=library)
+        """Test that the ordinal encoder values learnt during fit are expected if a weights column is specified.
+
+        Includes some invalid weight rows which should be filtered/have no effect on results.
+        """
+        df_dict = {
+            "a": [1, 2, 3, 4, 5, 6, 7, 8],
+            "b": ["a", "b", "c", "d", "e", "f", "a", "b"],
+            "c": ["a", "b", "c", "d", "e", "f", "c", "d"],
+            "d": [1, 2, 3, 4, 5, 6, 10, 11],
+            "e": [3.0, 4.0, 5.0, 6.0, 7.0, 8.0, None, -100],
+            "f": [False, False, False, True, True, True, False, True],
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        df = nw.from_native(df)
+
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
         x = OrdinalEncoderTransformer(weights_column="e", columns=["b", "d", "f"])
 

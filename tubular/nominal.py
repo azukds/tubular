@@ -1173,6 +1173,34 @@ class MeanResponseTransformer(
                 response_column=response_column,
             )
 
+    def _check_for_failed_fit(self) -> None:
+        """Check if fit failed to find needed attrs.
+
+        Occurs if mapping values or unseen_level_handling_dict values are null
+        unexpectedly.
+
+        Raises
+        ------
+            ValueError: if mapping values or unseen_level_handling_dict values
+            have come out as None unexpectedly
+
+        """
+        for col in self.encoded_columns:
+            failed_columns = []
+            if any(pd.isna(value) for value in self.mappings[col].values()):
+                failed_columns.append(col)
+                break
+
+            if self.unseen_level_handling and pd.isna(
+                self.unseen_levels_encoding_dict[col]
+            ):
+                failed_columns.append(col)
+                break
+
+        if failed_columns:
+            msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+            raise ValueError(msg)
+
     @block_from_json
     @nw.narwhalify
     def fit(self, X: FrameT, y: nw.Series) -> FrameT:
@@ -1228,7 +1256,7 @@ class MeanResponseTransformer(
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            self, weights_column
+            weights_column
         )
 
         if (response_null_count := y.is_null().sum()) > 0:
@@ -1322,6 +1350,8 @@ class MeanResponseTransformer(
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
         self._fit_unseen_level_handling_dict(X_y, weights_column)
+
+        self._check_for_failed_fit()
 
         return self
 
@@ -2175,6 +2205,26 @@ class OrdinalEncoderTransformer(
         # if there are more levels than this, will get a type error
         self.return_dtypes = dict.fromkeys(self.columns, "Int8")
 
+    def _check_for_failed_fit(self) -> None:
+        """Check if fit failed to find needed attrs.
+
+        Occurs if mapping values are null unexpectedly.
+
+        Raises
+        ------
+            ValueError: if mapping values have come out as None unexpectedly
+
+        """
+        for col in self.columns:
+            failed_columns = []
+            if len(self.mappings[col]) == 0:
+                failed_columns.append(col)
+                break
+
+        if failed_columns:
+            msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+            raise ValueError(msg)
+
     @beartype
     def fit(self, X: DataFrame, y: Series) -> OrdinalEncoderTransformer:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
@@ -2209,7 +2259,7 @@ class OrdinalEncoderTransformer(
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            self, weights_column
+            weights_column
         )
 
         if (response_null_count := y.is_null().sum()) > 0:
@@ -2219,7 +2269,7 @@ class OrdinalEncoderTransformer(
         X_y = self._combine_X_y(X, y, return_native=False)
         response_column = "_temporary_response"
 
-        X = X.filter(valid_weights_filter_expr)
+        X_y = X_y.filter(valid_weights_filter_expr)
 
         # the need to sort for each c limits the optimisation we can do here,
         # as it is still necessarily to materialise for each column
@@ -2266,6 +2316,8 @@ class OrdinalEncoderTransformer(
         self.mappings = base_mapping_transformer.mappings
         self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
+
+        self._check_for_failed_fit()
 
         return self
 

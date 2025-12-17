@@ -785,18 +785,8 @@ class FailedFitWeightFilterTest:
 
         transformer = uninitialized_transformer(**args)
 
-        transformer.fit(df, df["a"])
+        msg = "fit has failed for columns .*, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
 
-        # json_dict=transformer.to_json()
-        # for attr in json_dict["fit"]:
-        #     print(attr)
-        #     print(getattr(transformer, attr))
-        # print(transformer.rare_levels_record_)
-        # assert 1==2
-
-        msg = re.escape(
-            f"fit has failed for columns {transformer.columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
-        )
         with pytest.raises(ValueError, match=msg):
             transformer.fit(df, df["a"])
 

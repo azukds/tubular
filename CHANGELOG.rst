@@ -51,6 +51,7 @@ Changed
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
 - feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
 - feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
+- feat: added new `check_for_failed_fit` method to relevant fitting transformers. This will be helpful as we move to more of a filtering bad rows rather than erroring approach.
 
 2.4.0 (01/12/2025)
 ------------------
