@@ -47,8 +47,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
-    @staticmethod
-    def test_learnt_values(library):
+    def test_learnt_values(self, library):
         """Test that the impute values learnt during fit are expected."""
 
         df_dict = {
@@ -88,8 +87,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
-    @staticmethod
-    def test_learnt_values_tied(library):
+    def test_learnt_values_tied(self, library):
         """Test that the impute values learnt during fit are expected - when mode is tied."""
 
         df_dict = {
@@ -154,8 +152,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             (["g", "g", "h", None], [2, 2, 4, 1], "h", True),
         ],
     )
-    @staticmethod
     def test_learnt_values_tied_weighted(
+        self,
         library,
         input_col,
         weight_col,
@@ -205,8 +203,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
-    @staticmethod
-    def test_nan_learnt_values(library):
+    def test_nan_learnt_values(self, library):
         """Test behaviour when learnt value is None."""
         x = ModeImputer(columns=["a"])
 
@@ -228,8 +225,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
-    @staticmethod
-    def test_nan_learnt_values_weighted(library):
+    def test_nan_learnt_values_weighted(self, library):
         """Test behaviour when learnt value is None - when weights are used."""
         weights_column = "weights_column"
         x = ModeImputer(columns=["a"], weights_column=weights_column)
@@ -281,8 +277,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             ([1.0, 2.0, 2.0, np.nan, 3.0, 5.0], [2, 2, 2, 1, None, -1], 2.0, False),
         ],
     )
-    @staticmethod
     def test_learnt_values_weighted_df(
+        self,
         library,
         input_col,
         weight_col,

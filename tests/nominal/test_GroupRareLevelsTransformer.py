@@ -65,40 +65,35 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
-    @staticmethod
-    def test_cut_off_percent_not_float_error():
+    def test_cut_off_percent_not_float_error(self):
         """Test that an exception is raised if cut_off_percent is not an float."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", cut_off_percent="a")
 
-    @staticmethod
-    def test_cut_off_percent_negative_error():
+    def test_cut_off_percent_negative_error(self):
         """Test that an exception is raised if cut_off_percent is negative."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", cut_off_percent=-1.0)
 
-    @staticmethod
-    def test_cut_off_percent_gt_one_error():
+    def test_cut_off_percent_gt_one_error(self):
         """Test that an exception is raised if cut_off_percent is greater than 1."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", cut_off_percent=2.0)
 
-    @staticmethod
-    def test_record_rare_levels_not_bool_error():
+    def test_record_rare_levels_not_bool_error(self):
         """Test that an exception is raised if record_rare_levels is not a bool."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             GroupRareLevelsTransformer(columns="a", record_rare_levels=2)
 
-    @staticmethod
-    def test_unseen_levels_to_rare_not_bool_error():
+    def test_unseen_levels_to_rare_not_bool_error(self):
         """Test that an exception is raised if unseen_levels_to_rare is not a bool."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -107,8 +102,8 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
 
     # overload this one until weight mixin is converted to beartype
     @pytest.mark.parametrize("weights_column", (0, ["a"], {"a": 10}))
-    @staticmethod
     def test_weight_arg_errors(
+        self,
         weights_column,
     ):
         """Test that appropriate errors are throw for bad weight arg."""
@@ -127,8 +122,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         cls.transformer_name = "GroupRareLevelsTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_learnt_values_no_weight(library):
+    def test_learnt_values_no_weight(self, library):
         """Test that the impute values learnt during fit, without using a weight, are expected."""
         df = d.create_df_5(library=library)
 
@@ -150,8 +144,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_learnt_values_weight(library):
+    def test_learnt_values_weight(self, library):
         """Test that the impute values learnt during fit, using a weight, are expected."""
         df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
 
@@ -174,8 +167,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_learnt_values_weight_2(library):
+    def test_learnt_values_weight_2(self, library):
         """Test that the impute values learnt during fit, using a weight, are expected."""
         df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
 
@@ -197,9 +189,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_nulls_error(library):
+    def test_nulls_error(self, library):
         """Test that checks error is raised if transform is run on column with nulls."""
         df_dict = {"a": ["a", None]}
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
@@ -215,8 +206,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("col", ["a", "c"])
-    @staticmethod
-    def test_column_strlike_error(col, library):
+    def test_column_strlike_error(self, col, library):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
@@ -230,8 +220,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             x.fit(df)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_training_data_levels_stored(library):
+    def test_training_data_levels_stored(self, library):
         """Test that the levels present in the training data are stored if unseen_levels_to_rare is false"""
         df = d.create_df_8(library=library)
 
@@ -261,8 +250,7 @@ class TestTransform(GenericNominalTransformTests):
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
-    @staticmethod
-    def expected_df_1(library="pandas"):
+    def expected_df_1(self, library="pandas"):
         """Expected output for test_expected_output_no_weight."""
 
         df_dict = {
@@ -284,8 +272,7 @@ class TestTransform(GenericNominalTransformTests):
             .to_native()
         )
 
-    @staticmethod
-    def expected_df_2(library="pandas"):
+    def expected_df_2(self, library="pandas"):
         """Expected output for test_expected_output_weight."""
 
         df_dict = {
@@ -303,10 +290,9 @@ class TestTransform(GenericNominalTransformTests):
     def test_non_mappable_rows_exception_raised(self):
         """override test in GenericNominalTransformTests as not relevant to this transformer."""
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(library, from_json):
+    def test_learnt_values_not_modified(self, library, from_json):
         """Test that the non_rare_levels from fit are not changed in transform."""
         df = d.create_df_5(library=library)
 
@@ -385,10 +371,9 @@ class TestTransform(GenericNominalTransformTests):
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_column_strlike_error(library, from_json):
+    def test_column_strlike_error(self, library, from_json):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
@@ -412,10 +397,9 @@ class TestTransform(GenericNominalTransformTests):
         ):
             x.transform(df)
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_unseen_levels_not_encoded(library, from_json):
+    def test_expected_output_unseen_levels_not_encoded(self, library, from_json):
         """Test that unseen levels are not encoded when unseen_levels_to_rare is false"""
 
         df = d.create_df_8(library=library)
@@ -449,10 +433,9 @@ class TestTransform(GenericNominalTransformTests):
             f"unseen level handling not working as expected, expected {expected} but got {actual}"
         )
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", ["True", "False"])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_rare_categories_forgotten(library, from_json):
+    def test_rare_categories_forgotten(self, library, from_json):
         "test that for category dtype, categories encoded as rare are forgotten by series"
 
         df = d.create_df_8(library=library)

@@ -176,8 +176,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
     def test_weight_arg_errors(self):
         pass
 
-    @staticmethod
-    def test_prior_not_positive_int_error():
+    def test_prior_not_positive_int_error(self):
         """Test that an exception is raised if prior is not a positive int."""
         with pytest.raises(BeartypeCallHintParamViolation):
             MeanResponseTransformer(prior=-1)
@@ -186,9 +185,8 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
 class TestPriorRegularisation:
     "tests for _prior_regularisation method."
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_output1(library):
+    def test_output1(self, library):
         "Test output of method."
         x = MeanResponseTransformer(columns="a", prior=3)
 
@@ -230,8 +228,7 @@ class TestPriorRegularisation:
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_output2(library):
+    def test_output2(self, library):
         "Test output of method - for category dtypes"
         x = MeanResponseTransformer(columns="a", prior=0)
 
@@ -278,8 +275,7 @@ class TestPriorRegularisation:
         )
 
     @pytest.mark.parametrize("library", ["pandas"])
-    @staticmethod
-    def test_output3(library):
+    def test_output3(self, library):
         "Test output of method - for pandas object dtype"
         x = MeanResponseTransformer(columns="a", prior=0)
 
@@ -335,8 +331,7 @@ class TestFit(
         cls.transformer_name = "MeanResponseTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_weights_column_missing_error(library):
+    def test_weights_column_missing_error(self, library):
         """Test that an exception is raised if weights_column is specified but not present in data for fit."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -360,8 +355,8 @@ class TestFit(
             (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
-    @staticmethod
     def test_response_column_nulls_error(
+        self,
         level,
         target_column,
         unseen_level_handling,
@@ -400,8 +395,8 @@ class TestFit(
             (None, "a", "min"),
         ],
     )
-    @staticmethod
     def test_correct_mappings_stored_numeric_response(
+        self,
         learnt_mapping_dict,
         level,
         target_column,
@@ -434,8 +429,8 @@ class TestFit(
             (["yellow", "blue"], "multi_level_response", "max"),
         ],
     )
-    @staticmethod
     def test_correct_mappings_stored_categorical_response(
+        self,
         learnt_mapping_dict,
         level,
         target_column,
@@ -489,8 +484,8 @@ class TestFit(
             (["yellow", "blue"], "multi_level_response", "mean"),
         ],
     )
-    @staticmethod
     def test_correct_unseen_levels_encoding_dict_stored(  # noqa: PLR0912
+        self,
         learnt_unseen_levels_encoding_dict_mean,
         learnt_unseen_levels_encoding_dict_median,
         learnt_unseen_levels_encoding_dict_lowest,
@@ -565,8 +560,7 @@ class TestFit(
                     assert actual == expected
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_missing_categories_ignored(library):
+    def test_missing_categories_ignored(self, library):
         "test that where a categorical column has missing levels, these do not make it into the encoding dict"
 
         df = create_MeanResponseTransformer_test_df(library=library)
@@ -593,7 +587,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("with_invalid_weights", [True, False])
     @pytest.mark.parametrize(
@@ -669,6 +662,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         ],
     )
     def test_learnt_values(
+        self,
         library,
         columns,
         weights_values,
@@ -749,8 +743,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
-    @staticmethod
-    def test_prior_logic(prior, library):
+    def test_prior_logic(self, prior, library):
         "Test that for prior>0 encodings are closer to global mean than for prior=0."
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -821,8 +814,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         ("low_weight", "high_weight"),
         ((1, 2), (2, 3), (3, 4), (10, 20)),
     )
-    @staticmethod
-    def test_prior_logic_for_weights(low_weight, high_weight, library):  # noqa: PLR0914
+    def test_prior_logic_for_weights(self, low_weight, high_weight, library):  # noqa: PLR0914
         "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -1270,8 +1262,8 @@ class TestTransform(GenericTransformTests):
             ),
         ],
     )
-    @staticmethod
     def test_expected_outputs(
+        self,
         library,
         columns,
         level,
@@ -1354,8 +1346,8 @@ class TestTransform(GenericTransformTests):
             (["b", "f"], "multi_level_response", "max", "all", expected_df_10),
         ],
     )
-    @staticmethod
     def test_expected_outputs_with_unseen_level_handling(
+        self,
         library,
         columns,
         target,
@@ -1410,10 +1402,9 @@ class TestTransform(GenericTransformTests):
                 df_expected_row[column_order],
             )
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_nulls_introduced_in_transform_error(library, from_json):
+    def test_nulls_introduced_in_transform_error(self, library, from_json):
         """Test that transform will raise an error if nulls are introduced."""
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -1444,8 +1435,8 @@ class TestTransform(GenericTransformTests):
             (0, None, "a", "median"),
         ],
     )
-    @staticmethod
     def test_return_type_can_be_changed(
+        self,
         prior,
         level,
         target,
@@ -1489,10 +1480,9 @@ class TestTransform(GenericTransformTests):
                 f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
             )
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(library, from_json):
+    def test_learnt_values_not_modified(self, library, from_json):
         """Test that the mappings from fit are not changed in transform."""
         df = create_MeanResponseTransformer_test_df(library=library)
 

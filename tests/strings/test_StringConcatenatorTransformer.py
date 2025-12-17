@@ -55,8 +55,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "StringConcatenator"
 
-    @staticmethod
-    def test_correct_df_returned_1():
+    def test_correct_df_returned_1(self):
         """Test that correct df is returned after transformation."""
         df = d.create_df_1()
         expected_df = df.copy()
@@ -75,8 +74,7 @@ class TestTransform(GenericTransformTests):
             "Incorrect dataframe returned after StringConcatenator transform",
         )
 
-    @staticmethod
-    def test_correct_df_returned_2():
+    def test_correct_df_returned_2(self):
         """Test that correct df is returned after transformation."""
         df = d.create_df_1()
         expected_df = df.copy()

@@ -36,8 +36,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         cls.transformer_name = "MedianImputer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_learnt_values(library):
+    def test_learnt_values(self, library):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
@@ -52,8 +51,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_learnt_values_weighted(library):
+    def test_learnt_values_weighted(self, library):
         """Test that the impute values learnt during fit are expected - when using weights."""
         df = d.create_df_9_with_null_weight_row(library=library)
 
@@ -66,8 +64,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_fit_not_changing_data(library):
+    def test_fit_not_changing_data(self, library):
         """Test fit does not change X."""
         df = d.create_df_1(library=library)
 

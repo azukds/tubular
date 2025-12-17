@@ -168,8 +168,7 @@ class TestTransform(BaseMappingTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_1(), d.create_df_1()),
     )
-    @staticmethod
-    def test_X_returned(df, expected):
+    def test_X_returned(self, df, expected):
         """Test that X is returned from transform."""
         mapping = {
             "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},

@@ -64,9 +64,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterT
     def setup_class(cls):
         cls.transformer_name = "OrdinalEncoderTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values(library):
+    def test_learnt_values(self, library):
         """Test that the ordinal encoder values learnt during fit are expected."""
         df = create_OrdinalEncoderTransformer_test_df(library=library)
 
@@ -86,9 +85,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterT
             msg="mappings attribute",
         )
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weight(library):
+    def test_learnt_values_weight(self, library):
         """Test that the ordinal encoder values learnt during fit are expected if a weights column is specified.
 
         Includes some invalid weight rows which should be filtered/have no effect on results.
@@ -124,9 +122,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterT
             msg="mappings attribute",
         )
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_response_column_nulls_error(library):
+    def test_response_column_nulls_error(self, library):
         """Test that an exception is raised if nulls are present in response_column."""
         df = d.create_df_4(library=library)
 
@@ -138,9 +135,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterT
         ):
             x.fit(df, df["a"])
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_error_for_too_many_levels(library):
+    def test_error_for_too_many_levels(self, library):
         "test that transformer.transform errors for column with too many levels"
         transformer = OrdinalEncoderTransformer(columns=["a"])
 
@@ -184,8 +180,7 @@ class TestTransform(GenericTransformTests):
 
         return df
 
-    @staticmethod
-    def test_learnt_values_not_modified():
+    def test_learnt_values_not_modified(self):
         """Test that the mappings from fit are not changed in transform."""
         df = create_OrdinalEncoderTransformer_test_df()
 
@@ -212,8 +207,7 @@ class TestTransform(GenericTransformTests):
             expected_df_1(),
         ),
     )
-    @staticmethod
-    def test_expected_output(df, expected):
+    def test_expected_output(self, df, expected):
         """Test that the output is expected from transform."""
         x = OrdinalEncoderTransformer(columns=["b", "d", "f"])
 

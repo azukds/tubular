@@ -36,6 +36,7 @@ Changed
 - feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
 - feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
 - feat: added new `check_for_failed_fit` method to relevant fitting transformers. This will be helpful as we move to more of a filtering bad rows rather than erroring approach.
+- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 
 2.5.0 (16/12/2025)
 ------------------
