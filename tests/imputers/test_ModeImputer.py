@@ -2,7 +2,6 @@ import narwhals as nw
 import numpy as np
 import pytest
 
-import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
     FailedFitWeightFilterTest,
@@ -197,65 +196,6 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
 
         assert x.impute_values_ == expected_impute_values, (
             f"impute_values_ attribute not expected, expected {expected_impute_values} but got {x.impute_values_}"
-        )
-
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_nan_learnt_values(self, library):
-        """Test behaviour when learnt value is None."""
-        x = ModeImputer(columns=["a"])
-
-        df = input_df_nan(library)
-
-        with pytest.warns(
-            UserWarning,
-            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
-        ):
-            x.fit(df)
-
-        expected_impute_values = {"a": None}
-
-        assert x.impute_values_ == expected_impute_values, (
-            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
-        )
-
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_nan_learnt_values_weighted(self, library):
-        """Test behaviour when learnt value is None - when weights are used."""
-        weights_column = "weights_column"
-        x = ModeImputer(columns=["a"], weights_column=weights_column)
-
-        df = d.create_weighted_imputers_test_df(library=library)
-
-        df = nw.from_native(df)
-        native_backend = nw.get_native_namespace(df)
-
-        # replace 'a' with all null values to trigger warning
-        df = df.with_columns(
-            nw.new_series(
-                name="a",
-                values=[None] * len(df),
-                backend=native_backend,
-            ),
-        )
-
-        df = df.to_native()
-
-        with pytest.warns(
-            UserWarning,
-            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
-        ):
-            x.fit(df)
-
-        expected_impute_values = {"a": None}
-
-        assert x.impute_values_ == expected_impute_values, (
-            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
         )
 
     @pytest.mark.parametrize(

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import product
 
 import narwhals as nw
@@ -579,14 +580,6 @@ class TestFit(
             "MeanResponseTransformer should ignore unobserved levels"
         )
 
-
-class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
-    """Tests for MeanResponseTransformer.fit()."""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "MeanResponseTransformer"
-
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("with_invalid_weights", [True, False])
     @pytest.mark.parametrize(
@@ -613,7 +606,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             # no weight, prior
             (
                 ["b", "d", "f"],
-                [1.0, 1.0, 0.01, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
                 5,
                 {
                     "b": {
@@ -692,6 +685,9 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         # use this argument to run the test again with
         # some extra rows which should just be filtered/have no
         # effect
+        full_weights_values = deepcopy(
+            weights_values
+        )  # was having issues with fixture being overwritten
         if with_invalid_weights:
             extra_rows = {
                 "a": [7.0, 8.0],
@@ -708,7 +704,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
 
             bad_weights = [-1, None]
 
-            weights_values += bad_weights
+            full_weights_values += bad_weights
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
@@ -719,19 +715,16 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
 
         weights_column = "weights_column"
         df = df.with_columns(
-            nw.new_series(name=weights_column, values=weights_values, backend=library),
+            nw.new_series(
+                name=weights_column, values=full_weights_values, backend=library
+            ),
         ).to_native()
 
-        x = MeanResponseTransformer(columns=columns, prior=prior)
-
-        x.mappings = {}
-
-        x._fit_binary_response(
-            df,
-            x.columns,
-            weights_column=weights_column,
-            response_column="a",
+        x = MeanResponseTransformer(
+            columns=columns, prior=prior, weights_column=weights_column
         )
+
+        x.fit(df, df["a"])
 
         assert x.global_mean == expected_mean, (
             f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
@@ -740,6 +733,14 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         assert x.mappings == expected_mappings, (
             f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
         )
+
+
+class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
+    """Tests for MeanResponseTransformer.fit()."""
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "MeanResponseTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))

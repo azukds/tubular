@@ -1271,10 +1271,10 @@ class MeanResponseTransformer(
         self.response_levels = self.level
 
         if self.level == "all":
-            self.response_levels = y.unique()
+            self.response_levels = X_y[response_column].unique()
 
         elif self.level is not None and any(
-            level not in list(y.unique()) for level in self.level
+            level not in list(X_y[response_column].unique()) for level in self.level
         ):
             msg = "Levels contains a level to encode against that is not present in the response."
             raise ValueError(msg)
@@ -1306,17 +1306,21 @@ class MeanResponseTransformer(
             # if nans are present then will error in previous handling, so can assume not here
             X_y = X_y.with_columns(
                 (
-                    nw.col(response_column) == level
+                    (nw.col(response_column) == level)
                     if self.MULTI_LEVEL
                     else nw.col(response_column)
-                ).alias(response_column),
+                ).alias(
+                    f"{level}_response_column" if self.MULTI_LEVEL else response_column
+                ),
             )
 
             self._fit_binary_response(
                 X_y,
                 list(mapping_columns_for_this_level.values()),
                 weights_column=weights_column,
-                response_column=response_column,
+                response_column=f"{level}_response_column"
+                if self.MULTI_LEVEL
+                else response_column,
             )
 
             self.column_to_encoded_columns = {
