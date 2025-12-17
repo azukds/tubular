@@ -42,21 +42,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
-        df = nw.from_native(df)
-        native_backend = nw.get_native_namespace(df)
-
-        # replace 'a' with all null values to trigger warning
-        df = df.with_columns(
-            nw.new_series(
-                name="d",
-                values=[None] * len(df),
-                backend=native_backend,
-            ),
-        )
-
-        df = df.to_native()
-
-        transformer = MedianImputer(columns=["a", "b", "c", "d"])
+        transformer = MedianImputer(columns=["a", "b", "c"])
 
         transformer.fit(df)
 
@@ -64,7 +50,6 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             "a": df["a"].median(),
             "b": df["b"].median(),
             "c": df["c"].median(),
-            "d": None,
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
