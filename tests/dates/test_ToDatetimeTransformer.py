@@ -10,7 +10,11 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import ToDatetimeTransformer
 
 
@@ -135,17 +139,22 @@ class TestTransform(GenericTransformTests):
             (["e"], None),
         ],
     )
-    def test_expected_output_year_parsing(self, library, columns, time_format):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_year_parsing(
+        self, library, columns, time_format, from_json
+    ):
         """Test input data is transformed as expected."""
 
         df = self.create_to_datetime_test_df(library=library)
         expected = self.expected_df_1(library=library)
 
-        to_dt = ToDatetimeTransformer(
+        transformer = ToDatetimeTransformer(
             columns=columns,
             time_format=time_format,
         )
-        df_transformed = to_dt.transform(df)
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(df)
 
         assert_frame_equal_dispatch(expected[columns], df_transformed[columns])
 

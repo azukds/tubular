@@ -27,7 +27,14 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.5.0 (unreleased)
+2.6.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
+
+2.5.0 (16/12/2025)
 ------------------
 
 Changed
@@ -47,8 +54,9 @@ Changed
 - feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
-- feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
-- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>`_
+- feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
+- feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
+- bugfix: Fixed issue with OneHotEncodingTransformer when used with wanted_values and unseen levels at transform time
 
 2.4.0 (01/12/2025)
 ------------------
