@@ -795,11 +795,17 @@ class ToDatetimeTransformer(BaseTransformer):
     Example:
     -------
     ```pycon
-    >>> ToDatetimeTransformer(
+    >>> transformer = ToDatetimeTransformer(
     ...     columns="a",
     ...     time_format="%d/%m/%Y",
     ... )
+    >>> transformer
     ToDatetimeTransformer(columns=['a'], time_format='%d/%m/%Y')
+
+    >>> # version will vary for local vs CI, so use ... as generic match
+    >>> json_dump = transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
 
     ```
 
@@ -811,14 +817,14 @@ class ToDatetimeTransformer(BaseTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
         self,
         columns: Union[str, list[str]],
         time_format: Optional[str] = None,
-        **kwargs: dict[str, bool],
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
@@ -846,6 +852,36 @@ class ToDatetimeTransformer(BaseTransformer):
             columns=columns,
             **kwargs,
         )
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = ToDatetimeTransformer(columns="a", time_format="%d/%m/%Y")
+
+        >>> # version will vary for local vs CI, so use ... as generic match
+        >>> transformer.to_json()
+        {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+        json_dict["init"].update(
+            {
+                "time_format": self.time_format,
+            }
+        )
+        return json_dict
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:
