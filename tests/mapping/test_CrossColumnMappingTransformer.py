@@ -20,8 +20,7 @@ class TestInit(BaseCrossColumnMappingTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "CrossColumnMappingTransformer"
 
-    @staticmethod
-    def test_mappings_not_ordered_dict_error():
+    def test_mappings_not_ordered_dict_error(self):
         """Test that an exception is raised if mappings is not an ordered dict if more than 1 mapping is defined ."""
         with pytest.raises(
             TypeError,
@@ -66,8 +65,7 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_1()),
     )
-    @staticmethod
-    def test_expected_output(df, expected):
+    def test_expected_output(self, df, expected):
         """Test that transform is giving the expected output."""
         mapping = {"a": {1: "aa", 2: "bb", 3: "cc", 4: "dd", 5: "ee", 6: "ff"}}
 
@@ -85,8 +83,7 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_2()),
     )
-    @staticmethod
-    def test_non_specified_values_unchanged(df, expected):
+    def test_non_specified_values_unchanged(self, df, expected):
         """Test that values not specified in mappings are left unchanged in transform."""
         mapping = {"a": {1: "aa", 2: "bb", 3: "cc"}}
 
@@ -104,8 +101,7 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_7(), expected_df_3()),
     )
-    @staticmethod
-    def test_multiple_mappings_ordered_dict(df, expected):
+    def test_multiple_mappings_ordered_dict(self, df, expected):
         """Test that mappings by multiple columns using an ordered dict gives the expected output in transform."""
         mapping = OrderedDict()
 

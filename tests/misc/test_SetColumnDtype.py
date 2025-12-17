@@ -23,8 +23,7 @@ class TestInit(ColumnStrListInitTests):
         "invalid_dtype",
         ["STRING", "misc_invalid", "np.int", 0],
     )
-    @staticmethod
-    def test_invalid_dtype_error(invalid_dtype):
+    def test_invalid_dtype_error(self, invalid_dtype):
         msg = f"ColumnDtypeSetter: data type '{invalid_dtype}' not understood as a valid dtype"
         with pytest.raises(TypeError, match=msg):
             ColumnDtypeSetter(columns=["a"], dtype=invalid_dtype)
@@ -73,8 +72,7 @@ class TestTransform(GenericTransformTests):
         + ta.pandas.index_preserved_params(base_df(), expected_df()),
     )
     @pytest.mark.parametrize("dtype", [float, "float"])
-    @staticmethod
-    def test_expected_output(df, expected, dtype):
+    def test_expected_output(self, df, expected, dtype):
         """Test values are correctly set to float dtype."""
         df["a"] = df["a"].astype(str)
         df["b"] = df["b"].astype(float)
