@@ -71,7 +71,7 @@ class BaseMappingTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -222,7 +222,7 @@ class BaseMappingTransformer(BaseTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to apply mappings to.
 
         return_native_override: Optional[bool]
@@ -231,7 +231,7 @@ class BaseMappingTransformer(BaseTransformer):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Input X, copied if specified by user.
 
         Examples
@@ -317,7 +317,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with nominal columns to transform.
 
         return_native_override: Optional[bool]
@@ -326,7 +326,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
         #  not currently including doctest for this, as is not intended to be used
@@ -507,12 +507,12 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with nominal columns to transform.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
         Examples

@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDatetimeTransformer, AggregateColumnsOverRowTransformer, AggregateRowsOverColumnTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer, DatetimeComponentExtractor `#586 <https://github.com/azukds/tubular/issues/586>`_
 - bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 
 2.5.0 (16/12/2025)
@@ -53,7 +54,7 @@ Changed
 - feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
 - feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
-- feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
+- feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_.
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
 - bugfix: Fixed issue with OneHotEncodingTransformer when used with wanted_values and unseen levels at transform time
