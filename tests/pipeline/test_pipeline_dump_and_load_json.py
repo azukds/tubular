@@ -3,14 +3,18 @@ import pytest
 from sklearn.pipeline import Pipeline
 
 from tubular.imputers import MeanImputer, MedianImputer
-from tubular.nominal import NominalToIntegerTransformer
 from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
+
+
+class FakeTransformer:
+    jsonable = False
 
 
 class TestPipelineDumpAndLoadJson:
     """Tests for dump_pipeline_to_json() and load_pipeline_from_json()."""
 
-    def test_dump_pipeline_then_load_pipeline(self):  # noqa: PLR6301
+    @staticmethod
+    def test_dump_pipeline_then_load_pipeline():
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
 
         median_imputer = MedianImputer(columns=["b"])
@@ -30,21 +34,24 @@ class TestPipelineDumpAndLoadJson:
             f"number of steps in the pipeline does not match with that of original pipeline, expected {len(original_pipeline.steps)} steps but got {len(pipeline.steps)}"
         )
 
-        for i, (x, y) in enumerate(zip(original_pipeline.steps, pipeline.steps)):
-            assert x[0] == y[0], (
-                f"loaded pipeline does not match the original pipeline at step {i}, expected step name {x[0]} but got {y[0]}"
+        for i, (original_transformer, loaded_transformer) in enumerate(
+            zip(original_pipeline.steps, pipeline.steps)
+        ):
+            assert original_transformer[0] == loaded_transformer[0], (
+                f"loaded pipeline does not match the original pipeline at step {i}, expected step name {original_transformer[0]} but got {loaded_transformer[0]}"
             )
 
-            x1 = x[1].__dict__
+            original_transformer_dict = original_transformer[1].__dict__
             # removing  built_from_json attr, as the two transformers are expected to differ here
-            x1.pop("built_from_json", None)
-            y1 = y[1].__dict__
-            y1.pop("built_from_json", None)
-            assert x1 == y1, (
-                f"loaded pipeline does not match the original pipeline at step {i}, expected step {x1} but got {y1}"
+            original_transformer_dict.pop("built_from_json", None)
+            loaded_transformer_dict = loaded_transformer[1].__dict__
+            loaded_transformer_dict.pop("built_from_json", None)
+            assert original_transformer_dict == loaded_transformer_dict, (
+                f"loaded pipeline does not match the original pipeline at step {i}, expected step {original_transformer_dict} but got {loaded_transformer_dict}"
             )
 
-    def test_dump_pipeline_to_json_output(self):  # noqa: PLR6301
+    @staticmethod
+    def test_dump_pipeline_to_json_output():
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
 
         median_imputer = MedianImputer(columns=["b"])
@@ -92,15 +99,15 @@ class TestPipelineDumpAndLoadJson:
                 f"loaded json pipeline does not match the original pipeline at step {i}, expected step {expected_json[transformer]} but got {actual_json[transformer]}"
             )
 
-    def test_dump_transformer_not_jsonable(self):  # noqa: PLR6301
-        df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
-        nominal_to_integer_transformer = NominalToIntegerTransformer(columns=["a"])
+    @staticmethod
+    def test_dump_transformer_not_jsonable():
+        good_transformer = MeanImputer(columns="a")
+        bad_transformer = FakeTransformer()
 
         original_pipeline = Pipeline(
-            [("NominalToIntegerTransformer", nominal_to_integer_transformer)]
+            [("FakeTransformer", bad_transformer), ("MeanImputer", good_transformer)]
         )
 
-        original_pipeline.fit(df, df["a"])
         with pytest.raises(
             RuntimeError,
         ):
