@@ -14,17 +14,37 @@ from tubular.types import DataFrame, NarwhalsFrame, Series
 
 
 @beartype
+def _collect_frame(X: DataFrame) -> NarwhalsFrame:
+    """Collect lazyframes, or return inputs if eager.
+
+    Parameters
+    ----------
+    X: DataFrame
+        DataFrame to be collected if lazy
+
+    Returns
+    -------
+    nw.DataFrame: collected frame
+
+    """
+    if isinstance(X, nw.LazyFrame):
+        X = X.collect()
+
+    return X
+
+
+@beartype
 def _convert_dataframe_to_narwhals(X: DataFrame) -> NarwhalsFrame:
     """Narwhalifies dataframe, if dataframe is not already narwhals.
 
     Parameters
     ----------
-    X: pd/pl/nw.Series
+    X: DataFrame
         DataFrame to narwhalify if pd/pl type
 
     Returns
     -------
-    nw.DataFrame/LazyFrame: narwhalified dataframe
+    NarwhalsFrame: narwhalified dataframe
 
     """
     if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
@@ -39,7 +59,7 @@ def _convert_series_to_narwhals(y: Optional[Series] = None) -> Optional[nw.Serie
 
     Parameters
     ----------
-    y: pd/pl/nw.Series
+    y: Series
         series to narwhalify if pd/pl type
 
     Returns
@@ -62,7 +82,7 @@ def _return_narwhals_or_native_dataframe(
 
     Parameters
     ----------
-    X: pd/pl/nw.DataFrame
+    X: DataFrame
         DataFrame to process and return
 
     return_native: bool
