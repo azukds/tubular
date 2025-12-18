@@ -174,7 +174,6 @@ class TestTransform(BaseMappingTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseMappingTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -183,7 +182,7 @@ class TestTransform(BaseMappingTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_1(), d.create_df_1()),
     )
-    def test_X_returned(df, expected, lazy):
+    def test_X_returned(self, df, expected, lazy):
         """Test that X is returned from transform."""
         mapping = {
             "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},

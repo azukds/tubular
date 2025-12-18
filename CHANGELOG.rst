@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDatetimeTransformer, AggregateColumnsOverRowTransformer, AggregateRowsOverColumnTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer, DatetimeComponentExtractor `#586 <https://github.com/azukds/tubular/issues/586>`_
+- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 
 2.5.0 (16/12/2025)
 ------------------

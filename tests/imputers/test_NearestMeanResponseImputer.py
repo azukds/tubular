@@ -32,8 +32,7 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "NearestMeanResponseImputer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_null_values_in_response_error(library):
+    def test_null_values_in_response_error(self, library):
         """Test an error is raised if the response column contains null entries."""
         df = d.create_df_3(library=library)
 
@@ -46,8 +45,7 @@ class TestFit(GenericFitTests):
             transformer.fit(df, df["a"])
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_columns_with_no_nulls_warning(library):
+    def test_columns_with_no_nulls_warning(self, library):
         """Test a warning is raised if a non-response column contains no nulls."""
         df = d.create_numeric_df_1(library=library)
 
@@ -65,8 +63,7 @@ class TestFit(GenericFitTests):
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_learnt_values(library):
+    def test_learnt_values(self, library):
         """Test that the nearest response values learnt during fit are expected."""
         df = d.create_numeric_df_2(library=library)
 
@@ -106,8 +103,7 @@ class TestTransform(
             ([True, False, True], [True, False, True]),
         ],
     )
-    @staticmethod
-    def test_no_effect_when_fit_on_null_free_col(fit_col, transform_col, library):
+    def test_no_effect_when_fit_on_null_free_col(self, fit_col, transform_col, library):
         "test that when transformer fits on a col with no nulls, transform has no effect"
 
         df_fit_dict = {
