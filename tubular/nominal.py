@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
@@ -13,6 +12,7 @@ from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
+from tubular._checks import _get_null_filter_exprs
 from tubular._utils import (
     _collect_frame,
     _convert_dataframe_to_narwhals,
@@ -314,7 +314,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -331,6 +331,9 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         unseen_levels_to_rare: bool = True,
         **kwargs: bool,
     ) -> None:
+        # if "record_rare_levels" in kwargs:
+        #    warnings.warn(f"{self.classname()}: argument `record_rare_levels` has been deprecated, rare levels are now always stored in the `rare_levels_record` attr")
+
         super().__init__(columns=columns, **kwargs)
 
         self.cut_off_percent = cut_off_percent
@@ -446,59 +449,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             msg = f"{self.classname()}: transformer must run on str-like columns, but got non str-like {non_str_like_columns}"
             raise TypeError(msg)
 
-    @beartype
-    def _check_for_nulls(self, present_levels: dict[str, list[Any]]) -> None:
-        """check that transformer being called on only non-null columns.
-
-        Note, found including nulls to be quite complicated due to:
-        - categorical variables make use of NaN not None
-        - pl/nw categorical variables do not allow categories to be edited,
-        so adjusting requires converting to str as interim step
-        - NaNs are converted to nan, introducing complications
-
-        As this transformer is generally used post imputation, elected to remove null
-        functionality.
-
-        Parameters
-        ----------
-        present_levels : dict[str, list[Any]]
-            dict of format column:levels present in column
-
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-
-        >>> transformer = GroupRareLevelsTransformer(
-        ...     columns="a",
-        ...     cut_off_percent=0.02,
-        ...     rare_level_name="rare_level",
-        ... )
-
-        >>> # non erroring example
-        >>> test_dict = {"a": ["x", "y"], "b": ["w", "z"]}
-
-        >>> transformer._check_for_nulls(test_dict)
-
-        >>> # erroring  example
-        >>> test_dict = {"a": [None, "y"], "b": ["w", "z"]}
-
-        >>> transformer._check_for_nulls(test_dict)
-        Traceback (most recent call last):
-        ...
-        ValueError: ...
-
-        ```
-        """
-
-        columns_with_nulls = [
-            c for c in present_levels if any(pd.isna(val) for val in present_levels[c])
-        ]
-
-        if columns_with_nulls:
-            msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
-            raise ValueError(msg)
-
     @block_from_json
     @beartype
     def fit(
@@ -555,17 +505,9 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self._check_str_like_columns(schema)
 
-        present_levels = {c: list(set(X.get_column(c).unique())) for c in self.columns}
-
-        self._check_for_nulls(present_levels)
-
-        # sort once nulls are removed
-        present_levels = {c: sorted(present_levels[c]) for c in self.columns}
-
         self.non_rare_levels = {}
-
-        if self.record_rare_levels:
-            self.rare_levels_record_ = {}
+        self.rare_levels_record_ = {}
+        present_levels = {}
 
         backend = nw.get_native_namespace(X)
 
@@ -588,20 +530,36 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         }
 
         non_rare_levels_exprs = {
-            c: nw.when(level_weight_perc_exprs[c] >= self.cut_off_percent)
+            f"{c}_non_rare_levels": nw.when(
+                level_weight_perc_exprs[c] >= self.cut_off_percent
+            )
             .then(nw.col(c))
             .otherwise(None)
             for c in self.columns
         }
 
-        results_dict = X.select(**non_rare_levels_exprs).to_dict(as_series=True)
+        col_exprs = {c: nw.col(c) for c in self.columns}
+
+        transform_exprs = {**non_rare_levels_exprs, **col_exprs}
+
+        results = X.select(**transform_exprs)
+
+        results = _collect_frame(results)
+
+        results_dict = results.to_dict(as_series=True)
 
         for c in self.columns:
-            self.non_rare_levels[c] = [
-                val for val in results_dict[c].unique().to_list() if not pd.isna(val)
-            ]
+            self.non_rare_levels[c] = sorted(
+                val
+                for val in results_dict[f"{c}_non_rare_levels"].unique().to_list()
+                if not pd.isna(val)
+            )
 
-            self.non_rare_levels[c] = sorted(self.non_rare_levels[c], key=str)
+            present_levels[c] = sorted(
+                value
+                for value in results_dict[c].unique().to_list()
+                if not pd.isna(value)
+            )
 
             if self.record_rare_levels:
                 self.rare_levels_record_[c] = sorted(
@@ -614,9 +572,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 )
 
         if not self.unseen_levels_to_rare:
-            self.training_data_levels = {}
-            for c in self.columns:
-                self.training_data_levels[c] = present_levels[c]
+            self.training_data_levels = {c: present_levels[c] for c in self.columns}
 
         return self
 
@@ -661,14 +617,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         │ rare_level ┆ z   │
         └────────────┴─────┘
 
-        >>> # erroring example (with nulls)
-        >>> test_df = pl.DataFrame({"a": ["x", "x", None], "b": ["w", "z", "z"]})
-
-        >>> transformer.transform(test_df)
-        Traceback (most recent call last):
-        ...
-        ValueError: ...
-
         ```
         """
         X = BaseTransformer.transform(self, X, return_native_override=False)
@@ -680,23 +628,21 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.check_is_fitted(["non_rare_levels"])
 
-        # copy non_rare_levels, as unseen values may be added, and transform should not
-        # change the transformer state
-        non_rare_levels = copy.deepcopy(self.non_rare_levels)
+        null_filter_exprs = _get_null_filter_exprs(columns=self.columns)
 
-        present_levels = {c: list(set(X.get_column(c).unique())) for c in self.columns}
-
-        self._check_for_nulls(present_levels)
-
-        # sort once nulls removed
-        present_levels = {c: sorted(present_levels[c]) for c in self.columns}
-
-        if not self.unseen_levels_to_rare:
-            for c in self.columns:
-                unseen_vals = set(present_levels[c]).difference(
-                    set(self.training_data_levels[c]),
-                )
-                non_rare_levels[c].extend(unseen_vals)
+        non_rare_condition_exprs = {
+            c: nw.col(c).is_in(self.non_rare_levels[c])
+            if self.unseen_levels_to_rare
+            # if unseen levels are mapped to rare,
+            # the condition becomes either in
+            # non rare levels OR not in training data
+            # levels (unseen)
+            else (
+                nw.col(c).is_in(self.non_rare_levels[c])
+                | ~nw.col(c).is_in(self.training_data_levels[c])
+            )
+            for c in self.columns
+        }
 
         transform_expressions = {
             c: nw.col(c).cast(
@@ -709,7 +655,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         transform_expressions = {
             c: (
-                nw.when(transform_expressions[c].is_in(non_rare_levels[c]))
+                nw.when(non_rare_condition_exprs[c] | null_filter_exprs[c])
                 .then(transform_expressions[c])
                 .otherwise(nw.lit(self.rare_level_name))
             )

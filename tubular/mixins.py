@@ -10,6 +10,7 @@ from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401 - required for nw.Schema see #455
 
 from tubular._utils import (
+    _collect_frame,
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
@@ -209,6 +210,10 @@ class WeightColumnMixin:
             )
 
         # finally create dummy weights column if valid option not found
+        lazy = False
+        if isinstance(X, nw.LazyFrame):
+            lazy = True
+        X = _collect_frame(X)
         X = X.with_columns(
             nw.new_series(
                 name=unit_weights_column,
@@ -216,6 +221,8 @@ class WeightColumnMixin:
                 backend=backend,
             ),
         )
+        if lazy:
+            X = X.lazy()
 
         return _return_narwhals_or_native_dataframe(
             X,
