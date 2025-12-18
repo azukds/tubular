@@ -37,14 +37,11 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     >>> median_imputer = MedianImputer(columns=["b"])
     >>> mean_imputer = MeanImputer(columns=["b"])
     >>> original_pipeline = Pipeline(
-    ...       [
-    ...            ("MedianImputer", median_imputer),
-    ...            ("MeanImputer", mean_imputer)
-    ...        ]
-    ...    )
+    ...     [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+    ... )
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
-    >>> pipeline_json #doctest: +NORMALIZE_WHITESPACE
+    >>> pipeline_json  # doctest: +NORMALIZE_WHITESPACE
     {'MedianImputer': {'tubular_version':...,
     'classname': 'MedianImputer',
     'init': {'columns': ['b'],
@@ -96,11 +93,8 @@ def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipelin
     >>> median_imputer = MedianImputer(columns=["b"])
     >>> mean_imputer = MeanImputer(columns=["b"])
     >>> original_pipeline = Pipeline(
-    ...       [
-    ...            ("MedianImputer", median_imputer),
-    ...            ("MeanImputer", mean_imputer)
-    ...        ]
-    ...    )
+    ...     [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+    ... )
 
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
