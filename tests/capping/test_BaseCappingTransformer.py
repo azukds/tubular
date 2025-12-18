@@ -396,8 +396,7 @@ class GenericCappingTransformTests(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseCappingTransformer"
 
-    @staticmethod
-    def expected_df_2(library="pandas"):
+    def expected_df_2(self, library="pandas"):
         """Expected output from test_expected_output_max."""
 
         df_dict = {
@@ -730,8 +729,7 @@ class GenericCappingTransformTests(GenericTransformTests):
             "quantiles attribute modified in transform"
         )
 
-    @staticmethod
-    def expected_df_1(library="pandas"):
+    def expected_df_1(self, library="pandas"):
         """Expected output from test_expected_output_min_and_max."""
         df_dict = {
             "a": [2, 2, 3, 4, 5, 5, None],
@@ -835,8 +833,8 @@ class TestWeightedQuantile:
             ([1, 2, 3, 4, 5], [1, 0, 1, 0, 1], [0, 0.5, 1.0], [1.0, 2.0, 5.0]),
         ],
     )
-    @staticmethod
     def test_expected_output(
+        self,
         values,
         sample_weight,
         quantiles,

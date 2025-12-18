@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 
 2.5.0 (16/12/2025)
 ------------------

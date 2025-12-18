@@ -37,8 +37,7 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
-    @staticmethod
-    def test_units_values_error():
+    def test_units_values_error(self):
         """Test that an exception is raised if the value of inits is not one of accepted_values_units."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -350,7 +349,6 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "unit",
@@ -373,7 +371,7 @@ class TestTransform(
             "polars",
         ],
     )
-    def test_expected_output_units(generic_expected_df, unit, library, from_json):
+    def test_expected_output_units(self, generic_expected_df, unit, library, from_json):
         """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
@@ -395,7 +393,6 @@ class TestTransform(
 
         assert_frame_equal_dispatch(expected, df_transformed)
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -410,7 +407,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls(df, expected, from_json):
+    def test_expected_output_nulls(self, df, expected, from_json):
         """Test that the output is expected from transform, when columns have nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -425,7 +422,6 @@ class TestTransform(
 
         assert_frame_equal_dispatch(df_transformed, expected)
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -440,7 +436,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls2(df, expected, from_json):
+    def test_expected_output_nulls2(self, df, expected, from_json):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
