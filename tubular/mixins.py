@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import narwhals as nw
-import narwhals.selectors as ncs
 from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401 - required for nw.Schema see #455
 
@@ -15,9 +14,6 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
 )
 from tubular.types import DataFrame, NumericTypes
-
-if TYPE_CHECKING:
-    from narhwals.typing import FrameT
 
 
 class CheckNumericMixin:
@@ -229,13 +225,13 @@ class WeightColumnMixin:
             return_native,
         ), unit_weights_column
 
-    @nw.narwhalify
-    def check_weights_column(self, X: FrameT, weights_column: str) -> None:
+    @beartype
+    def check_weights_column(self, X: DataFrame, weights_column: str) -> None:
         """Validate weights column in dataframe.
 
         Parameters
         ----------
-        X: pd/pl/nw DataFrame
+        X: DataFrame
             input data
         weights_column: str
             name of weight column
@@ -248,50 +244,38 @@ class WeightColumnMixin:
             ValueError:
                 if weights_column is non-numeric
 
-            ValueError:
-                if weights_column is not strictly positive, contains nulls, or is infinite
-
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         # check if given weight is in columns
         if weights_column not in X.columns:
             msg = f"{self.classname()}: weight col ({weights_column}) is not present in columns of data"
             raise ValueError(msg)
 
         # check weight is numeric
-        if weights_column not in X.select(ncs.numeric()).columns:
+        schema = X.schema
+        if schema[weights_column] not in NumericTypes:
             msg = f"{self.classname()}: weight column must be numeric."
             raise ValueError(msg)
 
-        expr_min = nw.col(weights_column).min().alias("min")
-        expr_null = nw.col(weights_column).is_null().sum().alias("null_count")
-        expr_nan = nw.col(weights_column).is_nan().sum().alias("nan_count")
-        expr_finite = (nw.col(weights_column).is_finite()).all().alias("all_finite")
-        expr_sum = nw.col(weights_column).sum().alias("sum")
+    @staticmethod
+    @beartype
+    def get_valid_weights_filter_expr(weights_column: str) -> nw.Expr:
+        """Validate weights column in dataframe.
 
-        checks = X.select(expr_min, expr_null, expr_nan, expr_finite, expr_sum)
-        min_val, null_count, nan_count, all_finite, sum_val = checks.row(0)
+        Parameters
+        ----------
+        weights_column: str
+            name of weight column
 
-        # check weight is positive
-        if min_val < 0:
-            msg = f"{self.classname()}: weight column must be positive"
-            raise ValueError(msg)
+        Returns
+        -------
+            nw.Expr: expression to be used for filtering down to valid weights rows
 
-        if (
-            # check weight non-None
-            null_count != 0
-            or
-            # check weight non-NaN - polars differentiates between None and NaN
-            nan_count != 0
-        ):
-            msg = f"{self.classname()}: weight column must be non-null"
-            raise ValueError(msg)
+        """
+        expr_ge_0 = nw.col(weights_column) > 0
+        expr_not_null = ~nw.col(weights_column).is_null()
+        expr_not_nan = ~nw.col(weights_column).is_nan()
+        expr_finite = nw.col(weights_column).is_finite()
 
-        # check weight not inf
-        if not all_finite:
-            msg = f"{self.classname()}: weight column must not contain infinite values."
-            raise ValueError(msg)
-
-        # # check weight not all 0
-        if sum_val == 0:
-            msg = f"{self.classname()}: total sample weights are not greater than 0"
-            raise ValueError(msg)
+        return expr_ge_0 & expr_not_null & expr_not_nan & expr_finite

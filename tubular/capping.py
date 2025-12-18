@@ -8,6 +8,7 @@ from typing import Annotated, Optional
 
 import narwhals as nw
 import numpy as np
+import pandas as pd
 from beartype import beartype
 from beartype.vale import Is
 
@@ -220,6 +221,28 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 msg = f"{self.classname()}: both values are None for key {k}"
                 raise ValueError(msg)
 
+    def _check_for_failed_fit(self) -> None:
+        """Check if fit failed to find needed attrs.
+
+        This is detected by checking self.quantile_capping_values are None where values were expected.
+
+        Raises
+        ------
+            ValueError: if quantile_capping_values have fit as None where values were expected
+
+        """
+        for col in self.quantiles:
+            failed_columns = []
+            for i, init_value in enumerate(self.quantiles[col]):
+                fit_value = self.quantile_capping_values[col][i]
+                if (not pd.isna(init_value)) and pd.isna(fit_value):
+                    failed_columns.append(col)
+                    break
+
+        if failed_columns:
+            msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+            raise ValueError(msg)
+
     @block_from_json
     @beartype
     def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
@@ -261,6 +284,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         """
         super().fit(X, y)
 
+        X = _convert_dataframe_to_narwhals(X)
+
         backend = nw.get_native_namespace(X)
 
         weights_column = self.weights_column
@@ -271,6 +296,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 return_native=False,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
+
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            weights_column
+        )
+
+        X = X.filter(valid_weights_filter_expr)
 
         self.quantile_capping_values = {}
 
@@ -286,6 +317,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 self.quantile_capping_values[col] = cap_values
 
                 self._replacement_values = copy.deepcopy(self.quantile_capping_values)
+
+            self._check_for_failed_fit()
 
         else:
             warnings.warn(
@@ -393,7 +426,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         quantiles: list[Number],
         values_column: str,
         weights_column: str,
-    ) -> list[Number]:
+    ) -> list[Optional[Number]]:
         """Calculate weighted quantiles.
 
         This method is adapted from the "Completely vectorized numpy solution" answer from user
@@ -494,8 +527,15 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         weighted_quantiles = results_dict[weights_column].to_numpy()
         values = results_dict[values_column].to_numpy()
 
+        interp_quantiles = (
+            np.interp(quantiles, weighted_quantiles, values)
+            # if no rows have passed filters, return None
+            if len(values) > 0
+            else [None] * len(quantiles)
+        )
+
         return [
-            float(value) for value in np.interp(quantiles, weighted_quantiles, values)
+            float(value) if value is not None else value for value in interp_quantiles
         ]
 
     @beartype
@@ -1067,6 +1107,10 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 return_native=False,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            weights_column
+        )
+        X = X.filter(valid_weights_filter_expr)
 
         # need to overwrite attr for fit method to work
         self.weights_column = weights_column
