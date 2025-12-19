@@ -79,7 +79,7 @@ class BaseGenericDateTransformer(
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -204,7 +204,7 @@ class BaseGenericDateTransformer(
 
         Parameters
         ----------
-        X: pd/pl/nw.DataFrame
+        X: DataFrame
             Data to validate
 
         datetime_only: bool
@@ -296,7 +296,7 @@ class BaseGenericDateTransformer(
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data containing self.columns
 
         datetime_only: bool
@@ -308,7 +308,7 @@ class BaseGenericDateTransformer(
 
         Returns
         -------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Validated data
 
         Examples
@@ -394,7 +394,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -444,7 +444,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data containing self.columns
 
         return_native_override: Optional[bool]
@@ -453,7 +453,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
 
         Returns
         -------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Validated data
 
         Example:
@@ -572,7 +572,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -668,12 +668,12 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data containing self.columns
 
         Returns
         -------
-        pd/pl/nw.DataFrame:
+        DataFrame:
             dataframe with added date difference column
 
         Examples
@@ -813,7 +813,7 @@ class ToDatetimeTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -883,18 +883,18 @@ class ToDatetimeTransformer(BaseTransformer):
         )
         return json_dict
 
-    @nw.narwhalify
-    def transform(self, X: FrameT) -> FrameT:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Convert specified column to datetime using pd.to_datetime.
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data with column to transform.
 
         Returns
         -------
-        pd/pl/nw.DataFrame:
+        DataFrame:
             dataframe with provided columns converted to datetime
 
         Examples
@@ -923,11 +923,15 @@ class ToDatetimeTransformer(BaseTransformer):
         ```
 
         """
-        X = nw.from_native(super().transform(X))
+        X = _convert_dataframe_to_narwhals(X)
 
-        return X.with_columns(
+        X = super().transform(X, return_native_override=False)
+
+        X = X.with_columns(
             nw.col(col).str.to_datetime(format=self.time_format) for col in self.columns
         )
+
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register
@@ -1261,7 +1265,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -1497,12 +1501,12 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data with columns to extract info from.
 
         Returns
         -------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Transformed input X with added columns of extracted information.
 
         Example:
@@ -1640,6 +1644,9 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     polars_compatible : bool
         Indicates whether transformer has been converted to polars/pandas agnostic framework
 
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
     jsonable: bool
         Indicates if transformer supports to/from_json methods
 
@@ -1671,7 +1678,11 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     INCLUDE_OPTIONS: ClassVar[list[str]] = ["hour", "day", "month", "year"]
 
     polars_compatible = True
+
+    lazyframe_compatible = True
+
     FITS = False
+
     jsonable = True
 
     @beartype
@@ -1777,12 +1788,12 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with columns to extract info from.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with added columns of extracted information.
 
 

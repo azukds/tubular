@@ -11,6 +11,9 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -45,9 +48,8 @@ class TestInit(ColumnStrListInitTests):
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("value", [{"a": 1}, [1, 2]])
-    def test_value_arg_type(value):
+    def test_value_arg_type(self, value):
         """Tests that check arg value type."""
 
         with pytest.raises(BeartypeCallHintParamViolation):
@@ -69,26 +71,31 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_value_set_in_transform(library, value, from_json):
+    def test_value_set_in_transform(self, library, value, from_json, lazy):
         """Test that transform sets the value as expected."""
 
         df = d.create_df_2(library)
 
         x = SetValueTransformer(columns=["a", "b"], value=value)
 
-        if from_json:
-            x = _handle_from_json(x, from_json=from_json)
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+            return
 
-        df_transformed = x.transform(df)
+        x = _handle_from_json(x, from_json=from_json)
+
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
         expected = expected_df_1(library, value)
 
         assert_frame_equal_dispatch(
-            df1=df_transformed,
+            df1=_collect_frame(df_transformed, lazy=lazy),
             df2=expected,
         )
 
@@ -104,9 +111,8 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     def setup_class(cls):
         cls.transformer_name = "SetValueTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("value", ["a", 1, 1.0, None, np.nan])
-    def test_to_json_returns_correct_dict(value):
+    def test_to_json_returns_correct_dict(self, value):
         """Test that to_json is working as expected."""
         transformer = SetValueTransformer(columns="a", value=value)
 

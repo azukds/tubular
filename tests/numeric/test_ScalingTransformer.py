@@ -17,8 +17,7 @@ class TestInit(BaseNumericTransformerInitTests):
         cls.transformer_name = "ScalingTransformer"
         cls.scaler_type = "min_max"
 
-    @staticmethod
-    def test_invalid_scaler_type():
+    def test_invalid_scaler_type(self):
         """Test that an exception is raised for an invalid scaler type."""
         with pytest.raises(
             ValueError,
@@ -44,8 +43,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         cls.transformer_name = "ScalingTransformer"
         cls.scaler_type = "min_max"
 
-    @staticmethod
-    def test_min_max_scaling():
+    def test_min_max_scaling(self):
         """Test min-max scaling works correctly."""
         df = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         transformer = ScalingTransformer(columns=["a", "b"], scaler_type="min_max")
@@ -55,8 +53,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         expected_df = pd.DataFrame({"a": [0, 0.5, 1], "b": [0, 0.5, 1]})
         pd.testing.assert_frame_equal(transformed_df, expected_df)
 
-    @staticmethod
-    def test_standard_scaling():
+    def test_standard_scaling(self):
         """Test standard scaling works correctly."""
         df = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         transformer = ScalingTransformer(columns=["a", "b"], scaler_type="standard")
@@ -71,8 +68,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         )
         pd.testing.assert_frame_equal(transformed_df, expected_df)
 
-    @staticmethod
-    def test_max_abs_scaling():
+    def test_max_abs_scaling(self):
         """Test max absolute scaling works correctly."""
         df = pd.DataFrame({"a": [-3, -2, -1], "b": [1, 2, 3]})
         transformer = ScalingTransformer(columns=["a", "b"], scaler_type="max_abs")
@@ -82,8 +78,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         expected_df = pd.DataFrame({"a": [-1, -2 / 3, -1 / 3], "b": [1 / 3, 2 / 3, 1]})
         pd.testing.assert_frame_equal(transformed_df, expected_df)
 
-    @staticmethod
-    def test_transform_min_max_raises():
+    def test_transform_min_max_raises(self):
         """Test that transform scales negative values correctly with MinMaxScaler."""
         df = pd.DataFrame({"a": [-3, -2, -1]})  # Example for Min-Max scalingcode
         transformer = ScalingTransformer(columns=["a"], scaler_type="min_max")
@@ -97,8 +92,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
         pd.testing.assert_frame_equal(transformed_df, expected_df)
 
-    @staticmethod
-    def test_custom_scaler_args():
+    def test_custom_scaler_args(self):
         """Test that custom arguments passed to the scaler are correctly applied."""
         df = pd.DataFrame({"a": [0, 1, 2]})
         transformer = ScalingTransformer(

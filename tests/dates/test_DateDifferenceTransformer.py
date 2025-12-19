@@ -19,6 +19,9 @@ from tests.dates.test_BaseGenericDateTransformer import (
     GenericDatesMixinTransformTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -37,8 +40,7 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
-    @staticmethod
-    def test_units_values_error():
+    def test_units_values_error(self):
         """Test that an exception is raised if the value of inits is not one of accepted_values_units."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -350,8 +352,11 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DateDifferenceTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         "unit",
         [
@@ -373,7 +378,9 @@ class TestTransform(
             "polars",
         ],
     )
-    def test_expected_output_units(generic_expected_df, unit, library, from_json):
+    def test_expected_output_units(
+        self, generic_expected_df, unit, library, from_json, lazy
+    ):
         """Test that the output is as expected from transform, when units are D, h, m, s, week, fortnight, lunar_month, common_year, or custom_days.
 
         This tests positive month gaps, negative month gaps, and missing values.
@@ -391,11 +398,20 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json=from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+            return
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
-    @staticmethod
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, lazy=lazy),
+        )
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -410,7 +426,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls(df, expected, from_json):
+    def test_expected_output_nulls(self, df, expected, from_json, lazy):
         """Test that the output is expected from transform, when columns have nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -421,11 +437,20 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json=from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
-    @staticmethod
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, lazy=lazy),
+        )
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -440,7 +465,7 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_nulls2(df, expected, from_json):
+    def test_expected_output_nulls2(self, df, expected, from_json, lazy):
         """Test that the output is expected from transform, when columns are nulls."""
         x = DateDifferenceTransformer(
             columns=["a", "b"],
@@ -451,9 +476,15 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json=from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
+
+        assert_frame_equal_dispatch(
+            expected,
+            _collect_frame(df_transformed, lazy=lazy),
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
