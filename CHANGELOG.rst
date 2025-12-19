@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- feat: turned on lazyframe_compatible for MappingTransformer and base classes, and setup lazy tests for these `#529 <https://github.com/azukds/tubular/issues/529>`_
 
 2.6.0 (19/12/2025)
 ------------------

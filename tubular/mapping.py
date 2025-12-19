@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from collections import OrderedDict
 from typing import Any, Literal, Optional, Union
 
@@ -301,7 +300,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -336,6 +335,8 @@ class BaseMappingTransformMixin(BaseTransformer):
         self.check_is_fitted(["mappings", "return_dtypes", "mappings_from_null"])
 
         X = _convert_dataframe_to_narwhals(X)
+
+        backend = nw.get_native_namespace(X).__name__
 
         return_native = self._process_return_native(return_native_override)
 
@@ -380,7 +381,8 @@ class BaseMappingTransformMixin(BaseTransformer):
         # (bool has special handling at end)
         mapping_exprs = {
             col: mapping_exprs[col].cast(getattr(nw, self.return_dtypes[col]))
-            if self.return_dtypes[col] != "Boolean"
+            # pandas bool types need special handling
+            if not (self.return_dtypes[col] == "Boolean" and backend == "pandas")
             else mapping_exprs[col]
             for col in mapping_exprs
         }
@@ -393,7 +395,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         # are returned in sensible (non object) types
         # maybe_convert_dtypes will not run on an expression,
         # so do need a second with_columns call
-        if "Boolean" in self.return_dtypes.values():
+        if "Boolean" in self.return_dtypes.values() and backend == "pandas":
             X = X.with_columns(
                 nw.maybe_convert_dtypes(X[col]).cast(
                     getattr(nw, self.return_dtypes[col]),
@@ -487,7 +489,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -544,26 +546,6 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         X = _convert_dataframe_to_narwhals(X)
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
-
-        mapped_columns = self.mappings.keys()
-
-        col_values_present = {}
-        for col in mapped_columns:
-            values_to_be_mapped = set(self.mappings[col].keys())
-            col_values_present[col] = set(X.get_column(col).unique())
-
-            if self.verbose:
-                if len(values_to_be_mapped.intersection(col_values_present[col])) == 0:
-                    warnings.warn(
-                        f"{self.classname()}: No values from mapping for {col} exist in dataframe.",
-                        stacklevel=2,
-                    )
-
-                if len(values_to_be_mapped.difference(col_values_present[col])) > 0:
-                    warnings.warn(
-                        f"{self.classname()}: There are values in the mapping for {col} that are not present in the dataframe",
-                        stacklevel=2,
-                    )
 
         X = BaseMappingTransformMixin.transform(
             self,
