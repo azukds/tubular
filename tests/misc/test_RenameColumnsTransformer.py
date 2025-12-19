@@ -24,8 +24,7 @@ class TestInit(ColumnStrListInitTests):
     def setup_class(cls):
         cls.transformer_name = "RenameColumnsTransformer"
 
-    @staticmethod
-    def test_invalid_new_column_names_error():
+    def test_invalid_new_column_names_error(self):
         "test expected error thrown if columns/new_column_names don't align"
         msg = "RenameColumnsTransformer: all provided columns must appear as keys in new_column_names"
         with pytest.raises(ValueError, match=msg):
@@ -47,7 +46,6 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "RenameColumnsTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize(
         "drop_original",
         [True, False],
@@ -65,6 +63,7 @@ class TestTransform(GenericTransformTests):
         ["pandas", "polars"],
     )
     def test_output(
+        self,
         library,
         from_json,
         lazy,

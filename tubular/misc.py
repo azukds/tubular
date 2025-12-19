@@ -59,7 +59,7 @@ class SetValueTransformer(BaseTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -157,9 +157,9 @@ class SetValueTransformer(BaseTransformer):
         ```
 
         """
-        X = super().transform(X, return_native_override=False)
-
         X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
 
         X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
 
