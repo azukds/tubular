@@ -12,6 +12,7 @@ from tests.base_tests import (
 )
 from tests.utils import (
     _check_if_skip_test,
+    _collect_frame,
     _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
@@ -171,11 +172,10 @@ class TestTransform(BaseMappingTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseMappingTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_X_returned(lazy, from_json, library):
+    def test_X_returned(self, lazy, from_json, library):
         """Test that X is returned from transform."""
 
         df = d.create_df_1(library=library)
@@ -192,19 +192,21 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         expected = nw.from_native(df).clone().to_native()
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy=lazy), expected)
 
         # Check outcomes for single rows
         df = nw.from_native(df)
         expected = nw.from_native(expected)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]], lazy=lazy).to_native()
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
 

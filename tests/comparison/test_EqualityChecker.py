@@ -44,8 +44,7 @@ class TestTransform(GenericTransformTests):
         "test_dataframe",
         [d.create_df_5(), d.create_df_2(), d.create_df_9()],
     )
-    @staticmethod
-    def test_expected_output(test_dataframe):
+    def test_expected_output(self, test_dataframe):
         """Tests that the output given by EqualityChecker transformer is as you would expect
         when all cases are neither all True nor False.
         """
@@ -69,8 +68,7 @@ class TestTransform(GenericTransformTests):
         "test_dataframe",
         [d.create_df_5(), d.create_df_2(), d.create_df_9()],
     )
-    @staticmethod
-    def test_expected_output_dropped(test_dataframe):
+    def test_expected_output_dropped(self, test_dataframe):
         """Tests that the output given by EqualityChecker transformer is as you would expect
         when all cases are neither all True nor False.
         """

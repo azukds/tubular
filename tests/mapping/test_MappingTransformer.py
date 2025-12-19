@@ -71,11 +71,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     def setup_class(cls):
         cls.transformer_name = "MappingTransformer"
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output(library, from_json, lazy):
+    def test_expected_output(self, library, from_json, lazy):
         """Test that transform is giving the expected output."""
 
         df = d.create_df_1(library=library)
@@ -114,11 +113,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
                 df_expected_row,
             )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_non_specified_values_unchanged(library, from_json, lazy):
+    def test_non_specified_values_unchanged(self, library, from_json, lazy):
         """Test that values not specified in mappings are left unchanged in transform."""
 
         df = d.create_df_1(library=library)
@@ -179,8 +177,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             ),
         ],
     )
-    @staticmethod
     def test_expected_dtype_conversions(
+        self,
         mapping,
         return_dtypes,
         library,
@@ -205,11 +203,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             f"dtype converted unexpectedly, expected {return_dtypes[column]} but got {actual_dtype}"
         )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_category_dtype_is_conserved(library, from_json, lazy):
+    def test_category_dtype_is_conserved(self, library, from_json, lazy):
         """This is a separate test due to the behaviour of category dtypes.
 
         See documentation of transform method
@@ -236,11 +233,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             "Categorical dtype not preserved for column b"
         )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_boolean_with_nulls(library, from_json, lazy):
+    def test_expected_output_boolean_with_nulls(self, library, from_json, lazy):
         """Test that output is as expected for tricky bool cases:
         e.g. mapping {True:1, False:0, None: 0}, potential causes of failure:
             - None being cast to False when these values are inserted into bool series

@@ -23,8 +23,7 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "TwoColumnOperatorTransformer"
 
-    @staticmethod
-    def test_axis_not_present_error():
+    def test_axis_not_present_error(self):
         """Checks that an error is raised if no axis element present in pd_method_kwargs dict."""
         with pytest.raises(
             ValueError,
@@ -32,8 +31,7 @@ class TestInit(
         ):
             TwoColumnOperatorTransformer("mul", ["a", "b"], "c", pd_method_kwargs={})
 
-    @staticmethod
-    def test_axis_not_valid_error():
+    def test_axis_not_valid_error(self):
         """Checks that an error is raised if no axis element present in pd_method_kwargs dict."""
         with pytest.raises(ValueError, match="pd_method_kwargs 'axis' must be 0 or 1"):
             TwoColumnOperatorTransformer(
@@ -62,8 +60,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
             ("pow", [1, 32, 729]),
         ],
     )
-    @staticmethod
-    def test_expected_output(pd_method_name, output):
+    def test_expected_output(self, pd_method_name, output):
         """Tests that the output given by TwoColumnOperatorTransformer is as you would expect."""
         expected = d.create_df_11()
         expected["c"] = output

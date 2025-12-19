@@ -83,7 +83,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = False
 
@@ -103,20 +103,19 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         """
         super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
     def fit(
         self,
-        X: FrameT,
+        X: DataFrame,
         y: nw.Series | None = None,
     ) -> BaseNumericTransformer:
         """Validate data and attributes prior to the child objects fit logic.
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             A dataframe containing the required columns
 
-        y : pd/pl.Series | None
+        y : Series | None
             Required for pipeline.
 
         Returns
@@ -141,9 +140,11 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         ```
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         super().fit(X, y)
 
-        CheckNumericMixin.check_numeric_columns(self, X[self.columns])
+        CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
         return self
 
@@ -157,7 +158,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to transform.
 
         return_native_override: Optional[bool]
@@ -166,7 +167,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Validated data
 
         Examples
@@ -591,7 +592,7 @@ class DifferenceTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     @beartype
     def __init__(
@@ -625,12 +626,12 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame containing the columns to operate on.
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
+        DataFrame
             Transformed DataFrame with the new column containing the subtraction results.
 
 
@@ -728,7 +729,7 @@ class RatioTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -787,12 +788,12 @@ class RatioTransformer(BaseNumericTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame containing the columns to operate on.
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
+        DataFrame
             Transformed DataFrame with the new column containing the division results.
 
         Examples

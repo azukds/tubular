@@ -57,8 +57,7 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_expected_output_for_str_and_int(mapping, library, lazy):
+    def test_expected_output_for_str_and_int(self, mapping, library, lazy):
         """Test outputs for str/int type inputs."""
 
         df = d.create_df_1(library=library)
@@ -95,8 +94,7 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_expected_output_for_cat(library, lazy):
+    def test_expected_output_for_cat(self, library, lazy):
         """Test that output for cat input"""
 
         df = d.create_df_2(library=library)
@@ -148,8 +146,7 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_expected_output_boolean_with_nulls(library, lazy):
+    def test_expected_output_boolean_with_nulls(self, library, lazy):
         """Test that output is as expected for tricky bool cases:
         e.g. mapping {True:1, False:0, None: 0}, potential causes of failure:
             - None being cast to False when these values are inserted into bool series
@@ -259,8 +256,7 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_can_map_values_to_none(library, lazy):
+    def test_can_map_values_to_none(self, library, lazy):
         """replace_strict  does  not support mappings values to None, so additional
         logic has been added. Explicitly test a case of mapping to None here.
 
@@ -309,8 +305,7 @@ class TestTransform(GenericTransformTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @staticmethod
-    def test_mappings_unchanged(mapping, library, lazy):
+    def test_mappings_unchanged(self, mapping, library, lazy):
         """Test that mappings is unchanged in transform."""
         df = d.create_df_1(library=library)
 
@@ -339,10 +334,9 @@ class TestTransform(GenericTransformTests):
             f"BaseMappingTransformer.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
         )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_original_df_not_updated(mapping, library, lazy):
+    def test_original_df_not_updated(self, mapping, library, lazy):
         """Test that the original dataframe is not transformed when transform method used."""
 
         df = d.create_df_10(library=library)
@@ -460,13 +454,12 @@ class TestTransform(GenericTransformTests):
             "expected empty frame transform to return empty frame"
         )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_can_handle_lots_of_mappings(library, lazy):
+    def test_can_handle_lots_of_mappings(self, library, lazy):
         """older implementations had issues erroring for too many mappings, include
         this stress test
         """

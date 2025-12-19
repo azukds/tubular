@@ -19,8 +19,7 @@ class TestInit(BaseNumericTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "InteractionTransformer"
 
-    @staticmethod
-    def test_invalid_input_type_errors():
+    def test_invalid_input_type_errors(self):
         """Test that an exceptions are raised for invalid input types."""
 
         with pytest.raises(
@@ -40,8 +39,7 @@ class TestInit(BaseNumericTransformerInitTests):
                 max_degree="2",
             )
 
-    @staticmethod
-    def test_invalid_input_value_errors():
+    def test_invalid_input_value_errors(self):
         """Test and exception is raised if degrees or columns provided are inconsistent."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -132,8 +130,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_1()),
     )
-    @staticmethod
-    def test_expected_output_default_assignment(df, expected):
+    def test_expected_output_default_assignment(self, df, expected):
         """Test default values and multiple columns assignment from transform gives expected results."""
         x = InteractionTransformer(columns=["a", "b", "c"])
 
@@ -149,8 +146,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_2()),
     )
-    @staticmethod
-    def test_expected_output_multiple_columns_assignment(df, expected):
+    def test_expected_output_multiple_columns_assignment(self, df, expected):
         """Test a multiple columns assignment from transform gives expected results."""
         x = InteractionTransformer(columns=["a", "b"])
 
