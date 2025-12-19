@@ -279,31 +279,31 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "columns", "add_1", "extra_exception_text"),
-        (
-            [pd.DataFrame({"a": [1, 2, 0]}), ["a"], False, ""],
-            [pd.DataFrame({"a": [1, 2, 0], "b": [1, 2, 3]}), ["a", "b"], False, ""],
-            [pd.DataFrame({"a": [1, 2, -1]}), ["a"], True, r" \(after adding 1\)"],
-            [
+        [
+            (pd.DataFrame({"a": [1, 2, 0]}), ["a"], False, ""),
+            (pd.DataFrame({"a": [1, 2, 0], "b": [1, 2, 3]}), ["a", "b"], False, ""),
+            (pd.DataFrame({"a": [1, 2, -1]}), ["a"], True, r" \(after adding 1\)"),
+            (
                 pd.DataFrame({"a": [1, 2, -1], "b": [1, 2, 3]}),
                 ["a", "b"],
                 True,
                 r" \(after adding 1\)",
-            ],
-            [pd.DataFrame({"b": [1, 2, -0.001]}), ["b"], False, ""],
-            [
+            ),
+            (pd.DataFrame({"b": [1, 2, -0.001]}), ["b"], False, ""),
+            (
                 pd.DataFrame({"b": [1, 2, -0.001], "a": [1, 2, 3]}),
                 ["a", "b"],
                 False,
                 "",
-            ],
-            [pd.DataFrame({"b": [1, 2, -1.001]}), ["b"], True, r" \(after adding 1\)"],
-            [
+            ),
+            (pd.DataFrame({"b": [1, 2, -1.001]}), ["b"], True, r" \(after adding 1\)"),
+            (
                 pd.DataFrame({"b": [1, 2, -1.001], "a": [1, 2, 3]}),
                 ["a", "b"],
                 True,
                 r" \(after adding 1\)",
-            ],
-        ),
+            ),
+        ],
     )
     def test_negative_values_raise_exception(
         self,

@@ -18,7 +18,7 @@ from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 # Note there are no tests that need inheriting from this file as the only difference is an expected transform output
 
 
-@pytest.fixture()
+@pytest.fixture
 def mapping():
     return {
         "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h", 9: None},

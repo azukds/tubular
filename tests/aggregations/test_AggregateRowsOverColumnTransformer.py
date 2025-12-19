@@ -19,7 +19,7 @@ class TestAggregateRowsOverColumnTransformerInit(TestBaseAggregationTransformerI
     def setup_class(cls):
         cls.transformer_name = "AggregateRowsOverColumnTransformer"
 
-    @pytest.mark.parametrize("key", (0, ["a"], {"a": 10}, None))
+    @pytest.mark.parametrize("key", [0, ["a"], {"a": 10}, None])
     def test_key_arg_errors(
         self,
         key,
@@ -74,7 +74,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        "aggregations, expected_data",
+        ("aggregations", "expected_data"),
         [
             # Test cases for "min", "max", "mean", "median", "sum", and "count"
             (

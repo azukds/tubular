@@ -27,7 +27,7 @@ class TestDifferenceTransformerInit(BaseNumericTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "DifferenceTransformer"
 
-    @pytest.mark.parametrize("columns", (["a"], ["a", "b", "c"], None, "a"))
+    @pytest.mark.parametrize("columns", [["a"], ["a", "b", "c"], None, "a"])
     def test_errors_if_not_two_columns(
         self,
         columns,
@@ -91,7 +91,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "a_values, b_values, expected_value",
+        ("a_values", "b_values", "expected_value"),
         [
             ([100], [80], 20),
             ([0], [80], [-80]),

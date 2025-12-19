@@ -25,22 +25,22 @@ from tests.utils import (
 from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
 
 
-@pytest.fixture()
+@pytest.fixture
 def timeofday_extractor():
     return DatetimeInfoExtractor(columns=["a"], include=["timeofday"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def timeofmonth_extractor():
     return DatetimeInfoExtractor(columns=["a"], include=["timeofmonth"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def timeofyear_extractor():
     return DatetimeInfoExtractor(columns=["a"], include=["timeofyear"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def dayofweek_extractor():
     return DatetimeInfoExtractor(columns=["a"], include=["dayofweek"])
 
