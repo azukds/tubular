@@ -3,7 +3,6 @@ import datetime
 
 import narwhals as nw
 import numpy as np
-import polars as pl
 import pytest
 from dateutil.tz import gettz
 
@@ -17,7 +16,12 @@ from tests.base_tests import (
     ReturnNativeTests,
 )
 from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
-from tests.utils import _check_if_skip_test, _handle_from_json, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _convert_to_lazy,
+    _handle_from_json,
+    dataframe_init_dispatch,
+)
 from tubular.dates import TIME_UNITS
 
 
@@ -25,6 +29,10 @@ class GenericDatesMixinTransformTests:
     """Generic tests for Dates Transformers"""
 
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -45,6 +53,7 @@ class GenericDatesMixinTransformTests:
         minimal_dataframe_lookup,
         bad_value,
         bad_type,
+        lazy,
         from_json,
     ):
         "Test that transform raises an error if columns contains non date types"
@@ -58,7 +67,7 @@ class GenericDatesMixinTransformTests:
 
         df = copy.deepcopy(minimal_dataframe_lookup[self.transformer_name])
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -75,10 +84,14 @@ class GenericDatesMixinTransformTests:
             with pytest.raises(
                 TypeError,
             ) as exc_info:
-                transformer.transform(nw.to_native(bad_df))
+                transformer.transform(nw.to_native(_convert_to_lazy(bad_df, lazy)))
 
             assert msg in str(exc_info.value)
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
@@ -95,6 +108,7 @@ class GenericDatesMixinTransformTests:
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        lazy,
         from_json,
     ):
         "Test that transform raises an error if one column is a date and one is datetime"
@@ -107,7 +121,7 @@ class GenericDatesMixinTransformTests:
 
         df = create_date_diff_different_dtypes(library=library)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -133,10 +147,14 @@ class GenericDatesMixinTransformTests:
         with pytest.raises(
             TypeError,
         ) as exc_info:
-            transformer.transform(df)
+            transformer.transform(_convert_to_lazy(df, lazy))
 
         assert msg in str(exc_info.value)
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas"])
     @pytest.mark.parametrize(
@@ -152,6 +170,7 @@ class GenericDatesMixinTransformTests:
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        lazy,
         from_json,
     ):
         """Test that transform raises an error if
@@ -182,7 +201,7 @@ class GenericDatesMixinTransformTests:
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -192,10 +211,14 @@ class GenericDatesMixinTransformTests:
         with pytest.raises(
             TypeError,
         ) as exc_info:
-            transformer.transform(df)
+            transformer.transform(_convert_to_lazy(df, lazy))
 
         assert msg in str(exc_info.value)
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_only_typechecks_self_columns(
@@ -203,6 +226,7 @@ class GenericDatesMixinTransformTests:
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        lazy,
         from_json,
     ):
         "Test that type checks are only performed on self.columns"
@@ -214,7 +238,7 @@ class GenericDatesMixinTransformTests:
 
         df = create_date_test_df(library=library)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -239,12 +263,8 @@ class GenericDatesMixinTransformTests:
             ),
         ).to_native()
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
         # test that this runs successfully
-        transformer.transform(df)
+        transformer.transform(_convert_to_lazy(df, lazy))
 
 
 class TestInit(
