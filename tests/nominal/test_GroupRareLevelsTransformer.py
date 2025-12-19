@@ -340,6 +340,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
+        x.rare_levels_record_ = {}
         x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
@@ -366,6 +367,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mapping dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"]}
+        x.rare_levels_record_ = {}
         x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 

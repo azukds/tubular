@@ -14,6 +14,9 @@ from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
 )
@@ -61,12 +64,16 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "DatetimeComponentExtractor"
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_output_for_subset_of_options(self, library, from_json):
+    def test_output_for_subset_of_options(self, library, from_json, lazy):
         """Test that correct df is returned after transformation."""
         # Create test data with explicit datetime values
         df = nw.from_native(d.create_date_test_df(library=library))
@@ -151,8 +158,11 @@ class TestTransform(
             include=["hour", "day"],
         )
 
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json)
-        transformed = transformer.transform(df.to_native())
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy))
 
         # Define the expected output DataFrame
         expected = df.clone()
@@ -190,25 +200,33 @@ class TestTransform(
         )
 
         # Assert that the transformed DataFrame matches the expected output
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, lazy), expected.to_native()
+        )
 
         # Test single row transformation
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_output_for_all_options(self, library, from_json):
+    def test_output_for_all_options(self, library, from_json, lazy):
         """Test that correct df is returned after transformation for all options, including JSON serialization."""
         # Create test data with explicit datetime values
         df = nw.from_native(d.create_date_test_df(library=library))
@@ -293,10 +311,13 @@ class TestTransform(
             include=["hour", "day", "month", "year"],
         )
 
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
         # Handle JSON serialization and deserialization
         transformer = _handle_from_json(transformer, from_json)
 
-        transformed = transformer.transform(df.to_native())
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy))
 
         # Define the expected output DataFrame
         expected = df.clone()
@@ -364,16 +385,20 @@ class TestTransform(
         )
 
         # Assert that the transformed DataFrame matches the expected output
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, lazy), expected.to_native()
+        )
 
         # Test single row transformation
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 

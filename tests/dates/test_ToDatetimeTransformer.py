@@ -11,6 +11,9 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -124,6 +127,10 @@ class TestTransform(GenericTransformTests):
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
@@ -137,7 +144,7 @@ class TestTransform(GenericTransformTests):
     )
     @pytest.mark.parametrize("from_json", [True, False])
     def test_expected_output_year_parsing(
-        self, library, columns, time_format, from_json
+        self, library, columns, time_format, from_json, lazy
     ):
         """Test input data is transformed as expected."""
 
@@ -148,11 +155,18 @@ class TestTransform(GenericTransformTests):
             columns=columns,
             time_format=time_format,
         )
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json)
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
-        assert_frame_equal_dispatch(expected[columns], df_transformed[columns])
+        assert_frame_equal_dispatch(
+            expected[columns],
+            _collect_frame(df_transformed, lazy)[columns],
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

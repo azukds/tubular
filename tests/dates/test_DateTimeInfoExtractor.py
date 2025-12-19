@@ -15,6 +15,9 @@ from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -203,10 +206,14 @@ class TestTransform(
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_single_column_output_for_all_options(self, library, from_json):
+    def test_single_column_output_for_all_options(self, library, from_json, lazy):
         """Test that correct df is returned after transformation."""
         df = d.create_date_test_df(library=library)
         df = nw.from_native(df)
@@ -290,9 +297,12 @@ class TestTransform(
             include=["timeofmonth", "timeofyear", "dayofweek", "timeofday"],
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
 
-        transformed = transformer.transform(df.to_native())
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy=lazy))
 
         expected = df.clone()
         expected = df.with_columns(
@@ -368,25 +378,34 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, lazy),
+            expected.to_native(),
+        )
 
         # also test single row
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy),
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_multi_column_output(self, library, from_json):
+    def test_multi_column_output(self, library, from_json, lazy):
         "test output for multiple columns"
 
         df = d.create_date_test_df(library=library)
@@ -542,9 +561,12 @@ class TestTransform(
             include=["timeofmonth"],
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
 
-        transformed = transformer.transform(df.to_native())
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        transformed = transformer.transform(_convert_to_lazy(df.to_native(), lazy=lazy))
 
         expected = df.clone()
         expected = df.with_columns(
@@ -580,25 +602,34 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, lazy),
+            expected.to_native(),
+        )
 
         # also test single row
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy),
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_custom_mappings_can_be_used(self, library, from_json):
+    def test_custom_mappings_can_be_used(self, library, from_json, lazy):
         "test output when custom mappings provided"
 
         df_dict = {
@@ -679,9 +710,12 @@ class TestTransform(
             },
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
 
-        transformed = transformer.transform(df)
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         expected = nw.from_native(df).clone()
         expected = expected.with_columns(
             nw.new_series(
@@ -766,16 +800,21 @@ class TestTransform(
             ),
         )
 
-        assert_frame_equal_dispatch(transformed, expected.to_native())
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed, lazy),
+            expected.to_native(),
+        )
 
         # also test single row
         df = nw.from_native(df)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy),
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 

@@ -10,7 +10,12 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import _check_if_skip_test, _handle_from_json
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+)
 from tubular.mapping import BaseMappingTransformer
 
 
@@ -108,6 +113,10 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_mappings_unchanged(
@@ -115,6 +124,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        lazy,
         from_json,
     ):
         """Test that mappings is unchanged in transform."""
@@ -131,12 +141,12 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
 
-        transformer.transform(df)
+        transformer.transform(_convert_to_lazy(df, lazy))
 
         assert mapping == transformer.mappings, (
             f"{self.transformer_name}.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
@@ -165,10 +175,14 @@ class TestTransform(BaseMappingTransformerTransformTests):
         cls.transformer_name = "BaseMappingTransformer"
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_1(), d.create_df_1()),
     )
-    def test_X_returned(self, df, expected):
+    def test_X_returned(self, df, expected, lazy):
         """Test that X is returned from transform."""
         mapping = {
             "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},
@@ -177,11 +191,14 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         x = BaseMappingTransformer(mappings=mapping)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy):
+            return
+
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
 
         ta.equality.assert_equal_dispatch(
             expected=expected,
-            actual=df_transformed,
+            actual=_collect_frame(df_transformed, lazy),
             msg="Check X returned from transform",
         )
 
