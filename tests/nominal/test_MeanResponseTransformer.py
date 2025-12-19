@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import product
 
 import narwhals as nw
@@ -8,6 +9,7 @@ from beartype.roar import BeartypeCallHintParamViolation
 from tests.base_tests import (
     ColumnStrListInitTests,
     DummyWeightColumnMixinTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -319,7 +321,12 @@ class TestPriorRegularisation:
         )
 
 
-class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
+class TestFit(
+    GenericFitTests,
+    WeightColumnFitMixinTests,
+    DummyWeightColumnMixinTests,
+    FailedFitWeightFilterTest,
+):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
@@ -573,15 +580,8 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             "MeanResponseTransformer should ignore unobserved levels"
         )
 
-
-class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
-    """Tests for MeanResponseTransformer.fit()."""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "MeanResponseTransformer"
-
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("with_invalid_weights", [True, False])
     @pytest.mark.parametrize(
         (
             "columns",
@@ -594,7 +594,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             # no prior, no weight
             (
                 ["b", "d", "f"],
-                [1, 1, 1, 1, 1, 1],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
                 0,
                 {
                     "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
@@ -606,7 +606,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             # no weight, prior
             (
                 ["b", "d", "f"],
-                [1, 1, 1, 1, 1, 1],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
                 5,
                 {
                     "b": {
@@ -632,7 +632,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             # weight, no prior
             (
                 ["b", "d", "f"],
-                [1, 2, 3, 4, 5, 6],
+                [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                 0,
                 {
                     "b": {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0},
@@ -644,7 +644,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             # prior and weight
             (
                 ["d", "f"],
-                [1, 1, 1, 2, 2, 2],
+                [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
                 5,
                 {
                     "d": {1: 7 / 2, 2: 11 / 3, 3: 23 / 6, 4: 4.0, 5: 30 / 7, 6: 32 / 7},
@@ -662,27 +662,69 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         prior,
         expected_mappings,
         expected_mean,
+        with_invalid_weights,
     ):
         """Test that the mean response values learnt during fit are expected."""
-        df = create_MeanResponseTransformer_test_df(library=library)
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "b": ["a", "b", "c", "d", "e", "f"],
+            "c": ["a", "b", "c", "d", "e", "f"],
+            "d": [1, 2, 3, 4, 5, 6],
+            "e": [1, 2, 3, 4, 5, 6],
+            "f": [False, False, False, True, True, True],
+            "multi_level_response": [
+                "blue",
+                "blue",
+                "yellow",
+                "yellow",
+                "green",
+                "green",
+            ],
+        }
+
+        # use this argument to run the test again with
+        # some extra rows which should just be filtered/have no
+        # effect
+        full_weights_values = deepcopy(
+            weights_values
+        )  # was having issues with fixture being overwritten
+        if with_invalid_weights:
+            extra_rows = {
+                "a": [7.0, 8.0],
+                "b": ["c", "b"],
+                "c": ["d", "e"],
+                "d": [1, 3],
+                "e": [4, 5],
+                "f": [False, True],
+                "multi_level_response": ["yellow", "green"],
+            }
+
+            for key in df_dict:
+                df_dict[key] += extra_rows[key]
+
+            bad_weights = [-1, None]
+
+            full_weights_values += bad_weights
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("c").cast(nw.Categorical))
 
         df = nw.from_native(df)
 
         weights_column = "weights_column"
         df = df.with_columns(
-            nw.new_series(name=weights_column, values=weights_values, backend=library),
+            nw.new_series(
+                name=weights_column, values=full_weights_values, backend=library
+            ),
         ).to_native()
 
-        x = MeanResponseTransformer(columns=columns, prior=prior)
-
-        x.mappings = {}
-
-        x._fit_binary_response(
-            df,
-            x.columns,
-            weights_column=weights_column,
-            response_column="a",
+        x = MeanResponseTransformer(
+            columns=columns, prior=prior, weights_column=weights_column
         )
+
+        x.fit(df, df["a"])
 
         assert x.global_mean == expected_mean, (
             f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
@@ -691,6 +733,14 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         assert x.mappings == expected_mappings, (
             f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
         )
+
+
+class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
+    """Tests for MeanResponseTransformer.fit()."""
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "MeanResponseTransformer"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))

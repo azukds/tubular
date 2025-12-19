@@ -126,23 +126,6 @@ def create_df_5(library="pandas"):
     return df.to_native()
 
 
-def create_df_6(library="pandas"):
-    """Nulls in different positions to check summing weights by col with nulls."""
-
-    df_dict = {
-        "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
-        "b": ["a", "a", "a", "d", "e", "f", "g", None, None, None],
-        "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", None],
-    }
-
-    df = u.dataframe_init_dispatch(df_dict, library)
-
-    df = nw.from_native(df)
-    df = df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
-
-    return df.to_native()
-
-
 def create_df_7(library="pandas"):
     """Create simple DataFrame to use in other tests."""
 
@@ -184,6 +167,21 @@ def create_df_9(library="pandas"):
         "a": [1, 2, None, 4, None, 6],
         "b": [None, 5, 4, 3, 2, 1],
         "c": [3, 2, 1, 4, 5, 6],
+    }
+
+    return u.dataframe_init_dispatch(df_dict, library)
+
+
+def create_df_9_with_null_weight_row(library="pandas"):
+    """Create simple DataFrame to use in other tests.
+
+    This is a slight hack, to retrofit older tests using
+    'create_df_9' to also test the weight filtering functionality.
+    """
+    df_dict = {
+        "a": [1, 2, None, 4, None, 6, 3],
+        "b": [None, 5, 4, 3, 2, 1, 2],
+        "c": [3, 2, 1, 4, 5, 6, -1],
     }
 
     return u.dataframe_init_dispatch(df_dict, library)

@@ -1,4 +1,3 @@
-import narwhals as nw
 import numpy as np
 import pytest
 
@@ -6,6 +5,7 @@ import tests.test_data as d
 from tests import utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -28,7 +28,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
         cls.transformer_name = "MedianImputer"
 
 
-class TestFit(WeightColumnFitMixinTests, GenericFitTests):
+class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterTest):
     """Generic tests for transformer.fit()"""
 
     @classmethod
@@ -40,21 +40,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
-        df = nw.from_native(df)
-        native_backend = nw.get_native_namespace(df)
-
-        # replace 'a' with all null values to trigger warning
-        df = df.with_columns(
-            nw.new_series(
-                name="d",
-                values=[None] * len(df),
-                backend=native_backend,
-            ),
-        )
-
-        df = df.to_native()
-
-        transformer = MedianImputer(columns=["a", "b", "c", "d"])
+        transformer = MedianImputer(columns=["a", "b", "c"])
 
         transformer.fit(df)
 
@@ -62,35 +48,19 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             "a": df["a"].median(),
             "b": df["b"].median(),
             "c": df["c"].median(),
-            "d": None,
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weighted(self, library):
         """Test that the impute values learnt during fit are expected - when using weights."""
-        df = d.create_df_9(library=library)
+        df = d.create_df_9_with_null_weight_row(library=library)
 
-        df = nw.from_native(df)
-        native_backend = nw.get_native_namespace(df)
-
-        # replace 'a' with all null values to trigger warning
-        df = df.with_columns(
-            nw.new_series(
-                name="d",
-                values=[None] * len(df),
-                backend=native_backend,
-            ),
-        )
-
-        df = df.to_native()
-
-        transformer = MedianImputer(columns=["a", "d"], weights_column="c")
+        transformer = MedianImputer(columns=["a"], weights_column="c")
 
         transformer.fit(df)
 
         assert transformer.impute_values_ == {
             "a": np.int64(4),
-            "d": None,
         }, "impute_values_ attribute"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
