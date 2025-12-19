@@ -40,6 +40,9 @@ Changed
 
 Changed
 ^^^^^^^
+- switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
+- feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
+- bug: fix issue in to_json method of GroupRareLevelsTransformer
 - turned on beartype for WeightsColumnMixin and associated transformers `#561 <https://github.com/azukds/tubular/issues/561>`_
 - feat: added `to_json` method to BaseCappingTransformer to enable dumping transformer state, including init attributes (`capping_values`, `quantiles`, `weights_column`) and fitted attributes (`quantile_capping_values`, `_replacement_values`) `#540 <https://github.com/azukds/tubular/pull/594>`_
 - feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>`_
@@ -71,8 +74,8 @@ Changed
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
 - feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
 - feat: added a new transformer called DatetimeComponentExtractor
-- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>`_
 - bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
 
 2.3.0 (18/11/2025)
 ------------------
