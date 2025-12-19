@@ -23,7 +23,8 @@ class TestInit(ColumnStrListInitTests):
 
     def test_start_encoding_not_int_error(self):
         """Test that an exception is raised if start_encoding is not an int."""
-        with pytest.raises(ValueError):
+        msg = f"{self.transformer_name}: start_encoding should be an integer"
+        with pytest.raises(ValueError, match=msg):
             NominalToIntegerTransformer(columns="a", start_encoding="a")
 
 

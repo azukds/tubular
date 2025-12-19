@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
 
 2.6.0 (19/12/2025)
 ------------------
