@@ -379,7 +379,7 @@ class TestTransform(
         )
 
         assert_frame_equal_dispatch(
-            _collect_frame(transformed, lazy),
+            _collect_frame(transformed, lazy=lazy),
             expected.to_native(),
         )
 
@@ -387,12 +387,12 @@ class TestTransform(
         df = nw.from_native(df)
         for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                _convert_to_lazy(df[[i]].to_native(), lazy),
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy),
             )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, lazy),
+                _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
 
@@ -603,7 +603,7 @@ class TestTransform(
         )
 
         assert_frame_equal_dispatch(
-            _collect_frame(transformed, lazy),
+            _collect_frame(transformed, lazy=lazy),
             expected.to_native(),
         )
 
@@ -611,12 +611,12 @@ class TestTransform(
         df = nw.from_native(df)
         for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                _convert_to_lazy(df[[i]].to_native(), lazy),
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy),
             )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, lazy),
+                _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
 
@@ -801,7 +801,7 @@ class TestTransform(
         )
 
         assert_frame_equal_dispatch(
-            _collect_frame(transformed, lazy),
+            _collect_frame(transformed, lazy=lazy),
             expected.to_native(),
         )
 
@@ -809,12 +809,12 @@ class TestTransform(
         df = nw.from_native(df)
         for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                _convert_to_lazy(df[[i]].to_native(), lazy),
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy),
             )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, lazy),
+                _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
 

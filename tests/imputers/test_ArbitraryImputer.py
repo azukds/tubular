@@ -98,10 +98,10 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         if col_type in {"Categorical", "String"}:
             msg_required_impute_value_type = "str"
@@ -126,7 +126,7 @@ class TestTransform(
             TypeError,
             match=msg,
         ):
-            transformer.transform(u._convert_to_lazy(df, lazy))
+            transformer.transform(u._convert_to_lazy(df, lazy=lazy))
 
     @pytest.mark.parametrize(
         "lazy",
@@ -166,17 +166,17 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
+            u._convert_to_lazy(df_nw.to_native(), lazy=lazy),
         )
 
         df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
+            u._collect_frame(df_transformed_native, lazy=lazy),
         )
 
         expected_dtype = df_nw[column].dtype
@@ -248,10 +248,10 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # for pandas, the all null column is inferred as string type
         # for polars, it is Unknown type, which triggers a warning
@@ -261,16 +261,16 @@ class TestTransform(
                 match=f"{self.transformer_name}: X contains all null columns { {column}!s}, types for these columns will be inferred as {type(transformer.impute_value)}",
             ):
                 df_transformed_native = transformer.transform(
-                    u._convert_to_lazy(df_nw.to_native(), lazy),
+                    u._convert_to_lazy(df_nw.to_native(), lazy=lazy),
                 )
 
         else:
             df_transformed_native = transformer.transform(
-                u._convert_to_lazy(df_nw.to_native(), lazy),
+                u._convert_to_lazy(df_nw.to_native(), lazy=lazy),
             )
 
         df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
+            u._collect_frame(df_transformed_native, lazy=lazy),
         )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
@@ -324,17 +324,17 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
+            u._convert_to_lazy(df_nw.to_native(), lazy=lazy),
         )
 
         df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
+            u._collect_frame(df_transformed_native, lazy=lazy),
         )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
@@ -388,7 +388,7 @@ class TestTransform(
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        if u._check_if_skip_test(transformer, df2, lazy, from_json):
+        if u._check_if_skip_test(transformer, df2, lazy=lazy, from_json=from_json):
             return
 
         transformer.impute_values_ = impute_values_dict
@@ -398,14 +398,14 @@ class TestTransform(
 
         transformer.columns = ["b", "c"]
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy))
+        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy=lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
-            u._collect_frame(df_transformed, lazy),
+            u._collect_frame(df_transformed, lazy=lazy),
             expected_df_3,
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
@@ -417,12 +417,12 @@ class TestTransform(
 
         for i in range(len(df2)):
             df_transformed_row = transformer.transform(
-                u._convert_to_lazy(df2[[i]].to_native(), lazy),
+                u._convert_to_lazy(df2[[i]].to_native(), lazy=lazy),
             )
             df_expected_row = expected_df_3[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
-                u._collect_frame(df_transformed_row, lazy),
+                u._collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
                 # this turns off checks for category metadata like ordering
                 # this transformer will convert an unordered pd categorical to ordered
@@ -461,21 +461,21 @@ class TestTransform(
         # Initialize the transformer
         transformer = initialized_transformers[self.transformer_name]
 
-        if u._check_if_skip_test(transformer, df2, lazy, from_json):
+        if u._check_if_skip_test(transformer, df2, lazy=lazy, from_json=from_json):
             return
 
         transformer.impute_values_ = impute_values_dict
         transformer.impute_value = "z"
         transformer.columns = ["b", "c"]
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy))
+        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy=lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
-            u._collect_frame(df_transformed, lazy),
+            u._collect_frame(df_transformed, lazy=lazy),
             expected_df_4,
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
@@ -487,12 +487,12 @@ class TestTransform(
 
         for i in range(len(df2)):
             df_transformed_row = transformer.transform(
-                u._convert_to_lazy(df2[[i]].to_native(), lazy),
+                u._convert_to_lazy(df2[[i]].to_native(), lazy=lazy),
             )
             df_expected_row = expected_df_4[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
-                u._collect_frame(df_transformed_row, lazy),
+                u._collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
                 # this turns off checks for category metadata like ordering
                 # this transformer will convert an unordered pd categorical to ordered
@@ -530,9 +530,9 @@ class TestTransform(
 
         transformer = ArbitraryImputer(impute_value=1, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         bad_types = dict(nw.from_native(df).select(nw.col(column)).schema.items())
 
@@ -547,7 +547,7 @@ class TestTransform(
             TypeError,
             match=msg,
         ):
-            transformer.transform(u._convert_to_lazy(df, lazy))
+            transformer.transform(u._convert_to_lazy(df, lazy=lazy))
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

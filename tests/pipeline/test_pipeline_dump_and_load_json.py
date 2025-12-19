@@ -13,8 +13,7 @@ class FakeTransformer:
 class TestPipelineDumpAndLoadJson:
     """Tests for dump_pipeline_to_json() and load_pipeline_from_json()."""
 
-    @staticmethod
-    def test_dump_pipeline_then_load_pipeline():
+    def test_dump_pipeline_then_load_pipeline(self):
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
 
         median_imputer = MedianImputer(columns=["b"])
@@ -50,8 +49,7 @@ class TestPipelineDumpAndLoadJson:
                 f"loaded pipeline does not match the original pipeline at step {i}, expected step {original_transformer_dict} but got {loaded_transformer_dict}"
             )
 
-    @staticmethod
-    def test_dump_pipeline_to_json_output():
+    def test_dump_pipeline_to_json_output(self):
         df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
 
         median_imputer = MedianImputer(columns=["b"])
@@ -99,8 +97,7 @@ class TestPipelineDumpAndLoadJson:
                 f"loaded json pipeline does not match the original pipeline at step {i}, expected step {expected_json[transformer]} but got {actual_json[transformer]}"
             )
 
-    @staticmethod
-    def test_dump_transformer_not_jsonable():
+    def test_dump_transformer_not_jsonable(self):
         good_transformer = MeanImputer(columns="a")
         bad_transformer = FakeTransformer()
 

@@ -70,7 +70,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         for i in range(len(columns)):
             col = columns[i]
@@ -84,7 +84,7 @@ class GenericDatesMixinTransformTests:
             with pytest.raises(
                 TypeError,
             ) as exc_info:
-                transformer.transform(nw.to_native(_convert_to_lazy(bad_df, lazy)))
+                transformer.transform(nw.to_native(_convert_to_lazy(bad_df, lazy=lazy)))
 
             assert msg in str(exc_info.value)
 
@@ -124,7 +124,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df = (
             nw.from_native(df)
@@ -147,7 +147,7 @@ class GenericDatesMixinTransformTests:
         with pytest.raises(
             TypeError,
         ) as exc_info:
-            transformer.transform(_convert_to_lazy(df, lazy))
+            transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert msg in str(exc_info.value)
 
@@ -204,14 +204,14 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         msg = "a type should be in ['Datetime', 'Date'] but got Unknown. Note, Datetime columns should have time_unit in ['us', 'ns', 'ms'] and time_zones from zoneinfo.available_timezones()"
 
         with pytest.raises(
             TypeError,
         ) as exc_info:
-            transformer.transform(_convert_to_lazy(df, lazy))
+            transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert msg in str(exc_info.value)
 
@@ -241,7 +241,7 @@ class GenericDatesMixinTransformTests:
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df = nw.from_native(df)
 
@@ -264,7 +264,7 @@ class GenericDatesMixinTransformTests:
         ).to_native()
 
         # test that this runs successfully
-        transformer.transform(_convert_to_lazy(df, lazy))
+        transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
 
 class TestInit(

@@ -88,14 +88,14 @@ class TestTransform(GenericTransformTests):
         if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
-        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
         expected = expected_df_1(library, value)
 
         assert_frame_equal_dispatch(
-            df1=_collect_frame(df_transformed, lazy),
+            df1=_collect_frame(df_transformed, lazy=lazy),
             df2=expected,
         )
 

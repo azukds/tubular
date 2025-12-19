@@ -144,9 +144,9 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
-        transformer.transform(_convert_to_lazy(df, lazy))
+        transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert mapping == transformer.mappings, (
             f"{self.transformer_name}.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
@@ -191,14 +191,14 @@ class TestTransform(BaseMappingTransformerTransformTests):
 
         x = BaseMappingTransformer(mappings=mapping)
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
-        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
         ta.equality.assert_equal_dispatch(
             expected=expected,
-            actual=_collect_frame(df_transformed, lazy),
+            actual=_collect_frame(df_transformed, lazy=lazy),
             msg="Check X returned from transform",
         )
 

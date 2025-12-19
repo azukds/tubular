@@ -71,17 +71,17 @@ class TestAggregateColumnsOverRowTransformerTransform(
         # transformer = transformer_setup(columns, aggregations, key, drop_original)
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df, lazy):
+        if u._check_if_skip_test(transformer, df, lazy=lazy):
             return
 
-        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
+        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy=lazy))
 
         # Create expected DataFrame using the library parameter
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         # Compare the transformed DataFrame with the expected DataFrame using the dispatch function
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+            u._collect_frame(transformed_df, lazy=lazy),
             expected_df,
         )
 
@@ -115,10 +115,12 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, single_row_df, lazy):
+        if u._check_if_skip_test(transformer, single_row_df, lazy=lazy):
             return
 
-        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
+        transformed_df = transformer.transform(
+            u._convert_to_lazy(single_row_df, lazy=lazy)
+        )
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -139,7 +141,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         )
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+            u._collect_frame(transformed_df, lazy=lazy),
             expected_df,
         )
 
@@ -167,10 +169,12 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
+        if u._check_if_skip_test(transformer, df_with_nulls, lazy=lazy):
             return
 
-        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
+        transformed_df = transformer.transform(
+            u._convert_to_lazy(df_with_nulls, lazy=lazy)
+        )
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -185,6 +189,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+            u._collect_frame(transformed_df, lazy=lazy),
             expected_df,
         )

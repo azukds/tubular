@@ -396,16 +396,16 @@ class TestTransform(
             custom_days_divider=25 if unit == "custom_days" else None,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
-        if _check_if_skip_test(x, df, lazy, from_json):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
-        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, lazy),
+            _collect_frame(df_transformed, lazy=lazy),
         )
 
     @pytest.mark.parametrize(
@@ -435,16 +435,16 @@ class TestTransform(
             verbose=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
-        if _check_if_skip_test(x, df, lazy, from_json):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
-        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, lazy),
+            _collect_frame(df_transformed, lazy=lazy),
         )
 
     @pytest.mark.parametrize(
@@ -474,16 +474,16 @@ class TestTransform(
             verbose=False,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
-        if _check_if_skip_test(x, df, lazy, from_json):
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
             return
 
-        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+        df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, lazy),
+            _collect_frame(df_transformed, lazy=lazy),
         )
 
 

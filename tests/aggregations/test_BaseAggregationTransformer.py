@@ -83,7 +83,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
         args["columns"] = ["a"]
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(transformer, test_df, lazy):
+        if _check_if_skip_test(transformer, test_df, lazy=lazy):
             return
 
         msg = r"attempting to call transformer on non-numeric columns \['a'\], which is not supported"
@@ -91,4 +91,4 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
             TypeError,
             match=msg,
         ):
-            transformer.transform(_convert_to_lazy(test_df, lazy))
+            transformer.transform(_convert_to_lazy(test_df, lazy=lazy))

@@ -83,12 +83,12 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = u._handle_from_json(transformer, from_json)
+        transformer = u._handle_from_json(transformer, from_json=from_json)
 
-        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
+        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy=lazy))
 
         # Expected output for basic division
         expected_data = {
@@ -109,7 +109,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         transformed_df = transformed_df.to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+            u._collect_frame(transformed_df, lazy=lazy),
             expected_df,
         )
 
@@ -162,12 +162,16 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, single_row_df, lazy, from_json):
+        if u._check_if_skip_test(
+            transformer, single_row_df, lazy=lazy, from_json=from_json
+        ):
             return
 
-        transformer = u._handle_from_json(transformer, from_json)
+        transformer = u._handle_from_json(transformer, from_json=from_json)
 
-        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
+        transformed_df = transformer.transform(
+            u._convert_to_lazy(single_row_df, lazy=lazy)
+        )
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -198,7 +202,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         transformed_df = transformed_df.to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+            u._collect_frame(transformed_df, lazy=lazy),
             expected_df,
         )
 
@@ -229,11 +233,15 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy, from_json):
+        if u._check_if_skip_test(
+            transformer, df_with_nulls, lazy=lazy, from_json=from_json
+        ):
             return
 
-        transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
+        transformer = u._handle_from_json(transformer, from_json=from_json)
+        transformed_df = transformer.transform(
+            u._convert_to_lazy(df_with_nulls, lazy=lazy)
+        )
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -254,6 +262,6 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
         transformed_df = transformed_df.to_native()
 
         u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+            u._collect_frame(transformed_df, lazy=lazy),
             expected_df,
         )
