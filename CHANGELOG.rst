@@ -27,22 +27,28 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.6.0 (unreleased)
+2.7.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- placeholder
+
+2.6.0 (19/12/2025)
 ------------------
 
 Changed
 ^^^^^^^
 - feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDatetimeTransformer, AggregateColumnsOverRowTransformer, AggregateRowsOverColumnTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer, DatetimeComponentExtractor `#586 <https://github.com/azukds/tubular/issues/586>`_
 - bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
+- feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
+- bug: fix issue with rare_levels_record_ attr in to_json method of GroupRareLevelsTransformer
 
 2.5.0 (16/12/2025)
 ------------------
 
 Changed
 ^^^^^^^
-- switched pre-commit for `prek <https://github.com/j178/prek>_` `#634 <https://github.com/azukds/tubular/issues/634>`_
-- feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
-- bug: fix issue in to_json method of GroupRareLevelsTransformer
 - turned on beartype for WeightsColumnMixin and associated transformers `#561 <https://github.com/azukds/tubular/issues/561>`_
 - feat: added `to_json` method to BaseCappingTransformer to enable dumping transformer state, including init attributes (`capping_values`, `quantiles`, `weights_column`) and fitted attributes (`quantile_capping_values`, `_replacement_values`) `#540 <https://github.com/azukds/tubular/pull/594>`_
 - feat: added tests for BaseCappingTransformer to verify correct behaviour when using transformers rebuilt from JSON `#540 <https://github.com/azukds/tubular/pull/594>`_
