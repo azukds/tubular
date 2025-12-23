@@ -46,6 +46,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_transform_basic_case_outputs(
         self,
         library,
@@ -54,6 +55,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         """Test transform method aggregates rows correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -73,7 +75,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         if u._check_if_skip_test(transformer, df, lazy):
             return
-
+        transformer = u._handle_from_json(transformer, from_json=from_json)
         transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Create expected DataFrame using the library parameter
@@ -87,12 +89,14 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_single_row(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -118,6 +122,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         if u._check_if_skip_test(transformer, single_row_df, lazy):
             return
 
+        transformer = u._handle_from_json(transformer, from_json=from_json)
         transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
 
         # Expected output for a single-row DataFrame
@@ -145,12 +150,14 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_with_nulls(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -169,7 +176,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         if u._check_if_skip_test(transformer, df_with_nulls, lazy):
             return
-
+        transformer = u._handle_from_json(transformer, from_json=from_json)
         transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
 
         # Expected output for a DataFrame with null values
