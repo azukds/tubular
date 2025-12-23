@@ -195,18 +195,24 @@ class TestPriorRegularisation:
 
         x.fit(X=df, y=y)
 
-        expected1 = (1 + 3 * 2.5) / (1 + 3)
+        # note, previously global mean was learnt during the fit
+        # call above and used inside _prior_regularisation
+        # now it is derived as an expression inside
+        # _prior_regularisation
+        expected1 = (1 + 3 * (5 / 3)) / (1 + 3)
 
-        expected2 = (2 + 3 * 2.5) / (2 + 3)
+        expected2 = (2 + 3 * (5 / 3)) / (2 + 3)
 
         expected = {"a": expected1, "b": expected2}
 
         weights_column = "weights"
-        response_column = "means"
+        encoded_column = "a__temporary_response"
+        response_column = "_temporary_response"
         column = "column"
         group_means_and_weights_dict = {
             column: ["a", "b"],
             response_column: [1, 2],
+            encoded_column: [1, 2],
             weights_column: [1, 2],
         }
 
@@ -215,12 +221,27 @@ class TestPriorRegularisation:
             library="pandas",
         )
 
-        output = x._prior_regularisation(
-            group_means_and_weights=group_means_and_weights_df,
-            column=column,
-            weights_column=weights_column,
-            response_column=response_column,
+        weighted_response_sum_over_groups_exprs = {
+            encoded_column: nw.col(encoded_column),
+        }
+
+        weight_sum_over_groups_exprs = {
+            "a": nw.col(weights_column),
+        }
+
+        output_exprs = x._prior_regularisation(
+            weighted_response_sum_over_groups_exprs,
+            weight_sum_over_groups_exprs,
+            weights_column,
         )
+
+        group_means_and_weights_df = nw.from_native(group_means_and_weights_df)
+        results = group_means_and_weights_df.select(**output_exprs)
+
+        output = {
+            "a": results.item(0, 0),
+            "b": results.item(1, 0),
+        }
 
         assert output == expected, (
             f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
@@ -249,11 +270,13 @@ class TestPriorRegularisation:
         expected = {"a": expected1, "b": expected2}
 
         weights_column = "weights"
-        response_column = "means"
+        encoded_column = "a__temporary_response"
+        response_column = "_temporary_response"
         column = "column"
         group_means_and_weights_dict = {
             column: ["a", "b"],
             response_column: [1, 2],
+            encoded_column: [1, 2],
             weights_column: [1, 2],
         }
 
@@ -262,12 +285,27 @@ class TestPriorRegularisation:
             library="pandas",
         )
 
-        output = x._prior_regularisation(
-            group_means_and_weights=group_means_and_weights_df,
-            column=column,
-            weights_column=weights_column,
-            response_column=response_column,
+        weighted_response_sum_over_groups_exprs = {
+            encoded_column: nw.col(encoded_column),
+        }
+
+        weight_sum_over_groups_exprs = {
+            "a": nw.col(weights_column),
+        }
+
+        output_exprs = x._prior_regularisation(
+            weighted_response_sum_over_groups_exprs,
+            weight_sum_over_groups_exprs,
+            weights_column,
         )
+
+        group_means_and_weights_df = nw.from_native(group_means_and_weights_df)
+        results = group_means_and_weights_df.select(**output_exprs)
+
+        output = {
+            "a": results.item(0, 0),
+            "b": results.item(1, 0),
+        }
 
         assert output == expected, (
             f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
@@ -294,11 +332,13 @@ class TestPriorRegularisation:
         expected = {"a": expected1, "b": expected2}
 
         weights_column = "weights"
-        response_column = "means"
+        encoded_column = "a__temporary_response"
+        response_column = "_temporary_response"
         column = "column"
         group_means_and_weights_dict = {
             column: ["a", "b"],
             response_column: [1, 2],
+            encoded_column: [1, 2],
             weights_column: [1, 2],
         }
 
@@ -307,12 +347,27 @@ class TestPriorRegularisation:
             library="pandas",
         )
 
-        output = x._prior_regularisation(
-            group_means_and_weights=group_means_and_weights_df,
-            column=column,
-            weights_column=weights_column,
-            response_column=response_column,
+        weighted_response_sum_over_groups_exprs = {
+            encoded_column: nw.col(encoded_column),
+        }
+
+        weight_sum_over_groups_exprs = {
+            "a": nw.col(weights_column),
+        }
+
+        output_exprs = x._prior_regularisation(
+            weighted_response_sum_over_groups_exprs,
+            weight_sum_over_groups_exprs,
+            weights_column,
         )
+
+        group_means_and_weights_df = nw.from_native(group_means_and_weights_df)
+        results = group_means_and_weights_df.select(**output_exprs)
+
+        output = {
+            "a": results.item(0, 0),
+            "b": results.item(1, 0),
+        }
 
         assert output == expected, (
             f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
@@ -573,14 +628,6 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             "MeanResponseTransformer should ignore unobserved levels"
         )
 
-
-class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
-    """Tests for MeanResponseTransformer.fit()."""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "MeanResponseTransformer"
-
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         (
@@ -588,7 +635,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             "weights_values",
             "prior",
             "expected_mappings",
-            "expected_mean",
         ),
         [
             # no prior, no weight
@@ -601,7 +647,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
                     "f": {False: 2.0, True: 5.0},
                 },
-                3.5,
             ),
             # no weight, prior
             (
@@ -627,7 +672,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     },
                     "f": {False: 47 / 16, True: 65 / 16},
                 },
-                3.5,
             ),
             # weight, no prior
             (
@@ -639,7 +683,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     "d": {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0, 5: 5.0, 6: 6.0},
                     "f": {False: 14 / 6, True: 77 / 15},
                 },
-                13 / 3,
             ),
             # prior and weight
             (
@@ -650,7 +693,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
                     "d": {1: 7 / 2, 2: 11 / 3, 3: 23 / 6, 4: 4.0, 5: 30 / 7, 6: 32 / 7},
                     "f": {False: 13 / 4, True: 50 / 11},
                 },
-                4.0,
             ),
         ],
     )
@@ -661,7 +703,6 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         weights_values,
         prior,
         expected_mappings,
-        expected_mean,
     ):
         """Test that the mean response values learnt during fit are expected."""
         df = create_MeanResponseTransformer_test_df(library=library)
@@ -673,20 +714,15 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             nw.new_series(name=weights_column, values=weights_values, backend=library),
         ).to_native()
 
-        x = MeanResponseTransformer(columns=columns, prior=prior)
+        x = MeanResponseTransformer(
+            columns=columns,
+            prior=prior,
+            weights_column=weights_column,
+        )
 
         x.mappings = {}
 
-        x._fit_binary_response(
-            df,
-            x.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
-
-        assert x.global_mean == expected_mean, (
-            f"global mean not learnt as expected, expected {expected_mean} but got {x.global_mean}"
-        )
+        x.fit(df, df["a"])
 
         assert x.mappings == expected_mappings, (
             f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
@@ -721,32 +757,15 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             weights_column=weights_column,
         )
 
-        x_prior.mappings = {}
-        x_no_prior.mappings = {}
+        x_prior.fit(df, df["a"])
 
-        x_prior._fit_binary_response(
-            df,
-            x_prior.columns,
-            response_column="a",
-            weights_column=weights_column,
-        )
-
-        x_no_prior._fit_binary_response(
-            df,
-            x_no_prior.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
+        x_no_prior.fit(df, df["a"])
 
         prior_mappings = x_prior.mappings
 
         no_prior_mappings = x_no_prior.mappings
 
-        global_mean = x_prior.global_mean
-
-        assert global_mean == x_no_prior.global_mean, (
-            "global means for transformers with/without priors should match"
-        )
+        global_mean = sum(df[weights_column] * df["a"]) / sum(df[weights_column])
 
         for col in prior_mappings:
             for value in prior_mappings[col]:
@@ -765,7 +784,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         ("low_weight", "high_weight"),
         ((1, 2), (2, 3), (3, 4), (10, 20)),
     )
-    def test_prior_logic_for_weights(self, low_weight, high_weight, library):  # noqa: PLR0914
+    def test_prior_logic_for_weights(self, low_weight, high_weight, library):
         "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
         df = create_MeanResponseTransformer_test_df(library=library)
 
@@ -801,32 +820,15 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             weights_column=weights_column,
         )
 
-        x_prior.mappings = {}
-        x_no_prior.mappings = {}
+        x_prior.fit(df, df["a"])
 
-        x_prior._fit_binary_response(
-            df,
-            x_prior.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
-
-        x_no_prior._fit_binary_response(
-            df,
-            x_no_prior.columns,
-            weights_column=weights_column,
-            response_column="a",
-        )
+        x_no_prior.fit(df, df["a"])
 
         prior_mappings = x_prior.mappings
 
         no_prior_mappings = x_no_prior.mappings
 
-        global_mean = x_prior.global_mean
-
-        assert global_mean == x_no_prior.global_mean, (
-            "global means for transformers with/without priors should match"
-        )
+        global_mean = sum(df["a"] * df[weights_column]) / sum(df[weights_column])
 
         low_weight_prior_encoding = prior_mappings["f"][False]
         high_weight_prior_encoding = prior_mappings["f"][True]
