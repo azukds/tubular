@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- added `to_json` method for BaseAggregationTransformer `#610 <https://github.com/azukds/tubular/issues/610>_`
 
 2.6.0 (19/12/2025)
 ------------------

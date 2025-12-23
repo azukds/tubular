@@ -3,10 +3,17 @@ import copy
 import narwhals as nw
 import pytest
 
-from tests import utils as u
 from tests.aggregations.test_BaseAggregationTransformer import (
     TestBaseAggregationTransformerInit,
     TestBaseAggregationTransformerTransform,
+)
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
 )
 
 
@@ -46,6 +53,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_transform_basic_case_outputs(
         self,
         library,
@@ -54,6 +62,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         """Test transform method aggregates rows correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -66,33 +75,35 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "c": [3, 4, 5, 6, 10],
         }
 
-        df = u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
         # transformer = transformer_setup(columns, aggregations, key, drop_original)
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy):
             return
-
-        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
+        transformer = _handle_from_json(transformer, from_json=from_json)
+        transformed_df = transformer.transform(_convert_to_lazy(df, lazy))
 
         # Create expected DataFrame using the library parameter
-        expected_df = u.dataframe_init_dispatch(expected_data, library)
+        expected_df = dataframe_init_dispatch(expected_data, library)
 
         # Compare the transformed DataFrame with the expected DataFrame using the dispatch function
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed_df, lazy),
             expected_df,
         )
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_single_row(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -105,7 +116,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "b": [2],
             "c": ["A"],
         }
-        single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
+        single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
 
         # cast none row to numeric type
         single_row_df = nw.from_native(single_row_df)
@@ -115,10 +126,11 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, single_row_df, lazy):
+        if _check_if_skip_test(transformer, single_row_df, lazy):
             return
 
-        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
+        transformer = _handle_from_json(transformer, from_json=from_json)
+        transformed_df = transformer.transform(_convert_to_lazy(single_row_df, lazy))
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -130,7 +142,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "a_b_mean": [2.0],
             "a_b_sum": [2.0],
         }
-        expected_df = u.dataframe_init_dispatch(expected_data, library)
+        expected_df = dataframe_init_dispatch(expected_data, library)
         # ensure none columns are numeric type
         expected_df = (
             nw.from_native(expected_df)
@@ -138,19 +150,21 @@ class TestAggregateColumnsOverRowTransformerTransform(
             .to_native()
         )
 
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed_df, lazy),
             expected_df,
         )
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_with_nulls(
         self,
         library,
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -163,14 +177,14 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "b": [None, 3.0, None, 5.0, 9.0],
             "c": ["A", "B", "A", "B", "A"],
         }
-        df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
+        df_with_nulls = dataframe_init_dispatch(df_with_nulls_dict, library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy):
+        if _check_if_skip_test(transformer, df_with_nulls, lazy):
             return
-
-        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
+        transformer = _handle_from_json(transformer, from_json=from_json)
+        transformed_df = transformer.transform(_convert_to_lazy(df_with_nulls, lazy))
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -182,9 +196,9 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "a_b_mean": [1.0, 3.0, 3.0, 5.0, 8.5],
             "a_b_sum": [1.0, 3.0, 3.0, 5.0, 17.0],
         }
-        expected_df = u.dataframe_init_dispatch(expected_data, library)
+        expected_df = dataframe_init_dispatch(expected_data, library)
 
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
+        assert_frame_equal_dispatch(
+            _collect_frame(transformed_df, lazy),
             expected_df,
         )
