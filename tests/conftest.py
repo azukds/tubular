@@ -310,6 +310,11 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "return_dtype": "Float32",  # Default dtype for the resulting column
         },
+        "WhenThenOtherwiseTransformer": {
+            "columns": ["a", "b"],
+            "when_column": "condition_col",
+            "then_column": "update_col",
+        },
     }
 
 
