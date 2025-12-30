@@ -1342,14 +1342,14 @@ class MeanResponseTransformer(
         full_expr_dict.update(prior_exprs)
         full_expr_dict.update(encoded_column_exprs)
 
-        results_dict = X_y.select(**full_expr_dict).to_dict(as_series=True)
+        results_dict = X_y.select(**full_expr_dict).to_dict(as_series=False)
 
         self.mappings.update(
             {
                 encoded_column: dict(
                     zip(
-                        results_dict[encoded_column].to_list(),
-                        results_dict[f"{encoded_column}_mapped"].to_list(),
+                        results_dict[encoded_column],
+                        results_dict[f"{encoded_column}_mapped"],
                     ),
                 )
                 for encoded_column in self.encoded_columns
