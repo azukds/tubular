@@ -6,7 +6,12 @@ from tests.base_tests import (
     DropOriginalInitMixinTests,
     GenericTransformTests,
 )
-from tests.utils import _check_if_skip_test, _convert_to_lazy, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _convert_to_lazy,
+    _handle_from_json,
+    dataframe_init_dispatch,
+)
 
 
 class TestBaseAggregationTransformerInit(
@@ -63,6 +68,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
             ["a", "b", "c"],
         ],
     )
+    @pytest.mark.parametrize("from_json", [True, False])
     def test_error_for_bad_col_types(
         self,
         library,
@@ -70,6 +76,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         lazy,
+        from_json,
     ):
         "test that errors are thrown at transform for non numeric columns"
 
@@ -85,7 +92,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
 
         if _check_if_skip_test(transformer, test_df, lazy):
             return
-
+        transformer = _handle_from_json(transformer, from_json=from_json)
         msg = r"attempting to call transformer on non-numeric columns \['a'\], which is not supported"
         with pytest.raises(
             TypeError,
