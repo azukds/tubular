@@ -1450,8 +1450,7 @@ class MeanResponseTransformer(
                     for c in self.encoded_columns:
                         X_temp = X_y.with_columns(**encoded_column_exprs)
                         X_temp = X_temp.sort(c)
-
-                        null_filter_expr = ~nw.col(
+                        X_temp = X_y.with_columns(**encoded_column_exprs).sort(c)
                             self.encoded_columns_to_columns[c]
                         ).is_null()
 
