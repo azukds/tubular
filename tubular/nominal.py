@@ -1103,7 +1103,7 @@ class MeanResponseTransformer(
                         * nw.lit(self.prior)
                     )
                 )
-                / (nw.col("weight_sum") + self.prior).cast(
+                / (nw.col("weight_sum") + nw.lit(self.prior)).cast(
                     getattr(nw, self.return_type),
                 )
             ).alias(encoded_column + "_mapped")
