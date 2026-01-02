@@ -1254,9 +1254,7 @@ class MeanResponseTransformer(
 
         y_vals = y.unique().to_list()
 
-        response_null_count = sum(pd.isna(val) for val in y_vals)
-
-        if response_null_count > 0:
+        if (response_null_count := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
