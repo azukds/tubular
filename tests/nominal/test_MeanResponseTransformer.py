@@ -181,205 +181,6 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
             MeanResponseTransformer(prior=-1)
 
 
-class TestPriorRegularisation:
-    "tests for _prior_regularisation method."
-
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_output1(self, library):
-        "Test output of method."
-
-        column="a"
-        x = MeanResponseTransformer(columns="a", prior=3)
-
-        df_dict = {"a": [1, 2]}
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-        y = nw.new_series(name="y", values=[2, 3], backend=library)
-
-        x.fit(X=df, y=y)
-
-        # note, previously global mean was learnt during the fit
-        # call above and used inside _prior_regularisation
-        # now it is derived as an expression inside
-        # _prior_regularisation
-        expected1 = (1 + 3 * (5 / 3)) / (1 + 3)
-
-        expected2 = (2 + 3 * (5 / 3)) / (2 + 3)
-
-        expected = {
-            column : {
-                "a": expected1, "b": expected2
-            }    
-            }
-
-        sum_weights_column = "weight_sum"
-        response_column="_temporary_response"
-        sum_weighted_response_column = f"{response_column}_weighted_sum"
-        group_means_and_weights_dict = {
-            column: ["a", "b"],
-            sum_weighted_response_column: [1, 2],
-            sum_weights_column: [1, 2],
-        }
-
-        group_means_and_weights_df = dataframe_init_dispatch(
-            dataframe_dict=group_means_and_weights_dict,
-            library="pandas",
-        )
-        print(group_means_and_weights_df)
-
-        group_means_and_weights_df=nw.from_native(group_means_and_weights_df)
-
-        global_means={
-            response_column: 
-            ((2*1)+(2*3))/(1+2)
-            }
-
-        groups={column: group_means_and_weights_df}
-
-        prior_outputs = x._prior_regularisation(
-            global_means,
-            groups,
-        )[column].to_dict(as_series=False)
-
-        output = {
-            column: dict(
-                zip(
-                    prior_outputs[column],
-                    prior_outputs[column+"_mapped"],
-                ),
-            )
-        }
-
-        assert output == expected, (
-            f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
-        )
-
-    # @pytest.mark.parametrize("library", ["pandas", "polars"])
-    # def test_output2(self, library):
-    #     "Test output of method - for category dtypes"
-    #     x = MeanResponseTransformer(columns="a", prior=0)
-
-    #     df_dict = {"a": ["a", "b"]}
-    #     df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-    #     df = nw.from_native(df)
-    #     df = df.with_columns(nw.col("a").cast(nw.Categorical))
-    #     df = nw.to_native(df)
-
-    #     y = nw.new_series(name="y", values=[2, 3], backend=library)
-
-    #     x.fit(X=df, y=y)
-
-    #     expected1 = (1) / (1)
-
-    #     expected2 = (2) / (2)
-
-    #     expected = {"a": expected1, "b": expected2}
-
-    #     weights_column = "weights"
-    #     encoded_column = "a__temporary_response"
-    #     response_column = "_temporary_response"
-    #     column = "column"
-    #     group_means_and_weights_dict = {
-    #         column: ["a", "b"],
-    #         response_column: [1, 2],
-    #         encoded_column: [1, 2],
-    #         weights_column: [1, 2],
-    #     }
-
-    #     group_means_and_weights_df = dataframe_init_dispatch(
-    #         dataframe_dict=group_means_and_weights_dict,
-    #         library="pandas",
-    #     )
-
-    #     weighted_response_sum_over_groups_exprs = {
-    #         encoded_column: nw.col(encoded_column),
-    #     }
-
-    #     weight_sum_over_groups_exprs = {
-    #         "a": nw.col(weights_column),
-    #     }
-
-    #     output_exprs = x._prior_regularisation(
-    #         weighted_response_sum_over_groups_exprs,
-    #         weight_sum_over_groups_exprs,
-    #         weights_column,
-    #     )
-
-    #     group_means_and_weights_df = nw.from_native(group_means_and_weights_df)
-    #     results = group_means_and_weights_df.select(**output_exprs)
-
-    #     output = {
-    #         "a": results.item(0, 0),
-    #         "b": results.item(1, 0),
-    #     }
-
-    #     assert output == expected, (
-    #         f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
-    #     )
-
-    # @pytest.mark.parametrize("library", ["pandas"])
-    # def test_output3(self, library):
-    #     "Test output of method - for pandas object dtype"
-    #     x = MeanResponseTransformer(columns="a", prior=0)
-
-    #     df_dict = {"a": ["a", "b"]}
-    #     df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-    #     df["a"] = df["a"].astype("object")
-
-    #     y = nw.new_series(name="y", values=[2, 3], backend=library)
-
-    #     x.fit(X=df, y=y)
-
-    #     expected1 = (1) / (1)
-
-    #     expected2 = (2) / (2)
-
-    #     expected = {"a": expected1, "b": expected2}
-
-    #     weights_column = "weights"
-    #     encoded_column = "a__temporary_response"
-    #     response_column = "_temporary_response"
-    #     column = "column"
-    #     group_means_and_weights_dict = {
-    #         column: ["a", "b"],
-    #         response_column: [1, 2],
-    #         encoded_column: [1, 2],
-    #         weights_column: [1, 2],
-    #     }
-
-    #     group_means_and_weights_df = dataframe_init_dispatch(
-    #         dataframe_dict=group_means_and_weights_dict,
-    #         library="pandas",
-    #     )
-
-    #     weighted_response_sum_over_groups_exprs = {
-    #         encoded_column: nw.col(encoded_column),
-    #     }
-
-    #     weight_sum_over_groups_exprs = {
-    #         "a": nw.col(weights_column),
-    #     }
-
-    #     output_exprs = x._prior_regularisation(
-    #         weighted_response_sum_over_groups_exprs,
-    #         weight_sum_over_groups_exprs,
-    #         weights_column,
-    #     )
-
-    #     group_means_and_weights_df = nw.from_native(group_means_and_weights_df)
-    #     results = group_means_and_weights_df.select(**output_exprs)
-
-    #     output = {
-    #         "a": results.item(0, 0),
-    #         "b": results.item(1, 0),
-    #     }
-
-    #     assert output == expected, (
-    #         f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
-    #     )
-
-
 class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
     @classmethod
     def setup_class(cls):
@@ -858,6 +659,69 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         high_ratio = high_weight_prior_mean_dist / high_weight_no_prior_mean_dist
         assert low_ratio <= high_ratio, (
             "encodings for categories with lower weights should be moved closer to the global mean than those with higher weights, for fixed prior"
+        )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("column_type", ["cat", "object", "default"])
+    @pytest.mark.parametrize("prior", [3, 0])
+    def test_simple_prior_cases(self, library, column_type, prior):
+        "Test simple cases using prior logic (adapted from tests in old TestPriorRegularisation class)."
+
+        column = "a"
+        weights_column = "weight"
+        x = MeanResponseTransformer(
+            columns=column, weights_column=weights_column, prior=prior
+        )
+
+        column_values = ["a", "b"]
+        target_values = [2, 3]
+        weight_values = [1, 2]
+        df_dict = {column: column_values, weights_column: weight_values}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        y = nw.new_series(name="y", values=target_values, backend=library)
+
+        if column_type == "cat":
+            df = nw.from_native(df)
+            df = df.with_columns(nw.col(column).cast(nw.Categorical))
+            df = nw.to_native(df)
+        elif column_type == "object" and library == "pandas":
+            df["a"] = df["a"].astype("object")
+
+        x.fit(X=df, y=y)
+
+        global_mean = (
+            (target_values[0] * weight_values[0])
+            + (target_values[1] * weight_values[1])
+        ) / sum(weight_values)
+
+        # note, previously global mean was learnt during the fit
+        # call above and used inside _prior_regularisation
+        # now it is derived as an expression inside
+        # _prior_regularisation
+        # formula: (weight*value + prior*global_mean)/(weight + prior)
+        expected1 = ((target_values[0] * weight_values[0]) + prior * (global_mean)) / (
+            weight_values[0] + prior
+        )
+
+        expected2 = ((target_values[1] * weight_values[1]) + prior * (global_mean)) / (
+            weight_values[1] + prior
+        )
+
+        expected = {column: {"a": expected1, "b": expected2}}
+
+        output = x.mappings
+
+        # polars doesn't guarantee complete precision, so will round
+        # before assert
+        # specify values here to fix dict order
+        values = ["a", "b"]
+        output = {
+            col: {value: round(output[col][value], 2) for value in values}
+            for col in output
+        }
+
+        assert output == expected, (
+            f"output of _prior_regularisation not as expected, expected {expected} but got {output}"
         )
 
 
