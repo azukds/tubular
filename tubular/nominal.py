@@ -1062,9 +1062,8 @@ class MeanResponseTransformer(
     @block_from_json
     def _prior_regularisation(
         self,
-        weighted_response_sum_over_groups_exprs: dict[str, nw.Expr],
-        weight_sum_over_groups_exprs: dict[str, nw.Expr],
-        weights_column: str,
+        global_means: dict[str, float],
+        groups: dict[str, nw.DataFrame],
     ) -> dict[str, nw.Expr]:
         """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
 
@@ -1075,14 +1074,6 @@ class MeanResponseTransformer(
         Parameters
         ----------
 
-        weighted_response_sum_over_groups_exprs: dict[str, nw.Expr]
-            expressions giving the weighted responses (one per level) summed over the column groups
-
-        weight_sum_over_groups_expr: dict[str, nw.Expr]
-            expressions giving the sum of weights over the column groups
-
-        weights_column: str
-            name of the weights column
 
         Returns
         -------
@@ -1094,34 +1085,32 @@ class MeanResponseTransformer(
 
         """
 
-        self.global_mean = {}
-
-        global_mean_exprs = _get_mean_calculation_expressions(
-            self.response_columns,
-            weights_column,
-        )
-
-        return {
+        exprs_dict= {
             encoded_column + "_mapped": (
-                weighted_response_sum_over_groups_exprs[
-                    f"{self.encoded_columns_to_columns[encoded_column]}_{self.encoded_columns_to_response_columns[encoded_column]}"
-                ]
+                (
+                nw.col(f"{self.encoded_columns_to_response_columns[encoded_column]}_weighted_sum")
                 + (
-                    global_mean_exprs[
+                    global_means[
                         self.encoded_columns_to_response_columns[encoded_column]
                     ]
                     * nw.lit(self.prior)
                 )
             )
             / (
-                weight_sum_over_groups_exprs[
-                    self.encoded_columns_to_columns[encoded_column]
-                ]
+                nw.col("weight_sum")
                 + self.prior
             ).cast(
                 getattr(nw, self.return_type),
             )
+            ).alias(encoded_column+"_mapped")
             for encoded_column in self.encoded_columns
+        }
+
+        return {
+            encoded_column: groups[
+                    self.encoded_columns_to_columns[encoded_column]
+                ].select(exprs_dict[encoded_column + "_mapped"], nw.col(self.encoded_columns_to_columns[encoded_column]))
+                for encoded_column in self.encoded_columns
         }
 
     @block_from_json
@@ -1170,7 +1159,7 @@ class MeanResponseTransformer(
         ]
 
     @block_from_json
-    def setup_fit_single_level(self, response_column: str) -> None:
+    def _setup_fit_single_level(self, response_column: str) -> None:
         """setup attrs needed for fit, for non-multi level case
 
         Parameters
@@ -1271,7 +1260,7 @@ class MeanResponseTransformer(
             self._setup_fit_multi_level(y_vals, response_column)
 
         else:
-            self.setup_fit_single_level(response_column)
+            self._setup_fit_single_level(response_column)
 
         self.encoded_columns_to_columns = {
             encoded_column: c
@@ -1306,7 +1295,7 @@ class MeanResponseTransformer(
 
         weighted_response_exprs = {
             "weighted_" + response_column: response_exprs[response_column]
-            * nw.col(weights_column)
+            * nw.col(weights_column).alias("weighted_"+response_column)
             for response_column in self.response_columns
         }
 
@@ -1314,46 +1303,59 @@ class MeanResponseTransformer(
         all_response_exprs.update(response_exprs)
         all_response_exprs.update(weighted_response_exprs)
 
-        # need to materialise these here in order to use .over with pandas
-        X_y = X_y.with_columns(**all_response_exprs)
+        # materialise these for global mean 
+        # calculations to work with
+        X_y=X_y.with_columns(**all_response_exprs)
 
-        # now get the weighted response per group
-        weighted_response_sum_over_groups_exprs = {
-            f"{c}_{response_column}": nw.col("weighted_" + response_column)
-            .sum()
-            .over(c)
-            for response_column in self.response_columns
-            for c in self.columns
-        }
-
-        # and the total weight per group
-        weight_sum_over_groups_exprs = {
-            c: nw.col(weights_column).sum().over(c) for c in self.columns
-        }
-
-        # the previous two then make up the inputs for our encoding algorithm
-        prior_exprs = self._prior_regularisation(
-            weighted_response_sum_over_groups_exprs,
-            weight_sum_over_groups_exprs,
+        global_means = {}
+        global_mean_exprs = _get_mean_calculation_expressions(
+            self.response_columns,
             weights_column,
         )
 
-        full_expr_dict = {}
-        full_expr_dict.update(prior_exprs)
-        full_expr_dict.update(encoded_column_exprs)
+        global_means=X_y.select(**global_mean_exprs).to_dict(as_series=False)
+        global_means={
+            response_column: global_means[response_column][0] for response_column in self.response_columns
+            }
 
-        results_dict = X_y.select(**full_expr_dict).to_dict(as_series=False)
+        # now get the weighted response per group
+        aggs = {
+            c: [
+                nw.col(weights_column).sum().alias("weight_sum"),
+            *[
+                    nw.col("weighted_"+binary_response_column).sum().alias(f"{binary_response_column}_weighted_sum")
+                    for binary_response_column in self.response_columns
+             ],
+            ]
+            for c in self.columns
+            }
 
+        groups = {
+            c: X_y.group_by(c).agg(aggs[c])
+            for c in self.columns
+        }
+
+        # the previous two then make up the inputs for our encoding algorithm
+        prior_encodings = self._prior_regularisation(
+            global_means,
+            groups,
+        )
+    
+        results_dict = {
+            c: prior_encodings[c].to_dict(as_series=False)
+            for c in prior_encodings
+        }
+        
         self.mappings.update(
-            {
-                encoded_column: dict(
-                    zip(
-                        results_dict[encoded_column],
-                        results_dict[f"{encoded_column}_mapped"],
-                    ),
-                )
-                for encoded_column in self.encoded_columns
-            },
+        {
+            encoded_column: dict(
+                zip(
+                    results_dict[encoded_column][self.encoded_columns_to_columns[encoded_column]],
+                    results_dict[encoded_column][encoded_column+"_mapped"],
+                ),
+            )
+        for encoded_column in self.encoded_columns
+        },
         )
 
         # set this attr up for BaseMappingTransformerMixin
