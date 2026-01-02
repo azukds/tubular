@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- feat: optimisation changes to fit method of MeanResponseTransformer `#565 <https://github.com/azukds/tubular/issues/565>`_
+- feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
 
 2.6.0 (19/12/2025)
 ------------------
