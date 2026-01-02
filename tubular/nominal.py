@@ -1448,24 +1448,24 @@ class MeanResponseTransformer(
                 # else, median
                 else:
                     for c in self.encoded_columns:
-                        X_temp = X_y.with_columns(**encoded_column_exprs)
-                        X_temp = X_temp.sort(c)
                         X_temp = X_y.with_columns(**encoded_column_exprs).sort(c)
+
+                        null_filter_expr = ~nw.col(
                             self.encoded_columns_to_columns[c]
                         ).is_null()
 
-                        unseen_level_exprs.update(
-                            {
-                                c: _get_median_calculation_expression(
-                                    initial_weights_expr=nw.col(weights_column).filter(
-                                        null_filter_expr
-                                    ),
-                                    initial_column_expr=mapping_expressions[c].filter(
-                                        null_filter_expr
-                                    ),
-                                ),
-                            },
+                        median_expr = _get_median_calculation_expression(
+                            initial_weights_expr=nw.col(weights_column).filter(
+                                null_filter_expr
+                            ),
+                            initial_column_expr=mapping_expressions[c].filter(
+                                null_filter_expr
+                            ),
                         )
+
+                        self.unseen_levels_encoding_dict[c] = X_temp.select(
+                            median_expr
+                        ).item(0, 0)
 
             # else, min/max
             else:
@@ -1476,13 +1476,15 @@ class MeanResponseTransformer(
                     },
                 )
 
-            unseen_level_results = X_y.select(**unseen_level_exprs).to_dict(
-                as_series=True,
-            )
+            # median will already have fit as it requires sorting/materialising
+            if self.unseen_level_handling != "median":
+                unseen_level_results = X_y.select(**unseen_level_exprs).to_dict(
+                    as_series=True,
+                )
 
-            self.unseen_levels_encoding_dict = {
-                c: unseen_level_results[c].item(0) for c in self.encoded_columns
-            }
+                self.unseen_levels_encoding_dict = {
+                    c: unseen_level_results[c].item(0) for c in self.encoded_columns
+                }
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
