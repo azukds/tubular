@@ -16,6 +16,7 @@ from tests.test_data import (
     create_object_df,
 )
 from tubular import base
+from tubular.comparison import ConditionEnum
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -314,6 +315,10 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "when_column": "condition_col",
             "then_column": "update_col",
+        },
+        "CompareTwoColumnsTransformer": {
+            "columns": ["a", "b"],
+            "condition": ConditionEnum.GREATER_THAN,
         },
     }
 
