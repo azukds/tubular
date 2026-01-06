@@ -87,7 +87,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -120,7 +120,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df_transformed = x.transform(df)
 
@@ -173,7 +173,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         df = d.create_df_1(library=library)
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = x.transform(df)
 
@@ -199,7 +199,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         x = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = x.transform(df)
 
@@ -232,7 +232,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             verbose=True,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         with pytest.warns(
             UserWarning,
@@ -265,7 +265,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             verbose=True,
         )
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         with pytest.warns(
             UserWarning,
@@ -367,7 +367,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 
@@ -388,7 +388,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
             verbose=True,
         )
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         with pytest.warns(
             UserWarning,
@@ -413,7 +413,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         # Guidance from pytest to use followiong syntax rather than pytest.warns(None)
         try:

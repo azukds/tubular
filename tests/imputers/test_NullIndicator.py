@@ -78,18 +78,18 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         columns = ["b", "c"]
         transformer = NullIndicator(columns=columns)
 
-        if _check_if_skip_test(transformer, df, lazy, from_json):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         df_transformed = transformer.transform(df)
 
-        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         # Check whole dataframes
         assert_frame_equal_dispatch(
-            _collect_frame(df_transformed, lazy),
+            _collect_frame(df_transformed, lazy=lazy),
             expected_df_1,
         )
 
@@ -98,12 +98,12 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         expected_df_1 = nw.from_native(expected_df_1)
         for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                _convert_to_lazy(df[[i]].to_native(), lazy),
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy),
             )
             df_expected_row = expected_df_1[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                _collect_frame(df_transformed_row, lazy),
+                _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
 

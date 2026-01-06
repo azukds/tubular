@@ -168,6 +168,7 @@ class BaseImputer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
+        *,
         return_native_override: Optional[bool] = None,
     ) -> DataFrame:
         """Impute missing values with values calculated from fit method.
@@ -214,7 +215,9 @@ class BaseImputer(BaseTransformer):
         """
         self.check_is_fitted("impute_values_")
 
-        return_native = self._process_return_native(return_native_override)
+        return_native = self._process_return_native(
+            return_native_override=return_native_override
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -227,7 +230,7 @@ class BaseImputer(BaseTransformer):
 
         X = X.with_columns(**transform_expressions)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=return_native)
 
 
 @register
@@ -288,8 +291,9 @@ class ArbitraryImputer(BaseImputer):
     @beartype
     def __init__(
         self,
-        impute_value: Union[int, float, str, bool],
         columns: Union[str, list[str]],
+        *,
+        impute_value: Union[int, float, str, bool],
         **kwargs: Optional[bool],
     ) -> None:
         """Initialise class instance.
@@ -572,7 +576,7 @@ class ArbitraryImputer(BaseImputer):
 
         X = X.with_columns(**transform_expressions)
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register

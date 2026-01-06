@@ -63,7 +63,7 @@ class GenericNominalTransformTests(GenericTransformTests):
             "b": {"a": 1, "c": 2, "d": 3, "e": 4, "f": 5},
         }
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         with pytest.raises(
             ValueError,
@@ -92,7 +92,7 @@ class GenericNominalTransformTests(GenericTransformTests):
 
         transformer.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
 
-        transformer = _handle_from_json(transformer, from_json)
+        transformer = _handle_from_json(transformer, from_json=from_json)
 
         _ = transformer.transform(df)
 
@@ -122,7 +122,7 @@ class GenericNominalTransformTests(GenericTransformTests):
 
         x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = nw.from_native(df)
         # take 0 rows from df
@@ -162,7 +162,7 @@ class GenericNominalTransformTests(GenericTransformTests):
 
         x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
 
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         # update to abnormal index
         df.index = [2 * i for i in df.index]

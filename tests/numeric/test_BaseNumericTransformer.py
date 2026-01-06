@@ -49,7 +49,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
 
         x = initialized_transformers[self.transformer_name]
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         x.columns = bad_cols
@@ -71,7 +71,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
                 f"{self.transformer_name}: The following columns are not numeric in X; {bad_cols}",
             ),
         ):
-            x.fit(_convert_to_lazy(df, lazy), df["c"])
+            x.fit(_convert_to_lazy(df, lazy=lazy), df["c"])
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -97,7 +97,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
         x = initialized_transformers[self.transformer_name]
         x.columns = cols
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         # add in 'target column' for fit
@@ -131,7 +131,7 @@ class BaseNumericTransformerFitTests(GenericFitTests):
             ),
         ).to_native()
 
-        x.fit(_convert_to_lazy(df, lazy), df["c"])
+        x.fit(_convert_to_lazy(df, lazy=lazy), df["c"])
 
 
 class BaseNumericTransformerTransformTests(
@@ -167,7 +167,7 @@ class BaseNumericTransformerTransformTests(
         x = initialized_transformers[self.transformer_name]
         x.columns = bad_cols
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         # add in 'target column' for and additional numeric column fit
@@ -203,7 +203,7 @@ class BaseNumericTransformerTransformTests(
                 rf"{self.transformer_name}: The following columns are not numeric in X; {x.columns}",
             ),
         ):
-            x.transform(_convert_to_lazy(df, lazy))
+            x.transform(_convert_to_lazy(df, lazy=lazy))
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -228,7 +228,7 @@ class BaseNumericTransformerTransformTests(
         x = initialized_transformers[self.transformer_name]
         x.columns = ["a", "b"]
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         # add in 'target column' for and additional numeric column fit
@@ -276,7 +276,7 @@ class BaseNumericTransformerTransformTests(
             )
             x.fit(numeric_df, numeric_df["c"])
 
-        x.transform(_convert_to_lazy(df, lazy))
+        x.transform(_convert_to_lazy(df, lazy=lazy))
 
 
 class TestInit(BaseNumericTransformerInitTests):

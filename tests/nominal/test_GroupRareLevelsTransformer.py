@@ -264,12 +264,12 @@ class TestTransform(GenericNominalTransformTests):
         x = GroupRareLevelsTransformer(columns=["b", "c"])
 
         x.fit(df)
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         x2 = GroupRareLevelsTransformer(columns=["b", "c"])
 
         x2.fit(df)
-        x2 = _handle_from_json(x2, from_json)
+        x2 = _handle_from_json(x2, from_json=from_json)
         x2.transform(df)
 
         actual = x2.non_rare_levels
@@ -299,7 +299,7 @@ class TestTransform(GenericNominalTransformTests):
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
         x.rare_levels_record_ = {}
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
@@ -326,7 +326,7 @@ class TestTransform(GenericNominalTransformTests):
         # set the mapping dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"]}
         x.rare_levels_record_ = {}
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
@@ -346,7 +346,7 @@ class TestTransform(GenericNominalTransformTests):
         x.fit(df)
         # overwrite columns to non str-like before transform, to trigger error
         x.columns = ["a"]
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         msg = re.escape(
             "GroupRareLevelsTransformer: transformer must run on str-like columns, but got non str-like {'a'}",
@@ -372,7 +372,7 @@ class TestTransform(GenericNominalTransformTests):
             unseen_levels_to_rare=False,
         )
         x.fit(df)
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
 
         df = nw.from_native(df)
         native_backend = nw.get_native_namespace(df)
@@ -410,7 +410,7 @@ class TestTransform(GenericNominalTransformTests):
         expected_removed_cats = ["c", "b"]
 
         x.fit(df)
-        x = _handle_from_json(x, from_json)
+        x = _handle_from_json(x, from_json=from_json)
         output_df = x.transform(df)
 
         output_categories = (

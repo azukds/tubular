@@ -59,7 +59,7 @@ class DatetimeMixinTransformTests:
 
         df = deepcopy(minimal_dataframe_lookup[self.transformer_name])
 
-        if _check_if_skip_test(transformer, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
         for i in range(len(columns)):
@@ -82,7 +82,7 @@ class DatetimeMixinTransformTests:
             with pytest.raises(
                 TypeError,
             ) as exc_info:
-                transformer.transform(nw.to_native(_convert_to_lazy(bad_df, lazy)))
+                transformer.transform(nw.to_native(_convert_to_lazy(bad_df, lazy=lazy)))
 
             assert msg in str(exc_info.value)
 
