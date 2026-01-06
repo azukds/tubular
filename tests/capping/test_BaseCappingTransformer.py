@@ -1,3 +1,5 @@
+import re
+
 import narwhals as nw
 import numpy as np
 import polars as pl
@@ -264,6 +266,14 @@ class GenericCappingFitTests(
             (
                 [1, 2, 3],
                 [1, 2, 1],
+                [0.1, 0.5],
+                [1, 1 + ((2 - 1) / (0.75 - 0.25)) * (0.5 - 0.25)],
+            ),
+            # repeat the above, but with an invalid weight
+            # row to be filtered out
+            (
+                [1, 2, 3, 5],
+                [1, 2, 1, -1],
                 [0.1, 0.5],
                 [1, 1 + ((2 - 1) / (0.75 - 0.25)) * (0.5 - 0.25)],
             ),  # lower value is 1 as this is the min in range
@@ -779,6 +789,44 @@ class GenericCappingTransformTests(GenericTransformTests):
                 df_transformed_row,
                 df_expected_row,
             )
+
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_failed_fit_error(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        minimal_dataframe_lookup,
+    ):
+        """Test error is thrown if all rows are filtered during fit.
+
+        Some special handling is needed here, so felt cleaner to overload than to edit
+        the usual mixin test of this name.
+        """
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        weight_column = "weight_column"
+        args["capping_values"] = None
+        args["quantiles"] = {"a": [0.01, 0.99]}
+        args["weights_column"] = weight_column
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        uninitialized_transformer = uninitialized_transformers[self.transformer_name]
+
+        df = nw.from_native(df)
+        df = df.with_columns(nw.lit(0).alias("weight_column"))
+        df = nw.to_native(df)
+
+        transformer = uninitialized_transformer(**args)
+
+        msg = re.escape(
+            f"fit has failed for columns {transformer.columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+        )
+        with pytest.raises(ValueError, match=msg):
+            transformer.fit(df, df["a"])
 
 
 class TestBaseCappingTransformerInit(GenericCappingInitTests):
