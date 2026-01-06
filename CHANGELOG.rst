@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
 - turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
 
 2.6.0 (19/12/2025)
@@ -117,7 +118,6 @@ Changed
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
-- feat: optimisation changes to MeanResponseTransformer
 - feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype
