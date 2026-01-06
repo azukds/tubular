@@ -90,7 +90,7 @@ def create_MeanResponseTransformer_test_df_unseen_levels(library="pandas"):
     return df.to_native()
 
 
-@pytest.fixture()
+@pytest.fixture
 def learnt_mapping_dict():
     full_dict = {}
 
@@ -113,7 +113,7 @@ def learnt_mapping_dict():
     return full_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def learnt_unseen_levels_encoding_dict_mean():
     return {
         "b": (1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0) / 6,
@@ -123,7 +123,7 @@ def learnt_unseen_levels_encoding_dict_mean():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def learnt_unseen_levels_encoding_dict_median():
     return {
         "b": 3.0,
@@ -133,7 +133,7 @@ def learnt_unseen_levels_encoding_dict_median():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def learnt_unseen_levels_encoding_dict_highest():
     return {
         "b": 6.0,
@@ -143,7 +143,7 @@ def learnt_unseen_levels_encoding_dict_highest():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def learnt_unseen_levels_encoding_dict_lowest():
     return {
         "b": 1.0,
@@ -153,7 +153,7 @@ def learnt_unseen_levels_encoding_dict_lowest():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def learnt_unseen_levels_encoding_dict_arbitrary():
     return {
         "b": 22.0,
@@ -693,7 +693,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
         )
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("prior", (1, 3, 5, 7, 9, 11, 100))
+    @pytest.mark.parametrize("prior", [1, 3, 5, 7, 9, 11, 100])
     def test_prior_logic(self, prior, library):
         "Test that for prior>0 encodings are closer to global mean than for prior=0."
         df = create_MeanResponseTransformer_test_df(library=library)
@@ -763,7 +763,7 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("low_weight", "high_weight"),
-        ((1, 2), (2, 3), (3, 4), (10, 20)),
+        [(1, 2), (2, 3), (3, 4), (10, 20)],
     )
     def test_prior_logic_for_weights(self, low_weight, high_weight, library):  # noqa: PLR0914
         "Test that for fixed prior a group with lower weight is moved closer to the global mean than one with higher weight."
@@ -1378,7 +1378,7 @@ class TestTransform(GenericTransformTests):
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        "prior, level, target, unseen_level_handling",
+        ("prior", "level", "target", "unseen_level_handling"),
         [
             (5, "all", "c", "mean"),
             (100, ["a", "b"], "c", "min"),

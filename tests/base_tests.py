@@ -152,7 +152,7 @@ class DropOriginalInitMixinTests:
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    @pytest.mark.parametrize("drop_original_column", (0, "a", ["a"], {"a": 10}, None))
+    @pytest.mark.parametrize("drop_original_column", [0, "a", ["a"], {"a": 10}, None])
     def test_drop_column_arg_errors(
         self,
         uninitialized_transformers,
@@ -232,7 +232,7 @@ class WeightColumnInitMixinTests:
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    @pytest.mark.parametrize("weights_column", (0, ["a"], {"a": 10}))
+    @pytest.mark.parametrize("weights_column", [0, ["a"], {"a": 10}])
     def test_weight_arg_errors(
         self,
         uninitialized_transformers,
@@ -587,7 +587,7 @@ class WeightColumnFitMixinTests:
         indirect=True,
     )
     @pytest.mark.parametrize(
-        "bad_weight_value, expected_message",
+        ("bad_weight_value", "expected_message"),
         [
             (np.nan, "weight column must be non-null"),
             (None, "weight column must be non-null"),
@@ -668,16 +668,17 @@ class WeightColumnFitMixinTests:
         df = df.with_columns(nw.lit("a").alias(weight_column))
         df = nw.to_native(df)
 
+        # using check_weights_column method to test correct error is raised for transformers that use weights
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["weights_column"] = weight_column
+
+        transformer = uninitialized_transformer(**args)
+
         with pytest.raises(
             ValueError,
             match=error,
         ):
-            # using check_weights_column method to test correct error is raised for transformers that use weights
-
-            args = minimal_attribute_dict[self.transformer_name].copy()
-            args["weights_column"] = weight_column
-
-            transformer = uninitialized_transformer(**args)
             transformer.fit(df, df["a"])
 
     @pytest.mark.parametrize(
@@ -706,16 +707,17 @@ class WeightColumnFitMixinTests:
         weight_column = "weight_column"
         error = rf"weight col \({weight_column}\) is not present in columns of data"
 
+        # using check_weights_column method to test correct error is raised for transformers that use weights
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["weights_column"] = weight_column
+
+        transformer = uninitialized_transformer(**args)
+
         with pytest.raises(
             ValueError,
             match=error,
         ):
-            # using check_weights_column method to test correct error is raised for transformers that use weights
-
-            args = minimal_attribute_dict[self.transformer_name].copy()
-            args["weights_column"] = weight_column
-
-            transformer = uninitialized_transformer(**args)
             transformer.fit(df, df["a"])
 
     @pytest.mark.parametrize(
@@ -1160,9 +1162,11 @@ class ColumnsCheckTests:
         if _check_if_skip_test(x, df, lazy=lazy, from_json=False):
             return
 
-        x.columns = ["a", "z"]
+        missing_col = "z"
+        x.columns = ["a", missing_col]
 
-        with pytest.raises(ValueError):
+        msg = f"variables {set(missing_col)} not in X"
+        with pytest.raises(ValueError, match=msg):
             x.columns_check(X=_convert_to_lazy(df, lazy))
 
 
