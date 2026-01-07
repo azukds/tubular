@@ -215,17 +215,11 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         # Create a single-row DataFrame
         single_row_df_dict = {
-            "a": [None],
+            "a": [30],
             "b": [2],
             "c": ["A"],
         }
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
-
-        # cast none row to numeric type
-        single_row_df = nw.from_native(single_row_df)
-        single_row_df = single_row_df.with_columns(
-            nw.col("a").cast(nw.Float64),
-        ).to_native()
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
@@ -262,7 +256,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         df = u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        # transformer = transformer_setup(columns, aggregations, key, drop_original)
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if u._check_if_skip_test(transformer, df, lazy):
