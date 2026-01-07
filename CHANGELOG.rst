@@ -32,7 +32,9 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- feat: set up benchmark testing for AggregateColumnsOverRowTransformer `#669 <https://github.com/azukds/tubular/pull/669>`_
+- feat: set up CI stage to assess benchmarks 
+- feat: set up github action to update benchmarks monthly
 
 2.6.0 (19/12/2025)
 ------------------
