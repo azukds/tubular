@@ -50,6 +50,14 @@ jobs:
           name: coverage-html-pytest-results-${{ matrix.python-version }}
           path: htmlcov
 
+      - name: benchmark regression check 
+        run: |
+          pytest -m benchmark \
+            --benchmark-columns=mean \
+            --benchmark-sort=mean \
+            --benchmark-compare=0001_baseline \
+            --benchmark-compare-fail=mean:10%
+
       - name: Update feature table
         run: |
           source ${{ matrix.python-version }}/bin/activate

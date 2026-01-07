@@ -45,6 +45,7 @@ dev = [
     "pytest>=5.4.1",
     "pytest-mock>=3.5.1",
     "pyarrow>=17.0.0",
+    "pytest-benchmark >= 5.2.3",
     "pytest-cov<=2.10.1",
     "prek",
     "ruff>=0.2.2",
@@ -206,7 +207,12 @@ fail_under = 80
 [tool.pytest.ini_options]
 
 # Additional Options (AddOpts) for pytest
-addopts = '--doctest-modules'
+# run doctest and skip benchmarking by default
+addopts = "--doctest-modules -m 'not benchmark'"
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
+markers = [
+    "benchmark: performance benchmarks"
+]
+

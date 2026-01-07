@@ -1,0 +1,38 @@
+name: Update benchmark baselines
+
+on:
+  schedule:
+    # monthly
+    - cron: 0 0 1 * *
+  workflow_dispatch: {} # manual trigger
+
+jobs:
+  update-baseline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+      steps:
+        - uses: actions/checkout@v4
+
+        - uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+        
+        - name: Install deps 
+          run: pip install -r requirements-dev.txt
+
+        - name: run benchmarks and replace baseline
+          run: |
+            rm -f .benchmarks/**/*baseline.json
+            pytest -m benchmark --benchmark-save=baseline
+
+        - name: create PR with updated benchmarks
+          uses: peter-evans/create-pull-request@v6
+          with:
+            commit-message: "update benchmarks"
+            title: "update benchmark baselines"
+            body: Automated benchmark baseline refresh.
+            branch: benchmark-baseline-update
+            delete-branch: True
