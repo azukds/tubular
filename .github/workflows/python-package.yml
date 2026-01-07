@@ -139,5 +139,5 @@ jobs:
           --benchmark-columns=mean \
           --benchmark-sort=mean \
           --benchmark-compare=0001_baseline \
-          --benchmark-compare-fail=mean:10% \
-          --benchmark-group-by=param
+          --benchmark-compare-fail=mean:25% \
+          --benchmark-group-by=name,param

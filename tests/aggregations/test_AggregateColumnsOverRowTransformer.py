@@ -1,4 +1,5 @@
 import copy
+from typing import ClassVar
 
 import narwhals as nw
 import numpy as np
@@ -192,6 +193,10 @@ class TestAggregateColumnsOverRowTransformerTransform(
             expected_df,
         )
 
+    # fix params between benchmark tests for fair comparisons
+    benchmark_columns: ClassVar = ["a", "b"]
+    benchmark_aggs: ClassVar = ["min", "max", "mean", "sum"]
+
     @pytest.mark.benchmark
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -205,8 +210,8 @@ class TestAggregateColumnsOverRowTransformerTransform(
     ):
         """benchmark performance for single row transforms"""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
-        args["aggregations"] = ["min", "max", "mean", "sum"]
+        args["columns"] = self.benchmark_columns
+        args["aggregations"] = self.benchmark_aggs
 
         # Create a single-row DataFrame
         single_row_df_dict = {
@@ -244,8 +249,8 @@ class TestAggregateColumnsOverRowTransformerTransform(
     ):
         """benchmark performance for many row transforms"""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
-        args["aggregations"] = ["mean", "min", "max"]
+        args["columns"] = self.benchmark_columns
+        args["aggregations"] = self.benchmark_aggs
 
         rng1 = np.random.default_rng(42)
         rng2 = np.random.default_rng(43)
