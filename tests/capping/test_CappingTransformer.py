@@ -10,7 +10,7 @@ from tests.capping.test_BaseCappingTransformer import (
     GenericCappingInitTests,
     GenericCappingTransformTests,
 )
-from tests.utils import dataframe_init_dispatch
+from tests.utils import benchmark_transform, dataframe_init_dispatch
 
 
 class TestInit(GenericCappingInitTests):
@@ -96,7 +96,7 @@ class TestTransform(GenericCappingTransformTests):
 
         transformer.fit(single_row_df)
 
-        _ = benchmark(transformer.transform, single_row_df)
+        _ = benchmark(benchmark_transform, transformer, single_row_df)
 
     @pytest.mark.benchmark
     @pytest.mark.parametrize("capping", ["capping_values", "quantiles"])
@@ -130,7 +130,7 @@ class TestTransform(GenericCappingTransformTests):
 
         transformer.fit(df)
 
-        _ = benchmark(transformer.transform, df)
+        _ = benchmark(benchmark_transform, transformer, df)
 
     @classmethod
     def setup_class(cls):

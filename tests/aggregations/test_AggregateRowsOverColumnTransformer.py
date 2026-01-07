@@ -331,7 +331,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
         single_row_df = u._convert_to_lazy(single_row_df, lazy)
 
-        _ = benchmark(transformer.transform, single_row_df)
+        _ = benchmark(u.benchmark_transform, transformer, single_row_df)
 
     @pytest.mark.benchmark
     @pytest.mark.parametrize("lazy", [True, False])
@@ -368,4 +368,4 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
         df = u._convert_to_lazy(df, lazy)
 
-        _ = benchmark(transformer.transform, df)
+        _ = benchmark(u.benchmark_transform, transformer, df)
