@@ -134,7 +134,7 @@ jobs:
 
     - name: benchmark regression check 
       run: |
-        source ${{ matrix.python-version }}/bin/activate
+        source $HOME/benchmark/bin/activate
         pytest -m benchmark \
           --benchmark-columns=mean \
           --benchmark-sort=mean \
