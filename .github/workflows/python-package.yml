@@ -111,6 +111,11 @@ jobs:
             
 jobs:
   benchmark:
+    runs-on: "ubuntu-22.04"
+    strategy:
+      matrix:
+        # benchmarks are set up to run only on codespaces python version
+        python-version: ["3.9"]
 
     - uses: actions/checkout@v3
 
@@ -119,10 +124,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install env (benchmarks set up to match codespaces python version)
+    - name: Install env
       run: |
         python -m pip install uv
-        uv venv -p 3.9 $HOME/benchmark
+        uv venv -p ${{ matrix.python-version }} $HOME/benchmark
         source $HOME/benchmark/bin/activate
         uv pip install -r requirements-dev.txt
 

@@ -187,6 +187,8 @@ A CI stage will evaluate code against these saved benchmarks and error in case o
 also be checked locally using:
 `pytest -m benchmark --benchmark-columns=mean,median,stddev --benchmark-sort=mean --benchmark-compare=0001_baseline --benchmark-compare-fail=mean:10% --benchmark-group-by=param`
 
+You can also assess pandas vs polars vs polars lazy by dropping the `--benchmark-group-by=param` parameter above.
+
 Note, as our benchmark tests will only fail for a 10% regression, it is possible that code may slip e.g. 9% each time and this compound
 to become quite significant, so this process is not perfect and saved benchmarks should still be inspected in the update PRs.
 
