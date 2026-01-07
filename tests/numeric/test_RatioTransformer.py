@@ -27,7 +27,7 @@ class TestRatioTransformerInit(BaseNumericTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "RatioTransformer"
 
-    @pytest.mark.parametrize("columns", (["a"], ["a", "b", "c"], None, "a"))
+    @pytest.mark.parametrize("columns", [["a"], ["a", "b", "c"], None, "a"])
     def test_errors_if_not_two_columns(
         self,
         columns,
@@ -118,7 +118,7 @@ class TestRatioTransformerTransform(BaseNumericTransformerTransformTests):
     @pytest.mark.parametrize("return_dtype", ["Float32", "Float64"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "a_values, b_values, expected_division",
+        ("a_values", "b_values", "expected_division"),
         [
             ([100], [80], [1.25]),
             ([0], [80], [0]),

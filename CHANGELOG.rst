@@ -35,6 +35,8 @@ Changed
 - feat: set up benchmark testing for AggregateColumnsOverRowTransformer `#669 <https://github.com/azukds/tubular/pull/669>`_
 - feat: set up CI stage to assess benchmarks 
 - feat: set up github action to update benchmarks monthly
+- feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
+- turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
 
 2.6.0 (19/12/2025)
 ------------------
@@ -119,7 +121,6 @@ Changed
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
-- feat: optimisation changes to MeanResponseTransformer
 - feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype

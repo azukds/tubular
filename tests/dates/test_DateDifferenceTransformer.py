@@ -233,7 +233,7 @@ def create_datediff_test_nulls_df2(library="pandas"):
     return dataframe_init_dispatch(df_dict, library=library)
 
 
-@pytest.fixture()
+@pytest.fixture
 def generic_expected_df():
     def _expected_df(unit, library="pandas"):
         a = [
