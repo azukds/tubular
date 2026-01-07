@@ -115,6 +115,8 @@ jobs:
       matrix:
         # benchmarks are set up to run only on codespaces python version
         python-version: ["3.9"]
+    
+    steps:
 
     - uses: actions/checkout@v3
 
@@ -130,13 +132,12 @@ jobs:
         source $HOME/benchmark/bin/activate
         uv pip install -r requirements-dev.txt
 
-    steps:
-      - name: benchmark regression check 
-        run: |
-          source ${{ matrix.python-version }}/bin/activate
-          pytest -m benchmark \
-            --benchmark-columns=mean \
-            --benchmark-sort=mean \
-            --benchmark-compare=0001_baseline \
-            --benchmark-compare-fail=mean:10% \
-            --benchmark-group-by=param
+    - name: benchmark regression check 
+      run: |
+        source ${{ matrix.python-version }}/bin/activate
+        pytest -m benchmark \
+          --benchmark-columns=mean \
+          --benchmark-sort=mean \
+          --benchmark-compare=0001_baseline \
+          --benchmark-compare-fail=mean:10% \
+          --benchmark-group-by=param
