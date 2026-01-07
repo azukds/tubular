@@ -109,7 +109,6 @@ jobs:
             source $HOME/lints/bin/activate
             prek run blacken-docs --all-files
             
-jobs:
   benchmark:
     runs-on: "ubuntu-22.04"
     strategy:
