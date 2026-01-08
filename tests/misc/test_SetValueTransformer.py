@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import polars as pl
 import pytest
@@ -16,6 +18,7 @@ from tests.utils import (
     _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
+    benchmark_transform,
     dataframe_init_dispatch,
 )
 from tubular.misc import SetValueTransformer
@@ -98,6 +101,63 @@ class TestTransform(GenericTransformTests):
             df1=_collect_frame(df_transformed, lazy),
             df2=expected,
         )
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_single_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        benchmark,
+    ):
+        """benchmark performance for single row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+
+        # Create a single-row DataFrame
+        single_row_df_dict = {
+            "a": [20.0],
+            "b": ["b"],
+        }
+        single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        single_row_df = _convert_to_lazy(single_row_df, lazy=lazy)
+
+        _ = benchmark(benchmark_transform, transformer, single_row_df)
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+
+        rng1 = np.random.default_rng(42)
+        rng2 = np.random.default_rng(43)
+
+        df_dict = {
+            "a": rng1.integers(0, 100, size=100),
+            "b": rng2.choice(["a", "b", "c"], size=100),
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        df = _convert_to_lazy(df, lazy)
+
+        _ = benchmark(benchmark_transform, transformer, df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

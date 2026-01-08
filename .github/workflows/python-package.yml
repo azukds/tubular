@@ -109,3 +109,35 @@ jobs:
             source $HOME/lints/bin/activate
             prek run blacken-docs --all-files
             
+  benchmark:
+    runs-on: "ubuntu-22.04"
+    strategy:
+      matrix:
+        # benchmarks are set up to run only on codespaces python version
+        python-version: ["3.9"]
+    
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install env
+      run: |
+        python -m pip install uv
+        uv venv -p ${{ matrix.python-version }} $HOME/benchmark
+        source $HOME/benchmark/bin/activate
+        uv pip install -r requirements-dev.txt
+
+    - name: benchmark regression check 
+      run: |
+        source $HOME/benchmark/bin/activate
+        pytest -m benchmark \
+          --benchmark-columns=mean \
+          --benchmark-sort=mean \
+          --benchmark-compare=0001_baseline \
+          --benchmark-compare-fail=mean:25% \
+          --benchmark-group-by=fullname,param

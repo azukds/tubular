@@ -1,3 +1,4 @@
+import copy
 import datetime
 
 import numpy as np
@@ -24,6 +25,7 @@ from tests.utils import (
     _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
+    benchmark_transform,
     dataframe_init_dispatch,
 )
 from tubular.dates import DateDifferenceTransformer
@@ -485,6 +487,55 @@ class TestTransform(
             expected,
             _collect_frame(df_transformed, lazy),
         )
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_single_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        benchmark,
+    ):
+        """benchmark performance for single row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+
+        # Create a single-row DataFrame
+        single_row_df_dict = {
+            "a": [datetime.datetime(1990, 2, 1, tzinfo=datetime.timezone.utc)],
+            "b": [datetime.datetime(2000, 3, 4, tzinfo=datetime.timezone.utc)],
+        }
+        single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        single_row_df = _convert_to_lazy(single_row_df, lazy=lazy)
+
+        _ = benchmark(benchmark_transform, transformer, single_row_df)
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+
+        df = d.create_many_row_date_df(library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        df = _convert_to_lazy(df, lazy)
+
+        _ = benchmark(benchmark_transform, transformer, df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

@@ -246,3 +246,28 @@ def _handle_from_json(
     """
 
     return transformer.from_json(transformer.to_json()) if from_json else transformer
+
+
+def benchmark_transform(transformer: BaseTransformer, df: DataFrame) -> DataFrame:
+    """Benchmark transform function, by including .collect call for lazyframes.
+
+    Parameters
+    ----------
+    transformer: BaseTransformer
+        transformer being  tested
+
+    df: DataFrame
+        data being transformed
+
+    Returns
+    -------
+    DataFrame:
+        transformed and collected data
+    """
+
+    out = transformer.transform(df)
+
+    if isinstance(out, (nw.LazyFrame, pl.LazyFrame)):
+        out = out.collect()
+
+    return out

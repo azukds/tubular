@@ -1,4 +1,8 @@
+import copy
+from typing import ClassVar
+
 import narwhals as nw
+import numpy as np
 import pytest
 
 import tests.test_data as d
@@ -11,6 +15,7 @@ from tests.capping.test_BaseCappingTransformer import (
 from tests.utils import (
     _handle_from_json,
     assert_frame_equal_dispatch,
+    benchmark_transform,
     dataframe_init_dispatch,
 )
 from tubular.capping import OutOfRangeNullTransformer
@@ -80,6 +85,35 @@ class TestFit(GenericCappingFitTests):
             f"unexpected value for replacement_values attribute, expected {expected} but got {transformer._replacement_values}"
         )
 
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args.pop("capping_values")
+
+        args["quantiles"] = {"a": [0.01, 0.99], "b": [0.8, 0.85]}
+
+        rng1 = np.random.default_rng(42)
+        rng2 = np.random.default_rng(43)
+
+        df_dict = {
+            "a": rng1.integers(0, 100, size=100),
+            "b": rng2.integers(0, 1000, size=100),
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        _ = benchmark(transformer.fit, df)
+
 
 class TestTransform(GenericCappingTransformTests):
     """Tests for OutOfRangeNullTransformer.transform()."""
@@ -135,6 +169,77 @@ class TestTransform(GenericCappingTransformTests):
                 df_transformed_row,
                 df_expected_row,
             )
+
+    benchmark_capping: ClassVar = {
+        "capping_values": {"a": [2, 20], "b": [40, 99]},
+        "quantiles": {"a": [0.01, 0.99], "b": [0.8, 0.85]},
+    }
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("capping", ["capping_values", "quantiles"])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_single_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        capping,
+        benchmark,
+    ):
+        """benchmark performance for single row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+
+        if capping != "capping_values":
+            args.pop("capping_values")
+
+        args[capping] = self.benchmark_capping[capping]
+
+        # Create a single-row DataFrame
+        single_row_df_dict = {
+            "a": [20.0],
+            "b": [2.0],
+        }
+        single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        transformer.fit(single_row_df)
+
+        _ = benchmark(benchmark_transform, transformer, single_row_df)
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("capping", ["capping_values", "quantiles"])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        capping,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        if capping != "capping_values":
+            args.pop("capping_values")
+
+        args[capping] = self.benchmark_capping[capping]
+
+        rng1 = np.random.default_rng(42)
+        rng2 = np.random.default_rng(43)
+
+        df_dict = {
+            "a": rng1.uniform(0, 100, size=100),
+            "b": rng2.uniform(0, 1000, size=100),
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        transformer.fit(df)
+
+        _ = benchmark(benchmark_transform, transformer, df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

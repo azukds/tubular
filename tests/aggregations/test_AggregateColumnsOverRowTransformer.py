@@ -1,6 +1,8 @@
 import copy
+from typing import ClassVar
 
 import narwhals as nw
+import numpy as np
 import pytest
 
 from tests import utils as u
@@ -118,7 +120,9 @@ class TestAggregateColumnsOverRowTransformerTransform(
         if u._check_if_skip_test(transformer, single_row_df, lazy):
             return
 
-        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
+        single_row_df = u._convert_to_lazy(single_row_df, lazy)
+
+        transformed_df = transformer.transform(single_row_df)
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -188,3 +192,75 @@ class TestAggregateColumnsOverRowTransformerTransform(
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
+
+    # fix params between benchmark tests for fair comparisons
+    benchmark_columns: ClassVar = ["a", "b"]
+    benchmark_aggs: ClassVar = ["min", "max", "mean", "sum"]
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_single_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        benchmark,
+    ):
+        """benchmark performance for single row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = self.benchmark_columns
+        args["aggregations"] = self.benchmark_aggs
+
+        # Create a single-row DataFrame
+        single_row_df_dict = {
+            "a": [30],
+            "b": [2],
+            "c": ["A"],
+        }
+        single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(transformer, single_row_df, lazy):
+            return
+
+        single_row_df = u._convert_to_lazy(single_row_df, lazy)
+
+        _ = benchmark(u.benchmark_transform, transformer, single_row_df)
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = self.benchmark_columns
+        args["aggregations"] = self.benchmark_aggs
+
+        rng1 = np.random.default_rng(42)
+        rng2 = np.random.default_rng(43)
+
+        df_dict = {
+            "a": rng1.integers(0, 100, size=100),
+            "b": rng2.integers(0, 1000, size=100),
+        }
+
+        df = u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(transformer, df, lazy):
+            return
+
+        df = u._convert_to_lazy(df, lazy)
+
+        _ = benchmark(u.benchmark_transform, transformer, df)

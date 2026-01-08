@@ -168,6 +168,30 @@ All existing tests must pass and new functionality must be tested.
 
 We organise our tests with one script per transformer then group together tests for a particular method into a test class.
 
+Performance Tests
+^^^^^^^^^^^^^^^^^
+We monitor the time performance of our code using  `pytest-benchmark <https://github.com/ionelmc/pytest-benchmark>`_. 
+
+When writing a new transformer, you should include tests marked with `pytest.marks.benchmark` and using the benchmark fixture, for:
+- single row transforms 
+- many row transforms 
+- many row fitting 
+
+To keep testing lightweight, we take currently 100 rows to be 'many' for these tests, as the intention in these cases is mainly 
+to test outside the single row case.
+
+Saved benchmarks are updated on a monthly cadence using github agents, but can also be manually updated using:
+`rm -f .benchmarks/**/*baseline.json | pytest -m benchmark --benchmark-save=baseline`
+
+A CI stage will evaluate code against these saved benchmarks and error in case of significant regression, but this can 
+also be checked locally using:
+`pytest -m benchmark --benchmark-columns=mean,median,stddev --benchmark-sort=mean --benchmark-compare=0001_baseline --benchmark-compare-fail=mean:25% --benchmark-group-by=fullname,param`
+
+You can also assess pandas vs polars vs polars lazy by dropping the `--benchmark-group-by=fullname,param` parameter above.
+
+Note, as our benchmark tests will only fail for a 25% regression (below this will trigger too many random failures), it is possible that code may slip e.g. 9% each time and this compound
+to become quite significant, so this process is not perfect and saved benchmarks should still be inspected in the update PRs.
+
 Docstrings
 ^^^^^^^^^^
 
@@ -178,11 +202,11 @@ Docstrings need to be updated for the relevant changes and docstrings need to be
 New transformers
 ^^^^^^^^^^^^^^^^
 
-Transformers in the package are designed to work with `pandas <https://pandas.pydata.org/>`_ `DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_ objects.
+Transformers in the package are written in `narwhals <https://github.com/narwhals-dev/narwhals>`_ to work with `polars <https://github.com/pola-rs/polars>`_ and `pandas <https://pandas.pydata.org/>`_ DataFrames.
 
 To be consistent with `scikit-learn <https://scikit-learn.org/stable/data_transforms.html>`_, all transformers must implement at least a  ``transform(X)`` method which applies the data transformation.
 
-If information must be learnt from the data before applying the transform then a ``fit(X, y=None)`` method is required. ``X`` is the input `DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_ and ``y`` is the response, which may not be required.
+If information must be learnt from the data before applying the transform then a ``fit(X, y=None)`` method is required. ``X`` is the input DataFrame and ``y`` is the response, which may not be required.
 
 Optionally a ``reverse_transform(X)`` method may be appropriate too if there is a way to apply the inverse of the ``transform`` method.
 
