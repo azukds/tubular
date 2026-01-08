@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 class WhenThenOtherwiseTransformer(BaseTransformer):
     """Transformer to apply conditional logic across multiple columns.
 
-    This transformer evaluates specified columns within a DataFrame and applies
+    This transformer evaluates specified columns against a condition and updates with given values based on the results.
     conditions based on logical rules to update column values.
 
     Attributes
