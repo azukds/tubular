@@ -155,8 +155,6 @@ class TestTransform(GenericTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        transformer.fit(df)
-
         df = _convert_to_lazy(df, lazy)
 
         _ = benchmark(benchmark_transform, transformer, df)

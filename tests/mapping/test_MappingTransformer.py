@@ -1,6 +1,9 @@
+import copy
 import warnings
+from typing import ClassVar
 
 import narwhals as nw
+import numpy as np
 import pytest
 
 import tests.test_data as d
@@ -14,6 +17,7 @@ from tests.mapping.test_BaseMappingTransformer import (
 from tests.utils import (
     _handle_from_json,
     assert_frame_equal_dispatch,
+    benchmark_transform,
     dataframe_init_dispatch,
 )
 from tubular.mapping import MappingTransformer
@@ -422,6 +426,62 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
                 transformer.transform(df)
         except Warning:
             pytest.fail("Warnings were issued despite verbose being set to False.")
+
+    benchmark_mappings: ClassVar = {
+        "a": {"a": 1, "b": 2, "c": 3},
+        "b": {i: i + 1 for i in range(100)},
+    }
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_single_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        benchmark,
+    ):
+        """benchmark performance for single row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["mappings"] = self.benchmark_mappings
+
+        # Create a single-row DataFrame
+        single_row_df_dict = {
+            "a": ["b"],
+            "b": [20],
+        }
+        single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        _ = benchmark(benchmark_transform, transformer, single_row_df)
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["mappings"] = self.benchmark_mappings
+
+        rng1 = np.random.default_rng(42)
+        rng2 = np.random.default_rng(43)
+
+        df_dict = {
+            "a": rng1.choice(["a", "b", "c"], size=100),
+            "b": rng2.integers(0, 100, size=100),
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        _ = benchmark(benchmark_transform, transformer, df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
