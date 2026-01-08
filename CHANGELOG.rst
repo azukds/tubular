@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- feat: set up benchmark testing for AggregateColumnsOverRowTransformer, AggregateRowOverColumnsTransformer, CappingTransformer, OutOfRangeNullTransformer, SetValueTransformer, MappingTransformer, BetweenDatesTransformer `#669 <https://github.com/azukds/tubular/pull/669>`_
+- feat: set up benchmark testing for modules; aggregations, capping, misc, mapping, dates `#669 <https://github.com/azukds/tubular/pull/669>`_
 - feat: set up CI stage to assess benchmarks 
 - feat: set up github action to update benchmarks monthly
 - feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_

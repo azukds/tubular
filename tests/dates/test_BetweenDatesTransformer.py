@@ -3,7 +3,6 @@ import datetime
 from typing import ClassVar
 
 import narwhals as nw
-import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
@@ -607,27 +606,7 @@ class TestTransform(
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = self.benchmark_columns
 
-        # set up random dates in a range
-        start = datetime.datetime(1990, 2, 1, tzinfo=datetime.timezone.utc)
-        end = datetime.datetime(2020, 2, 1, tzinfo=datetime.timezone.utc)
-
-        delta_days = (end - start).days
-
-        rng1 = np.random.default_rng(42)
-        rng2 = np.random.default_rng(43)
-        rng3 = np.random.default_rng(44)
-
-        rand_ints1 = rng1.integers(0, delta_days, size=100)
-        rand_ints2 = rng2.integers(0, delta_days, size=100)
-        rand_ints3 = rng3.integers(0, delta_days, size=100)
-
-        df_dict = {
-            "a": [start + datetime.timedelta(days=int(i)) for i in rand_ints1],
-            "b": [start + datetime.timedelta(days=int(i)) for i in rand_ints2],
-            "c": [start + datetime.timedelta(days=int(i)) for i in rand_ints3],
-        }
-
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = d.create_many_row_date_df(library=library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
