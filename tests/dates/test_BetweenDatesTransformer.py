@@ -1,6 +1,9 @@
+import copy
 import datetime
+from typing import ClassVar
 
 import narwhals as nw
+import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
@@ -23,6 +26,7 @@ from tests.dates.test_BaseGenericDateTransformer import (
 from tests.utils import (
     _handle_from_json,
     assert_frame_equal_dispatch,
+    benchmark_transform,
     dataframe_init_dispatch,
 )
 from tubular.dates import TIME_UNITS, BetweenDatesTransformer
@@ -561,6 +565,73 @@ class TestTransform(
 
         # test that this runs successfully
         transformer.transform(df)
+
+    # fix params between benchmark tests for fair comparisons
+    benchmark_columns: ClassVar = ["a", "b", "c"]
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_single_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        benchmark,
+    ):
+        """benchmark performance for single row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = self.benchmark_columns
+
+        # Create a single-row DataFrame
+        single_row_df_dict = {
+            "a": [datetime.datetime(1990, 2, 1, tzinfo=datetime.timezone.utc)],
+            "b": [datetime.datetime(2000, 3, 4, tzinfo=datetime.timezone.utc)],
+            "c": [datetime.datetime(2005, 6, 2, tzinfo=datetime.timezone.utc)],
+        }
+        single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        _ = benchmark(benchmark_transform, transformer, single_row_df)
+
+    @pytest.mark.benchmark
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_benchmark_many_row(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        benchmark,
+    ):
+        """benchmark performance for many row transforms"""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = self.benchmark_columns
+
+        # set up random dates in a range
+        start = datetime.datetime(1990, 2, 1, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2020, 2, 1, tzinfo=datetime.timezone.utc)
+
+        delta_days = (end - start).days
+
+        rng1 = np.random.default_rng(42)
+        rng2 = np.random.default_rng(43)
+        rng3 = np.random.default_rng(44)
+
+        rand_ints1 = rng1.integers(0, delta_days, size=100)
+        rand_ints2 = rng2.integers(0, delta_days, size=100)
+        rand_ints3 = rng3.integers(0, delta_days, size=100)
+
+        df_dict = {
+            "a": [start + datetime.timedelta(days=int(i)) for i in rand_ints1],
+            "b": [start + datetime.timedelta(days=int(i)) for i in rand_ints2],
+            "c": [start + datetime.timedelta(days=int(i)) for i in rand_ints3],
+        }
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        _ = benchmark(benchmark_transform, transformer, df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
