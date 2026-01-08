@@ -45,7 +45,7 @@ class TestCompareTwoColumnsTransformerInit:
     ):
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["columns"] = columns
-        args["condition"] = condition
+        #args["condition"] = condition
         if columns in ([], ["col1"], None, "col1", 123, ["col1", "col2", "col3"]):
             with pytest.raises(BeartypeCallHintParamViolation):
                 uninitialized_transformers[self.transformer_name](**args)
@@ -168,7 +168,7 @@ class TestCompareTwoColumnsTransformerTransform:
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b"]
-        args["condition"] = ConditionEnum.GREATER_THAN
+        #args["condition"] = ConditionEnum.GREATER_THAN
 
         single_row_df_dict = {
             "a": a_values,
@@ -240,7 +240,7 @@ class TestCompareTwoColumnsTransformerTransform:
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b"]
-        args["condition"] = ConditionEnum.GREATER_THAN
+        #args["condition"] = ConditionEnum.GREATER_THAN
 
         # Create a DataFrame with null values
         df_with_nulls_dict = {

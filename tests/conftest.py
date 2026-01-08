@@ -318,7 +318,7 @@ def minimal_attribute_dict():
         },
         "CompareTwoColumnsTransformer": {
             "columns": ["a", "b"],
-            "condition": ConditionEnum.GREATER_THAN,
+            "condition": ConditionEnum.GREATER_THAN.value,
         },
     }
 

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import operator
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
 import narwhals as nw
 from beartype import beartype
 from typing_extensions import deprecated
+from typing_extensions import Annotated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -21,6 +22,7 @@ from tubular.types import (
     DataFrame,
     ListOfTwoStrs,
     NonEmptyListOfStrs,
+    Is,
 )
 
 
@@ -32,16 +34,20 @@ class ConditionEnum(Enum):
     EQUAL_TO = "=="
     NOT_EQUAL_TO = "!="
 
+ConditionEnumStr = Annotated[
+    str,
+    Is[lambda s: s in ConditionEnum._value2member_map_],
+]
+
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import polars  as pl
 
 
 class WhenThenOtherwiseTransformer(BaseTransformer):
     """Transformer to apply conditional logic across multiple columns.
 
     This transformer evaluates specified columns against a condition and updates with given values based on the results.
-    conditions based on logical rules to update column values.
 
     Attributes
     ----------
@@ -60,27 +66,30 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
     Examples
     --------
     ```pycon
-    >>> import pandas as pd
-    >>> from tubular.base import BaseTransformer
-
-    >>> df = pd.DataFrame(
+    >>> import polars as pl
+    >>> df = pl.DataFrame(
     ...     {
-    ...         "col1": [1, 2, 3],
-    ...         "col2": [4, 5, 6],
+    ...         "a": [1, 2, 3],
+    ...         "b": [4, 5, 6],
     ...         "condition_col": [True, False, True],
     ...         "update_col": [10, 20, 30],
     ...     }
     ... )
-
     >>> transformer = WhenThenOtherwiseTransformer(
-    ...     columns=["col1", "col2"], when_column="condition_col", then_column="update_col"
+    ...     columns=["a", "b"], when_column="condition_col", then_column="update_col"
     ... )
-
-    >>> transformer.transform(df)
-       col1  col2  condition_col  update_col
-    0    10    10          True         10
-    1     2     5         False         20
-    2    30    30          True         30
+    >>> transformed_df = transformer.transform(df)
+    >>> print(transformed_df)
+    shape: (3, 4)
+    ┌─────┬─────┬──────────────┬───────────┐
+    │ a   │ b   │ condition_col│ update_col│
+    │ --- │ --- │ ---          │ ---       │
+    │ i64 │ i64 │ bool         │ i64       │
+    ╞═════╪═════╪══════════════╪═══════════╡
+    │ 10  │ 10  │ true         │ 10        │
+    │ 2   │ 5   │ false        │ 20        │
+    │ 30  │ 30  │ true         │ 30        │
+    └─────┴─────┴──────────────┴───────────┘
 
     ```
 
@@ -133,12 +142,12 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         Examples
         --------
         >>> transformer = WhenThenOtherwiseTransformer(
-        ...     columns=['col1', 'col2'],
+        ...     columns=['a', 'b'],
         ...     when_column='condition_col',
         ...     then_column='update_col'
         ... )
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'WhenThenOtherwiseTransformer', 'init': {'columns': ['col1', 'col2'], 'when_column': 'condition_col', 'then_column': 'update_col', 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'WhenThenOtherwiseTransformer', 'init': {'columns': ['a', 'b'], 'when_column': 'condition_col', 'then_column': 'update_col', 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
 
         """
         json_dict = super().to_json()
@@ -161,36 +170,41 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             DataFrame containing the columns to be transformed.
 
         Returns
         -------
-        pd.DataFrame
+        DataFrame
             Transformed DataFrame with updated columns based on conditions.
 
         Examples
         --------
         ```pycon
-        >>> import pandas as pd
-        >>> df = pd.DataFrame(
+        >>> import polars as pl
+        >>> df = pl.DataFrame(
         ...     {
-        ...         "col1": [1, 2, 3],
-        ...         "col2": [4, 5, 6],
+        ...         "a": [1, 2, 3],
+        ...         "b": [4, 5, 6],
         ...         "condition_col": [True, False, True],
         ...         "update_col": [10, 20, 30],
         ...     }
         ... )
-
         >>> transformer = WhenThenOtherwiseTransformer(
-        ...     columns=["col1", "col2"], when_column="when_column", then_column="update_col"
+        ...     columns=["a", "b"], when_column="condition_col", then_column="update_col"
         ... )
-
-        >>> transformer.transform(df)
-           col1  col2  condition_col  update_col
-        0    10    10          True         10
-        1     2     5         False         20
-        2    30    30          True         30
+        >>> transformed_df = transformer.transform(df)
+        >>> print(transformed_df)
+        shape: (3, 4)
+        ┌─────┬─────┬──────────────┬───────────┐
+        │ a   │ b   │ condition_col│ update_col│
+        │ --- │ --- │ ---          │ ---       │
+        │ i64 │ i64 │ bool         │ i64       │
+        ╞═════╪═════╪══════════════╪═══════════╡
+        │ 10  │ 10  │ true         │ 10        │
+        │ 2   │ 5   │ false        │ 20        │
+        │ 30  │ 30  │ true         │ 30        │
+        └─────┴─────┴──────────────┴───────────┘        
 
         ```
 
@@ -203,19 +217,17 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
             raise TypeError(f"The column '{self.when_column}' must be of type Boolean.")
 
         then_column_type = schema[self.then_column]
-        for col in self.columns:
-            if schema[col] != then_column_type:
-                raise TypeError(
-                    f"The column '{col}' must be of the same type as '{self.then_column}'."
-                )
+        if any(schema[col] != then_column_type for col in self.columns):
+            raise TypeError(
+                f"All columns in {self.columns} must be of the same type as '{self.then_column}'."
+            )
 
-        exprs_dict = {}
-        for col in self.columns:
-            exprs_dict[col] = (
-                nw.when(nw.col(self.when_column))
+        exprs_dict = {
+            col: nw.when(nw.col(self.when_column))
                 .then(nw.col(self.then_column))
                 .otherwise(nw.col(col))
-            )
+            for col in self.columns
+        }
 
         X = X.with_columns(**exprs_dict)
 
@@ -245,22 +257,24 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     Examples
     --------
     ```pycon
-    >>> import pandas as pd
-    >>> from tubular.base import BaseTransformer
-
-    >>> df = pd.DataFrame({"col1": [1, 2, 3], "col2": [3, 2, 1]})
-
+    >>> import polars as pl
+    >>> df = pl.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]})
     >>> transformer = CompareTwoColumnsTransformer(
-    ...     columns=["col1", "col2"],
-    ...     condition='row["col1"] > row["col2"]',
-    ...     outcome="comparison_result",
+    ...     columns=["a", "b"],
+    ...     condition=ConditionEnum.GREATER_THAN,
     ... )
-
-    >>> transformer.transform(df)
-       col1  col2  comparison_result
-    0     1     3                  0
-    1     2     2                  0
-    2     3     1                  1
+    >>> transformed_df = transformer.transform(df)
+    >>> print(transformed_df)
+    shape: (3, 3)
+    ┌─────┬─────┬───────────────┐
+    │ a   |  b  |    a>b        │
+    │ --- │ --- │ ---           │
+    │ i64 │ i64 │ i64           │
+    ╞═════╪═════╪═══════════════╡
+    │ 1   │ 3   │ 0             │
+    │ 2   │ 2   │ 0             │
+    │ 3   │ 1   │ 1             │
+    └─────┴─────┴───────────────┘
 
     ```
 
@@ -271,9 +285,17 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     jsonable = True
     lazyframe_compatible = True
 
+    # Map the enum to the operator functions
+    ops_map = {
+        ConditionEnum.GREATER_THAN: operator.gt,
+        ConditionEnum.LESS_THAN: operator.lt,
+        ConditionEnum.EQUAL_TO: operator.eq,
+        ConditionEnum.NOT_EQUAL_TO: operator.ne,
+    }
+
     @beartype
     def __init__(
-        self, columns: ListOfTwoStrs, condition: ConditionEnum, **kwargs: Optional[bool]
+        self, columns: ListOfTwoStrs, condition: ConditionEnumStr, **kwargs: Optional[bool]
     ) -> None:
         """Initialize the CompareTwoColumnsTransformer.
 
@@ -290,7 +312,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         """
         super().__init__(columns=columns, **kwargs)
-        self.condition = condition
+        self.condition = ConditionEnum(condition)
 
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Serialize the transformer to a JSON-compatible dictionary.
@@ -308,13 +330,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         return json_dict
 
     @classmethod
-    def from_json(
-        cls, json_dict: dict[str, dict[str, Any]]
-    ) -> CompareTwoColumnsTransformer:
-        """Deserialize the transformer from a JSON-compatible dictionary."""
-        json_dict["init"]["condition"] = ConditionEnum[
-            json_dict["init"]["condition"]
-        ]  # Deserialize using enum name
+    def from_json(cls, json_dict: dict[str, dict[str, Any]]) -> CompareTwoColumnsTransformer:
+        json_dict["init"]["condition"] = ConditionEnum[json_dict["init"]["condition"]].value
         return super().from_json(json_dict)
 
     @beartype
@@ -323,54 +340,61 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             DataFrame containing the columns to be transformed.
 
         Returns
         -------
-        pd.DataFrame
+        DataFrame
             Transformed DataFrame with the new outcome column.
 
         Examples
         --------
-        ```pycon
-        >>> import pandas as pd
-        >>> df = pd.DataFrame({"col1": [1, 2, 3], "col2": [3, 2, 1]})
-
+        >>> import polars as pl
+        >>> df = pl.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]})
         >>> transformer = CompareTwoColumnsTransformer(
-        ...     columns=["col1", "col2"],
-        ...     condition='row["col1"] > row["col2"]',
-        ...     outcome="comparison_result",
+        ...     columns=["a", "b"],
+        ...     condition=ConditionEnum.GREATER_THAN,
         ... )
-
-        >>> transformer.transform(df)
-           col1  col2  comparison_result
-        0     1     3                  0
-        1     2     2                  0
-        2     3     1                  1
+        >>> transformed_df = transformer.transform(df)
+        >>> print(transformed_df)
+        shape: (3, 3)
+        ┌─────┬─────┬───────────────┐
+        │ a   │ b   │ a>b           │
+        │ --- │ --- │ ---           │
+        │ i64 │ i64 │ i64           │
+        ╞═════╪═════╪═══════════════╡
+        │ 1   │ 3   │ 0             │
+        │ 2   │ 2   │ 0             │
+        │ 3   │ 1   │ 1             │
+        └─────┴─────┴───────────────┘
         ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        # Map the enum to the operator functions
-        ops_map = {
-            ConditionEnum.GREATER_THAN: operator.gt,
-            ConditionEnum.LESS_THAN: operator.lt,
-            ConditionEnum.EQUAL_TO: operator.eq,
-            ConditionEnum.NOT_EQUAL_TO: operator.ne,
-        }
+        schema = X.schema
+        numeric_types = {nw.Int64, nw.Float64, nw.Int32, nw.Float32}
+        for col in self.columns:
+            if schema[col] not in numeric_types:
+                raise TypeError(f"The column '{col}' must be of a numeric type.")
+
 
         expr = (
             nw.when(
-                ops_map[self.condition](
+                self.ops_map[self.condition](
                     nw.col(self.columns[0]), nw.col(self.columns[1])
                 )
             )
             .then(1)
             .otherwise(0)
         )
+
+
+        # expr = self.ops_map[self.condition](
+        #     nw.col(self.columns[0]).fill_null(0), nw.col(self.columns[1]).fill_null(0)
+        # ).cast(nw.Boolean)
 
         outcome_column_name = (
             f"{self.columns[0]}{self.condition.value}{self.columns[1]}"
