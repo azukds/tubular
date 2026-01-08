@@ -4,7 +4,7 @@ from tests import utils as u
 from beartype.roar import BeartypeCallHintParamViolation
 import narwhals as nw
 
-from tests.base_tests import ColumnStrListInitTests, GenericTransformTests
+from tests.base_tests import ColumnStrListInitTests
 
 
 def create_when_then_test_df(library="pandas"):
