@@ -27,7 +27,7 @@ class TestDifferenceTransformerInit(BaseNumericTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "DifferenceTransformer"
 
-    @pytest.mark.parametrize("columns", (["a"], ["a", "b", "c"], None, "a"))
+    @pytest.mark.parametrize("columns", [["a"], ["a", "b", "c"], None, "a"])
     def test_errors_if_not_two_columns(
         self,
         columns,
@@ -49,6 +49,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "DifferenceTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_transform_basic_case_outputs(
@@ -57,6 +58,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         from_json,
+        lazy,
     ):
         """Test transform method performs subtraction correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -65,8 +67,12 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         df = create_difference_test_df(library=library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
         transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(df)
+        transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Expected output for basic subtraction
         expected_data = {
@@ -76,12 +82,16 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, lazy),
+            expected_df,
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "a_values, b_values, expected_value",
+        ("a_values", "b_values", "expected_value"),
         [
             ([100], [80], 20),
             ([0], [80], [-80]),
@@ -99,6 +109,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         a_values,
         b_values,
         expected_value,
+        lazy,
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -121,8 +132,12 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         )
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(transformer, single_row_df, lazy, from_json):
+            return
+
         transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(single_row_df)
+        transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
 
         # Expected output for a single-row DataFrame
         expected_data = {
@@ -141,8 +156,12 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
             .to_native()
         )
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, lazy),
+            expected_df,
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_with_nulls(
@@ -151,6 +170,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         from_json,
+        lazy,
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
@@ -164,8 +184,12 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(transformer, df_with_nulls, lazy, from_json):
+            return
+
         transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(df_with_nulls)
+        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
 
         # Expected output for a DataFrame with null values
         expected_data = {
@@ -175,4 +199,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        u.assert_frame_equal_dispatch(transformed_df, expected_df)
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(transformed_df, lazy),
+            expected_df,
+        )

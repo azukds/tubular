@@ -22,64 +22,56 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "PCATransformer"
 
-    @staticmethod
-    def test_to_random_state_type_error():
+    def test_to_random_state_type_error(self):
         """Test that an exception is raised if random_state is not a int or None."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", random_state="2")
 
-    @staticmethod
-    def test_to_svd_solver_type_error():
+    def test_to_svd_solver_type_error(self):
         """Test that an exception is raised if svd_solver is not a str."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", svd_solver=2)
 
-    @staticmethod
-    def test_to_n_components_type_error():
+    def test_to_n_components_type_error(self):
         """Test that an exception is raised if n_components is not a int or 'mle'."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components="3")
 
-    @staticmethod
-    def test_to_pca_prefix_type_error():
+    def test_to_pca_prefix_type_error(self):
         """Test that an exception is raised if pca_column_prefix is not str."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components=2, pca_column_prefix=3)
 
-    @staticmethod
-    def test_to_svd_solver_value_error():
+    def test_to_svd_solver_value_error(self):
         """Test that an exception is raised if svd_solver is not one of the allowed values."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", svd_solver="zzz")
 
-    @staticmethod
-    def test_to_n_components_value_error():
+    def test_to_n_components_value_error(self):
         """Test that an exception is raised if n_components is not one of the allowed values."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components=-1)
 
-    @staticmethod
-    def test_to_n_components_float_value_error():
+    def test_to_n_components_float_value_error(self):
         """Test that an exception is raised if n_components is not one of the allowed float values."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             PCATransformer(columns="b", n_components=1.4)
 
-    @staticmethod
-    def test_to_arpack_mle_value_error():
+    def test_to_arpack_mle_value_error(self):
         """Test that an exception is raised if svd solver is arpack and n_components is "mle"."""
         with pytest.raises(
             ValueError,
@@ -87,8 +79,7 @@ class TestInit(
         ):
             PCATransformer(columns="b", n_components="mle", svd_solver="arpack")
 
-    @staticmethod
-    def test_to_arpack_randomized_float_type_error():
+    def test_to_arpack_randomized_float_type_error(self):
         """Test that an exception is raised if svd solver is arpack or randomized and n_components is float ."""
         with pytest.raises(
             TypeError,
@@ -104,18 +95,18 @@ class TestFit(CheckNumericFitMixinTests, GenericFitTests):
     def setup_class(cls):
         cls.transformer_name = "PCATransformer"
 
-    @staticmethod
-    def test_to_arpack_n_compontes_value_error():
+    def test_to_arpack_n_compontes_value_error(self):
         """Test that an exception is raised if svd solver is arpack and n_components greater than nb samples or features."""
+
+        # must be between 1 and min(n_samples 10, n_features 2) is 2 with svd_solver arpack
+        df = d.create_numeric_df_1()
+
+        x = PCATransformer(columns=["a", "b"], n_components=10, svd_solver="arpack")
+
         with pytest.raises(
             ValueError,
             match=r"""PCATransformer: n_components 10 must be between 1 and min\(n_samples 10, n_features 2\) is 2 with svd_solver 'arpack'""",
         ):
-            # must be between 1 and min(n_samples 10, n_features 2) is 2 with svd_solver arpack
-            df = d.create_numeric_df_1()
-
-            x = PCATransformer(columns=["a", "b"], n_components=10, svd_solver="arpack")
-
             x.fit(df)
 
 
@@ -126,8 +117,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "PCATransformer"
 
-    @staticmethod
-    def create_svd_solver_output():
+    def create_svd_solver_output(self):
         svd_solver_output = {}
         svd_solver_output["full"] = pd.DataFrame(
             {
@@ -334,8 +324,7 @@ class TestTransform(GenericTransformTests):
         )
 
     @pytest.mark.parametrize("columns", [("b"), ("c"), (["b", "c"])])
-    @staticmethod
-    def test_return_type(columns):
+    def test_return_type(self, columns):
         """Test that transform returns a pd.DataFrame."""
         df = d.create_numeric_df_1()
 

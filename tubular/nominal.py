@@ -372,7 +372,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                                    unseen_levels_to_rare=False)
 
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}}}
+        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}, 'rare_levels_record_': {'b': ['x', 'y', 'z'], 'c': ['b', 'c']}}}
 
         ```
 
@@ -393,6 +393,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         if not self.unseen_levels_to_rare:
             self.check_is_fitted(["training_data_levels"])
             json_dict["fit"]["training_data_levels"] = self.training_data_levels
+        if self.record_rare_levels:
+            self.check_is_fitted(["rare_levels_record_"])
+            json_dict["fit"]["rare_levels_record_"] = self.rare_levels_record_
+
         return json_dict
 
     @beartype
@@ -1081,9 +1085,8 @@ class MeanResponseTransformer(
     @block_from_json
     def _prior_regularisation(
         self,
-        weighted_response_sum_over_groups_exprs: dict[str, nw.Expr],
-        weight_sum_over_groups_exprs: dict[str, nw.Expr],
-        weights_column: str,
+        global_means: dict[str, float],
+        groups: dict[str, nw.DataFrame],
     ) -> dict[str, nw.Expr]:
         """Regularise encoding values by pushing encodings of infrequent categories towards the global mean.  If prior is zero this will return target_means unaltered.
 
@@ -1093,13 +1096,11 @@ class MeanResponseTransformer(
 
         Parameters
         ----------
-        weighted_response_sum_over_groups_exprs: dict[str, nw.Expr]
-            expressions giving the weighted responses (one per level) summed over the column groups
+        global_means: dict[str, float]
+            dictionary of global means per binary target
 
-        weight_sum_over_groups_exprs: dict[str, nw.Expr]
-            expressions giving the sum of weights over the column groups
-        weights_column: str
-            name of the weights column
+        groups: dict[str, nw.DataFrame]
+            dict of grouped dataframes per input column
 
         Returns
         -------
@@ -1110,32 +1111,32 @@ class MeanResponseTransformer(
         # of the fit process, so not including examples
 
         """
-        self.global_mean = {}
-
-        global_mean_exprs = _get_mean_calculation_expressions(
-            self.response_columns,
-            weights_column,
-        )
+        exprs_dict = {
+            encoded_column + "_mapped": (
+                (
+                    nw.col(
+                        f"{self.encoded_columns_to_response_columns[encoded_column]}_weighted_sum"
+                    )
+                    + (
+                        global_means[
+                            self.encoded_columns_to_response_columns[encoded_column]
+                        ]
+                        * nw.lit(self.prior)
+                    )
+                )
+                / (nw.col("weight_sum") + nw.lit(self.prior)).cast(
+                    getattr(nw, self.return_type),
+                )
+            ).alias(encoded_column + "_mapped")
+            for encoded_column in self.encoded_columns
+        }
 
         return {
-            encoded_column + "_mapped": (
-                weighted_response_sum_over_groups_exprs[
-                    f"{self.encoded_columns_to_columns[encoded_column]}_{self.encoded_columns_to_response_columns[encoded_column]}"
-                ]
-                + (
-                    global_mean_exprs[
-                        self.encoded_columns_to_response_columns[encoded_column]
-                    ]
-                    * nw.lit(self.prior)
-                )
-            )
-            / (
-                weight_sum_over_groups_exprs[
-                    self.encoded_columns_to_columns[encoded_column]
-                ]
-                + self.prior
-            ).cast(
-                getattr(nw, self.return_type),
+            encoded_column: groups[
+                self.encoded_columns_to_columns[encoded_column]
+            ].select(
+                exprs_dict[encoded_column + "_mapped"],
+                nw.col(self.encoded_columns_to_columns[encoded_column]),
             )
             for encoded_column in self.encoded_columns
         }
@@ -1189,7 +1190,7 @@ class MeanResponseTransformer(
         ]
 
     @block_from_json
-    def setup_fit_single_level(self, response_column: str) -> None:
+    def _setup_fit_single_level(self, response_column: str) -> None:
         """Set attrs needed for fit, for non-multi level case.
 
         Parameters
@@ -1284,9 +1285,7 @@ class MeanResponseTransformer(
 
         y_vals = y.unique().to_list()
 
-        response_null_count = sum(pd.isna(val) for val in y_vals)
-
-        if response_null_count > 0:
+        if (response_null_count := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
@@ -1297,7 +1296,7 @@ class MeanResponseTransformer(
             self._setup_fit_multi_level(y_vals, response_column)
 
         else:
-            self.setup_fit_single_level(response_column)
+            self._setup_fit_single_level(response_column)
 
         self.encoded_columns_to_columns = {
             encoded_column: c
@@ -1332,7 +1331,7 @@ class MeanResponseTransformer(
 
         weighted_response_exprs = {
             "weighted_" + response_column: response_exprs[response_column]
-            * nw.col(weights_column)
+            * nw.col(weights_column).alias("weighted_" + response_column)
             for response_column in self.response_columns
         }
 
@@ -1340,42 +1339,56 @@ class MeanResponseTransformer(
         all_response_exprs.update(response_exprs)
         all_response_exprs.update(weighted_response_exprs)
 
-        # need to materialise these here in order to use .over with pandas
+        # materialise these for global mean
+        # calculations to work with
         X_y = X_y.with_columns(**all_response_exprs)
 
-        # now get the weighted response per group
-        weighted_response_sum_over_groups_exprs = {
-            f"{c}_{response_column}": nw.col("weighted_" + response_column)
-            .sum()
-            .over(c)
-            for response_column in self.response_columns
-            for c in self.columns
-        }
-
-        # and the total weight per group
-        weight_sum_over_groups_exprs = {
-            c: nw.col(weights_column).sum().over(c) for c in self.columns
-        }
-
-        # the previous two then make up the inputs for our encoding algorithm
-        prior_exprs = self._prior_regularisation(
-            weighted_response_sum_over_groups_exprs,
-            weight_sum_over_groups_exprs,
+        global_means = {}
+        global_mean_exprs = _get_mean_calculation_expressions(
+            self.response_columns,
             weights_column,
         )
 
-        full_expr_dict = {}
-        full_expr_dict.update(prior_exprs)
-        full_expr_dict.update(encoded_column_exprs)
+        global_means = X_y.select(**global_mean_exprs).to_dict(as_series=False)
+        global_means = {
+            response_column: global_means[response_column][0]
+            for response_column in self.response_columns
+        }
 
-        results_dict = X_y.select(**full_expr_dict).to_dict(as_series=True)
+        # now get the weighted response per group
+        aggs = {
+            c: [
+                nw.col(weights_column).sum().alias("weight_sum"),
+                *[
+                    nw.col("weighted_" + binary_response_column)
+                    .sum()
+                    .alias(f"{binary_response_column}_weighted_sum")
+                    for binary_response_column in self.response_columns
+                ],
+            ]
+            for c in self.columns
+        }
+
+        groups = {c: X_y.group_by(c).agg(aggs[c]) for c in self.columns}
+
+        # the previous two then make up the inputs for our encoding algorithm
+        prior_encodings = self._prior_regularisation(
+            global_means,
+            groups,
+        )
+
+        results_dict = {
+            c: prior_encodings[c].to_dict(as_series=False) for c in prior_encodings
+        }
 
         self.mappings.update(
             {
                 encoded_column: dict(
                     zip(
-                        results_dict[encoded_column].to_list(),
-                        results_dict[f"{encoded_column}_mapped"].to_list(),
+                        results_dict[encoded_column][
+                            self.encoded_columns_to_columns[encoded_column]
+                        ],
+                        results_dict[encoded_column][encoded_column + "_mapped"],
                     ),
                 )
                 for encoded_column in self.encoded_columns
@@ -1467,25 +1480,24 @@ class MeanResponseTransformer(
                 # else, median
                 else:
                     for c in self.encoded_columns:
-                        X_temp = X_y.with_columns(**encoded_column_exprs)
-                        X_temp = X_temp.sort(c)
+                        X_temp = X_y.with_columns(**encoded_column_exprs).sort(c)
 
                         null_filter_expr = ~nw.col(
                             self.encoded_columns_to_columns[c]
                         ).is_null()
 
-                        unseen_level_exprs.update(
-                            {
-                                c: _get_median_calculation_expression(
-                                    initial_weights_expr=nw.col(weights_column).filter(
-                                        null_filter_expr
-                                    ),
-                                    initial_column_expr=mapping_expressions[c].filter(
-                                        null_filter_expr
-                                    ),
-                                ),
-                            },
+                        median_expr = _get_median_calculation_expression(
+                            initial_weights_expr=nw.col(weights_column).filter(
+                                null_filter_expr
+                            ),
+                            initial_column_expr=mapping_expressions[c].filter(
+                                null_filter_expr
+                            ),
                         )
+
+                        self.unseen_levels_encoding_dict[c] = X_temp.select(
+                            median_expr
+                        ).item(0, 0)
 
             # else, min/max
             else:
@@ -1496,13 +1508,15 @@ class MeanResponseTransformer(
                     },
                 )
 
-            unseen_level_results = X_y.select(**unseen_level_exprs).to_dict(
-                as_series=True,
-            )
+            # median will already have fit as it requires sorting/materialising
+            if self.unseen_level_handling != "median":
+                unseen_level_results = X_y.select(**unseen_level_exprs).to_dict(
+                    as_series=True,
+                )
 
-            self.unseen_levels_encoding_dict = {
-                c: unseen_level_results[c].item(0) for c in self.encoded_columns
-            }
+                self.unseen_levels_encoding_dict = {
+                    c: unseen_level_results[c].item(0) for c in self.encoded_columns
+                }
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -1981,7 +1995,11 @@ class OneHotEncodingTransformer(
         # Check each field has less than 100 categories/levels
         missing_levels = {}
         for c in self.columns:
-            level_count = len(present_levels[c])
+            level_count = (
+                len(present_levels[c])
+                if not self.wanted_values
+                else len(self.wanted_values[c])
+            )
 
             if level_count > self.MAX_LEVELS:
                 raise ValueError(

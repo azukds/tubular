@@ -6,7 +6,7 @@ from tests.base_tests import (
     DropOriginalInitMixinTests,
     GenericTransformTests,
 )
-from tests.utils import dataframe_init_dispatch
+from tests.utils import _check_if_skip_test, _convert_to_lazy, dataframe_init_dispatch
 
 
 class TestBaseAggregationTransformerInit(
@@ -32,7 +32,7 @@ class TestBaseAggregationTransformerInit(
             uninitialized_transformers[self.transformer_name](**args)
 
     # NOTE - can delete this test once DropOriginalMixin is converted to beartype
-    @pytest.mark.parametrize("drop_original_column", (0, "a", ["a"], {"a": 10}, None))
+    @pytest.mark.parametrize("drop_original_column", [0, "a", ["a"], {"a": 10}, None])
     def test_drop_column_arg_errors(
         self,
         drop_original_column,
@@ -54,6 +54,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseAggregationTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         "bad_values",
@@ -68,6 +69,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
         bad_values,
         minimal_attribute_dict,
         uninitialized_transformers,
+        lazy,
     ):
         "test that errors are thrown at transform for non numeric columns"
 
@@ -81,9 +83,12 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
         args["columns"] = ["a"]
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, test_df, lazy):
+            return
+
         msg = r"attempting to call transformer on non-numeric columns \['a'\], which is not supported"
         with pytest.raises(
             TypeError,
             match=msg,
         ):
-            transformer.transform(test_df)
+            transformer.transform(_convert_to_lazy(test_df, lazy))

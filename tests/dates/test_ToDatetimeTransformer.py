@@ -10,7 +10,14 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.dates import ToDatetimeTransformer
 
 
@@ -25,16 +32,14 @@ class TestInit(
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    @staticmethod
-    def test_time_format_type_error():
+    def test_time_format_type_error(self):
         """Test that an exception is raised for bad time_zone arg."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
             ToDatetimeTransformer(column="a", time_format=1)
 
-    @staticmethod
-    def test_warning_for_none_time_format():
+    def test_warning_for_none_time_format(self):
         "test appropriate warning raised when time_format not provided"
 
         with pytest.warns(
@@ -51,8 +56,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseDatetimeTransformer"
 
-    @staticmethod
-    def expected_df_1(library="pandas"):
+    def expected_df_1(self, library="pandas"):
         """Expected output for test_expected_output."""
 
         df_dict = {
@@ -102,8 +106,7 @@ class TestTransform(GenericTransformTests):
 
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-    @staticmethod
-    def create_to_datetime_test_df(library="pandas"):
+    def create_to_datetime_test_df(self, library="pandas"):
         """Create DataFrame to be used in the ToDatetimeTransformer tests."""
 
         df_dict = {
@@ -124,6 +127,10 @@ class TestTransform(GenericTransformTests):
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
     @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
@@ -135,19 +142,31 @@ class TestTransform(GenericTransformTests):
             (["e"], None),
         ],
     )
-    def test_expected_output_year_parsing(self, library, columns, time_format):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_expected_output_year_parsing(
+        self, library, columns, time_format, from_json, lazy
+    ):
         """Test input data is transformed as expected."""
 
         df = self.create_to_datetime_test_df(library=library)
         expected = self.expected_df_1(library=library)
 
-        to_dt = ToDatetimeTransformer(
+        transformer = ToDatetimeTransformer(
             columns=columns,
             time_format=time_format,
         )
-        df_transformed = to_dt.transform(df)
 
-        assert_frame_equal_dispatch(expected[columns], df_transformed[columns])
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            expected[columns],
+            _collect_frame(df_transformed, lazy)[columns],
+        )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

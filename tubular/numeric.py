@@ -83,7 +83,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = False
 
@@ -103,20 +103,19 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         """
         super().__init__(columns=columns, **kwargs)
 
-    @nw.narwhalify
     def fit(
         self,
-        X: FrameT,
+        X: DataFrame,
         y: nw.Series | None = None,
     ) -> BaseNumericTransformer:
         """Validate data and attributes prior to the child objects fit logic.
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             A dataframe containing the required columns
 
-        y : pd/pl.Series | None
+        y : Series | None
             Required for pipeline.
 
         Returns
@@ -141,9 +140,11 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         ```
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+
         super().fit(X, y)
 
-        CheckNumericMixin.check_numeric_columns(self, X[self.columns])
+        CheckNumericMixin.check_numeric_columns(self, X.select(self.columns))
 
         return self
 
@@ -157,7 +158,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to transform.
 
         return_native_override: Optional[bool]
@@ -166,7 +167,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Validated data
 
         Examples
@@ -250,9 +251,52 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
 
     lazyframe_compatible = False
 
-    jsonable = False
+    jsonable = True
 
     FITS = True
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Serialize the transformer to a JSON-compatible dictionary.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            JSON representation of the transformer, including init parameters.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> x = OneDKmeansTransformer(
+        ... columns='a',
+        ... n_clusters=2,
+        ... new_column_name="new",
+        ... drop_original=False,
+        ... kmeans_kwargs={"random_state": 42},
+        ...    )
+        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+        >>> x.fit(test_df)
+        OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
+                              n_clusters=2, new_column_name='new')
+        >>> x.to_json()
+        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
+
+        """
+        self.check_is_fitted(["bins"])
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "new_column_name": self.new_column_name,
+                "n_init": self.n_init,
+                "n_clusters": self.n_clusters,
+                "drop_original": self.drop_original,
+                "kmeans_kwargs": self.kmeans_kwargs,
+            },
+        )
+        json_dict["fit"]["bins"] = self.bins
+
+        return json_dict
 
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
@@ -314,7 +358,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         else:
             self.columns = columns
 
-        super().__init__(columns=[columns], **kwargs)
+        super().__init__(columns=self.columns, **kwargs)
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -345,6 +389,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             self.new_column_name,
         ]
 
+    @block_from_json
     @nw.narwhalify
     def fit(self, X: FrameT, y: IntoSeriesT | None = None) -> OneDKmeansTransformer:
         """Fit transformer to input data.
@@ -427,6 +472,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             .select(self.columns[0])
             .to_numpy()
             .ravel()
+            .tolist()
         )
         return self
 
@@ -546,7 +592,7 @@ class DifferenceTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     @beartype
     def __init__(
@@ -580,12 +626,12 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame containing the columns to operate on.
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
+        DataFrame
             Transformed DataFrame with the new column containing the subtraction results.
 
 
@@ -683,7 +729,7 @@ class RatioTransformer(BaseNumericTransformer):
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -742,12 +788,12 @@ class RatioTransformer(BaseNumericTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame or pl.DataFrame
+        X : DataFrame
             DataFrame containing the columns to operate on.
 
         Returns
         -------
-        pd.DataFrame or pl.DataFrame
+        DataFrame
             Transformed DataFrame with the new column containing the division results.
 
         Examples
