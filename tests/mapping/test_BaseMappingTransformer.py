@@ -201,7 +201,7 @@ class TestTransform(BaseMappingTransformerTransformTests):
         expected = nw.from_native(expected)
         for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                _convert_to_lazy(df[[i]], lazy=lazy).to_native()
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
             )
             df_expected_row = expected[[i]].to_native()
 

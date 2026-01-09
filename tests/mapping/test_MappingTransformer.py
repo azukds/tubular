@@ -227,7 +227,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         output = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        output = _collect_frame(df, lazy=lazy)
+        output = _collect_frame(output, lazy=lazy)
 
         assert nw.from_native(output).get_column("b").dtype == nw.Categorical, (
             "Categorical dtype not preserved for column b"
