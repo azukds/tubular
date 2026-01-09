@@ -325,14 +325,11 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         """
         json_dict = super().to_json()
 
-        json_dict["init"]["condition"] = self.condition.name
+        json_dict["init"]["condition"] = self.condition.value
 
         return json_dict
 
-    @classmethod
-    def from_json(cls, json_dict: dict[str, dict[str, Any]]) -> CompareTwoColumnsTransformer:
-        json_dict["init"]["condition"] = ConditionEnum[json_dict["init"]["condition"]].value
-        return super().from_json(json_dict)
+
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -381,20 +378,20 @@ class CompareTwoColumnsTransformer(BaseTransformer):
                 raise TypeError(f"The column '{col}' must be of a numeric type.")
 
 
+        null_filter_expr=nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
+
         expr = (
-            nw.when(
-                self.ops_map[self.condition](
-                    nw.col(self.columns[0]), nw.col(self.columns[1])
+                    nw.when(
+                        ~null_filter_expr
+                    )
+                    .then(self.ops_map[self.condition](
+                            nw.col(self.columns[0]), nw.col(self.columns[1])
+                        ))
+                    .otherwise(None).cast(nw.Boolean)
                 )
-            )
-            .then(1)
-            .otherwise(0)
-        )
 
 
-        # expr = self.ops_map[self.condition](
-        #     nw.col(self.columns[0]).fill_null(0), nw.col(self.columns[1]).fill_null(0)
-        # ).cast(nw.Boolean)
+
 
         outcome_column_name = (
             f"{self.columns[0]}{self.condition.value}{self.columns[1]}"
