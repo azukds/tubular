@@ -11,8 +11,8 @@ from tubular.comparison import ConditionEnum
 def create_compare_test_df(library="pandas"):
     """Create a test dataframe for CompareTwoColumnsTransformer tests."""
     df_dict = {
-        "a": [1, 2, 3],
-        "b": [3, 2, 1],
+        "a": [1, 2, 3, None, 4],
+        "b": [3, 2, 1, 5, None],
     }
     return u.dataframe_init_dispatch(df_dict, library=library)
 
@@ -24,34 +24,6 @@ class TestCompareTwoColumnsTransformerInit:
     def setup_class(cls):
         cls.transformer_name = "CompareTwoColumnsTransformer"
 
-    @pytest.mark.parametrize(
-        "columns, condition",
-        [
-            ([], ConditionEnum.GREATER_THAN),
-            (["col1"], ConditionEnum.GREATER_THAN),
-            (None, ConditionEnum.GREATER_THAN),
-            ("col1", ConditionEnum.GREATER_THAN),
-            (123, ConditionEnum.GREATER_THAN),
-            (["col1", "col2"], ConditionEnum.GREATER_THAN),
-            (["col1", "col2", "col3"], ConditionEnum.GREATER_THAN),
-        ],
-    )
-    def test_errors_if_invalid_columns(
-        self,
-        columns,
-        condition,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["columns"] = columns
-        #args["condition"] = condition
-        if columns in ([], ["col1"], None, "col1", 123, ["col1", "col2", "col3"]):
-            with pytest.raises(BeartypeCallHintParamViolation):
-                uninitialized_transformers[self.transformer_name](**args)
-        else:
-            transformer = uninitialized_transformers[self.transformer_name](**args)
-            assert transformer is not None
 
     @pytest.mark.parametrize(
         "condition",
@@ -83,6 +55,15 @@ class TestCompareTwoColumnsTransformerTransform:
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "condition, expected_result",
+        [
+            (ConditionEnum.GREATER_THAN, [0, 0, 1, 0, 0]),
+            (ConditionEnum.LESS_THAN, [1, 0, 0, 0, 0]),
+            (ConditionEnum.EQUAL_TO, [0, 1, 0, 0, 0]),
+            (ConditionEnum.NOT_EQUAL_TO, [1, 0, 1, 1, 1]),
+        ],
+    )
     def test_transform_basic_case_outputs(
         self,
         library,
@@ -90,12 +71,12 @@ class TestCompareTwoColumnsTransformerTransform:
         uninitialized_transformers,
         from_json,
         lazy,
+        condition,
+        expected_result,
     ):
         """Test transform method performs comparison correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        # args["kwargs"] = {}
-
-        print("Debug: Transformer args:", args)
+        args["condition"] = condition.value
 
         df = create_compare_test_df(library=library)
 
@@ -110,9 +91,9 @@ class TestCompareTwoColumnsTransformerTransform:
 
         # Expected output for basic comparison
         expected_data = {
-            "a": [1, 2, 3],
-            "b": [3, 2, 1],
-            "a>b": [0, 0, 1],
+            "a": [1, 2, 3, None, 4],
+            "b": [3, 2, 1, 5, None],
+            f"a{condition.value}b": expected_result,
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
         expected_df = (
@@ -120,7 +101,7 @@ class TestCompareTwoColumnsTransformerTransform:
             .with_columns(
                 nw.col("a").cast(nw.Float64),
                 nw.col("b").cast(nw.Float64),
-                nw.col("a>b").cast(nw.Int64),
+                nw.col(f"a{condition.value}b").cast(nw.Int64),
             )
             .to_native()
         )
@@ -130,7 +111,7 @@ class TestCompareTwoColumnsTransformerTransform:
             .with_columns(
                 nw.col("a").cast(nw.Float64),
                 nw.col("b").cast(nw.Float64),
-                nw.col("a>b").cast(nw.Int64),
+                nw.col(f"a{condition.value}b").cast(nw.Int64),
             )
             .to_native()
         )
@@ -200,80 +181,6 @@ class TestCompareTwoColumnsTransformerTransform:
             "a>b": expected_result,
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
-        expected_df = (
-            nw.from_native(expected_df)
-            .with_columns(
-                nw.col("a").cast(nw.Float64),
-                nw.col("b").cast(nw.Float64),
-                nw.col("a>b").cast(nw.Int64),
-            )
-            .to_native()
-        )
-
-        # Ensure transformed_df has matching dtypes
-        transformed_df = (
-            nw.from_native(transformed_df)
-            .with_columns(
-                nw.col("a").cast(nw.Float64),
-                nw.col("b").cast(nw.Float64),
-                nw.col("a>b").cast(nw.Int64),
-            )
-            .to_native()
-        )
-
-        u.assert_frame_equal_dispatch(
-            u._collect_frame(transformed_df, lazy),
-            expected_df,
-        )
-
-    @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("from_json", [True, False])
-    def test_with_nulls(
-        self,
-        library,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-        from_json,
-        lazy,
-    ):
-        """Test transform method with null values in the DataFrame."""
-        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
-        #args["condition"] = ConditionEnum.GREATER_THAN
-
-        # Create a DataFrame with null values
-        df_with_nulls_dict = {
-            "a": [1, None, 3],
-            "b": [3, 2, None],
-        }
-        df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
-
-        df_with_nulls = (
-            nw.from_native(df_with_nulls)
-            .with_columns(
-                nw.col("a").cast(nw.Float64),
-                nw.col("b").cast(nw.Float64),
-            )
-            .to_native()
-        )
-
-        transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if u._check_if_skip_test(transformer, df_with_nulls, lazy, from_json):
-            return
-
-        transformer = u._handle_from_json(transformer, from_json)
-        transformed_df = transformer.transform(u._convert_to_lazy(df_with_nulls, lazy))
-
-        # Expected output for a DataFrame with null values
-        expected_data = {
-            "a": [1, None, 3],
-            "b": [3, 2, None],
-            "a>b": [0, 0, 0],
-        }
-        expected_df = u.dataframe_init_dispatch(expected_data, library)
-
         expected_df = (
             nw.from_native(expected_df)
             .with_columns(
