@@ -91,7 +91,7 @@ def get_all_classes(
     return set(all_classes)
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_attribute_dict():
     """defines minimal attributes (values) needed to initiate each transformer named (key).
     New transformers need to be added here"""
@@ -313,7 +313,7 @@ def minimal_attribute_dict():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     """links transformers to minimal dataframes needed to successfully run transformer. There is logic to do this automatically by module, so function will only need to be edited where either:
     - a new module that operates primarily on non-numeric columns is added
@@ -380,13 +380,13 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     return min_df_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def initialized_transformers(minimal_attribute_dict):
     """dictionary of {transformer name : initiated transformer} pairs for all transformers"""
     return {x[0]: x[1](**minimal_attribute_dict[x[0]]) for x in get_all_classes()}
 
 
-@pytest.fixture()
+@pytest.fixture
 def uninitialized_transformers():
     """dictionary of {transformer name : uninitiated transformer} pairs for all transformers"""
     return {x[0]: x[1] for x in get_all_classes()}
