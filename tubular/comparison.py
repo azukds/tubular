@@ -380,6 +380,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         null_filter_expr=nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
 
+        
+
         expr = (
                     nw.when(
                         ~null_filter_expr
@@ -387,8 +389,27 @@ class CompareTwoColumnsTransformer(BaseTransformer):
                     .then(self.ops_map[self.condition](
                             nw.col(self.columns[0]), nw.col(self.columns[1])
                         ))
-                    .otherwise(None).cast(nw.Boolean)
+                    .otherwise(None)
                 )
+
+        backend=nw.get_native_namespace(X).__name__
+
+        if backend=='polars':
+
+            expr=expr.cast(nw.Boolean)
+
+        outcome_column_name = (
+            f"{self.columns[0]}{self.condition.value}{self.columns[1]}"
+        )
+
+        X = X.with_columns(expr.alias(outcome_column_name))
+
+        if backend=='pandas':
+            X = X.with_columns(
+                nw.maybe_convert_dtypes(X[outcome_column_name]).cast(
+                    nw.Boolean
+                )
+            )
 
 
 

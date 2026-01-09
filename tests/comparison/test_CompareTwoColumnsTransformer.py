@@ -58,10 +58,10 @@ class TestCompareTwoColumnsTransformerTransform:
     @pytest.mark.parametrize(
         "condition, expected_result",
         [
-            (ConditionEnum.GREATER_THAN, [0, 0, 1, None, None]),
-            (ConditionEnum.LESS_THAN, [1, 0, 0, None, None]),
-            (ConditionEnum.EQUAL_TO, [0, 1, 0, None, None]),
-            (ConditionEnum.NOT_EQUAL_TO, [1, 0, 1, None, None]),
+            (ConditionEnum.GREATER_THAN, [False, False, True, None, None]),
+            (ConditionEnum.LESS_THAN, [True, False, False, None, None]),
+            (ConditionEnum.EQUAL_TO, [False, True, False, None, None]),
+            (ConditionEnum.NOT_EQUAL_TO, [True, False, True, None, None]),
         ],
     )
     def test_transform_basic_case_outputs(
@@ -97,43 +97,22 @@ class TestCompareTwoColumnsTransformerTransform:
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        print("Expected DataFrame before casting:")
-        print(expected_df)
-
-        print("Transformed DataFrame before casting:")
-        print(transformed_df)
-
+        expected_df=nw.from_native(expected_df)
 
         expected_df = (
-            nw.from_native(expected_df)
+            expected_df
             .with_columns(
-                nw.col("a").cast(nw.Float64),
-                nw.col("b").cast(nw.Float64),
-                nw.col(f"a{condition.value}b").cast(nw.Float64),
+                nw.maybe_convert_dtypes(expected_df[f"a{condition.value}b"]),
             )
             .to_native()
         )
-
-        transformed_df = (
-            nw.from_native(transformed_df)
-            .with_columns(
-                nw.col("a").cast(nw.Float64),
-                nw.col("b").cast(nw.Float64),
-                nw.col(f"a{condition.value}b").cast(nw.Float64),
-            )
-            .to_native()
-        )
-
-        print("Expected DataFrame after casting:")
-        print(expected_df)
-
-        print("Transformed DataFrame after casting:")
-        print(transformed_df)
 
         u.assert_frame_equal_dispatch(
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
+ 
+
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
