@@ -104,6 +104,37 @@ Instructions for building the docs locally can be found in [docs/README](https:/
 
 We utilise [doctest](https://docs.python.org/3/library/doctest.html) to keep valid usage examples in the docstrings of transformers in the package, so please see these for getting started!
 
+The below demo showcases how to convert and load a pipeline to JSON using the functions *dump_pipeline_to_json* and *load_pipeline_from_json* from pipeline.py.
+
+```python
+import polars as pl
+from tubular.imputers import MeanImputer, MedianImputer
+from sklearn.pipeline import Pipeline
+
+# Create a simple dataframe
+df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
+
+# Add imputers
+median_imputer = MedianImputer(columns=["b"])
+mean_imputer = MeanImputer(columns=["b"])
+
+# Create and fit the pipeline
+original_pipeline = Pipeline(
+    [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+)
+original_pipeline = original_pipeline.fit(df, df["a"])
+
+# Dumping the pipeline to JSON
+pipeline_json = dump_pipeline_to_json(original_pipeline)
+pipeline_json
+
+# Load the pipeline from JSON
+pipeline = load_pipeline_from_json(pipeline_json)
+
+# Verify the reconstructed pipeline
+print(pipeline)
+```
+
 ## Issues
 
 For bugs and feature requests please open an [issue](https://github.com/azukds/tubular/issues).
