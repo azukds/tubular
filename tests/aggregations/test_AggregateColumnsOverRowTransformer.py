@@ -37,7 +37,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        "aggregations, expected_data",
+        ("aggregations", "expected_data"),
         [
             (
                 ["min", "max", "mean", "sum"],

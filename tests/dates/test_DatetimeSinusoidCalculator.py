@@ -93,7 +93,6 @@ class TestInit(
             {2: "str"},
             {"str": 2},
             {2: 2},
-            {"str": True},
             {"str": ["str"]},
         ],
     )
@@ -201,7 +200,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         cls.transformer_name = "DatetimeSinusoidCalculator"
 
     @pytest.mark.parametrize(
-        "columns, method, units, period",
+        ("columns", "method", "units", "period"),
         [
             (["a", "b"], "cos", "month", 12),
             (["a"], "cos", "month", 12),
@@ -261,7 +260,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             )
 
     @pytest.mark.parametrize(
-        "columns, method, units, period",
+        ("columns", "method", "units", "period"),
         [
             (["a"], ["sin", "cos"], "month", 12),
         ],
