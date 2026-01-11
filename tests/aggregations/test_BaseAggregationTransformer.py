@@ -90,7 +90,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
         args["columns"] = ["a"]
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        if _check_if_skip_test(transformer, test_df, lazy):
+        if _check_if_skip_test(transformer, test_df, lazy, from_json):
             return
         transformer = _handle_from_json(transformer, from_json=from_json)
         msg = r"attempting to call transformer on non-numeric columns \['a'\], which is not supported"
