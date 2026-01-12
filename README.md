@@ -80,7 +80,38 @@ pipeline_json = dump_pipeline_to_json(original_pipeline)
 pipeline_json
 
 # Printed value:
-# {'MedianImputer': {'tubular_version': '2.6.1.dev48+gedcc0f8c8', 'classname': 'MedianImputer', 'init': {'columns': ['b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'b': 15.0}}}, 'MeanImputer': {'tubular_version': '2.6.1.dev48+gedcc0f8c8', 'classname': 'MeanImputer', 'init': {'columns': ['b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'b': 15.0}}}}
+# ->
+# {
+# 'MedianImputer': {
+#     'tubular_version': '2.6.1', 
+#     'classname': 'MedianImputer', 
+#     'init': {
+#          'columns': ['b'], 
+#          'copy': False, 
+#          'verbose': False, 
+#          'return_native': True, 
+#          'weights_column': None
+#          },
+#     'fit': {
+#           'impute_values_': {'b': 15.0}
+#           }
+#      },
+# 'MeanImputer': {
+#      'tubular_version': '2.6.1', 
+#      'classname': 'MeanImputer', 
+#      'init': {
+#          'columns': ['b'],
+#          'copy': False, 
+#          'verbose': False, 
+#          'return_native': True, 
+#          'weights_column': None
+#           },
+#      'fit': {
+#          'impute_values_': {
+#          'b': 15.0
+#          }
+#     }
+#}
 
 # Load the pipeline from JSON
 pipeline = load_pipeline_from_json(pipeline_json)
