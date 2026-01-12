@@ -94,7 +94,7 @@ pipeline_json
 #          'weights_column': None
 #          },
 #     'fit': {
-#           'impute_values_': {'b': 15.0}
+#           'impute_values_': {'b': 10.0}
 #           }
 #      },
 # 'MeanImputer': {
