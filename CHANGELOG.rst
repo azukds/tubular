@@ -35,6 +35,7 @@ Changed
 - added `to_json` method for BaseAggregationTransformer `#610 <https://github.com/azukds/tubular/issues/610>_`
 - feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
 - turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
+- feat: turned on docstring lints for nominal file
 
 2.6.0 (19/12/2025)
 ------------------
