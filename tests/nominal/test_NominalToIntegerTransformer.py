@@ -21,10 +21,10 @@ class TestInit(ColumnStrListInitTests):
     def setup_class(cls):
         cls.transformer_name = "NominalToIntegerTransformer"
 
-    @staticmethod
-    def test_start_encoding_not_int_error():
+    def test_start_encoding_not_int_error(self):
         """Test that an exception is raised if start_encoding is not an int."""
-        with pytest.raises(ValueError):
+        msg = f"{self.transformer_name}: start_encoding should be an integer"
+        with pytest.raises(ValueError, match=msg):
             NominalToIntegerTransformer(columns="a", start_encoding="a")
 
 
@@ -35,8 +35,7 @@ class TestFit(GenericFitTests):
     def setup_class(cls):
         cls.transformer_name = "NominalToIntegerTransformer"
 
-    @staticmethod
-    def test_learnt_values():
+    def test_learnt_values(self):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_1()
 
@@ -55,8 +54,7 @@ class TestFit(GenericFitTests):
             msg="mappings attribute",
         )
 
-    @staticmethod
-    def test_error_for_too_many_levels():
+    def test_error_for_too_many_levels(self):
         "test that transformer.transform errors for column with too many levels"
         transformer = NominalToIntegerTransformer(columns=["a"])
 
@@ -101,8 +99,7 @@ class TestTransform(GenericNominalTransformTests):
 
         return df
 
-    @staticmethod
-    def test_learnt_values_not_modified():
+    def test_learnt_values_not_modified(self):
         """Test that the mappings from fit are not changed in transform."""
         df = d.create_df_1()
 
@@ -124,8 +121,7 @@ class TestTransform(GenericNominalTransformTests):
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_1()),
     )
-    @staticmethod
-    def test_expected_output(df, expected):
+    def test_expected_output(self, df, expected):
         """Test that the output is expected from transform."""
         x = NominalToIntegerTransformer(columns=["a", "b"])
 

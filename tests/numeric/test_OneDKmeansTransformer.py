@@ -25,8 +25,7 @@ class TestInit(
     def test_clone(self):
         pass
 
-    @staticmethod
-    def test_acolumns_type_error_if_not_str_or_len1_list():
+    def test_acolumns_type_error_if_not_str_or_len1_list(self):
         """Test that an exception is raised if kmeans_kwargs is not a dict."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -54,21 +53,24 @@ class TestFit(BaseNumericTransformerFitTests):
             (d.create_df_with_none_and_nan_cols),  # all np.nan
         ],
     )
-    @staticmethod
     def test_x_nans_value_type_error(
+        self,
         library,
         df_generator,
     ):
         """Test that an exception is raised if X contains Nan or None."""
+
+        df = df_generator(library=library)
+        transformer = OneDKmeansTransformer(
+            new_column_name="b",
+            columns="a",
+        )
+
         with pytest.raises(
             ValueError,
             match=r"OneDKmeansTransformer: X should not contain missing values.",
         ):
-            df = df_generator(library=library)
-            OneDKmeansTransformer(
-                new_column_name="b",
-                columns="a",
-            ).fit(X=df)
+            transformer.fit(X=df)
 
 
 # Create test data
@@ -215,8 +217,7 @@ class TestTransform(
             ),
         ],
     )
-    @staticmethod
-    def test_expected_output_without_drop(df, expected, from_json):
+    def test_expected_output_without_drop(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are no negative numbers and dont drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -246,8 +247,7 @@ class TestTransform(
             ),
         ],
     )
-    @staticmethod
-    def test_expected_output_with_drop(df, expected, from_json):
+    def test_expected_output_with_drop(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are no negative numbers and drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -276,8 +276,7 @@ class TestTransform(
             ),
         ],
     )
-    @staticmethod
-    def test_expected_output_without_drop_negatives(df, expected, from_json):
+    def test_expected_output_without_drop_negatives(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are negative numbers and dont drop original"""
         x = OneDKmeansTransformer(
             columns="b",
@@ -305,8 +304,7 @@ class TestTransform(
             ),
         ],
     )
-    @staticmethod
-    def test_expected_output_with_drop_negatives(df, expected, from_json):
+    def test_expected_output_with_drop_negatives(self, df, expected, from_json):
         """Test that the output is expected from transform, when there are negative numbers and drop original"""
         x = OneDKmeansTransformer(
             columns="b",

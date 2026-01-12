@@ -7,8 +7,7 @@ from tubular._utils import _assess_pandas_object_column
 class TestAssessPandasObjectColumn:
     "tests for _assess_pandas_object_column function"
 
-    @staticmethod
-    def test_boolean_case():
+    def test_boolean_case(self):
         "test function output for bool/null column"
 
         column = "a"
@@ -30,8 +29,7 @@ class TestAssessPandasObjectColumn:
             f"_assess_pandas_object_column output not as expected for polars bool type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
         )
 
-    @staticmethod
-    def test_null_case():
+    def test_null_case(self):
         "test function output for null column"
 
         column = "a"
@@ -53,8 +51,7 @@ class TestAssessPandasObjectColumn:
             f"_assess_pandas_object_column output not as expected for polars null type, expected {expected_polars_col_type} but got {actual_polars_col_type}"
         )
 
-    @staticmethod
-    def test_object_case():
+    def test_object_case(self):
         "test function output for object column (not one of our more specific subcases)"
 
         column = "a"
@@ -83,8 +80,7 @@ class TestAssessPandasObjectColumn:
             [True, False],
         ],
     )
-    @staticmethod
-    def test_errors_for_non_object(values):
+    def test_errors_for_non_object(self, values):
         "test function errors for non object columns"
 
         column = "a"
