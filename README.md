@@ -63,6 +63,7 @@ from sklearn.pipeline import Pipeline
 from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
 
 # Create a simple dataframe
+
 df = pl.DataFrame({"a": [1, 5], "b": [10, None]})
 
 # Add imputers
@@ -83,13 +84,13 @@ pipeline_json
 # ->
 # {
 # 'MedianImputer': {
-#     'tubular_version': '2.6.1', 
-#     'classname': 'MedianImputer', 
+#     'tubular_version': '2.6.1',
+#     'classname': 'MedianImputer',
 #     'init': {
-#          'columns': ['b'], 
-#          'copy': False, 
-#          'verbose': False, 
-#          'return_native': True, 
+#          'columns': ['b'],
+#          'copy': False,
+#          'verbose': False,
+#          'return_native': True,
 #          'weights_column': None
 #          },
 #     'fit': {
@@ -97,13 +98,13 @@ pipeline_json
 #           }
 #      },
 # 'MeanImputer': {
-#      'tubular_version': '2.6.1', 
-#      'classname': 'MeanImputer', 
+#      'tubular_version': '2.6.1',
+#      'classname': 'MeanImputer',
 #      'init': {
 #          'columns': ['b'],
-#          'copy': False, 
-#          'verbose': False, 
-#          'return_native': True, 
+#          'copy': False,
+#          'verbose': False,
+#          'return_native': True,
 #          'weights_column': None
 #           },
 #      'fit': {
@@ -111,7 +112,7 @@ pipeline_json
 #          'b': 15.0
 #          }
 #     }
-#}
+# }
 
 # Load the pipeline from JSON
 pipeline = load_pipeline_from_json(pipeline_json)
