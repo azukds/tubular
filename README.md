@@ -63,7 +63,7 @@ from sklearn.pipeline import Pipeline
 from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
 
 # Create a simple dataframe
-df = pl.DataFrame({"a": [1, 5], "b": [10, 20]})
+df = pl.DataFrame({"a": [1, 5], "b": [10, None]})
 
 # Add imputers
 median_imputer = MedianImputer(columns=["b"])
