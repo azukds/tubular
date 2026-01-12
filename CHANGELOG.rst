@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- added `to_json` method for BaseAggregationTransformer `#610 <https://github.com/azukds/tubular/issues/610>_`
 - feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
 - turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
 
