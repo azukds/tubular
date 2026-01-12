@@ -1,11 +1,11 @@
-import pytest
 import copy
-from tests import utils as u
-from beartype.roar import BeartypeCallHintParamViolation
-import narwhals as nw
 
+import narwhals as nw
+import pytest
+from beartype.roar import BeartypeCallHintParamViolation
+
+from tests import utils as u
 from tests.base_tests import ColumnStrListInitTests
-from tests.conftest import uninitialized_transformers
 
 
 def create_when_then_test_df(library="pandas"):
@@ -16,9 +16,8 @@ def create_when_then_test_df(library="pandas"):
         "condition_col": [True, False, True, True, None, True],
         "update_col": [100, 200, 300, 200, 300, None],
     }
-    df = u.dataframe_init_dispatch(df_dict, library=library)
-    df = (
-        nw.from_native(df)
+    return (
+        nw.from_native(u.dataframe_init_dispatch(df_dict, library=library))
         .with_columns(
             nw.col("a").cast(nw.Float64),
             nw.col("b").cast(nw.Float64),
@@ -27,7 +26,6 @@ def create_when_then_test_df(library="pandas"):
         )
         .to_native()
     )
-    return df
 
 
 def create_invalid_type_df(library="pandas"):
@@ -38,9 +36,8 @@ def create_invalid_type_df(library="pandas"):
         "condition_col": [1, 0, 1],  # Int type, should be Boolean
         "update_col": [10, 20, 30],  # Int type
     }
-    df = u.dataframe_init_dispatch(df_dict, library=library)
-    df = (
-        nw.from_native(df)
+    return (
+        nw.from_native(u.dataframe_init_dispatch(df_dict, library=library))
         .with_columns(
             nw.col("a").cast(nw.Int64),
             nw.col("b").cast(nw.Float64),
@@ -49,7 +46,7 @@ def create_invalid_type_df(library="pandas"):
         )
         .to_native()
     )
-    return df
+
 
 def create_mismatched_type_df(library="pandas"):
     """Create a test dataframe with mismatched types for testing."""
@@ -59,9 +56,8 @@ def create_mismatched_type_df(library="pandas"):
         "condition_col": [True, False, True],  # Correct Boolean type
         "update_col": [10.0, 20.0, 30.0],  # Float type
     }
-    df = u.dataframe_init_dispatch(df_dict, library=library)
-    df = (
-        nw.from_native(df)
+    return (
+        nw.from_native(u.dataframe_init_dispatch(df_dict, library=library))
         .with_columns(
             nw.col("a").cast(nw.Int64),
             nw.col("b").cast(nw.Int64),
@@ -70,8 +66,6 @@ def create_mismatched_type_df(library="pandas"):
         )
         .to_native()
     )
-    return df
-
 
 
 class TestWhenThenOtherwiseTransformerInit(ColumnStrListInitTests):
@@ -81,14 +75,13 @@ class TestWhenThenOtherwiseTransformerInit(ColumnStrListInitTests):
     def setup_class(cls):
         cls.transformer_name = "WhenThenOtherwiseTransformer"
 
-
     @pytest.mark.parametrize(
         "when_column, then_column",
         [
-            (None, "update_col"), 
+            (None, "update_col"),
             ("condition_col", None),
-            (123, "update_col"), 
-            ("condition_col", 456), 
+            (123, "update_col"),
+            ("condition_col", 456),
         ],
     )
     def test_errors_if_invalid_when_then_columns(
@@ -105,13 +98,57 @@ class TestWhenThenOtherwiseTransformerInit(ColumnStrListInitTests):
             uninitialized_transformers[self.transformer_name](**args)
 
 
-
-class TestWhenThenOtherwiseTransformerTransform():
+class TestWhenThenOtherwiseTransformerTransform:
     """Tests for transform method in WhenThenOtherwiseTransformer."""
 
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "WhenThenOtherwiseTransformer"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_transform_raises_error_on_invalid_condition_column_type(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test transform method raises TypeError if condition column is not Boolean."""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = ["a", "b"]
+        args["when_column"] = "condition_col"
+        args["then_column"] = "update_col"
+
+        df = create_invalid_type_df(library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        with pytest.raises(
+            TypeError, match=r"The column 'condition_col' must be of type Boolean."
+        ):
+            transformer.transform(df)
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_transform_raises_error_on_mismatched_column_types(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test transform method raises TypeError if columns have mismatched types."""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = ["a", "b"]
+        args["when_column"] = "condition_col"
+        args["then_column"] = "update_col"
+
+        df = create_mismatched_type_df(library=library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        with pytest.raises(
+            TypeError,
+            match=r"All columns in .* must be of the same type as 'update_col'.",
+        ):
+            transformer.transform(df)
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -129,7 +166,7 @@ class TestWhenThenOtherwiseTransformerTransform():
         args["columns"] = ["a", "b"]
         args["when_column"] = "condition_col"
         args["then_column"] = "update_col"
-        
+
         df = create_when_then_test_df(library=library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
@@ -143,13 +180,12 @@ class TestWhenThenOtherwiseTransformerTransform():
 
         # Expected output for basic conditional update
         expected_data = {
-            "a": [100, 20, 300, 200, 60, None ],
+            "a": [100, 20, 300, 200, 60, None],
             "b": [100, 50, 300, 200, 70, None],
             "condition_col": [True, False, True, True, None, True],
             "update_col": [100, 200, 300, 200, 300, None],
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
-
 
         expected_df = (
             nw.from_native(expected_df)
@@ -199,7 +235,7 @@ class TestWhenThenOtherwiseTransformerTransform():
         args["columns"] = ["a", "b"]
         args["when_column"] = "condition_col"
         args["then_column"] = "update_col"
-        
+
         single_row_df_dict = {
             "a": a_values,
             "b": b_values,

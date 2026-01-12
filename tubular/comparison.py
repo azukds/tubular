@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import operator
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional
 
 import narwhals as nw
+
+if TYPE_CHECKING:
+    import pandas as pd
 from beartype import beartype
 from typing_extensions import deprecated
-from typing_extensions import Annotated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -20,9 +22,9 @@ from tubular.base import BaseTransformer
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
+    Is,
     ListOfTwoStrs,
     NonEmptyListOfStrs,
-    Is,
 )
 
 
@@ -34,25 +36,24 @@ class ConditionEnum(Enum):
     EQUAL_TO = "=="
     NOT_EQUAL_TO = "!="
 
+
 ConditionEnumStr = Annotated[
     str,
     Is[lambda s: s in ConditionEnum._value2member_map_],
 ]
 
 
-if TYPE_CHECKING:
-    import polars  as pl
-
-
 class WhenThenOtherwiseTransformer(BaseTransformer):
     """Transformer to apply conditional logic across multiple columns.
 
-    This transformer evaluates specified columns against a condition and updates with given values based on the results.
+    This transformer evaluates specified columns against a condition and updates
+    with given values based on the results.
 
     Attributes
     ----------
     polars_compatible : bool
-        Indicates whether transformer has been converted to polars/pandas agnostic narwhals framework.
+        Indicates whether transformer has been converted to polars/pandas agnostic
+        narwhals framework.
 
     FITS : bool
         Indicates whether transform requires fit to be run first.
@@ -119,7 +120,8 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
             Boolean column used to evaluate conditions.
 
         then_column : ListOfOneStr
-            Column containing values to update the specified columns based on the condition.
+            Column containing values to update the specified columns
+            based on the condition.
 
         **kwargs : dict[str, bool]
             Additional keyword arguments passed to the BaseTransformer.
@@ -147,7 +149,20 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         ...     then_column='update_col'
         ... )
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'WhenThenOtherwiseTransformer', 'init': {'columns': ['a', 'b'], 'when_column': 'condition_col', 'then_column': 'update_col', 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        >>> transformer.to_json()
+        {
+            'tubular_version': ...,
+            'classname': 'WhenThenOtherwiseTransformer',
+            'init': {
+                'columns': ['a', 'b'],
+                'when_column': 'condition_col',
+                'then_column': 'update_col',
+                'copy': False,
+                'verbose': False,
+                'return_native': True
+            },
+            'fit': {}
+        }
 
         """
         json_dict = super().to_json()
@@ -178,6 +193,12 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         DataFrame
             Transformed DataFrame with updated columns based on conditions.
 
+        Raises
+        ------
+        TypeError
+            If the `when_column` is not of type Boolean or if columns
+            have mismatched types.
+
         Examples
         --------
         ```pycon
@@ -191,7 +212,9 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         ...     }
         ... )
         >>> transformer = WhenThenOtherwiseTransformer(
-        ...     columns=["a", "b"], when_column="condition_col", then_column="update_col"
+        ...     columns=["a", "b"],
+        ...     when_column="condition_col",
+        ...     then_column="update_col",
         ... )
         >>> transformed_df = transformer.transform(df)
         >>> print(transformed_df)
@@ -204,7 +227,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         │ 10  │ 10  │ true         │ 10        │
         │ 2   │ 5   │ false        │ 20        │
         │ 30  │ 30  │ true         │ 30        │
-        └─────┴─────┴──────────────┴───────────┘        
+        └─────┴─────┴──────────────┴───────────┘
 
         ```
 
@@ -214,18 +237,21 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         schema = X.schema
         if schema[self.when_column] != nw.Boolean:
-            raise TypeError(f"The column '{self.when_column}' must be of type Boolean.")
+            message = f"The column '{self.when_column}' must be of type Boolean."
+            raise TypeError(message)
 
         then_column_type = schema[self.then_column]
         if any(schema[col] != then_column_type for col in self.columns):
-            raise TypeError(
-                f"All columns in {self.columns} must be of the same type as '{self.then_column}'."
+            message = (
+                f"All columns in {self.columns} must be of the same type as "
+                f"'{self.then_column}'."
             )
+            raise TypeError(message)
 
         exprs_dict = {
             col: nw.when(nw.col(self.when_column))
-                .then(nw.col(self.then_column))
-                .otherwise(nw.col(col))
+            .then(nw.col(self.then_column))
+            .otherwise(nw.col(col))
             for col in self.columns
         }
 
@@ -243,7 +269,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     Attributes
     ----------
     polars_compatible : bool
-        Indicates whether transformer has been converted to polars/pandas agnostic narwhals framework.
+        Indicates whether transformer has been converted to polars/pandas
+        agnostic narwhals framework.
 
     FITS : bool
         Indicates whether transform requires fit to be run first.
@@ -286,7 +313,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     lazyframe_compatible = True
 
     # Map the enum to the operator functions
-    ops_map = {
+    ops_map: ClassVar[dict[ConditionEnum, Any]] = {
         ConditionEnum.GREATER_THAN: operator.gt,
         ConditionEnum.LESS_THAN: operator.lt,
         ConditionEnum.EQUAL_TO: operator.eq,
@@ -295,7 +322,10 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
     @beartype
     def __init__(
-        self, columns: ListOfTwoStrs, condition: ConditionEnumStr, **kwargs: Optional[bool]
+        self,
+        columns: ListOfTwoStrs,
+        condition: ConditionEnumStr,
+        **kwargs: Optional[bool],
     ) -> None:
         """Initialize the CompareTwoColumnsTransformer.
 
@@ -329,8 +359,6 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         return json_dict
 
-
-
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Transform two columns based on a condition to generate an outcome.
@@ -344,6 +372,11 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         -------
         DataFrame
             Transformed DataFrame with the new outcome column.
+
+        Raises
+        ------
+        TypeError
+            If the columns are not of a numeric type.
 
         Examples
         --------
@@ -375,50 +408,38 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         numeric_types = {nw.Int64, nw.Float64, nw.Int32, nw.Float32}
         for col in self.columns:
             if schema[col] not in numeric_types:
-                raise TypeError(f"The column '{col}' must be of a numeric type.")
+                message = f"The column '{col}' must be of a numeric type."
+                raise TypeError(message)
 
-
-        null_filter_expr=nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
-
-        
+        null_filter_expr = (
+            nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
+        )
 
         expr = (
-                    nw.when(
-                        ~null_filter_expr
-                    )
-                    .then(self.ops_map[self.condition](
-                            nw.col(self.columns[0]), nw.col(self.columns[1])
-                        ))
-                    .otherwise(None)
-                )
-
-        backend=nw.get_native_namespace(X).__name__
-
-        if backend=='polars':
-
-            expr=expr.cast(nw.Boolean)
-
-        outcome_column_name = (
-            f"{self.columns[0]}{self.condition.value}{self.columns[1]}"
-        )
-
-        X = X.with_columns(expr.alias(outcome_column_name))
-
-        if backend=='pandas':
-            X = X.with_columns(
-                nw.maybe_convert_dtypes(X[outcome_column_name]).cast(
-                    nw.Boolean
+            nw.when(~null_filter_expr)
+            .then(
+                self.ops_map[self.condition](
+                    nw.col(self.columns[0]), nw.col(self.columns[1])
                 )
             )
+            .otherwise(None)
+        )
 
+        backend = nw.get_native_namespace(X).__name__
 
-
+        if backend == "polars":
+            expr = expr.cast(nw.Boolean)
 
         outcome_column_name = (
             f"{self.columns[0]}{self.condition.value}{self.columns[1]}"
         )
 
         X = X.with_columns(expr.alias(outcome_column_name))
+
+        if backend == "pandas":
+            X = X.with_columns(
+                nw.maybe_convert_dtypes(X[outcome_column_name]).cast(nw.Boolean)
+            )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

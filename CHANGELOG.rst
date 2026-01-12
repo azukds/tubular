@@ -49,6 +49,7 @@ Changed
 - feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
+- feat: added two new transformers called WhenThenOtherwiseTransformer and CompareTwoColumnsTransformer
 
 2.4.0 (01/12/2025)
 ------------------
