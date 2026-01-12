@@ -109,7 +109,7 @@ pipeline_json
 #           },
 #      'fit': {
 #          'impute_values_': {
-#          'b': 15.0
+#          'b': 10.0
 #          }
 #     }
 # }
