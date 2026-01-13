@@ -105,7 +105,7 @@ class TestCompareTwoColumnsTransformerTransform:
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "condition, expected_result",
+        ("condition", "expected_result"),
         [
             (ConditionEnum.GREATER_THAN, [False, False, True, None, None]),
             (ConditionEnum.LESS_THAN, [True, False, False, None, None]),
@@ -161,7 +161,7 @@ class TestCompareTwoColumnsTransformerTransform:
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "condition, a_value, b_value, expected_result",
+        ("condition", "a_value", "b_value", "expected_result"),
         [
             (ConditionEnum.GREATER_THAN, 1, 3, [False]),
             (ConditionEnum.LESS_THAN, 1, 3, [True]),

@@ -25,6 +25,7 @@ from tubular.types import (
     Is,
     ListOfTwoStrs,
     NonEmptyListOfStrs,
+    NumericTypes,
 )
 
 
@@ -82,17 +83,15 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
     >>> transformed_df = transformer.transform(df)
     >>> print(transformed_df)
     shape: (3, 4)
-    ┌─────┬─────┬──────────────┬───────────┐
-    │ a   │ b   │ condition_col│ update_col│
-    │ --- │ --- │ ---          │ ---       │
-    │ i64 │ i64 │ bool         │ i64       │
-    ╞═════╪═════╪══════════════╪═══════════╡
-    │ 10  │ 10  │ true         │ 10        │
-    │ 2   │ 5   │ false        │ 20        │
-    │ 30  │ 30  │ true         │ 30        │
-    └─────┴─────┴──────────────┴───────────┘
-
-    ```
+    ┌─────┬─────┬───────────────┬────────────┐
+    │ a   ┆ b   ┆ condition_col ┆ update_col │
+    │ --- ┆ --- ┆ ---           ┆ ---        │
+    │ i64 ┆ i64 ┆ bool          ┆ i64        │
+    ╞═════╪═════╪═══════════════╪════════════╡
+    │ 10  ┆ 10  ┆ true          ┆ 10         │
+    │ 2   ┆ 5   ┆ false         ┆ 20         │
+    │ 30  ┆ 30  ┆ true          ┆ 30         │
+    └─────┴─────┴───────────────┴────────────┘
 
     """
 
@@ -144,25 +143,10 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         Examples
         --------
         >>> transformer = WhenThenOtherwiseTransformer(
-        ...     columns=['a', 'b'],
-        ...     when_column='condition_col',
-        ...     then_column='update_col'
+        ...     columns=["a", "b"], when_column="condition_col", then_column="update_col"
         ... )
         >>> transformer.to_json()
-        >>> transformer.to_json()
-        {
-            'tubular_version': ...,
-            'classname': 'WhenThenOtherwiseTransformer',
-            'init': {
-                'columns': ['a', 'b'],
-                'when_column': 'condition_col',
-                'then_column': 'update_col',
-                'copy': False,
-                'verbose': False,
-                'return_native': True
-            },
-            'fit': {}
-        }
+        {'tubular_version': 'dev', 'classname': 'WhenThenOtherwiseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'when_column': 'condition_col', 'then_column': 'update_col'}, 'fit': {}}
 
         """
         json_dict = super().to_json()
@@ -219,17 +203,15 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         >>> transformed_df = transformer.transform(df)
         >>> print(transformed_df)
         shape: (3, 4)
-        ┌─────┬─────┬──────────────┬───────────┐
-        │ a   │ b   │ condition_col│ update_col│
-        │ --- │ --- │ ---          │ ---       │
-        │ i64 │ i64 │ bool         │ i64       │
-        ╞═════╪═════╪══════════════╪═══════════╡
-        │ 10  │ 10  │ true         │ 10        │
-        │ 2   │ 5   │ false        │ 20        │
-        │ 30  │ 30  │ true         │ 30        │
-        └─────┴─────┴──────────────┴───────────┘
-
-        ```
+        ┌─────┬─────┬───────────────┬────────────┐
+        │ a   ┆ b   ┆ condition_col ┆ update_col │
+        │ --- ┆ --- ┆ ---           ┆ ---        │
+        │ i64 ┆ i64 ┆ bool          ┆ i64        │
+        ╞═════╪═════╪═══════════════╪════════════╡
+        │ 10  ┆ 10  ┆ true          ┆ 10         │
+        │ 2   ┆ 5   ┆ false         ┆ 20         │
+        │ 30  ┆ 30  ┆ true          ┆ 30         │
+        └─────┴─────┴───────────────┴────────────┘
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -288,20 +270,20 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     >>> df = pl.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]})
     >>> transformer = CompareTwoColumnsTransformer(
     ...     columns=["a", "b"],
-    ...     condition=ConditionEnum.GREATER_THAN,
+    ...     condition=ConditionEnum.GREATER_THAN.value,
     ... )
     >>> transformed_df = transformer.transform(df)
     >>> print(transformed_df)
     shape: (3, 3)
-    ┌─────┬─────┬───────────────┐
-    │ a   |  b  |    a>b        │
-    │ --- │ --- │ ---           │
-    │ i64 │ i64 │ i64           │
-    ╞═════╪═════╪═══════════════╡
-    │ 1   │ 3   │ 0             │
-    │ 2   │ 2   │ 0             │
-    │ 3   │ 1   │ 1             │
-    └─────┴─────┴───────────────┘
+    ┌─────┬─────┬───────┐
+    │ a   ┆ b   ┆ a>b   │
+    │ --- ┆ --- ┆ ---   │
+    │ i64 ┆ i64 ┆ bool  │
+    ╞═════╪═════╪═══════╡
+    │ 1   ┆ 3   ┆ false │
+    │ 2   ┆ 2   ┆ false │
+    │ 3   ┆ 1   ┆ true  │
+    └─────┴─────┴───────┘
 
     ```
 
@@ -384,30 +366,28 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         >>> df = pl.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]})
         >>> transformer = CompareTwoColumnsTransformer(
         ...     columns=["a", "b"],
-        ...     condition=ConditionEnum.GREATER_THAN,
+        ...     condition=ConditionEnum.GREATER_THAN.value,
         ... )
         >>> transformed_df = transformer.transform(df)
         >>> print(transformed_df)
         shape: (3, 3)
-        ┌─────┬─────┬───────────────┐
-        │ a   │ b   │ a>b           │
-        │ --- │ --- │ ---           │
-        │ i64 │ i64 │ i64           │
-        ╞═════╪═════╪═══════════════╡
-        │ 1   │ 3   │ 0             │
-        │ 2   │ 2   │ 0             │
-        │ 3   │ 1   │ 1             │
-        └─────┴─────┴───────────────┘
-        ```
+        ┌─────┬─────┬───────┐
+        │ a   ┆ b   ┆ a>b   │
+        │ --- ┆ --- ┆ ---   │
+        │ i64 ┆ i64 ┆ bool  │
+        ╞═════╪═════╪═══════╡
+        │ 1   ┆ 3   ┆ false │
+        │ 2   ┆ 2   ┆ false │
+        │ 3   ┆ 1   ┆ true  │
+        └─────┴─────┴───────┘
 
         """
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
         schema = X.schema
-        numeric_types = {nw.Int64, nw.Float64, nw.Int32, nw.Float32}
         for col in self.columns:
-            if schema[col] not in numeric_types:
+            if schema[col] not in NumericTypes:
                 message = f"The column '{col}' must be of a numeric type."
                 raise TypeError(message)
 

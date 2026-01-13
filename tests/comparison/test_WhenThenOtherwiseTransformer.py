@@ -76,7 +76,7 @@ class TestWhenThenOtherwiseTransformerInit(ColumnStrListInitTests):
         cls.transformer_name = "WhenThenOtherwiseTransformer"
 
     @pytest.mark.parametrize(
-        "when_column, then_column",
+        ("when_column", "then_column"),
         [
             (None, "update_col"),
             ("condition_col", None),
@@ -207,7 +207,14 @@ class TestWhenThenOtherwiseTransformerTransform:
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
-        "a_values, b_values, condition_values, update_values, expected_a, expected_b",
+        (
+            "a_values",
+            "b_values",
+            "condition_values",
+            "update_values",
+            "expected_a",
+            "expected_b",
+        ),
         [
             ([10], [40], [True], [100], [100], [100]),
             ([10], [40], [False], [100], [10], [40]),
