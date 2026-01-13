@@ -288,7 +288,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     >>> df = pl.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]})
     >>> transformer = CompareTwoColumnsTransformer(
     ...     columns=["a", "b"],
-    ...     condition=ConditionEnum.GREATER_THAN,
+    ...     condition=">",
     ... )
     >>> transformed_df = transformer.transform(df)
     >>> print(transformed_df)
