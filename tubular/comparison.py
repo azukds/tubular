@@ -149,7 +149,6 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         ...     then_column='update_col'
         ... )
         >>> transformer.to_json()
-        >>> transformer.to_json()
         {
             'tubular_version': ...,
             'classname': 'WhenThenOtherwiseTransformer',
