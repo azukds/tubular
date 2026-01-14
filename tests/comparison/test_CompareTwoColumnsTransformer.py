@@ -72,7 +72,8 @@ class TestCompareTwoColumnsTransformerTransform:
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         with pytest.raises(
-            TypeError, match=r"The column 'a' must be of a numeric type."
+            TypeError,
+            match=r"Columns must be of a numeric type, but the following are not: \['a', 'b'\]",
         ):
             transformer.transform(df)
 
@@ -97,7 +98,8 @@ class TestCompareTwoColumnsTransformerTransform:
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         with pytest.raises(
-            TypeError, match=r"The column 'b' must be of a numeric type."
+            TypeError,
+            match=r"Columns must be of a numeric type, but the following are not: \['b'\]",
         ):
             transformer.transform(df)
 

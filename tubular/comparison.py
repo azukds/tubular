@@ -142,11 +142,20 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         Examples
         --------
+        >>> from pprint import pprint
         >>> transformer = WhenThenOtherwiseTransformer(
-        ...     columns=["a", "b"], when_column="condition_col", then_column="update_col"
+        ...     columns=["a", "b"],when_column="condition_col",then_column="update_col"
         ... )
-        >>> transformer.to_json()
-        {'tubular_version': 'dev', 'classname': 'WhenThenOtherwiseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'when_column': 'condition_col', 'then_column': 'update_col'}, 'fit': {}}
+        >>> pprint(transformer.to_json(),sort_dicts=True)
+        {'classname': 'WhenThenOtherwiseTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b'],
+                  'copy': False,
+                  'return_native': True,
+                  'then_column': 'update_col',
+                  'verbose': False,
+                  'when_column': 'condition_col'},
+         'tubular_version': 'dev'}
 
         """
         json_dict = super().to_json()
@@ -334,6 +343,24 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         dict[str, dict[str, Any]]:
             JSON representation of the transformer, including init parameters.
 
+        Examples
+        --------
+        >>> transformer = CompareTwoColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     condition=ConditionEnum.GREATER_THAN.value,
+        ... )
+        >>> json_dict = transformer.to_json()
+        >>> from pprint import pprint
+        >>> pprint(json_dict, sort_dicts=True)
+        {'classname': 'CompareTwoColumnsTransformer',
+         'fit': {},
+         'init': {'columns': ['a', 'b'],
+                  'condition': '>',
+                  'copy': False,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': 'dev'}
+
         """
         json_dict = super().to_json()
 
@@ -386,10 +413,14 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         X = super().transform(X, return_native_override=False)
 
         schema = X.schema
-        for col in self.columns:
-            if schema[col] not in NumericTypes:
-                message = f"The column '{col}' must be of a numeric type."
-                raise TypeError(message)
+
+        bad_cols = [col for col in self.columns if schema[col] not in NumericTypes]
+        if bad_cols:
+            message = (
+                "Columns must be of a numeric type, but the following are not: "
+                f"{bad_cols}"
+            )
+            raise TypeError(message)
 
         null_filter_expr = (
             nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
