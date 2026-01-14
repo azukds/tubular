@@ -93,6 +93,8 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
     │ 30  ┆ 30  ┆ true          ┆ 30         │
     └─────┴─────┴───────────────┴────────────┘
 
+    ```
+
     """
 
     polars_compatible = True
@@ -142,11 +144,14 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         Examples
         --------
+        ```pycon
         >>> from pprint import pprint
         >>> transformer = WhenThenOtherwiseTransformer(
-        ...     columns=["a", "b"],when_column="condition_col",then_column="update_col"
+        ...     columns=["a", "b"],
+        ...     when_column="condition_col",
+        ...     then_column="update_col",  # noqa: E501
         ... )
-        >>> pprint(transformer.to_json(),sort_dicts=True)
+        >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'WhenThenOtherwiseTransformer',
          'fit': {},
          'init': {'columns': ['a', 'b'],
@@ -155,7 +160,9 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
                   'then_column': 'update_col',
                   'verbose': False,
                   'when_column': 'condition_col'},
-         'tubular_version': 'dev'}
+         'tubular_version': ...}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -221,6 +228,8 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         │ 2   ┆ 5   ┆ false         ┆ 20         │
         │ 30  ┆ 30  ┆ true          ┆ 30         │
         └─────┴─────┴───────────────┴────────────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -345,6 +354,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         Examples
         --------
+        ```pycon
         >>> transformer = CompareTwoColumnsTransformer(
         ...     columns=["a", "b"],
         ...     condition=ConditionEnum.GREATER_THAN.value,
@@ -359,7 +369,9 @@ class CompareTwoColumnsTransformer(BaseTransformer):
                   'copy': False,
                   'return_native': True,
                   'verbose': False},
-         'tubular_version': 'dev'}
+         'tubular_version': ...}
+
+        ```
 
         """
         json_dict = super().to_json()
@@ -389,6 +401,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         Examples
         --------
+        ```pycon
         >>> import polars as pl
         >>> df = pl.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]})
         >>> transformer = CompareTwoColumnsTransformer(
@@ -407,6 +420,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         │ 2   ┆ 2   ┆ false │
         │ 3   ┆ 1   ┆ true  │
         └─────┴─────┴───────┘
+
+        ```
 
         """
         X = _convert_dataframe_to_narwhals(X)
