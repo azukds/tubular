@@ -54,12 +54,81 @@ transformer.transform(test_df)
 # │ 20  ┆ 1   ┆ 4   │
 # └─────┴─────┴─────┘
 ```
+Tubular also supports saving/reading transformers and pipelines to/from json format (goodbye .pkls!), which we demo below:
 
-We are currently in the process of rolling out support for some new features:
-- to/from json methods for our transformers to allow json storage
-- polars lazyframe support
+```python
+import polars as pl
+from tubular.imputers import MeanImputer, MedianImputer
+from sklearn.pipeline import Pipeline
+from tubular.pipeline import dump_pipeline_to_json, load_pipeline_from_json
 
-You can track our progress here:
+# Create a simple dataframe
+
+df = pl.DataFrame({"a": [1, 5], "b": [10, None]})
+
+# Add imputers
+median_imputer = MedianImputer(columns=["b"])
+mean_imputer = MeanImputer(columns=["b"])
+
+# Create and fit the pipeline
+original_pipeline = Pipeline(
+    [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+)
+original_pipeline = original_pipeline.fit(df)
+
+# Dumping the pipeline to JSON
+pipeline_json = dump_pipeline_to_json(original_pipeline)
+pipeline_json
+
+# Printed value:
+# ->
+# {
+# 'MedianImputer': {
+#     'tubular_version': '2.6.1',
+#     'classname': 'MedianImputer',
+#     'init': {
+#          'columns': ['b'],
+#          'copy': False,
+#          'verbose': False,
+#          'return_native': True,
+#          'weights_column': None
+#          },
+#     'fit': {
+#           'impute_values_': {'b': 10.0}
+#           }
+#      },
+# 'MeanImputer': {
+#      'tubular_version': '2.6.1',
+#      'classname': 'MeanImputer',
+#      'init': {
+#          'columns': ['b'],
+#          'copy': False,
+#          'verbose': False,
+#          'return_native': True,
+#          'weights_column': None
+#           },
+#      'fit': {
+#          'impute_values_': {
+#          'b': 10.0
+#          }
+#     }
+# }
+
+# Load the pipeline from JSON
+pipeline = load_pipeline_from_json(pipeline_json)
+
+# Verify the reconstructed pipeline
+print(pipeline)
+
+# Printed value:
+# Pipeline(steps=[('MedianImputer', MedianImputer(columns=['b'])),
+#                 ('MeanImputer', MeanImputer(columns=['b']))])
+```
+
+We are currently in the process of rolling out support for polars lazyframes!
+
+track our progress below:
+
 <!-- AUTO-GENERATED feature table -->
 |                                    | polars_compatible   | pandas_compatible   | jsonable           | lazyframe_compatible   |
 |------------------------------------|---------------------|---------------------|--------------------|------------------------|
@@ -68,13 +137,14 @@ You can track our progress here:
 | ArbitraryImputer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| CompareTwoColumnsTransformer       | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DateDifferenceTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DatetimeComponentExtractor         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DatetimeInfoExtractor              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DatetimeSinusoidCalculator         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | DifferenceTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | GroupRareLevelsTransformer         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
-| MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | MeanImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | MedianImputer                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
@@ -86,6 +156,7 @@ You can track our progress here:
 | RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | SetValueTransformer                | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | ToDatetimeTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
+| WhenThenOtherwiseTransformer       | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 <!-- /AUTO-GENERATED feature table -->
 
 ## Installation

@@ -32,9 +32,11 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- feat: turned on lazyframe_compatible for MappingTransformer and base classes, and setup lazy tests for these `#529 <https://github.com/azukds/tubular/issues/529>`_
 - added `to_json` method for BaseAggregationTransformer and AggregateColumnsOverRowTransformer `#610 <https://github.com/azukds/tubular/issues/610>`_
 - feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
 - turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
+- feat: added two new transformers called WhenThenOtherwiseTransformer and CompareTwoColumnsTransformer
 - added `to_json` method for AggregateRowsOverColumnTransformer `#611 <https://github.com/azukds/tubular/issues/611>`_
 
 2.6.0 (19/12/2025)
