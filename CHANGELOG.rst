@@ -35,6 +35,7 @@ Changed
 - added `to_json` method for BaseAggregationTransformer `#610 <https://github.com/azukds/tubular/issues/610>_`
 - feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
 - turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
+- feat: added two new transformers called WhenThenOtherwiseTransformer and CompareTwoColumnsTransformer
 
 2.6.0 (19/12/2025)
 ------------------
@@ -69,7 +70,6 @@ Changed
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
 - bugfix: Fixed issue with OneHotEncodingTransformer when used with wanted_values and unseen levels at transform time
-- feat: added two new transformers called WhenThenOtherwiseTransformer and CompareTwoColumnsTransformer
 
 2.4.0 (01/12/2025)
 ------------------
