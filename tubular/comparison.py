@@ -1,4 +1,4 @@
-"""Contains transformer for comparing equality between given columns (deprecated)."""
+"""module for comparing and conditionally updating provided columns."""
 
 from __future__ import annotations
 
@@ -472,9 +472,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
 # DEPRECATED TRANSFORMERS
 @deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
+    """This transformer has been superseded by CompareTwoColumnsTransformer
+    and so has been deprecated, and will be removed in a future major release.
     """,
 )
 class EqualityChecker(

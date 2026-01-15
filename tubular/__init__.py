@@ -6,6 +6,10 @@ from tubular.aggregations import (
     AggregateRowsOverColumnTransformer,
 )
 from tubular.capping import CappingTransformer, OutOfRangeNullTransformer
+from tubular.comparison import (
+    CompareTwoColumnsTransformer,
+    WhenThenOtherwiseTransformer,
+)
 from tubular.dates import (
     BetweenDatesTransformer,
     DateDifferenceTransformer,
@@ -40,6 +44,7 @@ __all__ = [
     "ArbitraryImputer",
     "BetweenDatesTransformer",
     "CappingTransformer",
+    "CompareTwoColumnsTransformer",
     "DateDifferenceTransformer",
     "DatetimeComponentExtractor",
     "DatetimeInfoExtractor",
@@ -58,6 +63,7 @@ __all__ = [
     "RatioTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",
+    "WhenThenOtherwiseTransformer",
 ]
 
 __version__ = _get_version()
