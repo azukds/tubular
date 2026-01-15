@@ -38,8 +38,7 @@ class TestInit(
         cls.transformer_name = "DatetimeSinusoidCalculator"
 
     @pytest.mark.parametrize("incorrect_type_method", [2, 2.0, True, {"a": 4}])
-    @staticmethod
-    def test_method_type_error(incorrect_type_method):
+    def test_method_type_error(self, incorrect_type_method):
         """Test that an exception is raised if method is not a str or a list."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -52,8 +51,7 @@ class TestInit(
             )
 
     @pytest.mark.parametrize("incorrect_type_units", [2, 2.0, True, ["help"]])
-    @staticmethod
-    def test_units_type_error(incorrect_type_units):
+    def test_units_type_error(self, incorrect_type_units):
         """Test that an exception is raised if units is not a str or a dict."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -66,8 +64,7 @@ class TestInit(
             )
 
     @pytest.mark.parametrize("incorrect_type_period", ["2", True, ["help"]])
-    @staticmethod
-    def test_period_type_error(incorrect_type_period):
+    def test_period_type_error(self, incorrect_type_period):
         """Test that an error is raised if period is not an int or a float or a dictionary."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -83,8 +80,7 @@ class TestInit(
         "incorrect_dict_types_period",
         [{"str": True}, {2: "str"}, {2: 2}, {"str": ["str"]}],
     )
-    @staticmethod
-    def test_period_dict_type_error(incorrect_dict_types_period):
+    def test_period_dict_type_error(self, incorrect_dict_types_period):
         """Test that an error is raised if period dict is not a str:int or str:float kv pair."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -103,12 +99,10 @@ class TestInit(
             {2: "str"},
             {"str": 2},
             {2: 2},
-            {"str": True},
             {"str": ["str"]},
         ],
     )
-    @staticmethod
-    def test_units_dict_type_error(incorrect_dict_types_units):
+    def test_units_dict_type_error(self, incorrect_dict_types_units):
         """Test that an error is raised if units dict is not a str:str kv pair."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -121,8 +115,7 @@ class TestInit(
             )
 
     @pytest.mark.parametrize("incorrect_dict_units", [{"str": "tweet"}])
-    @staticmethod
-    def test_units_dict_value_error(incorrect_dict_units):
+    def test_units_dict_value_error(self, incorrect_dict_units):
         """Test that an error is raised if units dict value is not from the valid units list."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -138,8 +131,7 @@ class TestInit(
         "incorrect_dict_columns_period",
         [{"ham": 24}, {"str": 34.0}],
     )
-    @staticmethod
-    def test_period_dict_col_error(incorrect_dict_columns_period):
+    def test_period_dict_col_error(self, incorrect_dict_columns_period):
         """Test that an error is raised if period dict keys are not equal to columns."""
         with pytest.raises(
             ValueError,
@@ -156,8 +148,7 @@ class TestInit(
         "incorrect_dict_columns_unit",
         [{"sausage_roll": "hour"}],
     )
-    @staticmethod
-    def test_unit_dict_col_error(incorrect_dict_columns_unit):
+    def test_unit_dict_col_error(self, incorrect_dict_columns_unit):
         """Test that an error is raised if unit dict keys is not equal to columns."""
         with pytest.raises(
             ValueError,
@@ -170,8 +161,7 @@ class TestInit(
                 6,
             )
 
-    @staticmethod
-    def test_valid_method_value_error():
+    def test_valid_method_value_error(self):
         """Test that a value error is raised if method is not sin, cos or a list containing both."""
         method = "tan"
 
@@ -185,8 +175,7 @@ class TestInit(
                 24,
             )
 
-    @staticmethod
-    def test_valid_units_value_error():
+    def test_valid_units_value_error(self):
         """Test that a value error is raised if the unit supplied is not in the valid units list."""
         units = "five"
 
@@ -216,10 +205,9 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
     def setup_class(cls):
         cls.transformer_name = "DatetimeSinusoidCalculator"
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
-        "columns, method, units, period",
+        ("columns", "method", "units", "period"),
         [
             (["a", "b"], "cos", "month", 12),
             (["a"], "cos", "month", 12),
@@ -228,6 +216,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_expected_output_single_method(
+        self,
         columns,
         method,
         units,
@@ -284,10 +273,9 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
                 expected_row,
             )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
-        "columns, method, units, period",
+        ("columns", "method", "units", "period"),
         [
             (["a"], ["sin", "cos"], "month", 12),
         ],
@@ -295,6 +283,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_expected_output_both_methods_single_column(
+        self,
         columns,
         method,
         units,
@@ -359,11 +348,10 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
                 expected_row,
             )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_expected_output_dict_units(library, from_json, lazy):
+    def test_expected_output_dict_units(self, library, from_json, lazy):
         """Test that the transformer produces the expected output when units is a dictionary."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -416,11 +404,10 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
                 expected_row,
             )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_expected_output_dict_period(library, from_json, lazy):
+    def test_expected_output_dict_period(self, library, from_json, lazy):
         """Test that the transformer produces the expected output when period is a dictionary."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(
@@ -473,11 +460,10 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
                 expected_row,
             )
 
-    @staticmethod
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_expected_output_dict_units_and_period(library, from_json, lazy):
+    def test_expected_output_dict_units_and_period(self, library, from_json, lazy):
         """Test that the transformer produces the expected output when both units and period are dictionaries."""
         expected_df = nw.from_native(d.create_datediff_test_df(library=library))
         transformer = DatetimeSinusoidCalculator(

@@ -27,7 +27,29 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.5.0 (unreleased)
+2.7.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- feat: turned on lazyframe_compatible for MappingTransformer and base classes, and setup lazy tests for these `#529 <https://github.com/azukds/tubular/issues/529>`_
+- added `to_json` method for BaseAggregationTransformer `#610 <https://github.com/azukds/tubular/issues/610>_`
+- feat: first pass refactor of MeanResponseTransformer `#149 <https://github.com/azukds/tubular/issues/149>`_
+- turned on PT ruff ruleset `#114 <https://github.com/azukds/tubular/issues/114>`_
+- feat: added two new transformers called WhenThenOtherwiseTransformer and CompareTwoColumnsTransformer
+
+2.6.0 (19/12/2025)
+------------------
+
+Changed
+^^^^^^^
+- feat: added lazyframe testing for SetValueTransformer, BaseMappingTransformer, NullIndicator, BaseImputer, ArbitraryImputer, ToDatetimeTransformer, DatetimeInfoExtractor, DateDifferenceTransformer, BaseGenericDateTransformer, BaseDatetimeTransformer, AggregateColumnsOverRowTransformer, AggregateRowsOverColumnTransformer, BaseAggregationTransformer, BaseNumericTransformer, DifferenceTransformer, RatioTransformer, DatetimeComponentExtractor `#586 <https://github.com/azukds/tubular/issues/586>`_
+- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
+- feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
+- bug: fix issue with rare_levels_record_ attr in to_json method of GroupRareLevelsTransformer
+- feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
+
+2.5.0 (16/12/2025)
 ------------------
 
 Changed
@@ -46,10 +68,10 @@ Changed
 - feat: added `deprecated` class attr to deprecated classes, useful to filter them out of e.g. feature table
 - feat: added `blacken-docs <https://github.com/adamchainz/blacken-docs>_` to CI to format code in docstrings/files `#524 <https://github.com/azukds/tubular/issues/524>`_
 - feat: turned on jsonable for OutOfRangeNullTransformer `#638 <https://github.com/azukds/tubular/issues/638>`_
-- feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_
+- feat: turned on jsonable for  CappingTransformer `#637 <https://github.com/azukds/tubular/issues/637>`_.
 - feat: added `to_json` method for ToDatetimeTransformer `#553 <https://github.com/azukds/tubular/issues/553>`_
 - feat: added 'to_json' method for OneDKmeansTransformer `#551 <https://github.com/azukds/tubular/issues/551>_`
-- feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
+- bugfix: Fixed issue with OneHotEncodingTransformer when used with wanted_values and unseen levels at transform time
 
 2.4.0 (01/12/2025)
 ------------------
@@ -63,8 +85,8 @@ Changed
 - feat: added `to_json` method for `DatetimeSinusoidCalculator` `#556 <https://github.com/azukds/tubular/issues/556>`_
 - feat: added `to_json` method for `BetweenDatesTransformer` `#554 <https://github.com/azukds/tubular/issues/554>`_
 - feat: added a new transformer called DatetimeComponentExtractor
-- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>`_
 - bugfix: MappingTransformer was hitting a recursion error for many mappings, adjusted logic to avoid this
+- feat: add a decorator to register transformer classes by name `#588 <https://github.com/azukds/tubular/issues/588>_`
 
 2.3.0 (18/11/2025)
 ------------------
@@ -100,7 +122,6 @@ Changed
 
 - feat: optimisation changes to fit methods in imputers file
 - feat: optimisation changes to transform method of NullIndicator
-- feat: optimisation changes to MeanResponseTransformer
 - feat: created _stats and _checks files to store reusable calculation or data validating functions
 - feat: converted DropOriginalMixin and associated transformers to beartype
 - feat: removed NewColumnNameMixin and converted associated transformers/tests to beartype

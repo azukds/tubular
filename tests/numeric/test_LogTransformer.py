@@ -20,8 +20,7 @@ class TestInit(BaseNumericTransformerInitTests, DropOriginalInitMixinTests):
     def setup_class(cls):
         cls.transformer_name = "LogTransformer"
 
-    @staticmethod
-    def test_base_type_error():
+    def test_base_type_error(self):
         """Test that an exception is raised if base is non-numeric."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -31,8 +30,7 @@ class TestInit(BaseNumericTransformerInitTests, DropOriginalInitMixinTests):
                 base="a",
             )
 
-    @staticmethod
-    def test_suffix_type_error():
+    def test_suffix_type_error(self):
         """Test that an exception is raised if suffix is non-str."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -42,8 +40,7 @@ class TestInit(BaseNumericTransformerInitTests, DropOriginalInitMixinTests):
                 suffix=1,
             )
 
-    @staticmethod
-    def test_add_1_type_error():
+    def test_add_1_type_error(self):
         """Test that an exception is raised if add_1 is not bool."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -53,8 +50,7 @@ class TestInit(BaseNumericTransformerInitTests, DropOriginalInitMixinTests):
                 add_1="bla",
             )
 
-    @staticmethod
-    def test_base_not_strictly_positive_error():
+    def test_base_not_strictly_positive_error(self):
         """Test that an exception is raised if base is not strictly positive."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -127,8 +123,7 @@ class TestTransform(
 
         return df.drop("a", axis=1)
 
-    @staticmethod
-    def test_log1p():
+    def test_log1p(self):
         """Test that log1p is working as intended."""
         df = pd.DataFrame(
             {
@@ -154,8 +149,7 @@ class TestTransform(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_1()),
     )
-    @staticmethod
-    def test_expected_output_1(df, expected):
+    def test_expected_output_1(self, df, expected):
         """Test that transform is giving the expected output when not adding one and dropping original columns."""
         x1 = LogTransformer(
             columns=["a", "b"],
@@ -176,8 +170,7 @@ class TestTransform(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_2()),
     )
-    @staticmethod
-    def test_expected_output_2(df, expected):
+    def test_expected_output_2(self, df, expected):
         """Test that transform is giving the expected output when adding one and dropping original columns."""
         x1 = LogTransformer(
             columns=["a", "b"],
@@ -198,8 +191,7 @@ class TestTransform(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_3()),
     )
-    @staticmethod
-    def test_expected_output_3(df, expected):
+    def test_expected_output_3(self, df, expected):
         """Test that transform is giving the expected output when not adding one and not dropping original columns."""
         x1 = LogTransformer(
             columns=["a", "b"],
@@ -220,8 +212,7 @@ class TestTransform(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_4()),
     )
-    @staticmethod
-    def test_expected_output_4(df, expected):
+    def test_expected_output_4(self, df, expected):
         """Test that transform is giving the expected output when adding one and not dropping original columns."""
         x1 = LogTransformer(
             columns=["a", "b"],
@@ -242,8 +233,7 @@ class TestTransform(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_4(), expected_df_5()),
     )
-    @staticmethod
-    def test_expected_output_5(df, expected):
+    def test_expected_output_5(self, df, expected):
         """Test that transform is giving the expected output when adding one and not dropping
         original columns and using base.
         """
@@ -267,8 +257,7 @@ class TestTransform(
         ("df", "expected"),
         ta.pandas.adjusted_dataframe_params(d.create_df_4(), expected_df_6()),
     )
-    @staticmethod
-    def test_expected_output_6(df, expected):
+    def test_expected_output_6(self, df, expected):
         """Test that transform is giving the expected output when  not adding one and dropping
         original columns and using base.
         """
@@ -290,34 +279,34 @@ class TestTransform(
 
     @pytest.mark.parametrize(
         ("df", "columns", "add_1", "extra_exception_text"),
-        (
-            [pd.DataFrame({"a": [1, 2, 0]}), ["a"], False, ""],
-            [pd.DataFrame({"a": [1, 2, 0], "b": [1, 2, 3]}), ["a", "b"], False, ""],
-            [pd.DataFrame({"a": [1, 2, -1]}), ["a"], True, r" \(after adding 1\)"],
-            [
+        [
+            (pd.DataFrame({"a": [1, 2, 0]}), ["a"], False, ""),
+            (pd.DataFrame({"a": [1, 2, 0], "b": [1, 2, 3]}), ["a", "b"], False, ""),
+            (pd.DataFrame({"a": [1, 2, -1]}), ["a"], True, r" \(after adding 1\)"),
+            (
                 pd.DataFrame({"a": [1, 2, -1], "b": [1, 2, 3]}),
                 ["a", "b"],
                 True,
                 r" \(after adding 1\)",
-            ],
-            [pd.DataFrame({"b": [1, 2, -0.001]}), ["b"], False, ""],
-            [
+            ),
+            (pd.DataFrame({"b": [1, 2, -0.001]}), ["b"], False, ""),
+            (
                 pd.DataFrame({"b": [1, 2, -0.001], "a": [1, 2, 3]}),
                 ["a", "b"],
                 False,
                 "",
-            ],
-            [pd.DataFrame({"b": [1, 2, -1.001]}), ["b"], True, r" \(after adding 1\)"],
-            [
+            ),
+            (pd.DataFrame({"b": [1, 2, -1.001]}), ["b"], True, r" \(after adding 1\)"),
+            (
                 pd.DataFrame({"b": [1, 2, -1.001], "a": [1, 2, 3]}),
                 ["a", "b"],
                 True,
                 r" \(after adding 1\)",
-            ],
-        ),
+            ),
+        ],
     )
-    @staticmethod
     def test_negative_values_raise_exception(
+        self,
         df,
         columns,
         add_1,
