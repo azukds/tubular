@@ -2028,6 +2028,19 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             msg = f"{self.classname()}: period dictionary keys must be the same as columns but got {set(period.keys())}"
             raise ValueError(msg)
 
+        self.units_dict = {
+            column: self.units
+            if not isinstance(self.units, dict)
+            else self.units[column]
+            for column in self.columns
+        }
+        self.period_dict = {
+            column: self.period
+            if not isinstance(self.period, dict)
+            else self.period[column]
+            for column in self.columns
+        }
+
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
 
@@ -2155,43 +2168,26 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        exprs = {}
-        for column in self.columns:
-            if not isinstance(self.units, dict):
-                desired_units = self.units
-            elif isinstance(self.units, dict):
-                desired_units = self.units[column]
-            if not isinstance(self.period, dict):
-                desired_period = self.period
-            elif isinstance(self.period, dict):
-                desired_period = self.period[column]
+        # first convert to desired units
+        exprs = {
+            f"{method}_{self.period_dict[column]}_{self.units_dict[column]}_{column}": getattr(
+                nw.col(column).dt,
+                self.units_dict[column],
+            )()
+            * (2 * np.pi / self.period_dict[column])
+            for column in self.columns
+            for method in self.method
+        }
 
-            for method in self.method:
-                new_column_name = f"{method}_{desired_period}_{desired_units}_{column}"
-
-                # Calculate the sine or cosine of the column in the desired unit
-                expr = getattr(
-                    nw.col(column).dt,
-                    desired_units,
-                )() * (2 * np.pi / desired_period)
-
-                expr = (
-                    expr.map_batches(
-                        lambda s: np.sin(
-                            s.to_numpy(),
-                        ),
-                        return_dtype=nw.Float64,
-                    )
-                    if method == "sin"
-                    else expr.map_batches(
-                        lambda s: np.cos(
-                            s.to_numpy(),
-                        ),
-                        return_dtype=nw.Float64,
-                    )
-                )
-                expr = expr.alias(new_column_name)
-                exprs[new_column_name] = expr
+        # then take sin/cos
+        exprs = {
+            (
+                new_col_name
+                := f"{method}_{self.period_dict[column]}_{self.units_dict[column]}_{column}"
+            ): getattr(exprs[new_col_name], method)()
+            for column in self.columns
+            for method in self.method
+        }
 
         X = X.with_columns(**exprs)
         # Drop original columns if self.drop_original is True
