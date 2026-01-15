@@ -1,4 +1,3 @@
-import narwhals as nw
 import pandas as pd
 import polars as pl
 from narwhals.typing import FrameT
@@ -196,7 +195,6 @@ def _convert_to_lazy(df: DataFrame, lazy: bool) -> DataFrame:
     DataFrame:
         converted or original dataframe
     """
-
     polars = isinstance(df, pl.DataFrame)
 
     return df.lazy() if (lazy and polars) else df
@@ -218,8 +216,6 @@ def _collect_frame(df: DataFrame, lazy: bool) -> DataFrame:
     DataFrame:
         converted or original dataframe
     """
-
-    lazy = isinstance(df, (pl.LazyFrame, nw.LazyFrame))
 
     return df.collect() if lazy else df
 
