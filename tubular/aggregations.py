@@ -323,7 +323,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -361,6 +361,44 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             **kwargs,
         )
         self.key = key
+
+    @block_from_json
+    def to_json(self) -> dict[str, Any]:
+        """Dump transformer to json dict.
+
+        Returns:
+        -------
+        dict[str, Any]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+
+        Example:
+        -------
+        ```pycon
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns="a",
+        ...     key="c",
+        ...     aggregations=["min", "max"],
+        ... )
+        >>> transformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
+        {'tubular_version': ...,
+         'classname': 'AggregateRowsOverColumnTransformer',
+         'init': {'columns': ['a'],
+         'copy': False,
+         'verbose': False,
+         'return_native': True,
+         'aggregations': ['min', 'max'],
+         'drop_original': False,
+         'key': 'c'},
+         'fit': {}}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+        json_dict["init"].update({"key": self.key})
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
