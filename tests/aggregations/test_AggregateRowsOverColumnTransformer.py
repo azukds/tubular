@@ -123,6 +123,9 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
         transformer = u._handle_from_json(transformer, from_json)
 
+        if u._check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Create expected DataFrame using the library parameter
@@ -182,6 +185,11 @@ class TestAggregateRowsOverColumnTransformerTransform(
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         transformer = u._handle_from_json(transformer, from_json)
+
+        if u._check_if_skip_test(
+            transformer, single_row_df, lazy=lazy, from_json=from_json
+        ):
+            return
 
         transformed_df = transformer.transform(u._convert_to_lazy(single_row_df, lazy))
 
@@ -257,6 +265,11 @@ class TestAggregateRowsOverColumnTransformerTransform(
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if u._check_if_skip_test(
+            transformer, df_with_nulls, lazy=lazy, from_json=from_json
+        ):
+            return
 
         transformer = u._handle_from_json(transformer, from_json)
 
