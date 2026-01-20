@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
 
 2.7.0 (20/01/2026)
 ------------------
