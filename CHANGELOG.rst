@@ -55,6 +55,7 @@ Changed
 - bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 - feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
 - bug: fix issue with rare_levels_record_ attr in to_json method of GroupRareLevelsTransformer
+- feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
 
 2.5.0 (16/12/2025)
 ------------------
