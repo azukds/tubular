@@ -22,6 +22,8 @@ PANDAS_TO_POLARS_TYPES = {
     "bool": pl.Boolean,
     "datetime64[ns]": pl.Datetime,
     "datetime64[ns, UTC]": pl.Datetime(time_zone="UTC"),
+    "datetime64[us]": pl.Datetime,
+    "datetime64[us, UTC]": pl.Datetime(time_zone="UTC"),
     "date32[day][pyarrow]": pl.Date,
     # this is not a pandas type, but include to help manage null column handling
     "null": pl.Unknown,
