@@ -42,9 +42,23 @@ def _get_median_calculation_expression(
         weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
 
         QUANTILE_50 = 0.5
-        median_expr = initial_column_expr.filter(
+        x1 = initial_column_expr.filter(
+            weighted_quantile_expr < QUANTILE_50
+        ).max()
+        x2 = initial_column_expr.filter(
             weighted_quantile_expr >= QUANTILE_50
         ).min()
+        w1 = weighted_quantile_expr.filter(
+            weighted_quantile_expr < QUANTILE_50
+        ).max()
+        w2 = weighted_quantile_expr.filter(
+            weighted_quantile_expr >= QUANTILE_50
+        ).min()
+        median_expr1  = initial_column_expr.filter(
+            weighted_quantile_expr >= QUANTILE_50
+        ).min()
+        median_expr = x1 +  (x2 - x1) / (w2 - w1) * (0.5 - w1)
+
 
     else:
         median_expr = initial_column_expr.drop_nulls().median()
@@ -252,4 +266,4 @@ def _weighted_quantile_expr(
     ```
 
     """
-    return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()
+    return (initial_weights_expr.cum_sum() - 0.5)/ initial_weights_expr.sum().over('b')
