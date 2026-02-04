@@ -1,5 +1,6 @@
 import datetime
 
+import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -149,7 +150,12 @@ class TestTransform(GenericTransformTests):
         """Test input data is transformed as expected."""
 
         df = self.create_to_datetime_test_df(library=library)
+
         expected = self.expected_df_1(library=library)
+        expected = nw.from_native(expected)
+        expected = expected.with_columns(
+            nw.col(col).cast(nw.Datetime(time_unit="us")) for col in columns
+        ).to_native()
 
         transformer = ToDatetimeTransformer(
             columns=columns,

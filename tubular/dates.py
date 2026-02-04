@@ -917,9 +917,19 @@ class ToDatetimeTransformer(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        X = X.with_columns(
-            nw.col(col).str.to_datetime(format=self.time_format) for col in self.columns
-        )
+        transform_exprs = {
+            col: nw.col(col).str.to_datetime(format=self.time_format)
+            for col in self.columns
+        }
+
+        # pandas defaults to 'ns', so fix to match polars default
+        if nw.get_native_namespace(X).__name__ == "pandas":
+            transform_exprs = {
+                col: transform_exprs[col].cast(nw.Datetime(time_unit="us"))
+                for col in self.columns
+            }
+
+        X = X.with_columns(**transform_exprs)
 
         return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 

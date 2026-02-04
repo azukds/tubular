@@ -20,10 +20,10 @@ PANDAS_TO_POLARS_TYPES = {
     "object": pl.Utf8,
     "str": pl.String,
     "bool": pl.Boolean,
-    "datetime64[ns]": pl.Datetime,
-    "datetime64[ns, UTC]": pl.Datetime(time_zone="UTC"),
-    "datetime64[us]": pl.Datetime,
-    "datetime64[us, UTC]": pl.Datetime(time_zone="UTC"),
+    "datetime64[ns]": pl.Datetime(time_unit="ns"),
+    "datetime64[ns, UTC]": pl.Datetime(time_unit="ns", time_zone="UTC"),
+    "datetime64[us]": pl.Datetime(time_unit="us"),
+    "datetime64[us, UTC]": pl.Datetime(time_unit="us", time_zone="UTC"),
     "date32[day][pyarrow]": pl.Date,
     # this is not a pandas type, but include to help manage null column handling
     "null": pl.Unknown,
@@ -123,7 +123,7 @@ def dataframe_init_dispatch(
             pandas_df[col] = pandas_df[col].astype("date32[pyarrow]")
 
         # ensure datetimes setup as expected
-        if pd.api.types.is_datetime64_any_dtype(pandas_df[col]):
+        elif pd.api.types.is_datetime64_any_dtype(pandas_df[col]):
             pandas_df[col] = pd.to_datetime(pandas_df[col])
 
     if library == "pandas":
