@@ -2,46 +2,50 @@
 #    uv pip compile --extra=dev --no-emit-index-url --no-emit-trusted-host --output-file=requirements-dev.txt pyproject.toml
 auto-walrus==0.3.4
     # via tubular (pyproject.toml)
-beartype==0.21.0
+beartype==0.22.2
     # via tubular (pyproject.toml)
-black==26.1.0
+black==25.11.0
     # via blacken-docs
 blacken-docs==1.20.0
     # via tubular (pyproject.toml)
-click==8.3.1
+click==8.1.8
     # via black
 codespell==2.4.1
     # via tubular (pyproject.toml)
 coverage==7.10.7
     # via pytest-cov
+exceptiongroup==1.3.1
+    # via pytest
 iniconfig==2.1.0
     # via pytest
-joblib==1.5.2
+joblib==1.5.3
     # via scikit-learn
 mypy-extensions==1.1.0
     # via black
-narwhals==2.11.0
+narwhals==2.16.0
     # via tubular (pyproject.toml)
 numpy==2.0.2
     # via
     #   pandas
     #   scikit-learn
     #   scipy
-packaging==25.0
+packaging==26.0
     # via
     #   black
     #   pytest
-pandas==2.3.2
+pandas==2.3.3
     # via tubular (pyproject.toml)
 pathspec==1.0.4
     # via black
-platformdirs==4.5.1
+platformdirs==4.4.0
     # via black
 pluggy==1.6.0
     # via pytest
-polars==1.33.1
+polars==1.36.1
     # via tubular (pyproject.toml)
-prek==0.2.19
+polars-runtime-32==1.36.1
+    # via polars
+prek==0.3.1
     # via tubular (pyproject.toml)
 pyarrow==21.0.0
     # via tubular (pyproject.toml)
@@ -65,7 +69,7 @@ pytokens==0.4.1
     # via black
 pytz==2025.2
     # via pandas
-ruff==0.14.0
+ruff==0.15.0
     # via tubular (pyproject.toml)
 scikit-learn==1.6.1
     # via tubular (pyproject.toml)
@@ -79,9 +83,17 @@ test-aide==0.1.1
     # via tubular (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
+tomli==2.4.0
+    # via
+    #   auto-walrus
+    #   black
+    #   pytest
 typing-extensions==4.15.0
+    # via
+    #   tubular (pyproject.toml)
+    #   black
+    #   exceptiongroup
+typos==1.43.1
     # via tubular (pyproject.toml)
-typos==1.40.0
-    # via tubular (pyproject.toml)
-tzdata==2025.2
+tzdata==2025.3
     # via pandas
