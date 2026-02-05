@@ -97,15 +97,16 @@ class TestFit(CheckNumericFitMixinTests, GenericFitTests):
 
     def test_to_arpack_n_compontes_value_error(self):
         """Test that an exception is raised if svd solver is arpack and n_components greater than nb samples or features."""
+
+        # must be between 1 and min(n_samples 10, n_features 2) is 2 with svd_solver arpack
+        df = d.create_numeric_df_1()
+
+        x = PCATransformer(columns=["a", "b"], n_components=10, svd_solver="arpack")
+
         with pytest.raises(
             ValueError,
             match=r"""PCATransformer: n_components 10 must be between 1 and min\(n_samples 10, n_features 2\) is 2 with svd_solver 'arpack'""",
         ):
-            # must be between 1 and min(n_samples 10, n_features 2) is 2 with svd_solver arpack
-            df = d.create_numeric_df_1()
-
-            x = PCATransformer(columns=["a", "b"], n_components=10, svd_solver="arpack")
-
             x.fit(df)
 
 

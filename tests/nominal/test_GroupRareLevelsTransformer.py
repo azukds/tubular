@@ -101,7 +101,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
             GroupRareLevelsTransformer(columns="a", unseen_levels_to_rare=2)
 
     # overload this one until weight mixin is converted to beartype
-    @pytest.mark.parametrize("weights_column", (0, ["a"], {"a": 10}))
+    @pytest.mark.parametrize("weights_column", [0, ["a"], {"a": 10}])
     def test_weight_arg_errors(
         self,
         weights_column,

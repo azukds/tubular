@@ -120,7 +120,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         }
 
         with pytest.warns(
-            UserWarning,
+            UserWarning,  # noqa: PT030
         ) as warnings:
             x.fit(df)
 
@@ -183,9 +183,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         expected_impute_values = {
             "col": learnt_value,
         }
-        with pytest.warns(
-            UserWarning,
-        ) as warnings:
+        msg = f"ModeImputer: The Mode of column {columns[0]} is tied, will sort in descending order and return first candidate"
+        with pytest.warns(UserWarning, match=msg) as warnings:
             x.fit(df)
 
         columns.sort()
