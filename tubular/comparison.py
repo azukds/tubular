@@ -23,6 +23,7 @@ from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     Is,
+    ListOfStrs,
     ListOfTwoStrs,
     NonEmptyListOfStrs,
     NumericTypes,
@@ -466,6 +467,172 @@ class CompareTwoColumnsTransformer(BaseTransformer):
             X = X.with_columns(
                 nw.maybe_convert_dtypes(X[outcome_column_name]).cast(nw.Boolean)
             )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+class CheckColumnsForReferenceTransformer(BaseTransformer):
+    """Transformer to check for given column values in a given set of columns.
+
+    Attributes
+    ----------
+    polars_compatible : bool
+        Indicates whether transformer has been converted to polars/pandas
+        agnostic narwhals framework.
+
+    FITS : bool
+        Indicates whether transform requires fit to be run first.
+
+    jsonable : bool
+        Indicates if transformer supports to/from_json methods.
+
+    lazyframe_compatible : bool
+        Indicates whether transformer works with lazyframes.
+
+    Examples
+    --------
+    ```pycon
+
+
+    ```
+
+    """
+
+    polars_compatible = True
+    FITS = False
+    jsonable = True
+    lazyframe_compatible = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: ListOfStrs,
+        reference_column: str,
+        **kwargs: Optional[bool],
+    ) -> None:
+        """Initialize the CheckColumnsForReferenceTransformer.
+
+        Parameters
+        ----------
+        columns : ListOfStrs
+            names of columns to be searched
+
+        reference_column : str
+            name of column containing search values
+
+        **kwargs : dict[str, bool]
+            Additional keyword arguments passed to the BaseTransformer.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+        self.reference_column = reference_column
+
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Serialize the transformer to a JSON-compatible dictionary.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            JSON representation of the transformer, including init parameters.
+
+        Examples
+        --------
+        ```pycon
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["reference_column"] = self.reference_column
+
+        return json_dict
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Create columns indicating if provided columns contain reference values.
+
+        Parameters
+        ----------
+        X : DataFrame
+            DataFrame containing the columns to be transformed.
+
+        Returns
+        -------
+        DataFrame
+            Transformed DataFrame with the new outcome column.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> df = pl.DataFrame(
+        ...     {"a": ["cat sat on the mat", "frog sat on the log"], "b": ["cat", "dog"]}
+        ... )
+        >>> transformer = CheckColumnsForReferenceTransformer(
+        ...     columns=["a"],
+        ...     reference_column="b",
+        ... )
+        >>> transformed_df = transformer.transform(df)
+        >>> print(transformed_df)
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
+
+        schema = X.schema
+
+        bad_cols = [
+            col
+            for col in [*self.columns, self.reference_column]
+            if schema[col] != nw.String
+        ]
+
+        if bad_cols:
+            message = (
+                "Columns and reference_column must be of a String type, but the following are not: "
+                f"{bad_cols}"
+            )
+            raise TypeError(message)
+
+        reference_column_null_filter_expr = nw.col(self.reference_column).is_null()
+
+        null_filter_exprs = {
+            col: (nw.col(col).is_null() | reference_column_null_filter_expr)
+            for col in self.columns
+        }
+
+        new_col_names = {
+            col: f"{col}_contains_{self.reference_column}" for col in self.columns
+        }
+
+        transform_exprs = {
+            new_col_names[col]: (
+                nw.when(~null_filter_exprs[col])
+                .then(
+                    nw.col(col).str.contains(
+                        nw.col(self.reference_column), literal=True
+                    )
+                )
+                .otherwise(None)
+            )
+            for col in self.columns
+        }
+
+        # backend = nw.get_native_namespace(X).__name__
+
+        # if backend == "polars":
+        #     expr = expr.cast(nw.Boolean)
+
+        X = X.with_columns(**transform_exprs)
+
+        # if backend == "pandas":
+        #     X = X.with_columns(
+        #         nw.maybe_convert_dtypes(X[outcome_column_name]).cast(nw.Boolean)
+        #     )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
