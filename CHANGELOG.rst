@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- restricted pandas versions to < 3
 
 2.7.0 (20/01/2026)
 ------------------
