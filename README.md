@@ -133,7 +133,7 @@ track our progress below:
 |                                    | polars_compatible   | pandas_compatible   | jsonable           | lazyframe_compatible   |
 |------------------------------------|---------------------|---------------------|--------------------|------------------------|
 | AggregateColumnsOverRowTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
-| AggregateRowsOverColumnTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :x:                | :heavy_check_mark:     |
+| AggregateRowsOverColumnTransformer | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | ArbitraryImputer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
