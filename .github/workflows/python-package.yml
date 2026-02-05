@@ -2,6 +2,9 @@
 
 name: Python package build and test
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:

@@ -114,7 +114,7 @@ class TestCheckWeightsColumn:
         ],
     )
     @pytest.mark.parametrize(
-        "bad_weight_value, expected_message",
+        ("bad_weight_value", "expected_message"),
         [
             (None, "weight column must be non-null"),
             (np.inf, "weight column must not contain infinite values."),
