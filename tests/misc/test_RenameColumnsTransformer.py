@@ -8,6 +8,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
     _collect_frame,
     _convert_to_lazy,
     _handle_from_json,
@@ -89,6 +90,9 @@ class TestTransform(GenericTransformTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json=from_json)
 
         output = transformer.transform(_convert_to_lazy(df, lazy=lazy))
@@ -106,7 +110,9 @@ class TestTransform(GenericTransformTests):
         df = nw.from_native(df)
         expected = nw.from_native(expected)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
