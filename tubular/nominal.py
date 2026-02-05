@@ -2359,7 +2359,7 @@ class OrdinalEncoderTransformer(
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
-        X_y = self._combine_X_y(X, y, return_native=False)
+        X_y = self._combine_X_y(X, y, return_native_override=False)
         response_column = "_temporary_response"
 
         X_y = X_y.filter(valid_weights_filter_expr)
