@@ -26,7 +26,7 @@ from tubular.imputers import (
     NullIndicator,
 )
 from tubular.mapping import MappingTransformer
-from tubular.misc import SetValueTransformer
+from tubular.misc import ColumnDtypeSetter, SetValueTransformer
 from tubular.nominal import (
     GroupRareLevelsTransformer,
     MeanResponseTransformer,
@@ -44,6 +44,7 @@ __all__ = [
     "ArbitraryImputer",
     "BetweenDatesTransformer",
     "CappingTransformer",
+    "ColumnDtypeSetter",
     "CompareTwoColumnsTransformer",
     "DateDifferenceTransformer",
     "DatetimeComponentExtractor",
