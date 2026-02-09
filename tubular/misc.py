@@ -189,6 +189,7 @@ SimpleCastDtypesStr = Annotated[
 ]
 
 
+@register
 class ColumnDtypeSetter(BaseTransformer):
     """Transformer to set transform columns in a dataframe to a dtype.
 
