@@ -266,4 +266,4 @@ def _weighted_quantile_expr(
     ```
 
     """
-    return (initial_weights_expr.cum_sum() - 0.5)/ initial_weights_expr.sum().over('b')
+    return (initial_weights_expr.cum_sum() - 0.5 * initial_weights_expr) / initial_weights_expr.sum()
