@@ -1,7 +1,7 @@
 """Contains transformers for performing data aggregations."""
 
 from enum import Enum
-from typing import Union
+from typing import Any, Union
 
 import narwhals as nw
 from beartype import beartype
@@ -11,6 +11,7 @@ from beartype.vale import Is
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
 from tubular.base import BaseTransformer, register
 from tubular.mixins import DropOriginalMixin
@@ -117,7 +118,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -150,6 +151,44 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         self.aggregations = aggregations
 
         self.drop_original = drop_original
+
+    @block_from_json
+    def to_json(self) -> dict[str, Any]:
+        """Dump transformer to json dict.
+
+        Returns:
+        -------
+        dict[str, Any]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+
+        Example:
+        -------
+        ```pycon
+        >>> baseAggregationTransformer = BaseAggregationTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ... )
+        >>> baseAggregationTransformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
+        {'tubular_version': ...,
+        'classname': 'BaseAggregationTransformer',
+        'init': {'columns': ['a'],
+        'copy': False,
+        'verbose': False,
+        'return_native': True,
+        'aggregations': ['min', 'max'],
+        'drop_original': False},
+        'fit': {}}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+        json_dict["init"].update(
+            {"aggregations": self.aggregations, "drop_original": self.drop_original}
+        )
+        return json_dict
 
     @beartype
     def transform(
@@ -284,7 +323,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(
@@ -322,6 +361,44 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             **kwargs,
         )
         self.key = key
+
+    @block_from_json
+    def to_json(self) -> dict[str, Any]:
+        """Dump transformer to json dict.
+
+        Returns:
+        -------
+        dict[str, Any]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+
+        Example:
+        -------
+        ```pycon
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns="a",
+        ...     key="c",
+        ...     aggregations=["min", "max"],
+        ... )
+        >>> transformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
+        {'tubular_version': ...,
+         'classname': 'AggregateRowsOverColumnTransformer',
+         'init': {'columns': ['a'],
+         'copy': False,
+         'verbose': False,
+         'return_native': True,
+         'aggregations': ['min', 'max'],
+         'drop_original': False,
+         'key': 'c'},
+         'fit': {}}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+        json_dict["init"].update({"key": self.key})
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -479,7 +556,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
     @beartype
     def __init__(

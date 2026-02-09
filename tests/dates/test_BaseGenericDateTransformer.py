@@ -95,7 +95,7 @@ class GenericDatesMixinTransformTests:
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        ("columns, datetime_col"),
+        ("columns", "datetime_col"),
         [
             (["date_col_1", "datetime_col_2"], 1),
             (["datetime_col_1", "date_col_2"], 0),

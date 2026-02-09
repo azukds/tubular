@@ -1,9 +1,7 @@
 import copy
 
 import narwhals as nw
-import polars as pl
 import pytest
-from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -12,13 +10,19 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
-from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 
 # Note there are no tests that need inheriting from this file as the only difference is an expected transform output
 
 
-@pytest.fixture()
+@pytest.fixture
 def mapping():
     return {
         "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h", 9: None},
@@ -51,8 +55,9 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseMappingTransformMixin"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_for_str_and_int(self, mapping, library):
+    def test_expected_output_for_str_and_int(self, mapping, library, lazy):
         """Test outputs for str/int type inputs."""
 
         df = d.create_df_1(library=library)
@@ -69,8 +74,7 @@ class TestTransform(GenericTransformTests):
 
         transformer = BaseMappingTransformMixin(columns=["a", "b"])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
 
         return_dtypes = {"a": "String", "b": "Int64"}
@@ -84,12 +88,13 @@ class TestTransform(GenericTransformTests):
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_for_cat(self, library):
+    def test_expected_output_for_cat(self, library, lazy):
         """Test that output for cat input"""
 
         df = d.create_df_2(library=library)
@@ -121,8 +126,7 @@ class TestTransform(GenericTransformTests):
 
         transformer = BaseMappingTransformMixin(columns=["c"])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
 
         return_dtypes = {"c": "Int64"}
@@ -136,12 +140,13 @@ class TestTransform(GenericTransformTests):
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_boolean_with_nulls(self, library):
+    def test_expected_output_boolean_with_nulls(self, library, lazy):
         """Test that output is as expected for tricky bool cases:
         e.g. mapping {True:1, False:0, None: 0}, potential causes of failure:
             - None being cast to False when these values are inserted into bool series
@@ -231,15 +236,14 @@ class TestTransform(GenericTransformTests):
 
         transformer = BaseMappingTransformMixin(columns=["c"])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
 
         transformer.mappings = base_mapping_transformer.mappings
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         # convert bool type to pyarrow
         if library == "pandas":
@@ -248,10 +252,11 @@ class TestTransform(GenericTransformTests):
             expected = expected.with_columns(nw.maybe_convert_dtypes(expected["a"]))
             expected = expected.to_native()
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_can_map_values_to_none(self, library):
+    def test_can_map_values_to_none(self, library, lazy):
         """replace_strict  does  not support mappings values to None, so additional
         logic has been added. Explicitly test a case of mapping to None here.
 
@@ -287,27 +292,26 @@ class TestTransform(GenericTransformTests):
 
         transformer = BaseMappingTransformMixin(columns=["a"])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
 
         transformer.mappings = base_mapping_transformer.mappings
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_mappings_unchanged(self, mapping, library):
+    def test_mappings_unchanged(self, mapping, library, lazy):
         """Test that mappings is unchanged in transform."""
         df = d.create_df_1(library=library)
 
         transformer = BaseMappingTransformMixin(columns=["a", "b"])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
 
         return_dtypes = {
@@ -324,60 +328,22 @@ class TestTransform(GenericTransformTests):
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
-        transformer.transform(df)
+        transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert mapping == transformer.mappings, (
             f"BaseMappingTransformer.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("non_df", [1, True, "a", [1, 2], {"a": 1}, None])
-    def test_non_pd_type_error(
-        self,
-        non_df,
-        mapping,
-        library,
-    ):
-        """Test that an error is raised in transform is X is not a pd.DataFrame."""
-
-        df = d.create_df_10(library=library)
-
-        transformer = BaseMappingTransformMixin(columns=["a"])
-
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        return_dtypes = {
-            "a": "String",
-        }
-
-        base_mapping_transformer = BaseMappingTransformer(
-            mappings=mapping,
-            return_dtypes=return_dtypes,
-        )
-
-        transformer.mappings = base_mapping_transformer.mappings
-        transformer.return_dtypes = base_mapping_transformer.return_dtypes
-        transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
-
-        x_fitted = transformer.fit(df, df["c"])
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            x_fitted.transform(X=non_df)
-
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_original_df_not_updated(self, mapping, library):
+    def test_original_df_not_updated(self, mapping, library, lazy):
         """Test that the original dataframe is not transformed when transform method used."""
 
         df = d.create_df_10(library=library)
 
         transformer = BaseMappingTransformMixin(columns=["a"])
 
-        # if transformer is not yet polars compatible, skip this test
-        if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
 
         return_dtypes = {"a": "String", "b": "Int64"}
@@ -391,11 +357,14 @@ class TestTransform(GenericTransformTests):
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
         transformer.copy = True
-        transformer = transformer.fit(df, df["c"])
+
+        df = _convert_to_lazy(df, lazy=lazy)
 
         _ = transformer.transform(df)
 
-        assert_frame_equal_dispatch(df, d.create_df_10(library=library))
+        assert_frame_equal_dispatch(
+            _collect_frame(df, lazy=lazy), d.create_df_10(library=library)
+        )
 
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
@@ -439,6 +408,7 @@ class TestTransform(GenericTransformTests):
 
         assert_frame_equal_dispatch(df, original_df)
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
@@ -449,11 +419,15 @@ class TestTransform(GenericTransformTests):
         initialized_transformers,
         minimal_dataframe_lookup,
         mapping,
+        lazy,
     ):
         """Test transforming empty frame returns empty frame"""
 
         df = minimal_dataframe_lookup[self.transformer_name]
-        x = initialized_transformers[self.transformer_name]
+        transformer = initialized_transformers[self.transformer_name]
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
+            return
 
         return_dtypes = {"a": "String", "b": "String"}
 
@@ -462,29 +436,30 @@ class TestTransform(GenericTransformTests):
             return_dtypes=return_dtypes,
         )
 
-        x.mappings = base_mapping_transformer.mappings
-        x.return_dtypes = base_mapping_transformer.return_dtypes
-        x.mappings_from_null = base_mapping_transformer.mappings_from_null
+        transformer.mappings = base_mapping_transformer.mappings
+        transformer.return_dtypes = base_mapping_transformer.return_dtypes
+        transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
         df = nw.from_native(df)
         # take 0 rows from df
         df = df.head(0).to_native()
 
-        output = x.transform(
-            df,
+        output = transformer.transform(
+            _convert_to_lazy(df, lazy=lazy),
         )
 
-        output = nw.from_native(output)
+        output = nw.from_native(_collect_frame(output, lazy=lazy))
 
         assert output.shape[0] == 0, (
             "expected empty frame transform to return empty frame"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_can_handle_lots_of_mappings(self, library):
+    def test_can_handle_lots_of_mappings(self, library, lazy):
         """older implementations had issues erroring for too many mappings, include
         this stress test
         """
@@ -502,6 +477,9 @@ class TestTransform(GenericTransformTests):
 
         transformer = BaseMappingTransformMixin(columns="a")
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
+            return
+
         base_mapping_transformer = BaseMappingTransformer(
             mappings=mappings,
         )
@@ -510,9 +488,9 @@ class TestTransform(GenericTransformTests):
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
 
-        output = transformer.transform(df)
+        output = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(output, expected_df)
+        assert_frame_equal_dispatch(_collect_frame(output, lazy=lazy), expected_df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

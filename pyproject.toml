@@ -16,7 +16,7 @@ packages = ["tubular"]
 name = "tubular"
 dynamic = ["version"]
 dependencies = [
-    "pandas>=1.5.0",
+    "pandas>=1.5.0, <3.0.0",
     "scikit-learn>=1.2.0",
     "narwhals >= 2.11.0",
     "polars >= 1.9.0",
@@ -114,6 +114,7 @@ select = [
     "PLE",
     "PLR",
     "PLW",
+    "PT",
     "PYI",
     "Q",
     "RET",
@@ -167,13 +168,14 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     # main code
     "PLR0917",
     "PLR0913",
+    "PLR0914",
     "PLR6301", # converting to e.g. staticmethod can interfere with pytest detecting tests
     ]
 "profiling/*"=["D", "DOC", "E501"]
 # too much to turn on D/DOC and E501 lints in one go,
 # will tackle individual modules at a time
 "numeric.py"=["E501"]
-"nominal.py"=["D", "DOC","E501"]
+"nominal.py"=["E501"]
 "mixins.py"=["E501"]
 "mapping.py"=["E501"]
 "imputers.py"=["E501"]

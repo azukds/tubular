@@ -65,7 +65,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
             GroupRareLevelsTransformer(columns="a", unseen_levels_to_rare=2)
 
     # overload this one until weight mixin is converted to beartype
-    @pytest.mark.parametrize("weights_column", (0, ["a"], {"a": 10}))
+    @pytest.mark.parametrize("weights_column", [0, ["a"], {"a": 10}])
     def test_weight_arg_errors(
         self,
         weights_column,
@@ -298,6 +298,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
+        x.rare_levels_record_ = {}
         x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
@@ -324,6 +325,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mapping dict directly rather than fitting x on df so test works with decorators
         x.non_rare_levels = {"b": ["a"]}
+        x.rare_levels_record_ = {}
         x = _handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 
