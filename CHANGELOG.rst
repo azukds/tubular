@@ -34,6 +34,7 @@ Changed
 ^^^^^^^
 - feat: turned on docstring lints for nominal file
 - restricted pandas versions to < 3
+- converted ColumnDtypeSetter to narwhals/lazyframe/json
 
 2.7.0 (20/01/2026)
 ------------------

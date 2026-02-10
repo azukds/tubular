@@ -150,7 +150,7 @@ def minimal_attribute_dict():
         },
         "ColumnDtypeSetter": {
             "columns": ["a"],
-            "dtype": str,
+            "dtype": "String",
         },
         "CrossColumnAddTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
