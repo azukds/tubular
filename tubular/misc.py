@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from enum import Enum
+from typing import Annotated, Any, Optional, Union
 
 import narwhals as nw
-import pandas as pd
 from beartype import beartype
-from typing_extensions import deprecated
+from beartype.vale import Is
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -165,13 +165,31 @@ class SetValueTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
-# DEPRECATED TRANSFORMERS
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
+class SimpleCastDtypes(str, Enum):
+    """Allowed dtypes for ColumnDtypeSetter."""
+
+    FLOAT64 = "Float64"
+    FLOAT32 = "Float32"
+    INT64 = "Int64"
+    INT32 = "Int32"
+    INT16 = "Int16"
+    INT8 = "Int8"
+    UINT64 = "UInt64"
+    UINT32 = "UInt32"
+    UINT16 = "UInt16"
+    UINT8 = "UInt8"
+    BOOLEAN = "Boolean"
+    STRING = "String"
+    CATEGORICAL = "Categorical"
+
+
+SimpleCastDtypesStr = Annotated[
+    str,
+    Is[lambda s: s in SimpleCastDtypes._value2member_map_],
+]
+
+
+@register
 class ColumnDtypeSetter(BaseTransformer):
     """Transformer to set transform columns in a dataframe to a dtype.
 
@@ -199,32 +217,32 @@ class ColumnDtypeSetter(BaseTransformer):
 
     """
 
-    polars_compatible = False
+    polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
-    jsonable = False
+    jsonable = True
 
-    deprecated = True
+    deprecated = False
 
+    @beartype
     def __init__(
         self,
-        columns: str | list[str],
-        dtype: type | str,
-        **kwargs: dict[str, bool],
+        columns: Union[str, NonEmptyListOfStrs],
+        dtype: SimpleCastDtypesStr,
+        **kwargs: bool,
     ) -> None:
         """Initialise class instance.
 
         Parameters
         ----------
-        columns : str or list
+        columns : Union[str, NonEmptyListOfStrs]
             Columns to set dtype. Must be set or transform will not run.
 
-        dtype : type or string
-            dtype object to set columns to or a string interpretable as one
-            by pd.api.types.pandas_dtype e.g. float or 'float'
+        dtype : SimpleCastDtypesStr
+            dtype to set column to
 
         **kwargs: dict[str, Any]
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -232,39 +250,87 @@ class ColumnDtypeSetter(BaseTransformer):
         """
         super().__init__(columns, **kwargs)
 
-        self.__validate_dtype(dtype)
-
         self.dtype = dtype
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = ColumnDtypeSetter(columns="a", dtype="Float32")
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'ColumnDtypeSetter',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'dtype': 'Float32',
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["dtype"] = self.dtype
+
+        return json_dict
+
+    def transform(self, X: DataFrame) -> DataFrame:
         """Transform data.
 
         Parameters
         ----------
-        X: pd.DataFrame
+        X: DataFrame
             data to transform.
 
         Returns
         -------
-            pd.DataFrame: transformed data
+            DataFrame: transformed data
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> df = pl.DataFrame({"a": [1, 2]})
+        >>> transformer = ColumnDtypeSetter(columns="a", dtype="Float32")
+        >>> transformer.transform(df)
+        shape: (2, 1)
+        ┌─────┐
+        │ a   │
+        │ --- │
+        │ f32 │
+        ╞═════╡
+        │ 1.0 │
+        │ 2.0 │
+        └─────┘
+
+        ```
 
         """
-        X = super().transform(X)
+        X = _convert_dataframe_to_narwhals(X)
+        backend = nw.get_native_namespace(X).__name__
 
-        X[self.columns] = X[self.columns].astype(self.dtype)
+        X = super().transform(X, return_native_override=False)
 
-        return X
+        if backend == "pandas" and self.dtype == "Boolean":
+            X = X.with_columns(
+                nw.maybe_convert_dtypes(X[col]).cast(nw.Boolean) for col in self.columns
+            )
 
-    def __validate_dtype(self, dtype: str) -> None:
-        """Check string is a valid dtype.
+        else:
+            X = X.with_columns(
+                [nw.col(col).cast(getattr(nw, self.dtype)) for col in self.columns]
+            )
 
-        Raises
-        ------
-            TypeError: for invalid pandas dtype
-
-        """
-        try:
-            pd.api.types.pandas_dtype(dtype)
-        except TypeError:
-            msg = f"{self.classname()}: data type '{dtype}' not understood as a valid dtype"  # noqa: E501
-            raise TypeError(msg) from None
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
