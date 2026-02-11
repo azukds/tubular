@@ -34,7 +34,8 @@ Changed
 ^^^^^^^
 - feat: turned on docstring lints for nominal file
 - restricted pandas versions to < 3
-- converted ColumnDtypeSetter to narwhals/lazyframe/json
+- converted ColumnDtypeSetter to narwhals/lazyframe/json 
+- small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
 
 2.7.0 (20/01/2026)
 ------------------

@@ -276,14 +276,27 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         if self.quantiles is not None:
             for col in self.columns:
-                cap_values = self.prepare_quantiles(
+                lower_quantile = self.quantiles[col][0]
+                upper_quantile = self.quantiles[col][1]
+
+                quantiles = [
+                    quantile for quantile in self.quantiles[col] if quantile is not None
+                ]
+
+                results = self.weighted_quantile(
                     X,
-                    self.quantiles[col],
+                    quantiles,
                     values_column=col,
                     weights_column=weights_column,
                 )
 
-                self.quantile_capping_values[col] = cap_values
+                if lower_quantile is None:
+                    results = [None, results[0]]
+
+                elif upper_quantile is None:
+                    results = [results[0], None]
+
+                self.quantile_capping_values[col] = results
 
                 self._replacement_values = copy.deepcopy(self.quantile_capping_values)
 
@@ -294,96 +307,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             )
 
         return self
-
-    @block_from_json
-    @beartype
-    def prepare_quantiles(
-        self,
-        X: DataFrame,
-        quantiles: list[Optional[Number]],
-        values_column: str,
-        weights_column: str,
-    ) -> list[Optional[Number]]:
-        """Call the weighted_quantile method and prepare the outputs.
-
-        If there are no None values in the supplied quantiles then the outputs from weighted_quantile
-        are returned as is. If there are then prepare_quantiles removes the None values before
-        calling weighted_quantile and adds them back into the output, in the same position, after
-        calling.
-
-        Parameters
-        ----------
-        X : DataFrame
-            Dataframe with relevant columns to calculate quantiles from.
-
-        quantiles : list[Optional[Number]]
-            Weighted quantiles to calculate. Must all be between 0 and 1.
-
-        values_column: str
-            name of relevant values column in data
-
-        weights_column: str
-            name of relevant weight column in data
-
-        Returns
-        -------
-        interp_quantiles : list
-            List containing computed quantiles.
-
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-
-        >>> x = BaseCappingTransformer(capping_values={"a": [2, 10]})
-
-        >>> df = pl.DataFrame({"a": [1, 2, 3], "weight": [1, 1, 1]})
-
-        >>> quantiles_to_compute = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        >>> computed_quantiles = x.prepare_quantiles(
-        ...     X=df, values_column="a", weights_column="weight", quantiles=quantiles_to_compute
-        ... )
-        >>> [round(q, 1) for q in computed_quantiles]
-        [1.0, 1.0, 1.0, 1.0, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
-
-        ```
-
-        """
-        X = _convert_dataframe_to_narwhals(X)
-
-        if quantiles[0] is None:
-            quantiles = [quantiles[1]]
-
-            results_no_none = self.weighted_quantile(
-                X,
-                quantiles,
-                values_column=values_column,
-                weights_column=weights_column,
-            )
-
-            results = [None, *results_no_none]
-
-        elif quantiles[1] is None:
-            quantiles = [quantiles[0]]
-
-            results_no_none = self.weighted_quantile(
-                X,
-                quantiles,
-                values_column=values_column,
-                weights_column=weights_column,
-            )
-
-            results = [*results_no_none, None]
-
-        else:
-            results = self.weighted_quantile(
-                X,
-                quantiles,
-                values_column=values_column,
-                weights_column=weights_column,
-            )
-
-        return results
 
     @block_from_json
     @beartype
