@@ -137,6 +137,7 @@ track our progress below:
 | ArbitraryImputer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | BetweenDatesTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | CappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| ColumnDtypeSetter                  | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | CompareTwoColumnsTransformer       | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DateDifferenceTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DatetimeComponentExtractor         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
