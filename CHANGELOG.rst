@@ -32,8 +32,11 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- feat: turned on docstring lints for nominal file
 - restricted pandas versions to < 3
 - feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
+- feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
+- converted ColumnDtypeSetter to narwhals/lazyframe/json
 
 2.7.0 (20/01/2026)
 ------------------

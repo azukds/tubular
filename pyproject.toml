@@ -175,7 +175,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # too much to turn on D/DOC and E501 lints in one go,
 # will tackle individual modules at a time
 "numeric.py"=["E501"]
-"nominal.py"=["D", "DOC","E501"]
+"nominal.py"=["E501"]
 "mixins.py"=["E501"]
 "mapping.py"=["E501"]
 "imputers.py"=["E501"]
