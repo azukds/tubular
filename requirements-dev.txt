@@ -4,6 +4,12 @@ auto-walrus==0.3.4
     # via tubular (pyproject.toml)
 beartype==0.21.0
     # via tubular (pyproject.toml)
+black==25.11.0
+    # via blacken-docs
+blacken-docs==1.20.0
+    # via tubular (pyproject.toml)
+click==8.1.8
+    # via black
 codespell==2.4.1
     # via tubular (pyproject.toml)
 coverage==7.10.7
@@ -14,6 +20,8 @@ iniconfig==2.1.0
     # via pytest
 joblib==1.5.2
     # via scikit-learn
+mypy-extensions==1.1.0
+    # via black
 narwhals==2.11.0
     # via tubular (pyproject.toml)
 numpy==2.0.2
@@ -22,9 +30,15 @@ numpy==2.0.2
     #   scikit-learn
     #   scipy
 packaging==25.0
-    # via pytest
+    # via
+    #   black
+    #   pytest
 pandas==2.3.2
     # via tubular (pyproject.toml)
+pathspec==1.0.4
+    # via black
+platformdirs==4.4.0
+    # via black
 pluggy==1.6.0
     # via pytest
 polars==1.33.1
@@ -40,15 +54,14 @@ pytest==8.4.2
     #   tubular (pyproject.toml)
     #   pytest-cov
     #   pytest-mock
-    #   test-aide
 pytest-cov==2.10.1
     # via tubular (pyproject.toml)
 pytest-mock==3.15.1
-    # via
-    #   tubular (pyproject.toml)
-    #   test-aide
+    # via tubular (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
+pytokens==0.4.1
+    # via black
 pytz==2025.2
     # via pandas
 ruff==0.14.0
@@ -61,17 +74,17 @@ six==1.17.0
     # via python-dateutil
 tabulate==0.9.0
     # via tubular (pyproject.toml)
-test-aide==0.1.1
-    # via tubular (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
 tomli==2.2.1
     # via
     #   auto-walrus
+    #   black
     #   pytest
 typing-extensions==4.15.0
     # via
     #   tubular (pyproject.toml)
+    #   black
     #   exceptiongroup
 typos==1.40.0
     # via tubular (pyproject.toml)

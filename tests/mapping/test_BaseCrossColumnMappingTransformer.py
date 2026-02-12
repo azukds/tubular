@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-import test_aide as ta
+from pandas.testing import assert_series_equal
 
 import tests.test_data as d
 from tests.mapping.test_BaseMappingTransformer import (
@@ -69,7 +69,7 @@ class BaseCrossColumnMappingTransformerTransformTests(
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    def expected_df_2():
+    def expected_df_2(self):
         """Expected output from test_non_specified_values_unchanged."""
         return pd.DataFrame(
             {"b": ["a", "b", "c", "d", "e", "f"]},
@@ -98,18 +98,15 @@ class BaseCrossColumnMappingTransformerTransformTests(
         ):
             x.transform(df)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_2()),
-    )
     def test_non_specified_values_unchanged(
         self,
-        df,
-        expected,
         minimal_attribute_dict,
         uninitialized_transformers,
     ):
         """Test that values not specified in mappings are left unchanged in transform."""
+        df = d.create_df_1()
+        expected = self.expected_df_2()
+
         mapping = {"b": {"a": 1.1, "b": 1.2}}
 
         args = minimal_attribute_dict[self.transformer_name].copy()
@@ -120,11 +117,14 @@ class BaseCrossColumnMappingTransformerTransformTests(
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_series_equal_msg(
-            actual=df_transformed["b"],
-            expected=expected["b"],
-            msg_tag=f"expected output from {self.transformer_name}",
-        )
+        assert_series_equal(df_transformed["b"], expected["b"])
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_series_equal(row_transformed["b"], row_expected["b"])
 
 
 class TestInit(BaseCrossColumnMappingTransformerInitTests):

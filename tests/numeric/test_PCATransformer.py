@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -10,6 +9,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.numeric import PCATransformer
 
 
@@ -289,14 +289,12 @@ class TestTransform(GenericTransformTests):
         return svd_solver_output
 
     @pytest.mark.parametrize(
-        ("svd_solver", "svd_solver_output_str"),
-        [("full", "full"), ("arpack", "arpack"), ("randomized", "randomized")],
+        ("svd_solver"),
+        ["full", "arpack", "randomized"],
     )
     def test_output_from_pca_transform_set_to_columns(
         self,
-        mocker,
         svd_solver,
-        svd_solver_output_str,
     ):
         """Test that the call to the pca.transform method returns expected outputs."""
         df = d.create_numeric_df_1()
@@ -306,22 +304,21 @@ class TestTransform(GenericTransformTests):
             n_components=2,
             svd_solver=svd_solver,
             random_state=32,
+            copy=True,
         )
         x.fit(df)
         df_transformed = x.transform(df)
 
-        pca_transform_output = self.create_svd_solver_output()
+        expected = self.create_svd_solver_output()[svd_solver]
 
-        mocker.patch(
-            "sklearn.decomposition.PCA.transform",
-            return_value=pca_transform_output[svd_solver_output_str],
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-        ta.equality.assert_equal_dispatch(
-            expected=pca_transform_output[svd_solver_output_str],
-            actual=df_transformed,
-            msg=f"output from {svd_solver_output_str} doesn't match",
-        )
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
     @pytest.mark.parametrize("columns", [("b"), ("c"), (["b", "c"])])
     def test_return_type(self, columns):
