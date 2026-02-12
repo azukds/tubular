@@ -63,12 +63,17 @@ class TestTransform(GenericTransformTests):
         "library",
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize(
+        "empty",
+        [True, False],
+    )
     def test_output(
         self,
         library,
         from_json,
         lazy,
         drop_original,
+        empty,
     ):
         "test outputs for RenameColumnsTransformer.transform"
 
@@ -78,7 +83,10 @@ class TestTransform(GenericTransformTests):
             drop_original=drop_original,
         )
 
-        df_dict = {"a": [1, None, 3], "b": ["x", "y", None]}
+        df_dict = {
+            "a": [1, None, 3] if not empty else [],
+            "b": ["x", "y", None] if not empty else [],
+        }
 
         expected_df_dict = {
             "new_a": df_dict["a"],
