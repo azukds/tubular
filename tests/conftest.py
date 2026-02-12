@@ -150,7 +150,7 @@ def minimal_attribute_dict():
         },
         "ColumnDtypeSetter": {
             "columns": ["a"],
-            "dtype": str,
+            "dtype": "String",
         },
         "CrossColumnAddTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
@@ -255,6 +255,10 @@ def minimal_attribute_dict():
         },
         "PCATransformer": {
             "columns": ["a", "c"],
+        },
+        "RenameColumnsTransformer": {
+            "columns": "a",
+            "new_column_names": {"a": "new_a"},
         },
         "ScalingTransformer": {
             "scaler_type": "standard",
