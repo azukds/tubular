@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -10,6 +9,7 @@ from tests.base_tests import (
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.strings import SeriesStrMethodTransformer
 
 
@@ -113,7 +113,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "SeriesStrMethodTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output of test_expected_output_no_overwrite."""
         df = d.create_df_7()
 
@@ -121,7 +121,7 @@ class TestTransform(GenericTransformTests):
 
         return df
 
-    def expected_df_2():
+    def expected_df_2(self):
         """Expected output of test_expected_output_overwrite."""
         df = d.create_df_7()
 
@@ -129,12 +129,11 @@ class TestTransform(GenericTransformTests):
 
         return df
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_7(), expected_df_1()),
-    )
-    def test_expected_output_no_overwrite(self, df, expected):
+    def test_expected_output_no_overwrite(self):
         """Test a single column output from transform gives expected results, when not overwriting the original column."""
+        df = d.create_df_7()
+        expected = self.expected_df_1()
+
         x = SeriesStrMethodTransformer(
             new_column_name="b_new",
             pd_method_name="find",
@@ -144,18 +143,20 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in SeriesStrMethodTransformer.transform with find, not overwriting original column",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_7(), expected_df_2()),
-    )
-    def test_expected_output_overwrite(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_overwrite(self):
         """Test a single column output from transform gives expected results, when overwriting the original column."""
+        df = d.create_df_7()
+        expected = self.expected_df_2()
+
         x = SeriesStrMethodTransformer(
             new_column_name="b",
             pd_method_name="pad",
@@ -165,11 +166,14 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in SeriesStrMethodTransformer.transform with pad, overwriting original column",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

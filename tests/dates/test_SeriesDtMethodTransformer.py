@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -15,6 +14,7 @@ from tests.base_tests import (
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.dates import SeriesDtMethodTransformer
 
 
@@ -94,7 +94,7 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "SeriesDtMethodTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output of test_expected_output_no_overwrite."""
         df = d.create_datediff_test_df()
 
@@ -105,7 +105,7 @@ class TestTransform(
 
         return df
 
-    def expected_df_2():
+    def expected_df_2(self):
         """Expected output of test_expected_output_overwrite."""
         df = d.create_datediff_test_df()
 
@@ -116,7 +116,7 @@ class TestTransform(
 
         return df
 
-    def expected_df_3():
+    def expected_df_3(self):
         """Expected output of test_expected_output_callable."""
         df = d.create_datediff_test_df()
 
@@ -124,15 +124,12 @@ class TestTransform(
 
         return df
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_1(),
-        ),
-    )
-    def test_expected_output_no_overwrite(self, df, expected):
+    def test_expected_output_no_overwrite(self):
         """Test a single column output from transform gives expected results, when not overwriting the original column."""
+
+        df = d.create_datediff_test_df()
+        expected = self.expected_df_1()
+
         x = SeriesDtMethodTransformer(
             new_column_name="a_year",
             pd_method_name="year",
@@ -142,45 +139,46 @@ class TestTransform(
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in SeriesDtMethodTransformer.transform with find, not overwriting original column",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_2(),
-        ),
-    )
-    def test_expected_output_overwrite(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_overwrite(self):
         """Test a single column output from transform gives expected results, when overwriting the original column."""
+
+        df = d.create_datediff_test_df()
+        expected = self.expected_df_2()
+
         x = SeriesDtMethodTransformer(
             new_column_name="a",
             pd_method_name="year",
             columns="a",
             pd_method_kwargs=None,
+            copy=True,
         )
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in SeriesDtMethodTransformer.transform with pad, overwriting original column",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            d.create_datediff_test_df(),
-            expected_df_3(),
-        ),
-    )
-    def test_expected_output_callable(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_callable(self):
         """Test transform gives expected results, when pd_method_name is a callable."""
+
+        df = d.create_datediff_test_df()
+        expected = self.expected_df_3()
+
         x = SeriesDtMethodTransformer(
             new_column_name="b_new",
             pd_method_name="to_period",
@@ -190,11 +188,14 @@ class TestTransform(
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in SeriesDtMethodTransformer.transform with to_period",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

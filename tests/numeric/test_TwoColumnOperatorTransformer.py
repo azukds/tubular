@@ -1,5 +1,4 @@
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -10,6 +9,7 @@ from tests.base_tests import (
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerTransformTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.numeric import TwoColumnOperatorTransformer
 
 
@@ -62,6 +62,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
     )
     def test_expected_output(self, pd_method_name, output):
         """Tests that the output given by TwoColumnOperatorTransformer is as you would expect."""
+        df = d.create_df_11()
         expected = d.create_df_11()
         expected["c"] = output
         x = TwoColumnOperatorTransformer(
@@ -69,12 +70,16 @@ class TestTransform(BaseNumericTransformerTransformTests):
             ["a", "b"],
             "c",
         )
-        actual = x.transform(d.create_df_11())
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="TwoColumnMethod transformer does not produce the expected output",
-        )
+        actual = x.transform(df)
+
+        assert_frame_equal_dispatch(actual, expected)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

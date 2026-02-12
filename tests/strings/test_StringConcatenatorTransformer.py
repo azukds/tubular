@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -11,6 +10,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     SeparatorInitMixintests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.strings import StringConcatenator
 
 
@@ -68,11 +68,7 @@ class TestTransform(GenericTransformTests):
         df_transformed = x.transform(df)
         expected_df["merged_values"] = ["1 a", "2 b", "3 c", "4 d", "5 e", "6 f"]
 
-        ta.equality.assert_frame_equal_msg(
-            df_transformed,
-            expected_df,
-            "Incorrect dataframe returned after StringConcatenator transform",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected_df)
 
     def test_correct_df_returned_2(self):
         """Test that correct df is returned after transformation."""
@@ -88,11 +84,7 @@ class TestTransform(GenericTransformTests):
         df_transformed = x.transform(df)
         expected_df["merged_values"] = ["1:a", "2:b", "3:c", "4:d", "5:e", "6:f"]
 
-        ta.equality.assert_frame_equal_msg(
-            df_transformed,
-            expected_df,
-            "Incorrect dataframe returned after StringConcatenator transform",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected_df)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
