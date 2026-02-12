@@ -74,7 +74,7 @@ class TestTransform(GenericTransformTests):
 
         transformer = RenameColumnsTransformer(
             columns=["a", "b"],
-            new_column_names={"a": "new_a", "b": "new_b"},
+            new_column_names={"a": "new_a", "b": "return B!"},
             drop_original=drop_original,
         )
 
@@ -82,7 +82,7 @@ class TestTransform(GenericTransformTests):
 
         expected_df_dict = {
             "new_a": df_dict["a"],
-            "new_b": df_dict["b"],
+            "return B!": df_dict["b"],
         }
 
         if not drop_original:
@@ -119,6 +119,42 @@ class TestTransform(GenericTransformTests):
                 _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "from_json",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "library",
+        ["pandas", "polars"],
+    )
+    def test_error_for_present_new_col_names(
+        self,
+        library,
+        from_json,
+        lazy,
+    ):
+        transformer = RenameColumnsTransformer(
+            columns=["a"],
+            new_column_names={"a": "b"},
+        )
+
+        df_dict = {"a": [1], "b": ["x"]}
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        msg = r"RenameColumnsTransformer: The following new_column_names are already present in X, \['b'\]"
+        with pytest.raises(ValueError, match=msg):
+            transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

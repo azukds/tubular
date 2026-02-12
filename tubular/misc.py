@@ -356,6 +356,10 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         X : DataFrame
             Transformed input X with columns set to value.
 
+        Raises
+        ------
+            ValueError: if new_column_names values are already present in X
+
         Examples
         --------
         ```pycon
@@ -383,6 +387,13 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         """
         X = super().transform(X, return_native_override=False)
+
+        new_column_names_already_present = sorted(
+            set(self.new_column_names.values()).intersection(X.columns)
+        )
+        if new_column_names_already_present:
+            msg = f"{self.classname()}: The following new_column_names are already present in X, {new_column_names_already_present}"  # noqa: E501
+            raise ValueError(msg)
 
         X = _convert_dataframe_to_narwhals(X)
 
