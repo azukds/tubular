@@ -35,6 +35,7 @@ Changed
 - feat: turned on docstring lints for nominal file
 - restricted pandas versions to < 3
 - feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
+- feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
 - converted ColumnDtypeSetter to narwhals/lazyframe/json
 
 2.7.0 (20/01/2026)

@@ -15,6 +15,7 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     NonEmptyListOfStrs,
@@ -161,6 +162,246 @@ class SetValueTransformer(BaseTransformer):
         X = super().transform(X, return_native_override=False)
 
         X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+@register
+class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
+    """Transformer to rename a given set of columns.
+
+    This can be useful for personalising the auto-output names from
+    other transformers, or for creating a few different versions
+    of a given column to undergo separate paths of logic in a pipeline
+    (as the expression logic effectively creates duplicates of the column).
+
+    Attributes
+    ----------
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's
+        supported functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to
+        polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = RenameColumnsTransformer(
+    ...     columns="a", new_column_names={"a": "new_a"}
+    ... )  # noqa: E501
+    >>> transformer
+    RenameColumnsTransformer(columns=['a'], new_column_names={'a': 'new_a'})
+
+    >>> # transformer can also be dumped to json and reinitialised
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump, sort_dicts=True)
+    {'classname': 'RenameColumnsTransformer',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'drop_original': True,
+              'new_column_names': {'a': 'new_a'},
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> RenameColumnsTransformer.from_json(json_dump)
+    RenameColumnsTransformer(columns=['a'], new_column_names={'a': 'new_a'})
+
+    ```
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    FITS = False
+
+    jsonable = True
+
+    @beartype
+    def __init__(
+        self,
+        columns: Union[
+            NonEmptyListOfStrs,
+            str,
+        ],
+        new_column_names: dict[str, str],
+        drop_original: bool = True,
+        **kwargs: bool,
+    ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: list or str
+            Columns to set values.
+
+        new_column_names: dict[str, str]
+            dictionary mapping provided columns to updated names
+
+        drop_original: bool
+            indicates whether to drop original columns.
+
+        **kwargs: bool
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        Raises
+        ------
+            ValueError: if provided columns are not keys of
+                provided new_column_names
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        msg = f"{self.classname()}: all provided columns must appear as keys in new_column_names"  # noqa: E501
+        for column in self.columns:
+            if column not in new_column_names:
+                raise ValueError(msg)
+
+        self.new_column_names = new_column_names
+        self.drop_original = drop_original
+
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = RenameColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_names={"a": "new_a", "b": "new_b"},
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['new_a', 'new_b']
+
+        ```
+
+        """
+        return list(self.new_column_names.values())
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = RenameColumnsTransformer(
+        ...     columns="a", new_column_names={"a": "new_a"}
+        ... )  # noqa: E501
+        >>> pprint(transformer.to_json(), sort_dicts=True)
+        {'classname': 'RenameColumnsTransformer',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'drop_original': True,
+                  'new_column_names': {'a': 'new_a'},
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"].update(
+            {
+                "new_column_names": self.new_column_names,
+                "drop_original": self.drop_original,
+            }
+        )
+
+        return json_dict
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Create column copies.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data to apply mappings to.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with columns set to value.
+
+        Raises
+        ------
+            ValueError: if new_column_names values are already present in X
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+
+        >>> transformer = RenameColumnsTransformer(
+        ...     columns="a", new_column_names={"a": "new_a"}
+        ... )  # noqa: E501
+
+        >>> test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+        >>> transformer.transform(test_df)
+        shape: (3, 2)
+        ┌─────┬───────┐
+        │ b   ┆ new_a │
+        │ --- ┆ ---   │
+        │ i64 ┆ i64   │
+        ╞═════╪═══════╡
+        │ 4   ┆ 1     │
+        │ 5   ┆ 2     │
+        │ 6   ┆ 3     │
+        └─────┴───────┘
+
+        ```
+
+        """
+        X = super().transform(X, return_native_override=False)
+
+        new_column_names_already_present = sorted(
+            set(self.new_column_names.values()).intersection(X.columns)
+        )
+        if new_column_names_already_present:
+            msg = f"{self.classname()}: The following new_column_names are already present in X, {new_column_names_already_present}"  # noqa: E501
+            raise ValueError(msg)
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = X.with_columns(
+            [nw.col(c).alias(self.new_column_names[c]) for c in self.columns]
+        )
+
+        X = DropOriginalMixin.drop_original_column(X, self.drop_original, self.columns)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
