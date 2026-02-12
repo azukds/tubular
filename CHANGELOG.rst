@@ -36,6 +36,7 @@ Changed
 - bugfix: restricted pandas versions to < 3
 - feat: converted ColumnDtypeSetter to narwhals/lazyframe/json
 - chore: removed  test-aide from the env
+- feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
 
 2.7.0 (20/01/2026)
 ------------------
