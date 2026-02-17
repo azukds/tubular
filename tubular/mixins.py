@@ -173,7 +173,7 @@ class WeightColumnMixin:
             return_native: bool
                 controls whether to return nw or pd/pl dataframe
 
-        Raises:
+        Raises
         ------
             RuntimeError:
                 if invalid 'unit_weights_column' already exists
