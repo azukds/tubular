@@ -178,7 +178,8 @@ class WeightColumnMixin:
             RuntimeError:
                 if invalid 'unit_weights_column' already exists
 
-        Returns:
+        Returns
+        --------
             pd/pl/nw.DataFrame:
                 DataFrame with added 'unit_weights_column'
 
