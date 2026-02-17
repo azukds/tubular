@@ -329,7 +329,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to fit the transformer on.
 
         y : None or pd.DataFrame or pd.Series, default = None
