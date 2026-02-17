@@ -332,7 +332,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : DataFrame
             Data to fit the transformer on.
 
-        y : None or pd.DataFrame or pd.Series, default = None
+        y : None or Series, default = None
             Optional argument only required for the transformer to work with sklearn
             pipelines.
 
