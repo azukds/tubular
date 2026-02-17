@@ -487,7 +487,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Input X, copied if specified by user.
 
         Examples
