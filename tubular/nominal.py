@@ -2500,7 +2500,7 @@ class OrdinalEncoderTransformer(
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to with catgeorical variable columns to transform.
 
         Returns
