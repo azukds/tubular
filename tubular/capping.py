@@ -254,10 +254,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             A dataframe with required columns to be capped.
 
-        y : None
+        y : Series or None. Defaults to None
             Required for pipeline.
 
         Returns
@@ -551,7 +551,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to apply capping to.
 
         return_native_override: Optional[bool]
@@ -837,7 +837,7 @@ class CappingTransformer(BaseCappingTransformer):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             A dataframe with required columns to be capped.
 
         y : None
@@ -1065,7 +1065,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             A dataframe with required columns to be capped.
 
         y : None

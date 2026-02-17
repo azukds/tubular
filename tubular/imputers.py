@@ -688,10 +688,10 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to "learn" the median values from.
 
-        y : None or pd/pl.Series, default = None
+        y : Series or None, default = None
             Not required.
 
         Returns
@@ -884,10 +884,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to "learn" the mean values from.
 
-        y : None or pd.DataFrame or pd.Series, default = None
+        y : Series or None, default = None
             Not required.
 
         Returns
@@ -1057,10 +1057,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to "learn" the mode values from.
 
-        y : None or pd/pl.DataFrame or pd/pl.Series, default = None
+        y : Series or None, default = None
             Not required.
 
         Returns
@@ -1242,12 +1242,12 @@ class NullIndicator(BaseTransformer):
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data to add indicators to.
 
         Returns
         -------
-        pd/pl/nw.DataFrame:
+        DataFrame:
             dataframe with null indicator columns added
 
         Examples

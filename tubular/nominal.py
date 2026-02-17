@@ -532,10 +532,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to identify non-rare levels from.
 
-        y : None or or nw.Series, default = None
+        y : Series or None, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
         Returns
@@ -649,12 +649,12 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to with catgeorical variables to apply rare level grouping to.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with rare levels grouped for into a new rare level.
 
         Examples
@@ -1260,11 +1260,11 @@ class MeanResponseTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to with catgeorical variable columns to transform and also containing response_column
             column.
 
-        y : pd/pl.Series
+        y : Series
             Response variable or target.
 
         Raises
@@ -1470,7 +1470,7 @@ class MeanResponseTransformer(
 
         Parameters
         ----------
-        X_y : pd/pl.DataFrame
+        X_y : DataFrame
             Data to with categorical variable columns to transform and also containing response_column
             column.
 
@@ -1569,12 +1569,12 @@ class MeanResponseTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with nominal columns to transform.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
         Examples

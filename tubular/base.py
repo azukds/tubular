@@ -562,7 +562,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to check columns are in.
 
         Raises
