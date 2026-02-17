@@ -478,7 +478,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to transform with the transformer.
 
         return_native_override: Optional[bool]
