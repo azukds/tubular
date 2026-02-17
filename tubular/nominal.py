@@ -2489,7 +2489,8 @@ class OrdinalEncoderTransformer(
 
         return self
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Apply ordinal encoding stored in the mappings attribute to columns.
 
         This maps categorical levels to rank-ordered integer values by target-mean in ascending order.
