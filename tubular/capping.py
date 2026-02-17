@@ -560,7 +560,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with min and max capping applied to the specified columns.
 
         Raises
