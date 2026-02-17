@@ -2505,7 +2505,7 @@ class OrdinalEncoderTransformer(
 
         Returns
         -------
-        X : pd.DataFrame
+        X : DataFrame
             Transformed data with levels mapped to ordinal encoded values for categorical variables.
 
         """
