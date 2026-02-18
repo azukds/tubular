@@ -1981,7 +1981,7 @@ class OneHotEncodingTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to identify levels from.
 
         y : None
