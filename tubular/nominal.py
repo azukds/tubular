@@ -2165,7 +2165,7 @@ class OneHotEncodingTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to apply one hot encoding to.
 
         return_native_override: bool
