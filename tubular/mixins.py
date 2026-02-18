@@ -52,7 +52,7 @@ class CheckNumericMixin:
 
         Returns
         -------
-            pd/pl/nw.DataFrame:
+            DataFrame:
                 validated dataframe
 
         """
