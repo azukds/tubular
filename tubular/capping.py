@@ -8,13 +8,13 @@ from typing import Annotated, Optional
 
 import narwhals as nw
 import numpy as np
-import pandas as pd
 from beartype import beartype
 from beartype.vale import Is
 
 from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
+    _is_null,
     _return_narwhals_or_native_dataframe,
 )
 from tubular.base import block_from_json, register
@@ -235,7 +235,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             failed_columns = []
             for i, init_value in enumerate(self.quantiles[col]):
                 fit_value = self.quantile_capping_values[col][i]
-                if (not pd.isna(init_value)) and pd.isna(fit_value):
+                if not _is_null(init_value) and _is_null(fit_value):
                     failed_columns.append(col)
                     break
 

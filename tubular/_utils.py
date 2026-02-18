@@ -1,7 +1,8 @@
+import math
 from contextlib import suppress
 from functools import wraps
 from importlib.metadata import version
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import narwhals as nw
 import pandas as pd
@@ -219,3 +220,14 @@ def block_from_json(method):  # noqa: ANN202, ANN001,  no annotations for generi
         return method(self, *args, **kwargs)
 
     return wrapper
+
+
+def _is_null(value: Any) -> bool:  # noqa: ANN401
+    """Check if value if None/NaN.
+
+    Returns
+    -------
+        bool: True if value is None/NaN
+
+    """
+    return value is None or math.isnan(value)
