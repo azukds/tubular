@@ -180,7 +180,7 @@ class WeightColumnMixin:
 
         Returns
         --------
-            pd/pl/nw.DataFrame:
+            DataFrame:
                 DataFrame with added 'unit_weights_column'
 
         """
