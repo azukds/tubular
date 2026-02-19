@@ -102,7 +102,7 @@ class DropOriginalMixin:
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with columns to drop.
 
         drop_original : bool
@@ -116,7 +116,7 @@ class DropOriginalMixin:
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with columns dropped.
 
         """
