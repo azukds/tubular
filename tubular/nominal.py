@@ -1561,13 +1561,6 @@ class MeanResponseTransformer(
     def transform(self, X: DataFrame) -> DataFrame:
         """Apply mean response encoding stored in the mappings attribute to columns.
 
-        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
-        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
-        standard pd.Series.map method.
-
-        N.B. In the multi-level case, this method briefly overwrites the self.columns attribute, but sets
-        it back to the original value at the end.
-
         Parameters
         ----------
         X : DataFrame
