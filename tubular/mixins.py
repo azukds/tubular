@@ -162,16 +162,16 @@ class WeightColumnMixin:
         - if it is, then just reuse this existing column
         - if is not, throw error
 
-        Args:
-        ----
-            X: DataFrame
-                pandas, polars, or narwhals df
+        Parameters
+        ----------
+        X: DataFrame
+            pandas, polars, or narwhals df
 
-            backend: Literal['pandas', 'polars']
-                backed of original df
+        backend: Literal['pandas', 'polars']
+            backed of original df
 
-            return_native: bool
-                controls whether to return nw or pd/pl dataframe
+        return_native: bool
+            controls whether to return nw or pd/pl dataframe
 
         Raises
         ------
@@ -179,9 +179,9 @@ class WeightColumnMixin:
                 if invalid 'unit_weights_column' already exists
 
         Returns
-        --------
-            DataFrame:
-                DataFrame with added 'unit_weights_column'
+        -------
+        DataFrame:
+            DataFrame with added 'unit_weights_column'
 
         """
         X = _convert_dataframe_to_narwhals(X)
