@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
-import pandas as pd
 from beartype import beartype
 from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
@@ -35,6 +34,9 @@ from tubular.types import (
     PositiveInt,
     Series,
 )
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 @register
@@ -1211,7 +1213,7 @@ class MeanResponseTransformer(
                 failed_columns.append(col)
                 break
 
-            if self.unseen_level_handling and pd.isna(
+            if self.unseen_level_handling and _is_null(
                 self.unseen_levels_encoding_dict[col]
             ):
                 failed_columns.append(col)
