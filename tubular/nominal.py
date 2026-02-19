@@ -21,6 +21,7 @@ from tubular._stats import (
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _is_null,
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
@@ -1206,7 +1207,7 @@ class MeanResponseTransformer(
         """
         for col in self.encoded_columns:
             failed_columns = []
-            if any(pd.isna(value) for value in self.mappings[col].values()):
+            if any(_is_null(value) for value in self.mappings[col].values()):
                 failed_columns.append(col)
                 break
 
