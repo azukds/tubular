@@ -92,7 +92,6 @@ class DropOriginalMixin:
 
     @staticmethod
     @beartype
-    @nw.narwhalify
     def drop_original_column(
         X: DataFrame,
         drop_original: bool,
