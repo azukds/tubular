@@ -1,4 +1,5 @@
 import math
+import numbers
 from contextlib import suppress
 from functools import wraps
 from importlib.metadata import version
@@ -230,4 +231,6 @@ def _is_null(value: Any) -> bool:  # noqa: ANN401
         bool: True if value is None/NaN
 
     """
-    return value is None or math.isnan(value)
+    return value is None or (
+        math.isnan(value) if isinstance(value, numbers.Real) else False
+    )

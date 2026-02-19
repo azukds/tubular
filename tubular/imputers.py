@@ -6,7 +6,6 @@ import warnings
 from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
-import pandas as pd
 import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
@@ -21,6 +20,7 @@ from tubular._utils import (
     _assess_pandas_object_column,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _is_null,
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
@@ -175,7 +175,7 @@ class BaseImputer(BaseTransformer):
         """
         for col in self.columns:
             failed_columns = []
-            if pd.isna(self.impute_values_[col]):
+            if _is_null(self.impute_values_[col]):
                 failed_columns.append(col)
 
         if failed_columns:
