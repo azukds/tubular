@@ -39,7 +39,7 @@ class CheckNumericMixin:
 
         Parameters
         ----------
-        X: pd/pl/nw.DataFrame
+        X: DataFrame
             Data containing columns to check.
 
         return_native: bool

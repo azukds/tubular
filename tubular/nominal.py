@@ -2173,7 +2173,7 @@ class OneHotEncodingTransformer(
 
         Returns
         -------
-        X_transformed : pd/pl.DataFrame
+        X_transformed : DataFrame
             Transformed input X with dummy columns derived from categorical columns added. If drop_original
             = True then the original categorical columns that the dummies are created from will not be in
             the output X.
