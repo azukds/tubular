@@ -509,7 +509,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         """
         columns_with_nulls = [
-            c for c in present_levels if any(pd.isna(val) for val in present_levels[c])
+            c for c in present_levels if any(_is_null(val) for val in present_levels[c])
         ]
 
         if columns_with_nulls:
@@ -622,7 +622,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         for c in self.columns:
             self.non_rare_levels[c] = [
-                val for val in results_dict[c].unique().to_list() if not pd.isna(val)
+                val for val in results_dict[c].unique().to_list() if not _is_null(val)
             ]
 
             self.non_rare_levels[c] = sorted(self.non_rare_levels[c], key=str)
@@ -1962,7 +1962,7 @@ class OneHotEncodingTransformer(
         columns_with_nulls = []
 
         for c, levels in present_levels.items():
-            if any(pd.isna(val) for val in levels):
+            if any(_is_null(val) for val in levels):
                 columns_with_nulls.append(c)
 
             if columns_with_nulls:
