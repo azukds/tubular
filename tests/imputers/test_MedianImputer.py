@@ -89,7 +89,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         transformer.fit(df)
 
         assert transformer.impute_values_ == {
-            "a": np.int64(4),
+            "a": np.float64(4.2),
             "d": None,
         }, "impute_values_ attribute"
 
