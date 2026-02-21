@@ -89,8 +89,8 @@ class BaseImputer(BaseTransformer):
 
         Raises
         ------
-            RuntimeError:
-                if class is not jsonable
+        RuntimeError
+            if class is not jsonable
 
         Examples
         --------
@@ -351,7 +351,8 @@ class ArbitraryImputer(BaseImputer):
 
         Raises
         ------
-            TypeError: if given impute value clashes with types of given columns
+        TypeError
+            if given impute value clashes with types of given columns
 
         Returns
         -------
@@ -482,10 +483,6 @@ class ArbitraryImputer(BaseImputer):
         X : DataFrame
             Data containing columns to impute.
 
-        return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
-
         Returns
         -------
         X : DataFrame
@@ -615,16 +612,16 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     >>> # once fit, transformer can also be dumped to json and reinitialised
 
-    >>> test_df = pl.DataFrame({"a": [0, None], "b": [None, 1]})
+    >>> test_df = pl.DataFrame({"a": [0, 0, None], "b": [1, 1, None]})
 
     >>> _ = median_imputer.fit(test_df)
 
     >>> json_dump = median_imputer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+    {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': 'unit_weight'}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
 
     >>> MedianImputer.from_json(json_dump)
-    MedianImputer(columns=['a', 'b'])
+    MedianImputer(columns=['a', 'b'], weights_column='unit_weight')
 
     ```
 
@@ -728,39 +725,41 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         # as median depends on data ordering, it is less amenable to writing in
         # pure expression form, so implementation here is still
         # slightly pandas-like
-        # also, the weighted median approach is genuinely different to the unweighted
-        # approach, so have left as two separate logic flows
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
-            for c in not_all_null_columns:
-                col_not_null_expr = ~nw.col(c).is_null()
+        # adding unit weight column when weights column is none
+        UNIT_WEIGHT_COLUMN = "unit_weight"
+        if self.weights_column is None:
+            self.columns.append(UNIT_WEIGHT_COLUMN)
+            self.weights_column = UNIT_WEIGHT_COLUMN
+            X = X.with_columns(nw.lit(1).alias(self.weights_column))
 
-                X = X.sort(c)
+        WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        for c in not_all_null_columns:
+            col_not_null_expr = ~nw.col(c).is_null()
 
-                col_expr = nw.col(c).filter(col_not_null_expr)
-                weight_expr = nw.col(self.weights_column).filter(col_not_null_expr)
+            X = X.sort(c)
 
-                median_expr = _get_median_calculation_expression(
-                    initial_column_expr=col_expr,
-                    initial_weights_expr=weight_expr,
-                )
-
-                # impute value is weighted median
-                self.impute_values_[c] = X.select(median_expr).item(0, 0)
-
-        else:
-            median_exprs = {
-                c: _get_median_calculation_expression(nw.col(c), None)
-                for c in not_all_null_columns
-            }
-            results_dict = X.select(
-                **median_exprs,
-            ).to_dict(as_series=False)
-
-            self.impute_values_.update(
-                {col: value[0] for col, value in results_dict.items()},
+            col_expr = nw.when(col_not_null_expr).then(nw.col(c)).otherwise(None)
+            weight_expr = (
+                nw.when(col_not_null_expr)
+                .then(nw.col(self.weights_column))
+                .otherwise(None)
             )
 
+            median_expr = _get_median_calculation_expression(
+                initial_column_expr=col_expr,
+                initial_weights_expr=weight_expr,
+            )
+
+            # impute value is weighted median
+            weighted_median = X.select(median_expr).item(0, 0)
+            # self.impute_values_[c] = weighted_median
+            self.impute_values_[c] = (
+                round(weighted_median, 1)
+                if weighted_median is not None
+                else weighted_median
+            )
+            if UNIT_WEIGHT_COLUMN in self.columns:
+                self.columns.remove(UNIT_WEIGHT_COLUMN)
         return self
 
 
@@ -1330,7 +1329,8 @@ class NearestMeanResponseImputer(BaseImputer):
 
         Raises
         ------
-            ValueError: provided y contains nulls
+        ValueError
+            provided y contains nulls
 
         Returns
         -------
@@ -1377,5 +1377,4 @@ class NearestMeanResponseImputer(BaseImputer):
                     mean_response_by_levels["abs_diff_response"]
                     == mean_response_by_levels["abs_diff_response"].min(),
                 )[c].item(index=0)
-
         return self
