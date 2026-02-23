@@ -1,7 +1,7 @@
+import narwhals as nw
 import numpy as np
 import pandas as pd
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -15,6 +15,7 @@ from tests.utils import (
     _collect_frame,
     _convert_to_lazy,
     _handle_from_json,
+    assert_frame_equal_dispatch,
 )
 from tubular.mapping import BaseMappingTransformer
 
@@ -113,10 +114,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_mappings_unchanged(
@@ -124,8 +122,8 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
-        lazy,
         from_json,
+        lazy,
     ):
         """Test that mappings is unchanged in transform."""
         df = d.create_df_3(library=library)
@@ -146,7 +144,7 @@ class BaseMappingTransformerTransformTests(GenericTransformTests):
 
         transformer = _handle_from_json(transformer, from_json)
 
-        transformer.transform(_convert_to_lazy(df, lazy))
+        transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         assert mapping == transformer.mappings, (
             f"{self.transformer_name}.transform has changed self.mappings unexpectedly, expected {mapping} but got {transformer.mappings}"
@@ -174,33 +172,43 @@ class TestTransform(BaseMappingTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "BaseMappingTransformer"
 
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), d.create_df_1()),
-    )
-    def test_X_returned(self, df, expected, lazy):
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_X_returned(self, lazy, from_json, library):
         """Test that X is returned from transform."""
+
+        df = d.create_df_1(library=library)
+
         mapping = {
             "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},
             "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
         }
 
-        x = BaseMappingTransformer(mappings=mapping)
+        transformer = BaseMappingTransformer(mappings=mapping)
 
-        if _check_if_skip_test(x, df, lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+        expected = nw.from_native(df).clone().to_native()
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=_collect_frame(df_transformed, lazy),
-            msg="Check X returned from transform",
-        )
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy=lazy), expected)
+
+        # Check outcomes for single rows
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, lazy=lazy),
+                df_expected_row,
+            )
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

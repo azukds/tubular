@@ -6,6 +6,10 @@ from tubular.aggregations import (
     AggregateRowsOverColumnTransformer,
 )
 from tubular.capping import CappingTransformer, OutOfRangeNullTransformer
+from tubular.comparison import (
+    CompareTwoColumnsTransformer,
+    WhenThenOtherwiseTransformer,
+)
 from tubular.dates import (
     BetweenDatesTransformer,
     DateDifferenceTransformer,
@@ -22,7 +26,11 @@ from tubular.imputers import (
     NullIndicator,
 )
 from tubular.mapping import MappingTransformer
-from tubular.misc import SetValueTransformer
+from tubular.misc import (
+    ColumnDtypeSetter,
+    RenameColumnsTransformer,
+    SetValueTransformer,
+)
 from tubular.nominal import (
     GroupRareLevelsTransformer,
     MeanResponseTransformer,
@@ -40,6 +48,8 @@ __all__ = [
     "ArbitraryImputer",
     "BetweenDatesTransformer",
     "CappingTransformer",
+    "ColumnDtypeSetter",
+    "CompareTwoColumnsTransformer",
     "DateDifferenceTransformer",
     "DatetimeComponentExtractor",
     "DatetimeInfoExtractor",
@@ -56,8 +66,10 @@ __all__ = [
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
     "RatioTransformer",
+    "RenameColumnsTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",
+    "WhenThenOtherwiseTransformer",
 ]
 
 __version__ = _get_version()

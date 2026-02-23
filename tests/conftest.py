@@ -16,6 +16,7 @@ from tests.test_data import (
     create_object_df,
 )
 from tubular import base
+from tubular.comparison import ConditionEnum
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -91,7 +92,7 @@ def get_all_classes(
     return set(all_classes)
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_attribute_dict():
     """defines minimal attributes (values) needed to initiate each transformer named (key).
     New transformers need to be added here"""
@@ -149,7 +150,7 @@ def minimal_attribute_dict():
         },
         "ColumnDtypeSetter": {
             "columns": ["a"],
-            "dtype": str,
+            "dtype": "String",
         },
         "CrossColumnAddTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
@@ -255,6 +256,10 @@ def minimal_attribute_dict():
         "PCATransformer": {
             "columns": ["a", "c"],
         },
+        "RenameColumnsTransformer": {
+            "columns": "a",
+            "new_column_names": {"a": "new_a"},
+        },
         "ScalingTransformer": {
             "scaler_type": "standard",
             "columns": ["a", "b"],
@@ -310,10 +315,19 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "return_dtype": "Float32",  # Default dtype for the resulting column
         },
+        "WhenThenOtherwiseTransformer": {
+            "columns": ["a", "b"],
+            "when_column": "condition_col",
+            "then_column": "update_col",
+        },
+        "CompareTwoColumnsTransformer": {
+            "columns": ["a", "b"],
+            "condition": ConditionEnum.GREATER_THAN.value,
+        },
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     """links transformers to minimal dataframes needed to successfully run transformer. There is logic to do this automatically by module, so function will only need to be edited where either:
     - a new module that operates primarily on non-numeric columns is added
@@ -380,13 +394,13 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     return min_df_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def initialized_transformers(minimal_attribute_dict):
     """dictionary of {transformer name : initiated transformer} pairs for all transformers"""
     return {x[0]: x[1](**minimal_attribute_dict[x[0]]) for x in get_all_classes()}
 
 
-@pytest.fixture()
+@pytest.fixture
 def uninitialized_transformers():
     """dictionary of {transformer name : uninitiated transformer} pairs for all transformers"""
     return {x[0]: x[1] for x in get_all_classes()}

@@ -59,15 +59,18 @@ class TestFit(BaseNumericTransformerFitTests):
         df_generator,
     ):
         """Test that an exception is raised if X contains Nan or None."""
+
+        df = df_generator(library=library)
+        transformer = OneDKmeansTransformer(
+            new_column_name="b",
+            columns="a",
+        )
+
         with pytest.raises(
             ValueError,
             match=r"OneDKmeansTransformer: X should not contain missing values.",
         ):
-            df = df_generator(library=library)
-            OneDKmeansTransformer(
-                new_column_name="b",
-                columns="a",
-            ).fit(X=df)
+            transformer.fit(X=df)
 
 
 # Create test data

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Literal, Optional, Union
 
 import narwhals as nw
@@ -40,7 +41,7 @@ class CheckNumericMixin:
 
         Parameters
         ----------
-        X: pd/pl/nw.DataFrame
+        X: DataFrame
             Data containing columns to check.
 
         return_native: bool
@@ -53,7 +54,7 @@ class CheckNumericMixin:
 
         Returns
         -------
-            pd/pl/nw.DataFrame:
+            DataFrame:
                 validated dataframe
 
         """
@@ -93,7 +94,6 @@ class DropOriginalMixin:
 
     @staticmethod
     @beartype
-    @nw.narwhalify
     def drop_original_column(
         X: DataFrame,
         drop_original: bool,
@@ -104,7 +104,7 @@ class DropOriginalMixin:
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with columns to drop.
 
         drop_original : bool
@@ -118,7 +118,7 @@ class DropOriginalMixin:
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with columns dropped.
 
         """
@@ -163,25 +163,26 @@ class WeightColumnMixin:
         - if it is, then just reuse this existing column
         - if is not, throw error
 
-        Args:
-        ----
-            X: DataFrame
-                pandas, polars, or narwhals df
+        Parameters
+        ----------
+        X: DataFrame
+            pandas, polars, or narwhals df
 
-            backend: Literal['pandas', 'polars']
-                backed of original df
+        backend: Literal['pandas', 'polars']
+            backed of original df
 
-            return_native: bool
-                controls whether to return nw or pd/pl dataframe
+        return_native: bool
+            controls whether to return nw or pd/pl dataframe
 
-        Raises:
+        Raises
         ------
             RuntimeError:
                 if invalid 'unit_weights_column' already exists
 
-        Returns:
-            pd/pl/nw.DataFrame:
-                DataFrame with added 'unit_weights_column'
+        Returns
+        -------
+        DataFrame:
+            DataFrame with added 'unit_weights_column'
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -260,19 +261,29 @@ class WeightColumnMixin:
 
     @staticmethod
     @beartype
-    def get_valid_weights_filter_expr(weights_column: str) -> nw.Expr:
+    def get_valid_weights_filter_expr(
+        weights_column: str, verbose: bool = False
+    ) -> nw.Expr:
         """Validate weights column in dataframe.
 
         Parameters
         ----------
         weights_column: str
             name of weight column
+        verbose: bool
+            control verbosity of method
 
         Returns
         -------
             nw.Expr: expression to be used for filtering down to valid weights rows
 
         """
+        if verbose:
+            warnings.warn(
+                "Weights must be strictly positive, non-null, and finite - rows failing this will be filtered out.",
+                stacklevel=2,
+            )
+
         expr_ge_0 = nw.col(weights_column) > 0
         expr_not_null = ~nw.col(weights_column).is_null()
         expr_not_nan = ~nw.col(weights_column).is_nan()

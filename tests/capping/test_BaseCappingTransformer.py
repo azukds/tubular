@@ -32,7 +32,7 @@ class GenericCappingInitTests(WeightColumnInitMixinTests, GenericInitTests):
         cls.transformer_name = "BaseCappingTransformer"
 
     @pytest.mark.parametrize(
-        "non_string, cap_type",
+        ("non_string", "cap_type"),
         [(1, "capping_values"), (True, "quantiles")],
     )
     def test_columns_non_string_or_list_error(

@@ -6,7 +6,6 @@ import warnings
 from typing import Any, Literal, Optional, Union
 
 import narwhals as nw
-import pandas as pd
 import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
@@ -21,6 +20,7 @@ from tubular._utils import (
     _assess_pandas_object_column,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _is_null,
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
@@ -175,7 +175,7 @@ class BaseImputer(BaseTransformer):
         """
         for col in self.columns:
             failed_columns = []
-            if pd.isna(self.impute_values_[col]):
+            if _is_null(self.impute_values_[col]):
                 failed_columns.append(col)
 
         if failed_columns:
@@ -688,10 +688,10 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to "learn" the median values from.
 
-        y : None or pd/pl.Series, default = None
+        y : Series or None, default = None
             Not required.
 
         Returns
@@ -751,7 +751,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         if self.weights_column is not None:
             WeightColumnMixin.check_weights_column(self, X, self.weights_column)
             valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-                self.weights_column
+                self.weights_column, self.verbose
             )
             X = X.filter(valid_weights_filter_expr)
 
@@ -884,10 +884,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to "learn" the mean values from.
 
-        y : None or pd.DataFrame or pd.Series, default = None
+        y : Series or None, default = None
             Not required.
 
         Returns
@@ -936,7 +936,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
         X = X.filter(valid_weights_filter_expr)
 
@@ -1057,10 +1057,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to "learn" the mode values from.
 
-        y : None or pd/pl.DataFrame or pd/pl.Series, default = None
+        y : Series or None, default = None
             Not required.
 
         Returns
@@ -1109,7 +1109,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
         X = X.filter(valid_weights_filter_expr)
 
@@ -1242,12 +1242,12 @@ class NullIndicator(BaseTransformer):
 
         Parameters
         ----------
-        X : pd/pl/nw.DataFrame
+        X : DataFrame
             Data to add indicators to.
 
         Returns
         -------
-        pd/pl/nw.DataFrame:
+        DataFrame:
             dataframe with null indicator columns added
 
         Examples
