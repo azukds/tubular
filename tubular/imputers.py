@@ -751,7 +751,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         if self.weights_column is not None:
             WeightColumnMixin.check_weights_column(self, X, self.weights_column)
             valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-                self.weights_column
+                self.weights_column, self.verbose
             )
             X = X.filter(valid_weights_filter_expr)
 
@@ -936,7 +936,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
         X = X.filter(valid_weights_filter_expr)
 
@@ -1109,7 +1109,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
         X = X.filter(valid_weights_filter_expr)
 

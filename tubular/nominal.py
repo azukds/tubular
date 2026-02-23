@@ -583,7 +583,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
         X = X.filter(valid_weights_filter_expr)
 
@@ -1317,7 +1317,7 @@ class MeanResponseTransformer(
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
 
         y_vals = y.unique().to_list()
@@ -2423,7 +2423,7 @@ class OrdinalEncoderTransformer(
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column
+            weights_column, self.verbose
         )
 
         if (response_null_count := y.is_null().sum()) > 0:

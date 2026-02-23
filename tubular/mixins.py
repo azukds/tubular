@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Literal, Optional, Union
 
 import narwhals as nw
@@ -253,19 +254,29 @@ class WeightColumnMixin:
 
     @staticmethod
     @beartype
-    def get_valid_weights_filter_expr(weights_column: str) -> nw.Expr:
+    def get_valid_weights_filter_expr(
+        weights_column: str, verbose: bool = False
+    ) -> nw.Expr:
         """Validate weights column in dataframe.
 
         Parameters
         ----------
         weights_column: str
             name of weight column
+        verbose: bool
+            control verbosity of method
 
         Returns
         -------
             nw.Expr: expression to be used for filtering down to valid weights rows
 
         """
+        if verbose:
+            warnings.warn(
+                "Weights must be strictly positive, non-null, and finite - rows failing this will be filtered out.",
+                stacklevel=2,
+            )
+
         expr_ge_0 = nw.col(weights_column) > 0
         expr_not_null = ~nw.col(weights_column).is_null()
         expr_not_nan = ~nw.col(weights_column).is_nan()
