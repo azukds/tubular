@@ -34,6 +34,9 @@ Changed
 ^^^^^^^
 - feat: turned on docstring lints for nominal file
 - restricted pandas versions to < 3
+- feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
+- feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
+- feat: added new `check_for_failed_fit` method to relevant fitting transformers. This will be helpful as we move to more of a filtering bad rows rather than erroring approach.
 - feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
 - feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
 - converted ColumnDtypeSetter to narwhals/lazyframe/json

@@ -2,9 +2,9 @@ import narwhals as nw
 import numpy as np
 import pytest
 
-import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -35,7 +35,7 @@ class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
         cls.transformer_name = "ModeImputer"
 
 
-class TestFit(WeightColumnFitMixinTests, GenericFitTests):
+class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterTest):
     """Generic tests for transformer.fit()"""
 
     @classmethod
@@ -201,65 +201,6 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
         "library",
         ["pandas", "polars"],
     )
-    def test_nan_learnt_values(self, library):
-        """Test behaviour when learnt value is None."""
-        x = ModeImputer(columns=["a"])
-
-        df = input_df_nan(library)
-
-        with pytest.warns(
-            UserWarning,
-            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
-        ):
-            x.fit(df)
-
-        expected_impute_values = {"a": None}
-
-        assert x.impute_values_ == expected_impute_values, (
-            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
-        )
-
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_nan_learnt_values_weighted(self, library):
-        """Test behaviour when learnt value is None - when weights are used."""
-        weights_column = "weights_column"
-        x = ModeImputer(columns=["a"], weights_column=weights_column)
-
-        df = d.create_weighted_imputers_test_df(library=library)
-
-        df = nw.from_native(df)
-        native_backend = nw.get_native_namespace(df)
-
-        # replace 'a' with all null values to trigger warning
-        df = df.with_columns(
-            nw.new_series(
-                name="a",
-                values=[None] * len(df),
-                backend=native_backend,
-            ),
-        )
-
-        df = df.to_native()
-
-        with pytest.warns(
-            UserWarning,
-            match=r"ModeImputer: The Mode of columns \['a'\] will be None",
-        ):
-            x.fit(df)
-
-        expected_impute_values = {"a": None}
-
-        assert x.impute_values_ == expected_impute_values, (
-            f"impute_values_ attribute not as expected, expected {expected_impute_values} but got {x.impute_values_}"
-        )
-
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
     @pytest.mark.parametrize(
         ("input_col", "weight_col", "learnt_value", "categorical"),
         [
@@ -271,6 +212,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
             ([True, False, None, True, True], [4, 4, 1, 1, 1], True, False),
             # cat
             (["a", "b", "c", "c", None], [1, 2, 3, 4, 5], "c", True),
+            # float with invalid weight rows
+            ([1.0, 2.0, 2.0, np.nan, 3.0, 5.0], [2, 2, 2, 1, None, -1], 2.0, False),
         ],
     )
     def test_learnt_values_weighted_df(
