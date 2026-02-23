@@ -495,7 +495,8 @@ class TestTransform(GenericNominalTransformTests):
 
         transformer.fit(_convert_to_lazy(df, lazy=lazy))
         transformer = _handle_from_json(transformer, from_json)
-        output_df = transformer.transform(_collect_frame(df, lazy=lazy))
+
+        output_df = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         output_df = _collect_frame(output_df, lazy=lazy)
 
