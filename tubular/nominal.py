@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
 import numpy as np
-import pandas as pd
 from beartype import beartype
 from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
@@ -21,6 +20,7 @@ from tubular._utils import (
     _collect_frame,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
+    _is_null,
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
@@ -34,6 +34,9 @@ from tubular.types import (
     PositiveInt,
     Series,
 )
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 @register
@@ -508,7 +511,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         """
         columns_with_nulls = [
-            c for c in present_levels if any(pd.isna(val) for val in present_levels[c])
+            c for c in present_levels if any(_is_null(val) for val in present_levels[c])
         ]
 
         if columns_with_nulls:
@@ -532,10 +535,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to identify non-rare levels from.
 
-        y : None or or nw.Series, default = None
+        y : Series or None, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
         Returns
@@ -568,8 +571,21 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         super().fit(X, y)
 
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        backend = nw.get_native_namespace(X)
+
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=backend.__name__,
+                return_native=False,
+            )
+
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            weights_column, self.verbose
+        )
+        X = X.filter(valid_weights_filter_expr)
 
         schema = X.schema
 
@@ -586,16 +602,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         if self.record_rare_levels:
             self.rare_levels_record_ = {}
-
-        backend = nw.get_native_namespace(X)
-
-        weights_column = self.weights_column
-        if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_unit_weights_column(
-                X,
-                backend=backend.__name__,
-                return_native=False,
-            )
 
         level_weights_exprs = {
             c: (nw.col(weights_column).sum().over(c)) for c in self.columns
@@ -618,7 +624,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         for c in self.columns:
             self.non_rare_levels[c] = [
-                val for val in results_dict[c].unique().to_list() if not pd.isna(val)
+                val for val in results_dict[c].unique().to_list() if not _is_null(val)
             ]
 
             self.non_rare_levels[c] = sorted(self.non_rare_levels[c], key=str)
@@ -646,12 +652,12 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to with catgeorical variables to apply rare level grouping to.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with rare levels grouped for into a new rare level.
 
         Examples
@@ -1189,6 +1195,34 @@ class MeanResponseTransformer(
             response_column + "_" + level for level in self.response_levels
         ]
 
+    def _check_for_failed_fit(self) -> None:
+        """Check if fit failed to find needed attrs.
+
+        Occurs if mapping values or unseen_level_handling_dict values are null
+        unexpectedly.
+
+        Raises
+        ------
+            ValueError: if mapping values or unseen_level_handling_dict values
+            have come out as None unexpectedly
+
+        """
+        for col in self.encoded_columns:
+            failed_columns = []
+            if any(_is_null(value) for value in self.mappings[col].values()):
+                failed_columns.append(col)
+                break
+
+            if self.unseen_level_handling and _is_null(
+                self.unseen_levels_encoding_dict[col]
+            ):
+                failed_columns.append(col)
+                break
+
+        if failed_columns:
+            msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+            raise ValueError(msg)
+
     @block_from_json
     def _setup_fit_single_level(self, response_column: str) -> None:
         """Set attrs needed for fit, for non-multi level case.
@@ -1229,11 +1263,11 @@ class MeanResponseTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to with catgeorical variable columns to transform and also containing response_column
             column.
 
-        y : pd/pl.Series
+        y : Series
             Response variable or target.
 
         Raises
@@ -1282,6 +1316,9 @@ class MeanResponseTransformer(
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            weights_column, self.verbose
+        )
 
         y_vals = y.unique().to_list()
 
@@ -1291,6 +1328,8 @@ class MeanResponseTransformer(
 
         X_y = self._combine_X_y(X, y, return_native_override=False)
         response_column = "_temporary_response"
+
+        X_y = X_y.filter(valid_weights_filter_expr)
 
         if self.MULTI_LEVEL:
             self._setup_fit_multi_level(y_vals, response_column)
@@ -1412,6 +1451,8 @@ class MeanResponseTransformer(
 
         self._fit_unseen_level_handling_dict(X_y, encoded_column_exprs, weights_column)
 
+        self._check_for_failed_fit()
+
         return self
 
     @beartype
@@ -1432,7 +1473,7 @@ class MeanResponseTransformer(
 
         Parameters
         ----------
-        X_y : pd/pl.DataFrame
+        X_y : DataFrame
             Data to with categorical variable columns to transform and also containing response_column
             column.
 
@@ -1522,21 +1563,14 @@ class MeanResponseTransformer(
     def transform(self, X: DataFrame) -> DataFrame:
         """Apply mean response encoding stored in the mappings attribute to columns.
 
-        This method calls the check_mappable_rows method from BaseNominalTransformer to check that
-        all rows can be mapped then transform from BaseMappingTransformMixin to apply the
-        standard pd.Series.map method.
-
-        N.B. In the multi-level case, this method briefly overwrites the self.columns attribute, but sets
-        it back to the original value at the end.
-
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data with nominal columns to transform.
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
         Examples
@@ -1896,7 +1930,7 @@ class OneHotEncodingTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to identify levels from.
 
         y : None
@@ -1949,7 +1983,7 @@ class OneHotEncodingTransformer(
                 self.categories_[c] = sorted(
                     category
                     for category in results_dict[c].unique().to_list()
-                    if not pd.isna(category)
+                    if not _is_null(category)
                 )
 
             else:
@@ -2016,7 +2050,7 @@ class OneHotEncodingTransformer(
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to apply one hot encoding to.
 
         return_native_override: bool
@@ -2028,7 +2062,7 @@ class OneHotEncodingTransformer(
 
         Returns
         -------
-        X_transformed : pd/pl.DataFrame
+        X_transformed : DataFrame
             Transformed input X with dummy columns derived from categorical columns added. If drop_original
             = True then the original categorical columns that the dummies are created from will not be in
             the output X.
@@ -2186,7 +2220,28 @@ class OrdinalEncoderTransformer(
         # if there are more levels than this, will get a type error
         self.return_dtypes = dict.fromkeys(self.columns, "Int8")
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+    def _check_for_failed_fit(self) -> None:
+        """Check if fit failed to find needed attrs.
+
+        Occurs if mapping values are null unexpectedly.
+
+        Raises
+        ------
+            ValueError: if mapping values have come out as None unexpectedly
+
+        """
+        for col in self.columns:
+            failed_columns = []
+            if len(self.mappings[col]) == 0:
+                failed_columns.append(col)
+                break
+
+        if failed_columns:
+            msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
+            raise ValueError(msg)
+
+    @beartype
+    def fit(self, X: DataFrame, y: Series) -> OrdinalEncoderTransformer:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -2194,11 +2249,11 @@ class OrdinalEncoderTransformer(
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to with catgeorical variable columns to transform and response_column column
             specified when object was initialised.
 
-        y : pd.Series
+        y : Series
             Response column or target.
 
         Raises
@@ -2210,59 +2265,61 @@ class OrdinalEncoderTransformer(
             OrdinalEncoderTransformer: fitted class instance
 
         """
+        X = _convert_dataframe_to_narwhals(X)
+        y = _convert_series_to_narwhals(y)
+
         BaseNominalTransformer.fit(self, X, y)
 
         self.mappings = {}
 
-        if self.weights_column is not None:
-            WeightColumnMixin.check_weights_column(self, X, self.weights_column)
+        weights_column = self.weights_column
+        if self.weights_column is None:
+            X, weights_column = WeightColumnMixin._create_unit_weights_column(
+                X,
+                backend=nw.get_native_namespace(X).__name__,
+                return_native=False,
+            )
 
-        if (response_null_count := y.isna().sum()) > 0:
+        WeightColumnMixin.check_weights_column(self, X, weights_column)
+        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
+            weights_column, self.verbose
+        )
+
+        if (response_null_count := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {response_null_count} null values"
             raise ValueError(msg)
 
-        X_y = self._combine_X_y(X, y)
+        X_y = self._combine_X_y(X, y, return_native_override=False)
         response_column = "_temporary_response"
 
+        X_y = X_y.filter(valid_weights_filter_expr)
+
+        # the need to sort for each c limits the optimisation we can do here,
+        # as it is still necessarily to materialise for each column
         for c in self.columns:
-            if self.weights_column is None:
-                # get the indexes of the sorted target mean-encoded dict
-                idx_target_mean = list(
-                    X_y.groupby([c])[response_column]
-                    .mean()
-                    .sort_values(ascending=True, kind="mergesort")
-                    .index,
+            groupby_sum = X_y.group_by([c]).agg(
+                nw.col(response_column).sum(), nw.col(weights_column).sum()
+            )
+            # get the indexes of the sorted target mean-encoded dict
+            encodings = (
+                groupby_sum.select(
+                    (nw.col(response_column) / nw.col(weights_column)).alias(
+                        "encodings"
+                    ),
+                    nw.col(c),
                 )
+                .sort(by="encodings", descending=False)
+                .to_dict()
+            )
 
-                # create a dictionary whose keys are the levels of the categorical variable
-                # sorted ascending by their target-mean value
-                # and whose values are ascending ordinal integers
-                ordinal_encoded_dict = {
-                    k: idx_target_mean.index(k) + 1 for k in idx_target_mean
-                }
+            # create a dictionary whose keys are the levels of the categorical variable
+            # sorted ascending by their target-mean value
+            # and whose values are ascending ordinal integers
+            ordinal_encoded_dict = {
+                encodings[c][k]: k + 1 for k in range(len(encodings[c]))
+            }
 
-                self.mappings[c] = ordinal_encoded_dict
-
-            else:
-                groupby_sum = X_y.groupby([c])[
-                    [response_column, self.weights_column]
-                ].sum()
-
-                # get the indexes of the sorted target mean-encoded dict
-                idx_target_mean = list(
-                    (groupby_sum[response_column] / groupby_sum[self.weights_column])
-                    .sort_values(ascending=True, kind="mergesort")
-                    .index,
-                )
-
-                # create a dictionary whose keys are the levels of the categorical variable
-                # sorted ascending by their target-mean value
-                # and whose values are ascending ordinal integers
-                ordinal_encoded_dict = {
-                    k: idx_target_mean.index(k) + 1 for k in idx_target_mean
-                }
-
-                self.mappings[c] = ordinal_encoded_dict
+            self.mappings[c] = ordinal_encoded_dict
 
         for col in self.columns:
             # if more levels than int8 type can handle, then error
@@ -2283,9 +2340,12 @@ class OrdinalEncoderTransformer(
         self.mappings_from_null = base_mapping_transformer.mappings_from_null
         self.return_dtypes = base_mapping_transformer.return_dtypes
 
+        self._check_for_failed_fit()
+
         return self
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
         """Apply ordinal encoding stored in the mappings attribute to columns.
 
         This maps categorical levels to rank-ordered integer values by target-mean in ascending order.
@@ -2296,12 +2356,12 @@ class OrdinalEncoderTransformer(
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to with catgeorical variable columns to transform.
 
         Returns
         -------
-        X : pd.DataFrame
+        X : DataFrame
             Transformed data with levels mapped to ordinal encoded values for categorical variables.
 
         """

@@ -3,6 +3,7 @@ import pytest
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -25,7 +26,7 @@ class TestInit(WeightColumnInitMixinTests, ColumnStrListInitTests):
         cls.transformer_name = "MeanImputer"
 
 
-class TestFit(WeightColumnFitMixinTests, GenericFitTests):
+class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterTest):
     """Generic tests for transformer.fit()"""
 
     @classmethod
@@ -54,7 +55,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weighted(self, library):
         """Test that the impute values learnt during fit are expected - when weights are used."""
-        df = d.create_df_9(library=library)
+        df = d.create_df_9_with_null_weight_row(library=library)
 
         x = MeanImputer(columns=["a", "b"], weights_column="c")
 

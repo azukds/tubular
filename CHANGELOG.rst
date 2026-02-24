@@ -27,16 +27,26 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.8.0 (unreleased)
+2.9.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
+
+2.8.0 (23/02/2026)
 ------------------
 
 Changed
 ^^^^^^^
 - feat: turned on docstring lints for nominal file
-- restricted pandas versions to < 3
-- feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
+- chore: restricted pandas versions to < 3
+- feat: converted WeightsColumnMixin to be lazyframe compatible (new behaviour filters bad weight rows instead of erroring) `#528 <https://github.com/azukds/tubular/issues/528>`_
+- feat: converted OrdinalEncoderTransformer fit method to narwhals to enable the changes to WeightsColumnMixin
+- feat: added new `check_for_failed_fit` method to relevant fitting transformers. This will be helpful as we move to more of a filtering bad rows rather than erroring approach.
+- feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
 - feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
-- converted ColumnDtypeSetter to narwhals/lazyframe/json
+- feat: converted ColumnDtypeSetter to narwhals/lazyframe/json
 
 2.7.0 (20/01/2026)
 ------------------

@@ -22,6 +22,42 @@ from tests.utils import (
 from tubular.nominal import GroupRareLevelsTransformer
 
 
+def create_group_rare_levels_test_df_with_invalid_weights(library="pandas"):
+    """test df to use for fit tests of GroupRareLevelsTransformer"""
+
+    df_dict = {
+        # the two rows on the end are invalid weights, so these
+        # rows will be ignored
+        "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3, -1, -20],
+        "b": ["a", "a", "a", "d", "e", "f", "g", None, None, None, "z", "x"],
+        "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", None, "i", "j"],
+    }
+
+    df = dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+    df = df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
+
+    return df.to_native()
+
+
+def create_group_rare_levels_test_df(library="pandas"):
+    """test df to use for fit tests of GroupRareLevelsTransformer"""
+
+    df_dict = {
+        "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
+        "b": ["a", "a", "a", "d", "e", "f", "g", None, None, None],
+        "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", None],
+    }
+
+    df = dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+    df = df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
+
+    return df.to_native()
+
+
 class TestInit(ColumnStrListInitTests, WeightColumnInitMixinTests):
     """Tests for GroupRareLevelsTransformer.init()."""
 
@@ -110,7 +146,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight(self, library):
         """Test that the impute values learnt during fit, using a weight, are expected."""
-        df = d.create_df_6(library=library)
+        df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
 
         # first handle nulls
         df = nw.from_native(df)
@@ -133,7 +169,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight_2(self, library):
         """Test that the impute values learnt during fit, using a weight, are expected."""
-        df = d.create_df_6(library=library)
+        df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
 
         # handle nulls
         df = nw.from_native(df)
@@ -199,6 +235,12 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         assert expected_training_data_levels == x.training_data_levels, (
             "Training data values not correctly stored when unseen_levels_to_rare is false"
         )
+
+    # NOTE - have decided not to include the test for failed fit here,
+    # as in the case of fitting on an empty df finding no rare/non-rare levels
+    # is not actually an invalid result
+    # (compare this to an imputer, were finding None as the imputation value
+    # is nonsensical)
 
 
 class TestTransform(GenericNominalTransformTests):
@@ -309,7 +351,7 @@ class TestTransform(GenericNominalTransformTests):
     def test_expected_output_weight(self, library, from_json):
         """Test that the output is expected from transform, when weights are used."""
 
-        df = d.create_df_6(library=library)
+        df = create_group_rare_levels_test_df(library=library)
 
         # handle nulls
         df = nw.from_native(df)
