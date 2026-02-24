@@ -11,7 +11,7 @@ from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
-from tubular._checks import _get_null_filter_exprs
+from tubular._checks import _get_null_filter_expr
 from tubular._stats import (
     _get_mean_calculation_expressions,
     _get_median_calculation_expression,
@@ -538,47 +538,34 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         self.rare_levels_record_ = {}
         present_levels = {}
 
-        level_weights_exprs = {
-            c: (nw.col(weights_column).sum().over(c)) for c in self.columns
-        }
+        total_weight = _collect_frame(X.select(nw.col(weights_column).sum())).item()
 
-        total_weight_expr = nw.col(weights_column).sum()
+        level_weights_expr = nw.col(weights_column) / total_weight
 
-        level_weight_perc_exprs = {
-            c: level_weights_exprs[c] / total_weight_expr for c in self.columns
-        }
-
-        non_rare_levels_exprs = {
-            f"{c}_non_rare_levels": nw.when(
-                level_weight_perc_exprs[c] >= self.cut_off_percent
-            )
-            .then(nw.col(c))
-            .otherwise(None)
-            for c in self.columns
-        }
-
-        col_exprs = {c: nw.col(c) for c in self.columns}
-
-        transform_exprs = {**non_rare_levels_exprs, **col_exprs}
-
-        results = X.select(**transform_exprs)
-
-        results = _collect_frame(results)
-
-        results_dict = results.to_dict(as_series=True)
+        if not self.unseen_levels_to_rare:
+            self.training_data_levels = {}
 
         for c in self.columns:
+            group = X.group_by(c).agg(nw.col(weights_column).sum())
+
+            non_rare_levels_expr = (
+                nw.when(level_weights_expr >= self.cut_off_percent)
+                .then(nw.col(c))
+                .otherwise(None)
+                .alias(f"{c}_non_rare_levels")
+            )
+
+            results = group.select(non_rare_levels_expr, nw.col(c))
+
+            results = _collect_frame(results).to_dict(as_series=True)
+
             self.non_rare_levels[c] = sorted(
                 val
-                for val in results_dict[f"{c}_non_rare_levels"].unique().to_list()
+                for val in results[f"{c}_non_rare_levels"].unique().to_list()
                 if not _is_null(val)
             )
 
-            present_levels[c] = sorted(
-                value
-                for value in results_dict[c].unique().to_list()
-                if not _is_null(value)
-            )
+            present_levels[c] = sorted(value for value in results[c].unique().to_list())
 
             if self.record_rare_levels:
                 self.rare_levels_record_[c] = sorted(
@@ -590,8 +577,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                     key=str,
                 )
 
-        if not self.unseen_levels_to_rare:
-            self.training_data_levels = {c: present_levels[c] for c in self.columns}
+            if not self.unseen_levels_to_rare:
+                self.training_data_levels[c] = present_levels[c]
 
         return self
 
@@ -648,48 +635,49 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.check_is_fitted(["non_rare_levels"])
 
-        null_filter_exprs = _get_null_filter_exprs(columns=self.columns)
+        non_rare_condition_expressions = {}
 
-        non_rare_condition_exprs = {
-            c: nw.col(c).is_in(self.non_rare_levels[c])
-            if self.unseen_levels_to_rare
-            # if unseen levels are mapped to rare,
-            # the condition becomes either in
-            # non rare levels OR not in training data
-            # levels (unseen)
-            else (
-                nw.col(c).is_in(self.non_rare_levels[c])
-                | ~nw.col(c).is_in(self.training_data_levels[c])
+        transform_expressions = {}
+
+        null_filter_exprs = {}
+
+        for col in self.columns:
+            null_filter_exprs[col] = _get_null_filter_expr(col)
+
+            non_rare_condition_expressions[col] = (
+                nw.col(col).is_in(self.non_rare_levels[col])
+                if self.unseen_levels_to_rare
+                # if unseen levels are mapped to rare,
+                # the condition becomes either in
+                # non rare levels OR not in training data
+                # levels (unseen)
+                else (
+                    nw.col(col).is_in(self.non_rare_levels[col])
+                    | ~nw.col(col).is_in(self.training_data_levels[col])
+                )
             )
-            for c in self.columns
-        }
 
-        transform_expressions = {
-            c: nw.col(c).cast(
-                nw.String,
+            transform_expressions[col] = (
+                nw.col(col).cast(
+                    nw.String,
+                )
+                if schema[col] in {nw.Categorical, nw.Enum}
+                else nw.col(col)
             )
-            if schema[c] in {nw.Categorical, nw.Enum}
-            else nw.col(c)
-            for c in self.columns
-        }
 
-        transform_expressions = {
-            c: (
-                nw.when(non_rare_condition_exprs[c] | null_filter_exprs[c])
-                .then(transform_expressions[c])
+            transform_expressions[col] = (
+                nw.when(non_rare_condition_expressions[col] | null_filter_exprs[col])
+                .then(transform_expressions[col])
                 .otherwise(nw.lit(self.rare_level_name))
             )
-            for c in self.columns
-        }
 
-        transform_expressions = {
-            c: transform_expressions[c].cast(
-                nw.Enum(self.non_rare_levels[c] + [self.rare_level_name]),
+            transform_expressions[col] = (
+                transform_expressions[col].cast(
+                    nw.Enum(self.non_rare_levels[col] + [self.rare_level_name]),
+                )
+                if (schema[col] in {nw.Categorical, nw.Enum})
+                else transform_expressions[col]
             )
-            if (schema[c] in {nw.Categorical, nw.Enum})
-            else transform_expressions[c]
-            for c in self.columns
-        }
 
         X = X.with_columns(**transform_expressions)
 

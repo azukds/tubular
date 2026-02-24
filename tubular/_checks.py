@@ -3,20 +3,20 @@ import narwhals as nw
 from tubular.types import DataFrame
 
 
-def _get_null_filter_exprs(columns: list[str]) -> dict[str, nw.Expr]:
+def _get_null_filter_expr(column: str) -> dict[str, nw.Expr]:
     """Get expressions to filter out null rows in given columns.
 
     Parameters
     ----------
-    columns: list[str]
-        list of columns in to filter
+    column: str
+        column to filter
 
     Returns
     -------
-    dict[str, nw.Expr]: dict of per column null filter expressions
+    nw.Expr: column null filter expression
 
     """
-    return {col: nw.col(col).is_null() for col in columns}
+    return nw.col(column).is_null()
 
 
 def _get_all_null_columns(

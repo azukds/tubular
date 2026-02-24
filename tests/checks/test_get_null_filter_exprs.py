@@ -2,7 +2,7 @@ import narwhals as nw
 import pytest
 
 from tests.utils import dataframe_init_dispatch
-from tubular._checks import _get_null_filter_exprs
+from tubular._checks import _get_null_filter_expr
 
 
 @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -15,7 +15,7 @@ def test_output(library):
 
     cols = ["a", "b", "c"]
 
-    exprs = _get_null_filter_exprs(cols)
+    exprs = {col: _get_null_filter_expr(col) for col in cols}
 
     expected_outputs = {"a": [1, 2], "b": [], "c": [1, 2, 3]}
 
