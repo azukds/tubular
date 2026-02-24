@@ -184,3 +184,21 @@ class TestGetValidWeightsFilterExpr:
         df = df.filter(filter_expr)
 
         assert_frame_equal_dispatch(df.to_native(), expected_df.to_native())
+
+    @pytest.mark.parametrize("verbose", [True, False])
+    def test_warning(self, verbose, recwarn):
+        "test expected warning is given (depending on verbose)"
+
+        obj = WeightColumnMixin()
+
+        obj.get_valid_weights_filter_expr(weights_column="weights", verbose=verbose)
+
+        if not verbose:
+            assert len(recwarn) == 0
+
+        else:
+            assert len(recwarn) == 1
+            assert (
+                str(recwarn[0].message)
+                == "Weights must be strictly positive, non-null, and finite - rows failing this will be filtered out."
+            )

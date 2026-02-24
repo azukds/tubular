@@ -27,7 +27,16 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-2.8.0 (unreleased)
+2.9.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
+- feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
+- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
+
+2.8.0 (23/02/2026)
 ------------------
 
 Changed
@@ -40,9 +49,6 @@ Changed
 - feat: turned on lazyframe_compatible for DatetimeSinusoidCalculator, and setup lazy tests `#537 <https://github.com/azukds/tubular/issues/537>`_
 - feat: added RenameColumnsTransformer `#633 <https://github.com/azukds/tubular/issues/633>`_
 - feat: converted ColumnDtypeSetter to narwhals/lazyframe/json
-- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
-- feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
-- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 
 2.7.0 (20/01/2026)
 ------------------
