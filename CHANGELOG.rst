@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
 
 2.8.0 (23/02/2026)
 ------------------
