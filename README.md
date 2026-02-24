@@ -144,7 +144,7 @@ track our progress below:
 | DatetimeInfoExtractor              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DatetimeSinusoidCalculator         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | DifferenceTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
-| GroupRareLevelsTransformer         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| GroupRareLevelsTransformer         | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | MeanImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
@@ -152,7 +152,7 @@ track our progress below:
 | ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | OneDKmeansTransformer              | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
-| OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| OneHotEncodingTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | OutOfRangeNullTransformer          | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
 | RatioTransformer                   | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | RenameColumnsTransformer           | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
