@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
 
 2.8.0 (23/02/2026)
 ------------------
