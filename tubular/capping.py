@@ -249,8 +249,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
-        when initialising the transformer. Saves learnt values in the capping_values
-        attribute.
+        when initialising the transformer. Saves learnt values in the
+        quantile_capping_values and replacement_values attributes.
 
         Parameters
         ----------
