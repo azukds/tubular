@@ -231,8 +231,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             ValueError: if quantile_capping_values have fit as None where values were expected
 
         """
+        failed_columns = []
         for col in self.quantiles:
-            failed_columns = []
             for i, init_value in enumerate(self.quantiles[col]):
                 fit_value = self.quantile_capping_values[col][i]
                 if not _is_null(init_value) and _is_null(fit_value):
