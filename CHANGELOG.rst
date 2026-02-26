@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
+- updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 
 2.8.0 (23/02/2026)
 ------------------

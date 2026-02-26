@@ -1016,7 +1016,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -1115,27 +1115,27 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        all_null_cols = _get_all_null_columns(X, self.columns)
+        # all_null_cols = _get_all_null_columns(X, self.columns)
 
-        if all_null_cols:
-            # touch the dict entry for each all null col so that they are recorded
-            self.impute_values_.update(
-                dict.fromkeys(all_null_cols),
-            )
+        # if all_null_cols:
+        #     # touch the dict entry for each all null col so that they are recorded
+        #     self.impute_values_.update(
+        #         dict.fromkeys(all_null_cols),
+        #     )
 
-            warnings.warn(
-                f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
-                stacklevel=2,
-            )
+        #     warnings.warn(
+        #         f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
+        #         stacklevel=2,
+        #     )
 
-        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
+        # not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
 
         mode_value_exprs = _get_mode_calculation_expressions(
-            not_all_null_columns,
+            self.columns,
             weights_column,
         )
 
-        results_dict = X.select(**mode_value_exprs).to_dict(as_series=True)
+        results_dict = _collect_frame(X.select(**mode_value_exprs)).to_dict(as_series=True)
 
         for c in results_dict:
             mode_values = results_dict[c]
