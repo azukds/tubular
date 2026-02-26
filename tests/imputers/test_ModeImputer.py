@@ -16,7 +16,10 @@ from tests.imputers.test_BaseImputer import (
     GenericImputerTransformTests,
     GenericImputerTransformTestsWeight,
 )
-from tests.utils import dataframe_init_dispatch
+from tests.utils import (
+    _convert_to_lazy,
+    dataframe_init_dispatch,
+)
 from tubular.imputers import ModeImputer
 
 
@@ -46,7 +49,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
-    def test_learnt_values(self, library):
+    @pytest.mark.parametrize("lazy", [True, False])
+    def test_learnt_values(self, library, lazy):
         """Test that the impute values learnt during fit are expected."""
 
         df_dict = {
@@ -59,6 +63,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             "bool_col": [True, True, None, False, True],
             # cat
             "cat_col": ["b", "b", "d", "e", None],
+            # null majority
+            "null_col": [None, None, None, "a", "b"],
         }
 
         df = dataframe_init_dispatch(df_dict, library=library)
@@ -67,15 +73,18 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         df = nw.from_native(df)
         df = nw.to_native(df.with_columns(nw.col("cat_col").cast(nw.Categorical)))
 
-        x = ModeImputer(columns=["float_col", "str_col", "cat_col", "bool_col"])
+        x = ModeImputer(
+            columns=["float_col", "str_col", "cat_col", "bool_col", "null_col"]
+        )
 
-        x.fit(df)
+        x.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected_impute_values = {
             "float_col": 1.0,
             "str_col": "b",
             "cat_col": "b",
             "bool_col": True,
+            "null_col": "b",
         }
 
         assert x.impute_values_ == expected_impute_values, (
@@ -86,7 +95,8 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
-    def test_learnt_values_tied(self, library):
+    @pytest.mark.parametrize("lazy", [True, False])
+    def test_learnt_values_tied(self, library, lazy):
         """Test that the impute values learnt during fit are expected - when mode is tied."""
 
         df_dict = {
@@ -110,7 +120,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         columns = ["float_col", "str_col", "cat_col", "bool_col"]
         x = ModeImputer(columns=columns)
 
-        x.fit(df)
+        x.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected_impute_values = {
             "float_col": 2.0,
@@ -122,7 +132,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         with pytest.warns(
             UserWarning,  # noqa: PT030
         ) as warnings:
-            x.fit(df)
+            x.fit(_convert_to_lazy(df, lazy=lazy))
 
         columns.sort()
         warnings = [w.message.args[0] for w in warnings]
@@ -138,6 +148,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         ("input_col", "weight_col", "learnt_value", "categorical"),
         [
@@ -158,6 +169,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         weight_col,
         learnt_value,
         categorical,
+        lazy,
     ):
         """
         Test that the impute values learnt during fit are expected -
@@ -178,14 +190,14 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         columns = ["col"]
         x = ModeImputer(columns=columns, weights_column="weight")
 
-        x.fit(df)
+        x.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected_impute_values = {
             "col": learnt_value,
         }
         msg = f"ModeImputer: The Mode of column {columns[0]} is tied, will sort in descending order and return first candidate"
         with pytest.warns(UserWarning, match=msg) as warnings:
-            x.fit(df)
+            x.fit(_convert_to_lazy(df, lazy=lazy))
 
         columns.sort()
         warnings = [w.message.args[0] for w in warnings]
@@ -201,6 +213,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         "library",
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         ("input_col", "weight_col", "learnt_value", "categorical"),
         [
@@ -214,6 +227,10 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             (["a", "b", "c", "c", None], [1, 2, 3, 4, 5], "c", True),
             # float with invalid weight rows
             ([1.0, 2.0, 2.0, np.nan, 3.0, 5.0], [2, 2, 2, 1, None, -1], 2.0, False),
+            # null majority
+            ([None, None, "a", "b"], [3, 3, 2, 1], "a", False),
+            # null majority cat
+            ([None, None, "a", "b"], [3, 3, 2, 1], "a", True),
         ],
     )
     def test_learnt_values_weighted_df(
@@ -223,6 +240,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         weight_col,
         learnt_value,
         categorical,
+        lazy,
     ):
         """Test that the impute values learnt during fit are expected when df is weighted."""
         df_dict = {
@@ -240,7 +258,7 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
         columns = ["col"]
         x = ModeImputer(columns=columns, weights_column="weight")
 
-        x.fit(df)
+        x.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected_impute_values = {
             "col": learnt_value,
