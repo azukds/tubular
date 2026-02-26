@@ -3,6 +3,22 @@ import narwhals as nw
 from tubular.types import DataFrame
 
 
+def _get_null_filter_expr(column: str) -> dict[str, nw.Expr]:
+    """Get expressions to filter out null rows in given columns.
+
+    Parameters
+    ----------
+    column: str
+        column to filter
+
+    Returns
+    -------
+    nw.Expr: column null filter expression
+
+    """
+    return nw.col(column).is_null()
+
+
 def _get_all_null_columns(
     X: DataFrame,
     columns: list[str],

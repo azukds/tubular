@@ -14,6 +14,9 @@ from tests.base_tests import (
     SeparatorInitMixintests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -62,6 +65,21 @@ class TestInit(
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
+            OneHotEncodingTransformer(**args)
+
+    @pytest.mark.parametrize(
+        ("values", "columns"),
+        [({"a": ["b"]}, ["b"]), ({"a": ["b"], "z": ["x", "y"]}, ["a", "b"])],
+    )
+    def test_wanted_values_not_matching_columns_error(
+        self, values, columns, minimal_attribute_dict
+    ):
+        args = minimal_attribute_dict[self.transformer_name]
+        args["wanted_values"] = values
+        args["columns"] = columns
+
+        msg = f"{self.transformer_name}: keys of wanted values should match provided columns"
+        with pytest.raises(ValueError, match=msg):
             OneHotEncodingTransformer(**args)
 
     @pytest.mark.parametrize(
@@ -129,48 +147,28 @@ class TestFit(GenericFitTests):
     def setup_class(cls):
         cls.transformer_name = "OneHotEncodingTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_nulls_in_X_error(self, library):
-        """Test that an exception is raised if X has nulls in column to be fit on."""
+    def test_nulls_handled_successfully_error(self, library, lazy):
+        """Test that fit does not error if columns contain nulls"""
         df = d.create_df_2(library=library)
 
         transformer = OneHotEncodingTransformer(columns=["b", "c"])
 
-        with pytest.raises(
-            ValueError,
-            match="transformer can only fit/apply on columns without nulls, columns b need to be imputed first",
-        ):
-            transformer.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
 
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
+
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_fit_missing_levels_warning(self, library):
-        """Test OneHotEncodingTransformer.fit triggers a warning for missing levels."""
-        df = d.create_df_1(library=library)
-
-        transformer = OneHotEncodingTransformer(
-            columns=["b"],
-            wanted_values={"b": ["f", "g"]},
-        )
-
-        with pytest.warns(
-            UserWarning,
-            match=(
-                r"OneHotEncodingTransformer: column b includes user-specified values \['g'\] not found in the dataset"
-            ),
-        ):
-            transformer.fit(df)
-
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_fields_with_over_100_levels_error(self, library):
+    def test_fields_with_over_100_levels_error(self, library, lazy):
         """Test that OneHotEncodingTransformer.fit on fields with more than 100 levels raises error."""
         df_dict = {"a": [1] * 101, "b": list(range(101))}
 
@@ -178,35 +176,23 @@ class TestFit(GenericFitTests):
 
         transformer = OneHotEncodingTransformer(columns=["a", "b"])
 
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
         with pytest.raises(
             ValueError,
             match="OneHotEncodingTransformer: column b has over 100 unique values - consider another type of encoding",
         ):
-            transformer.fit(df)
+            transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_fit_no_warning_if_all_wanted_values_present(self, library, recwarn):
-        """Test that OneHotEncodingTransformer.fit does NOT raise a warning when all levels in wanted_levels are present in the data."""
-        df = d.create_df_1(library=library)
-
-        transformer = OneHotEncodingTransformer(
-            columns=["b"],
-            wanted_values={"b": ["a", "b", "c", "d", "e", "f"]},
-        )
-
-        transformer.fit(df)
-        assert len(recwarn) == 0, (
-            "OneHotEncodingTransformer.fit is raising unexpected warnings"
-        )
-
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_fields_with_over_100_levels_do_not_error_with_wanted_levels(self, library):
+    def test_fields_with_over_100_levels_do_not_error_with_wanted_levels(
+        self, library, lazy
+    ):
         """Test that OneHotEncodingTransformer.fit bypasses too many levels error if wanted_levels is provided"""
         df_dict = {"a": ["1"] * 101, "b": list(range(101))}
 
@@ -215,7 +201,11 @@ class TestFit(GenericFitTests):
         transformer = OneHotEncodingTransformer(
             columns=["a"], wanted_values={"a": ["1"]}
         )
-        transformer.fit(df)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
 
 class TestTransform(
@@ -297,34 +287,13 @@ class TestTransform(
         inherited test tests the mapping attribute, which OHE transformer doesn't have.
         """
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_non_numeric_column_error_1(self, library, from_json):
-        """Test that transform will raise an error if a column to transform has nulls."""
-        df_train = d.create_df_1(library=library)
-        df_test = d.create_df_2(library=library)
-
-        transformer = OneHotEncodingTransformer(columns=["b"])
-
-        transformer.fit(df_train)
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        with pytest.raises(
-            ValueError,
-            match="transformer can only fit/apply on columns without nulls, columns b need to be imputed first",
-        ):
-            transformer.transform(df_test)
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_expected_output(self, library, from_json):
+    def test_expected_output(self, library, from_json, lazy):
         """Test that OneHotEncodingTransformer.transform encodes the feature correctly.
 
         Also tests that OneHotEncodingTransformer.transform does not modify unrelated columns.
@@ -338,11 +307,17 @@ class TestTransform(
         expected = self.create_OneHotEncoderTransformer_test_df_1(library=library)
 
         transformer = OneHotEncodingTransformer(columns=columns)
-        transformer.fit(df_train)
+
+        if _check_if_skip_test(transformer, df_train, lazy=lazy, from_json=from_json):
+            return
+
+        transformer.fit(_convert_to_lazy(df_train, lazy=lazy))
 
         transformer = _handle_from_json(transformer, from_json)
 
-        df_transformed = transformer.transform(df_test.to_native())
+        df_transformed = transformer.transform(
+            _convert_to_lazy(df_test.to_native(), lazy=lazy)
+        )
 
         expected = nw.from_native(expected)
         for col in [
@@ -354,7 +329,9 @@ class TestTransform(
         ]:
             expected = expected.with_columns(nw.col(col).cast(nw.Boolean))
 
-        assert_frame_equal_dispatch(expected.to_native(), df_transformed)
+        assert_frame_equal_dispatch(
+            expected.to_native(), _collect_frame(df_transformed, lazy=lazy)
+        )
 
         # also test single row transform
         for i in range(len(df_test)):
@@ -362,16 +339,17 @@ class TestTransform(
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_categories_not_modified(self, library, from_json):
+    def test_categories_not_modified(self, library, from_json, lazy):
         """Test that the categories from fit are not changed in transform."""
         df_train = d.create_df_1(library=library)
         df_test = d.create_df_7(library=library)
@@ -379,23 +357,27 @@ class TestTransform(
         transformer = OneHotEncodingTransformer(columns=["a", "b"], verbose=False)
         transformer2 = OneHotEncodingTransformer(columns=["a", "b"], verbose=False)
 
-        transformer.fit(df_train)
-        transformer2.fit(df_train)
+        if _check_if_skip_test(transformer, df_train, lazy=lazy, from_json=from_json):
+            return
+
+        transformer.fit(_convert_to_lazy(df_train, lazy=lazy))
+        transformer2.fit(_convert_to_lazy(df_train, lazy=lazy))
 
         transformer = _handle_from_json(transformer, from_json)
 
-        transformer.transform(df_test)
+        transformer.transform(_convert_to_lazy(df_test, lazy=lazy))
 
         assert transformer2.categories_ == transformer.categories_, (
             f"categories_ modified during transform, pre transform had {transformer2.categories_} but post transform has {transformer.categories_}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_renaming_feature_works_as_expected(self, library, from_json):
+    def test_renaming_feature_works_as_expected(self, library, from_json, lazy):
         """Test OneHotEncodingTransformer.transform() is renaming features correctly."""
         df = d.create_df_7(library=library)
         df = df[["b", "c"]]
@@ -406,11 +388,14 @@ class TestTransform(
             drop_original=True,
         )
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         transformer.fit(df)
 
         transformer = _handle_from_json(transformer, from_json)
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
         expected_columns = ["b|x", "b|y", "b|z", "c|a", "c|b", "c|c"]
 
@@ -421,70 +406,31 @@ class TestTransform(
             f"renaming columns feature in OneHotEncodingTransformer.transform, expected {expected_columns} but got {actual_columns}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_warning_generated_by_unseen_categories(self, library, from_json):
-        """Test OneHotEncodingTransformer.transform triggers a warning for unseen categories."""
-        df_train = d.create_df_7(library=library)
-        df_test = d.create_df_8(library=library)
-
-        transformer = OneHotEncodingTransformer(columns=["a", "b", "c"], verbose=True)
-
-        transformer.fit(df_train)
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        with pytest.warns(UserWarning, match="unseen categories"):
-            transformer.transform(df_test)
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_transform_missing_levels_warning(self, library, from_json):
-        """Test OneHotEncodingTransformer.transform triggers a warning for missing levels."""
-        df_train = d.create_df_7(library=library)
-        df_test = d.create_df_8(library=library)
-
-        transformer = OneHotEncodingTransformer(
-            columns=["b"],
-            wanted_values={"b": ["v", "x", "z"]},
-        )
-
-        transformer.fit(df_train)
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        with pytest.warns(
-            UserWarning,
-            match=r"OneHotEncodingTransformer: column b includes user-specified values \['v'\] not found in the dataset",
-        ):
-            transformer.transform(df_test)
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_unseen_categories_encoded_as_all_zeroes(self, library, from_json):
+    def test_unseen_categories_encoded_as_all_zeroes(self, library, from_json, lazy):
         """Test OneHotEncodingTransformer.transform encodes unseen categories correctly (all 0s)."""
         # transformer is fit on the whole dataset separately from the input df to work with the decorators
         df_train = d.create_df_7(library=library)
 
         columns = ["a", "b", "c"]
-        x = OneHotEncodingTransformer(columns=columns, verbose=False)
-        x.fit(df_train)
+        transformer = OneHotEncodingTransformer(columns=columns, verbose=False)
 
-        x = _handle_from_json(x, from_json)
+        if _check_if_skip_test(transformer, df_train, lazy=lazy, from_json=from_json):
+            return
+
+        transformer.fit(df_train)
+
+        transformer = _handle_from_json(transformer, from_json)
 
         df_test = d.create_df_8(library=library)
         expected = self.create_OneHotEncoderTransformer_test_df_2(library=library)
 
-        df_transformed = x.transform(df_test)
+        df_transformed = transformer.transform(_convert_to_lazy(df_test, lazy=lazy))
 
         df_train = nw.from_native(df_train)
         expected = nw.from_native(expected)
@@ -499,25 +445,31 @@ class TestTransform(
             expected = expected.with_columns(nw.col(col).cast(nw.Boolean))
 
         column_order = expected.columns
-        assert_frame_equal_dispatch(expected.to_native(), df_transformed[column_order])
+        assert_frame_equal_dispatch(
+            expected.to_native(),
+            _collect_frame(df_transformed, lazy=lazy)[column_order],
+        )
 
         # also test single row transform
         df_test = nw.from_native(df_test)
         for i in range(len(df_test)):
-            df_transformed_row = x.transform(df_test[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df_test[[i]].to_native(), lazy=lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row[column_order],
+                _collect_frame(df_transformed_row, lazy=lazy)[column_order],
                 df_expected_row,
             )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_transform_output_with_wanted_values_arg(self, library, from_json):
+    def test_transform_output_with_wanted_values_arg(self, library, from_json, lazy):
         """
         Test to verify OneHotEncodingTransformer.transform zero-filled levels from user-specified "wanted_levels" and encodes only those listed in "wanted_levels".
 
@@ -530,11 +482,14 @@ class TestTransform(
             wanted_values={"b": ["v", "x", "z"]},
         )
 
+        if _check_if_skip_test(transformer, df_train, lazy=lazy, from_json=from_json):
+            return
+
         transformer.fit(df_train)
 
         transformer = _handle_from_json(transformer, from_json)
 
-        df_transformed = transformer.transform(df_test)
+        df_transformed = transformer.transform(_convert_to_lazy(df_test, lazy=lazy))
 
         expected_df_dict = {
             "a": [1, 5, 2, 3, 3],
@@ -559,30 +514,6 @@ class TestTransform(
             nw.col("c").cast(nw.Categorical),
         )
 
-        assert_frame_equal_dispatch(df_transformed, expected_df.to_native())
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_transform_no_warning_if_all_wanted_values_present(
-        self, library, recwarn, from_json
-    ):
-        """Test that OneHotEncodingTransformer.transform does NOT raise a warning when all levels in wanted_levels are present in the data."""
-        df_train = d.create_df_8(library=library)
-        df_test = d.create_df_7(library=library)
-
-        transformer = OneHotEncodingTransformer(
-            columns=["b"],
-            wanted_values={"b": ["z", "y", "x"]},
-        )
-        transformer.fit(df_train)
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        transformer.transform(df_test)
-
-        assert len(recwarn) == 0, (
-            "OneHotEncodingTransformer.transform is raising unexpected warnings"
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=lazy), expected_df.to_native()
         )
