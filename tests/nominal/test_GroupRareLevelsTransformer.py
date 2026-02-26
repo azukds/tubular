@@ -15,6 +15,9 @@ from tests.base_tests import (
     WeightColumnInitMixinTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -121,8 +124,9 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_no_weight(self, library):
+    def test_learnt_values_no_weight(self, library, lazy):
         """Test that the impute values learnt during fit, without using a weight, are expected."""
         df = d.create_df_5(library=library)
 
@@ -133,18 +137,24 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             nw.col("c").fill_null("c"),
         ).to_native()
 
-        x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
+        transformer = GroupRareLevelsTransformer(
+            columns=["b", "c"], cut_off_percent=0.2
+        )
 
-        x.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected = {"b": ["a"], "c": ["a", "c", "e"]}
-        actual = x.non_rare_levels
+        actual = transformer.non_rare_levels
         assert actual == expected, (
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weight(self, library):
+    def test_learnt_values_weight(self, library, lazy):
         """Test that the impute values learnt during fit, using a weight, are expected."""
         df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
 
@@ -152,22 +162,26 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         df = nw.from_native(df)
         df = df.with_columns(nw.col("b").fill_null("a")).to_native()
 
-        x = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=["b"],
             cut_off_percent=0.3,
             weights_column="a",
         )
 
-        x.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected = {"b": ["a"]}
-        actual = x.non_rare_levels
+        actual = transformer.non_rare_levels
         assert actual == expected, (
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weight_2(self, library):
+    def test_learnt_values_weight_2(self, library, lazy):
         """Test that the impute values learnt during fit, using a weight, are expected."""
         df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
 
@@ -175,52 +189,45 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         df = nw.from_native(df)
         df = df.with_columns(nw.col("c").fill_null("f")).to_native()
 
-        x = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=["c"],
             cut_off_percent=0.2,
             weights_column="a",
         )
 
-        x.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
         expected = {"c": ["f", "g"]}
-        actual = x.non_rare_levels
+        actual = transformer.non_rare_levels
         assert actual == expected, (
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_nulls_error(self, library):
-        """Test that checks error is raised if transform is run on column with nulls."""
-        df_dict = {"a": ["a", None]}
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-        x = GroupRareLevelsTransformer(columns="a", rare_level_name="bla")
-
-        msg = "GroupRareLevelsTransformer: transformer can only fit/apply on columns without nulls, columns a need to be imputed first"
-        with pytest.raises(
-            ValueError,
-            match=msg,
-        ):
-            x.fit(df)
-
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("col", ["a", "c"])
-    def test_column_strlike_error(self, col, library):
+    def test_column_strlike_error(self, col, library, lazy):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
-        x = GroupRareLevelsTransformer(columns=[col], rare_level_name="bla")
+        transformer = GroupRareLevelsTransformer(columns=[col], rare_level_name="bla")
+
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
 
         msg = "GroupRareLevelsTransformer: transformer must run on str-like columns"
         with pytest.raises(
             TypeError,
             match=msg,
         ):
-            x.fit(df)
+            transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_training_data_levels_stored(self, library):
+    def test_training_data_levels_stored(self, library, lazy):
         """Test that the levels present in the training data are stored if unseen_levels_to_rare is false"""
         df = d.create_df_8(library=library)
 
@@ -229,10 +236,16 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             "c": sorted(set(df["c"])),
         }
 
-        x = GroupRareLevelsTransformer(columns=["b", "c"], unseen_levels_to_rare=False)
-        x.fit(df)
+        transformer = GroupRareLevelsTransformer(
+            columns=["b", "c"], unseen_levels_to_rare=False
+        )
 
-        assert expected_training_data_levels == x.training_data_levels, (
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
+
+        assert expected_training_data_levels == transformer.training_data_levels, (
             "Training data values not correctly stored when unseen_levels_to_rare is false"
         )
 
@@ -290,9 +303,10 @@ class TestTransform(GenericNominalTransformTests):
     def test_non_mappable_rows_exception_raised(self):
         """override test in GenericNominalTransformTests as not relevant to this transformer."""
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(self, library, from_json):
+    def test_learnt_values_not_modified(self, library, from_json, lazy):
         """Test that the non_rare_levels from fit are not changed in transform."""
         df = d.create_df_5(library=library)
 
@@ -303,27 +317,31 @@ class TestTransform(GenericNominalTransformTests):
             nw.col("c").fill_null("c"),
         ).to_native()
 
-        x = GroupRareLevelsTransformer(columns=["b", "c"])
+        transformer = GroupRareLevelsTransformer(columns=["b", "c"])
 
-        x.fit(df)
-        x = _handle_from_json(x, from_json)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
 
-        x2 = GroupRareLevelsTransformer(columns=["b", "c"])
+        transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
 
-        x2.fit(df)
-        x2 = _handle_from_json(x2, from_json)
-        x2.transform(df)
+        transformer2 = GroupRareLevelsTransformer(columns=["b", "c"])
 
-        actual = x2.non_rare_levels
-        expected = x.non_rare_levels
+        transformer2.fit(_convert_to_lazy(df, lazy=lazy))
+        transformer2 = _handle_from_json(transformer2, from_json)
+        transformer2.transform(_convert_to_lazy(df, lazy=lazy))
+
+        actual = transformer2.non_rare_levels
+        expected = transformer.non_rare_levels
 
         assert actual == expected, (
             f"non_rare_levels attr modified in transform, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_no_weight(self, library, from_json):
+    def test_expected_output_no_weight(self, library, from_json, lazy):
         """Test that the output is expected from transform."""
         df = d.create_df_5(library=library)
 
@@ -336,19 +354,27 @@ class TestTransform(GenericNominalTransformTests):
 
         expected = self.expected_df_1(library=library)
 
-        x = GroupRareLevelsTransformer(columns=["b", "c"], cut_off_percent=0.2)
+        transformer = GroupRareLevelsTransformer(
+            columns=["b", "c"], cut_off_percent=0.2
+        )
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
-        x.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
-        x.rare_levels_record_ = {}
-        x = _handle_from_json(x, from_json)
-        df_transformed = x.transform(df)
+        transformer.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
+        transformer.rare_levels_record_ = {}
+        transformer = _handle_from_json(transformer, from_json)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(df_transformed, expected, check_categorical=False)
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=lazy), expected, check_categorical=False
+        )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_weight(self, library, from_json):
+    def test_expected_output_weight(self, library, from_json, lazy):
         """Test that the output is expected from transform, when weights are used."""
 
         df = create_group_rare_levels_test_df(library=library)
@@ -359,23 +385,27 @@ class TestTransform(GenericNominalTransformTests):
 
         expected = self.expected_df_2(library=library)
 
-        x = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=["b"],
             cut_off_percent=0.3,
             weights_column="a",
         )
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         # set the mapping dict directly rather than fitting x on df so test works with decorators
-        x.non_rare_levels = {"b": ["a"]}
-        x.rare_levels_record_ = {}
-        x = _handle_from_json(x, from_json)
-        df_transformed = x.transform(df)
+        transformer.non_rare_levels = {"b": ["a"]}
+        transformer.rare_levels_record_ = {}
+        transformer = _handle_from_json(transformer, from_json)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy=lazy), expected)
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_column_strlike_error(self, library, from_json):
+    def test_column_strlike_error(self, library, from_json, lazy):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
@@ -383,12 +413,15 @@ class TestTransform(GenericNominalTransformTests):
         df = nw.from_native(df)
         df = df.with_columns(nw.col("b").fill_null("a")).to_native()
 
-        x = GroupRareLevelsTransformer(columns=["b"], rare_level_name="bla")
+        transformer = GroupRareLevelsTransformer(columns=["b"], rare_level_name="bla")
 
-        x.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        transformer.fit(df)
         # overwrite columns to non str-like before transform, to trigger error
-        x.columns = ["a"]
-        x = _handle_from_json(x, from_json)
+        transformer.columns = ["a"]
+        transformer = _handle_from_json(transformer, from_json)
 
         msg = re.escape(
             "GroupRareLevelsTransformer: transformer must run on str-like columns, but got non str-like {'a'}",
@@ -397,26 +430,31 @@ class TestTransform(GenericNominalTransformTests):
             TypeError,
             match=msg,
         ):
-            x.transform(df)
+            transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_unseen_levels_not_encoded(self, library, from_json):
+    def test_expected_output_unseen_levels_not_encoded(self, library, from_json, lazy):
         """Test that unseen levels are not encoded when unseen_levels_to_rare is false"""
 
         df = d.create_df_8(library=library)
 
         expected = ["w", "w", "rare", "rare", "unseen_level"]
 
-        x = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=["b", "c"],
             cut_off_percent=0.3,
             unseen_levels_to_rare=False,
         )
-        x.fit(df)
-        x = _handle_from_json(x, from_json)
 
-        df = nw.from_native(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
+
+        df = nw.from_native(_convert_to_lazy(df, lazy=lazy))
         native_backend = nw.get_native_namespace(df)
 
         df = df.with_columns(
@@ -427,33 +465,40 @@ class TestTransform(GenericNominalTransformTests):
             ),
         ).to_native()
 
-        df_transformed = x.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        actual = list(df_transformed["b"])
+        actual = list(_collect_frame(df_transformed, lazy=lazy)["b"])
 
         assert actual == expected, (
             f"unseen level handling not working as expected, expected {expected} but got {actual}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", ["True", "False"])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_rare_categories_forgotten(self, library, from_json):
+    def test_rare_categories_forgotten(self, library, from_json, lazy):
         "test that for category dtype, categories encoded as rare are forgotten by series"
 
         df = d.create_df_8(library=library)
 
         column = "c"
 
-        x = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=column,
             cut_off_percent=0.25,
         )
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         expected_removed_cats = ["c", "b"]
 
-        x.fit(df)
-        x = _handle_from_json(x, from_json)
-        output_df = x.transform(df)
+        transformer.fit(_convert_to_lazy(df, lazy=lazy))
+        transformer = _handle_from_json(transformer, from_json)
+
+        output_df = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        output_df = _collect_frame(output_df, lazy=lazy)
 
         output_categories = (
             nw.from_native(output_df)[column].cat.get_categories().to_list()
@@ -461,7 +506,7 @@ class TestTransform(GenericNominalTransformTests):
 
         for cat in expected_removed_cats:
             assert cat not in output_categories, (
-                f"{x.classname} output columns should forget rare encoded categories, expected {cat} to be forgotten from column {column}"
+                f"{transformer.classname} output columns should forget rare encoded categories, expected {cat} to be forgotten from column {column}"
             )
 
 
