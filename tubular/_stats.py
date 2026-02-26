@@ -13,11 +13,11 @@ def _get_median_calculation_expression(
 
     Note, this function supports either operating on raw columns or chained expressions,
     this is to enable chaining together longer expressions across transformers. For
-    example, we may wish to find the mode of a column that has already been mapped,
+    example, we may wish to find the median of a column that has already been mapped,
     in which case (in pseudocode) we would do something like:
 
     mapped_expr=nw.col('c').map_batches(...)
-    mode_expr=_get_mode_calculation_expressions(
+    mode_expr=_get_median_calculation_expressions(
                 columns='c',
                 initial_columns_exprs=mapped_expr
                 )
@@ -128,75 +128,6 @@ def _get_mean_calculation_expressions(
     #  for each col c, take the ratio of these and return as weighted mean
     return {
         c: (total_weighted_col_expressions[c] / total_weight_expressions[c])
-        for c in columns
-    }
-
-
-@beartype
-def _get_mode_calculation_expressions(
-    columns: list[str],
-    weights_column: str,
-    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
-    initial_weights_expr: Optional[nw.Expr] = None,
-) -> dict[str, nw.Expr]:
-    """Produce expressions for calculating modes in provided dataframe.
-
-    Note, this function supports either operating on raw columns or chained expressions,
-    this is to enable chaining together longer expressions across transformers. For
-    example, we may wish to find the mode of a column that has already been mapped,
-    in which case (in pseudocode) we would do something like:
-
-    mapped_expr=nw.col('c').map_batches(...)
-    mode_expr=_get_mode_calculation_expressions(
-                columns=['c'],
-                initial_columns_exprs={'c': mapped_expr}
-                )
-
-    Parameters
-    ----------
-    columns: list[str]
-        list of columns to find modes for
-
-    weights_column: str
-        name of weights column
-
-    initial_columns_exprs: Optional[dict[str, nw.Expr]]
-        dict containing initial column expressions to build on. Defaults to None,
-        and in this case nw.col(c) is taken as the initial expr for each column c
-
-    initial_weights_expr: Optional[nw.Expr]
-        initial expression for weights column. Defaults to None,
-        and in this case nw.col(weights_column) is taken as the initial expr
-
-    Returns
-    -------
-    mode_value_exprs: dict[str, nw.Expr]
-        dict of format col: expression for calculating modes
-
-    """
-    if initial_columns_exprs is None:
-        initial_columns_exprs = {c: nw.col(c) for c in columns}
-
-    if initial_weights_expr is None:
-        initial_weights_expr = nw.col(weights_column)
-
-    level_weights_exprs = {
-        c: (
-            nw.when(~initial_columns_exprs[c].is_null())
-            .then(initial_weights_expr)
-            .otherwise(None)
-            .sum()
-            .over(c)
-        )
-        for c in columns
-    }
-
-    return {
-        c: (
-            nw.when(level_weights_exprs[c] == level_weights_exprs[c].max())
-            .then(nw.col(c))
-            .otherwise(None)
-        )
         for c in columns
     }
 
