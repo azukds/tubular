@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import warnings
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import narwhals as nw
@@ -1977,17 +1978,21 @@ class OneHotEncodingTransformer(
 
         # Check each field has less than 100 categories/levels
         for c in self.columns:
-            # if the user has provided a 'wanted_values' as a list of expected dummies,
-            # then there is actually nothing we need to fit on data here
-            if not self.wanted_values:
-                self.categories_[c] = sorted(
-                    category
-                    for category in results_dict[c].unique().to_list()
-                    if not _is_null(category)
+            results_list = results_dict[c].unique().to_list()
+            non_null_results_list = [val for val in results_list if not _is_null(val)]
+            if self.verbose and len(non_null_results_list) < len(results_list):
+                warnings.warn(
+                    f"{self.classname()}: Column {c} contains null values which will be ignored during fitting",
+                    stacklevel=2,
                 )
 
-            else:
-                self.categories_[c] = self.wanted_values[c]
+            # if the user has provided a 'wanted_values' as a list of expected dummies,
+            # then there is actually nothing we need to fit on data here
+            self.categories_[c] = (
+                sorted(category for category in non_null_results_list)
+                if not self.wanted_values
+                else self.wanted_values[c]
+            )
 
             level_count = len(self.categories_[c])
 
