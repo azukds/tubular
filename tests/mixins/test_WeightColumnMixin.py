@@ -38,7 +38,6 @@ class TestCreateUnitWeightsColumn:
 
         output, unit_weights_column = obj._create_unit_weights_column(
             df,
-            backend=library,
         )
 
         assert_frame_equal_dispatch(expected, output)
@@ -73,7 +72,6 @@ class TestCreateUnitWeightsColumn:
 
         output, unit_weights_column = obj._create_unit_weights_column(
             df,
-            backend=library,
         )
 
         assert_frame_equal_dispatch(expected, output)
@@ -102,7 +100,7 @@ class TestCreateUnitWeightsColumn:
             RuntimeError,
             match=msg,
         ):
-            obj._create_unit_weights_column(df, backend=library)
+            obj._create_unit_weights_column(df)
 
 
 class TestCheckWeightsColumn:

@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 import narwhals as nw
 from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401 - required for nw.Schema see #455
 
 from tubular._utils import (
-    _collect_frame,
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
 )
@@ -147,7 +146,6 @@ class WeightColumnMixin:
     @staticmethod
     def _create_unit_weights_column(
         X: DataFrame,
-        backend: Literal["pandas", "polars"],
         return_native: bool = True,
     ) -> tuple[DataFrame, str]:
         """Create unit weights column.
@@ -167,9 +165,6 @@ class WeightColumnMixin:
         ----------
         X: DataFrame
             pandas, polars, or narwhals df
-
-        backend: Literal['pandas', 'polars']
-            backed of original df
 
         return_native: bool
             controls whether to return nw or pd/pl dataframe
@@ -207,19 +202,7 @@ class WeightColumnMixin:
             )
 
         # finally create dummy weights column if valid option not found
-        lazy = False
-        if isinstance(X, nw.LazyFrame):
-            lazy = True
-        X = _collect_frame(X)
-        X = X.with_columns(
-            nw.new_series(
-                name=unit_weights_column,
-                values=[1] * len(X),
-                backend=backend,
-            ),
-        )
-        if lazy:
-            X = X.lazy()
+        X = X.with_columns(nw.lit(1).alias(unit_weights_column))
 
         return _return_narwhals_or_native_dataframe(
             X,

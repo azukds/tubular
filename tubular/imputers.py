@@ -924,13 +924,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         self.impute_values_ = {}
 
-        native_backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=native_backend.__name__,
                 return_native=False,
             )
 
@@ -1097,13 +1094,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
             )
 
