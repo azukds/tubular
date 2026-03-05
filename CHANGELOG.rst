@@ -32,8 +32,8 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 - feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
+- chore: small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 
 2.8.0 (23/02/2026)
@@ -71,7 +71,6 @@ Changed
 - bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 - feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
 - bug: fix issue with rare_levels_record_ attr in to_json method of GroupRareLevelsTransformer
->>>>>>> feature/lazy_weightsmixin
 
 2.5.0 (16/12/2025)
 ------------------

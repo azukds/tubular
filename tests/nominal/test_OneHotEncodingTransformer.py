@@ -147,21 +147,28 @@ class TestFit(GenericFitTests):
     def setup_class(cls):
         cls.transformer_name = "OneHotEncodingTransformer"
 
+    @pytest.mark.parametrize("verbose", [True, False])
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
         "library",
         ["pandas", "polars"],
     )
-    def test_nulls_handled_successfully_error(self, library, lazy):
-        """Test that fit does not error if columns contain nulls"""
+    def test_nulls_handled_successfully_error(self, library, lazy, verbose, recwarn):
+        """Test that fit issues warning if columns contain nulls (and verbose is True)"""
         df = d.create_df_2(library=library)
 
-        transformer = OneHotEncodingTransformer(columns=["b", "c"])
+        transformer = OneHotEncodingTransformer(columns=["b"], verbose=verbose)
 
         if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
         transformer.fit(_convert_to_lazy(df, lazy=lazy))
+        msg = f"{self.transformer_name}: Column b contains null values which will be ignored during fitting"
+        if not verbose:
+            assert ~any(msg in str(w.message) for w in recwarn)
+
+        else:
+            assert any(msg in str(w.message) for w in recwarn)
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize(
