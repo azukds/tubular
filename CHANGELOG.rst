@@ -34,6 +34,7 @@ Changed
 ^^^^^^^
 - feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
 - chore: small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
+- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 
 2.8.0 (23/02/2026)
 ------------------
