@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import pandas as pd
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import OtherBaseBehaviourTests
@@ -10,6 +9,7 @@ from tests.mapping.test_BaseCrossColumnMappingTransformer import (
     BaseCrossColumnMappingTransformerInitTests,
     BaseCrossColumnMappingTransformerTransformTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.mapping import CrossColumnMappingTransformer
 
 
@@ -39,19 +39,19 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "CrossColumnMappingTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output for test_expected_output."""
         return pd.DataFrame(
             {"a": [1, 2, 3, 4, 5, 6], "b": ["aa", "bb", "cc", "dd", "ee", "ff"]},
         )
 
-    def expected_df_2():
+    def expected_df_2(self):
         """Expected output for test_non_specified_values_unchanged."""
         return pd.DataFrame(
             {"a": [1, 2, 3, 4, 5, 6], "b": ["aa", "bb", "cc", "d", "e", "f"]},
         )
 
-    def expected_df_3():
+    def expected_df_3(self):
         """Expected output for test_multiple_mappings_ordered_dict."""
         return pd.DataFrame(
             {
@@ -61,62 +61,72 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
             },
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_1()),
-    )
-    def test_expected_output(self, df, expected):
+    def test_expected_output(self):
         """Test that transform is giving the expected output."""
+        df = d.create_df_1()
+        expected = self.expected_df_1()
+
         mapping = {"a": {1: "aa", 2: "bb", 3: "cc", 4: "dd", 5: "ee", 6: "ff"}}
 
         x = CrossColumnMappingTransformer(mappings=mapping, adjust_column="b")
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="expected output from cross column mapping transformer",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_2()),
-    )
-    def test_non_specified_values_unchanged(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_non_specified_values_unchanged(self):
         """Test that values not specified in mappings are left unchanged in transform."""
+        df = d.create_df_1()
+        expected = self.expected_df_2()
+
         mapping = {"a": {1: "aa", 2: "bb", 3: "cc"}}
 
-        x = CrossColumnMappingTransformer(mappings=mapping, adjust_column="b")
+        x = CrossColumnMappingTransformer(
+            mappings=mapping, adjust_column="b", copy=True
+        )
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="expected output from cross column mapping transformer",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_7(), expected_df_3()),
-    )
-    def test_multiple_mappings_ordered_dict(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_multiple_mappings_ordered_dict(self):
         """Test that mappings by multiple columns using an ordered dict gives the expected output in transform."""
+        df = d.create_df_7()
+        expected = self.expected_df_3()
+
         mapping = OrderedDict()
 
         mapping["a"] = {1: "aa", 2: "bb"}
         mapping["b"] = {"x": "cc", "z": "dd"}
 
-        x = CrossColumnMappingTransformer(mappings=mapping, adjust_column="c")
+        x = CrossColumnMappingTransformer(
+            mappings=mapping, adjust_column="c", copy=True
+        )
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="expected output from cross column mapping transformer",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
     def test_mappings_unchanged(
         self,
@@ -141,10 +151,8 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
 
         x.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=mapping,
-            actual=x.mappings,
-            msg=f"{self.transformer_name}.transform has changed self.mappings unexpectedly",
+        assert mapping == x.mappings, (
+            f"{self.transformer_name}.transform has changed self.mappings unexpectedly"
         )
 
 

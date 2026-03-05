@@ -1,5 +1,4 @@
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -10,6 +9,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     TwoColumnListInitTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.comparison import EqualityChecker
 
 
@@ -57,12 +57,7 @@ class TestTransform(GenericTransformTests):
         )
         actual = example_transformer.transform(test_dataframe)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="EqualityChecker transformer does not produce the expected output",
-            print_actual_and_expected=True,
-        )
+        assert_frame_equal_dispatch(actual, expected)
 
     @pytest.mark.parametrize(
         "test_dataframe",
@@ -83,12 +78,7 @@ class TestTransform(GenericTransformTests):
         )
         actual = example_transformer.transform(test_dataframe)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=actual,
-            expected=expected,
-            msg_tag="EqualityChecker transformer does not produce the expected output",
-            print_actual_and_expected=True,
-        )
+        assert_frame_equal_dispatch(actual, expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

@@ -41,7 +41,6 @@ classifiers=[
 
 [project.optional-dependencies]
 dev = [
-    "test-aide>=0.1.0",
     "pytest>=5.4.1",
     "pytest-mock>=3.5.1",
     "pyarrow>=17.0.0",

@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -9,6 +8,7 @@ from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.numeric import CutTransformer
 
 
@@ -45,7 +45,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
     def setup_class(cls):
         cls.transformer_name = "CutTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output for test_expected_output."""
         df = d.create_df_9()
 
@@ -96,12 +96,11 @@ class TestTransform(BaseNumericTransformerTransformTests):
             "unexpected values assigned to c_new column"
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_9(), expected_df_1()),
-    )
-    def test_expected_output(self, df, expected):
+    def test_expected_output(self):
         """Test input data is transformed as expected."""
+        df = d.create_df_9()
+        expected = self.expected_df_1()
+
         cut_1 = CutTransformer(
             column="c",
             new_column_name="d",
@@ -113,8 +112,11 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
         df_transformed = cut_1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="CutTransformer.transform output",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = cut_1.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)

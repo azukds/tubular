@@ -4,7 +4,6 @@ import narwhals as nw
 import numpy as np
 import pandas as pd
 import pytest
-import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -73,17 +72,11 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterT
 
         x.fit(df, df["a"])
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": {
-                    "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
-                    "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
-                    "f": {False: 1, True: 2},
-                },
-            },
-            msg="mappings attribute",
-        )
+        assert x.mappings == {
+            "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
+            "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
+            "f": {False: 1, True: 2},
+        }, "mappings attr not fit as expected"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight(self, library):
@@ -110,17 +103,11 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, FailedFitWeightFilterT
 
         x.fit(df, df["a"])
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": {
-                    "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
-                    "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
-                    "f": {False: 1, True: 2},
-                },
-            },
-            msg="mappings attribute",
-        )
+        assert x.mappings == {
+            "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
+            "d": {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
+            "f": {False: 1, True: 2},
+        }, "mappings not fit as expected"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_response_column_nulls_error(self, library):
@@ -161,7 +148,7 @@ class TestTransform(GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "OrdinalEncoderTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output for ."""
         df = pd.DataFrame(
             {
@@ -194,21 +181,13 @@ class TestTransform(GenericTransformTests):
 
         x2.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=x.mappings,
-            actual=x2.mappings,
-            msg="Mean response values not changed in transform",
-        )
+        assert x.mappings == x2.mappings, "mappings changed in transform"
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(
-            create_OrdinalEncoderTransformer_test_df(),
-            expected_df_1(),
-        ),
-    )
-    def test_expected_output(self, df, expected):
+    def test_expected_output(self):
         """Test that the output is expected from transform."""
+        df = create_OrdinalEncoderTransformer_test_df()
+        expected = self.expected_df_1()
+
         x = OrdinalEncoderTransformer(columns=["b", "d", "f"])
 
         # set the impute values dict directly rather than fitting x on df so test works with helpers
@@ -232,6 +211,13 @@ class TestTransform(GenericTransformTests):
         df_transformed = x.transform(df)
 
         assert_frame_equal_dispatch(df_transformed, expected)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

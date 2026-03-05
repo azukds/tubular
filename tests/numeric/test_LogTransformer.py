@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -10,6 +9,7 @@ from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.numeric import LogTransformer
 
 
@@ -71,7 +71,7 @@ class TestTransform(
     def setup_class(cls):
         cls.transformer_name = "LogTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output of test_expected_output_1."""
         df = d.create_df_3()
 
@@ -80,7 +80,7 @@ class TestTransform(
 
         return df.drop(columns=["a", "b"])
 
-    def expected_df_2():
+    def expected_df_2(self):
         """Expected output of test_expected_output_2."""
         df = d.create_df_3()
 
@@ -89,7 +89,7 @@ class TestTransform(
 
         return df.drop(columns=["a", "b"])
 
-    def expected_df_3():
+    def expected_df_3(self):
         """Expected output of test_expected_output_3."""
         df = d.create_df_3()
 
@@ -98,7 +98,7 @@ class TestTransform(
 
         return df
 
-    def expected_df_4():
+    def expected_df_4(self):
         """Expected output of test_expected_output_4."""
         df = d.create_df_3()
 
@@ -107,7 +107,7 @@ class TestTransform(
 
         return df
 
-    def expected_df_5():
+    def expected_df_5(self):
         """Expected output of test_expected_output_5."""
         df = d.create_df_4()
 
@@ -115,7 +115,7 @@ class TestTransform(
 
         return df
 
-    def expected_df_6():
+    def expected_df_6(self):
         """Expected output of test_expected_output_6."""
         df = d.create_df_4()
 
@@ -145,12 +145,11 @@ class TestTransform(
         actual = log_transformer.transform(df)
         pd.testing.assert_frame_equal(actual, expected)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_1()),
-    )
-    def test_expected_output_1(self, df, expected):
+    def test_expected_output_1(self):
         """Test that transform is giving the expected output when not adding one and dropping original columns."""
+        df = d.create_df_3()
+        expected = self.expected_df_1()
+
         x1 = LogTransformer(
             columns=["a", "b"],
             add_1=False,
@@ -160,18 +159,20 @@ class TestTransform(
 
         df_transformed = x1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="LogTransformer transform not adding 1 and dropping original columns",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_2()),
-    )
-    def test_expected_output_2(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x1.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_2(self):
         """Test that transform is giving the expected output when adding one and dropping original columns."""
+        df = d.create_df_3()
+        expected = self.expected_df_2()
+
         x1 = LogTransformer(
             columns=["a", "b"],
             add_1=True,
@@ -181,18 +182,20 @@ class TestTransform(
 
         df_transformed = x1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="LogTransformer transform adding 1 and dropping original columns",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_3()),
-    )
-    def test_expected_output_3(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x1.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_3(self):
         """Test that transform is giving the expected output when not adding one and not dropping original columns."""
+        df = d.create_df_3()
+        expected = self.expected_df_3()
+
         x1 = LogTransformer(
             columns=["a", "b"],
             add_1=False,
@@ -202,18 +205,20 @@ class TestTransform(
 
         df_transformed = x1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="LogTransformer transform not adding 1 and dropping original columns",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_4()),
-    )
-    def test_expected_output_4(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x1.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_4(self):
         """Test that transform is giving the expected output when adding one and not dropping original columns."""
+        df = d.create_df_3()
+        expected = self.expected_df_4()
+
         x1 = LogTransformer(
             columns=["a", "b"],
             add_1=True,
@@ -223,20 +228,15 @@ class TestTransform(
 
         df_transformed = x1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="LogTransformer transform not adding 1 and dropping original columns",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_4(), expected_df_5()),
-    )
-    def test_expected_output_5(self, df, expected):
+    def test_expected_output_5(self):
         """Test that transform is giving the expected output when adding one and not dropping
         original columns and using base.
         """
+        df = d.create_df_4()
+        expected = self.expected_df_5()
+
         x1 = LogTransformer(
             columns=["a"],
             base=5,
@@ -247,20 +247,22 @@ class TestTransform(
 
         df_transformed = x1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="LogTransformer transform not adding 1 and dropping original columns",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_4(), expected_df_6()),
-    )
-    def test_expected_output_6(self, df, expected):
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x1.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_6(self):
         """Test that transform is giving the expected output when  not adding one and dropping
         original columns and using base.
         """
+        df = d.create_df_4()
+        expected = self.expected_df_6()
+
         x1 = LogTransformer(
             columns=["a"],
             base=7,
@@ -271,11 +273,14 @@ class TestTransform(
 
         df_transformed = x1.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="LogTransformer transform should be using base, not adding 1, and not dropping original columns",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x1.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
     @pytest.mark.parametrize(
         ("df", "columns", "add_1", "extra_exception_text"),

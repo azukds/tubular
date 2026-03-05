@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-import test_aide as ta
 from test_BaseNominalTransformer import GenericNominalTransformTests
 
 import tests.test_data as d
@@ -10,6 +9,7 @@ from tests.base_tests import (
     GenericFitTests,
     OtherBaseBehaviourTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import NominalToIntegerTransformer
 
@@ -43,16 +43,10 @@ class TestFit(GenericFitTests):
 
         x.fit(df)
 
-        ta.classes.test_object_attributes(
-            obj=x,
-            expected_attributes={
-                "mappings": {
-                    "a": {k: i for i, k in enumerate(df["a"].unique(), 1)},
-                    "b": {k: i for i, k in enumerate(df["b"].unique(), 1)},
-                },
-            },
-            msg="mappings attribute",
-        )
+        assert x.mappings == {
+            "a": {k: i for i, k in enumerate(df["a"].unique(), 1)},
+            "b": {k: i for i, k in enumerate(df["b"].unique(), 1)},
+        }, "mappings attr not fit as expected"
 
     def test_error_for_too_many_levels(self):
         "test that transformer.transform errors for column with too many levels"
@@ -79,7 +73,7 @@ class TestTransform(GenericNominalTransformTests):
     def setup_class(cls):
         cls.transformer_name = "NominalToIntegerTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output for test_expected_output."""
         df = pd.DataFrame(
             {"a": [1, 2, 3, 4, 5, 6], "b": ["a", "b", "c", "d", "e", "f"]},
@@ -111,18 +105,13 @@ class TestTransform(GenericNominalTransformTests):
 
         x2.fit_transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=x.mappings,
-            actual=x2.mappings,
-            msg="Impute values not changed in transform",
-        )
+        assert x.mappings == x2.mappings, "Impute values not changed in transform"
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_1(), expected_df_1()),
-    )
-    def test_expected_output(self, df, expected):
+    def test_expected_output(self):
         """Test that the output is expected from transform."""
+        df = d.create_df_1()
+        expected = self.expected_df_1()
+
         x = NominalToIntegerTransformer(columns=["a", "b"])
 
         # set the mapping dict directly rather than fitting x on df so test works with helpers
@@ -146,11 +135,14 @@ class TestTransform(GenericNominalTransformTests):
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_frame_equal_msg(
-            actual=df_transformed,
-            expected=expected,
-            msg_tag="Unexpected values in NominalToIntegerTransformer.transform",
-        )
+        assert_frame_equal_dispatch(df_transformed, expected)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

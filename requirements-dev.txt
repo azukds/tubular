@@ -22,7 +22,7 @@ joblib==1.5.2
     # via scikit-learn
 mypy-extensions==1.1.0
     # via black
-narwhals==2.15.0
+narwhals==2.17.0
     # via tubular (pyproject.toml)
 numpy==2.0.2
     # via
@@ -54,13 +54,10 @@ pytest==8.4.2
     #   tubular (pyproject.toml)
     #   pytest-cov
     #   pytest-mock
-    #   test-aide
 pytest-cov==2.10.1
     # via tubular (pyproject.toml)
 pytest-mock==3.15.1
-    # via
-    #   tubular (pyproject.toml)
-    #   test-aide
+    # via tubular (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
 pytokens==0.3.0
@@ -76,8 +73,6 @@ scipy==1.13.1
 six==1.17.0
     # via python-dateutil
 tabulate==0.9.0
-    # via tubular (pyproject.toml)
-test-aide==0.1.1
     # via tubular (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
