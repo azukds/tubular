@@ -286,13 +286,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1019,14 +1016,11 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         super().fit(X=X, y=y)
 
-        backend = nw.get_native_namespace(X)
-
         original_weights_column = self.weights_column
         weights_column = original_weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
