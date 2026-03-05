@@ -108,52 +108,6 @@ class TestCreateUnitWeightsColumn:
 class TestCheckWeightsColumn:
     @pytest.mark.parametrize(
         "library",
-        [
-            "pandas",
-            "polars",
-        ],
-    )
-    @pytest.mark.parametrize(
-        ("bad_weight_value", "expected_message"),
-        [
-            (None, "weight column must be non-null"),
-            (np.inf, "weight column must not contain infinite values."),
-            (-np.inf, "weight column must be positive"),
-            (-1, "weight column must be positive"),
-        ],
-    )
-    def test_bad_values_in_weights_error(
-        self,
-        bad_weight_value,
-        expected_message,
-        library,
-    ):
-        """Test that an exception is raised if there are negative/nan/inf values in sample_weight."""
-
-        df = create_df_2(library=library)
-
-        obj = WeightColumnMixin()
-
-        df = nw.from_native(df)
-        native_backend = nw.get_native_namespace(df)
-
-        weight_column = "weight_column"
-
-        df = df.with_columns(
-            nw.new_series(
-                weight_column,
-                [*[bad_weight_value], *np.arange(2, len(df) + 1)],
-                backend=native_backend,
-            ),
-        )
-
-        df = nw.to_native(df)
-
-        with pytest.raises(ValueError, match=expected_message):
-            obj.check_weights_column(df, weight_column)
-
-    @pytest.mark.parametrize(
-        "library",
         ["pandas", "polars"],
     )
     def test_weight_col_non_numeric(
@@ -205,28 +159,46 @@ class TestCheckWeightsColumn:
 
             obj.check_weights_column(df, weight_column)
 
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_zero_total_weight_error(
-        self,
-        library,
-    ):
-        """Test that an exception is raised if the total sample weights are 0."""
+
+class TestGetValidWeightsFilterExpr:
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_filter_expression_results(self, library):
+        "test that rows with bad weights are filtered as expected by expression"
 
         obj = WeightColumnMixin()
 
-        weight_column = "weight_column"
+        df_dict = {
+            "weights": [-1.0, np.inf, -np.inf, None, np.nan, 1.0],
+            "column": ["a", "b", "c", "d", "e", "f"],
+        }
 
-        df = create_df_2(library=library)
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
         df = nw.from_native(df)
-        df = df.with_columns(nw.lit(0).alias(weight_column))
-        df = nw.to_native(df)
 
-        with pytest.raises(
-            ValueError,
-            match="total sample weights are not greater than 0",
-        ):
-            obj.check_weights_column(df, weight_column)
+        # take the only row with valid weights
+        expected_df = df.clone()[[5]]
+
+        filter_expr = obj.get_valid_weights_filter_expr(weights_column="weights")
+
+        df = df.filter(filter_expr)
+
+        assert_frame_equal_dispatch(df.to_native(), expected_df.to_native())
+
+    @pytest.mark.parametrize("verbose", [True, False])
+    def test_warning(self, verbose, recwarn):
+        "test expected warning is given (depending on verbose)"
+
+        obj = WeightColumnMixin()
+
+        obj.get_valid_weights_filter_expr(weights_column="weights", verbose=verbose)
+
+        if not verbose:
+            assert len(recwarn) == 0
+
+        else:
+            assert len(recwarn) == 1
+            assert (
+                str(recwarn[0].message)
+                == "Weights must be strictly positive, non-null, and finite - rows failing this will be filtered out."
+            )

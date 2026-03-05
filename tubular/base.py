@@ -329,10 +329,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd.DataFrame
+        X : DataFrame
             Data to fit the transformer on.
 
-        y : None or pd.DataFrame or pd.Series, default = None
+        y : None or Series, default = None
             Optional argument only required for the transformer to work with sklearn
             pipelines.
 
@@ -378,10 +378,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data containing explanatory variables.
 
-        y : pd/pl.Series
+        y : Series
             Response variable.
 
         return_native_override: Optional[bool]
@@ -390,7 +390,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Returns
         -------
-            pd/pl/nw.DataFrame: DataFrame with added column containing y
+            DataFrame: DataFrame with added column containing y
 
         Examples
         --------
@@ -478,7 +478,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to transform with the transformer.
 
         return_native_override: Optional[bool]
@@ -487,7 +487,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Returns
         -------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Input X, copied if specified by user.
 
         Examples
@@ -562,7 +562,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pd/pl.DataFrame
+        X : DataFrame
             Data to check columns are in.
 
         Raises
