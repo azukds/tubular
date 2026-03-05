@@ -12,7 +12,6 @@ from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
-from tubular._checks import _get_null_filter_expr
 from tubular._stats import (
     _get_mean_calculation_expressions,
     _get_median_calculation_expression,
@@ -515,13 +514,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         super().fit(X, y)
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
             )
 
@@ -640,11 +636,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         transform_expressions = {}
 
-        null_filter_exprs = {}
-
         for col in self.columns:
-            null_filter_exprs[col] = _get_null_filter_expr(col)
-
             non_rare_condition_expressions[col] = (
                 nw.col(col).is_in(self.non_rare_levels[col])
                 if self.unseen_levels_to_rare
@@ -667,7 +659,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             )
 
             transform_expressions[col] = (
-                nw.when(non_rare_condition_expressions[col] | null_filter_exprs[col])
+                nw.when(non_rare_condition_expressions[col] | nw.col(col).is_null())
                 .then(transform_expressions[col])
                 .otherwise(nw.lit(self.rare_level_name))
             )
@@ -1233,13 +1225,10 @@ class MeanResponseTransformer(
         self.mappings = {}
         self.unseen_levels_encoding_dict = {}
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
             )
 
@@ -2208,7 +2197,6 @@ class OrdinalEncoderTransformer(
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=nw.get_native_namespace(X).__name__,
                 return_native=False,
             )
 

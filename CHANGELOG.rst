@@ -35,6 +35,7 @@ Changed
 - feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
 - chore: small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
 - feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 
 2.8.0 (23/02/2026)
 ------------------
@@ -72,9 +73,12 @@ Changed
 - feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
 - bug: fix issue with rare_levels_record_ attr in to_json method of GroupRareLevelsTransformer
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> feature/lazy_weightsmixin
 =======
 >>>>>>> main
+=======
+>>>>>>> feature/lazy_grouprare
 
 2.5.0 (16/12/2025)
 ------------------
