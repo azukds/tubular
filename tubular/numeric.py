@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import narwhals as nw
 import numpy as np
@@ -152,7 +152,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Validate data and attributes prior to the child objects transform logic.
 
@@ -301,15 +301,12 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
         self,
-        columns: Union[
-            str,
-            ListOfOneStr,
-        ],
+        columns: str | ListOfOneStr,
         new_column_name: str,
-        n_init: Union[str, int] = "auto",
+        n_init: str | int = "auto",
         n_clusters: int = 8,
         drop_original: bool = False,
-        kmeans_kwargs: Optional[dict[str, object]] = None,
+        kmeans_kwargs: dict[str, object] | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -598,7 +595,7 @@ class DifferenceTransformer(BaseNumericTransformer):
     def __init__(
         self,
         columns: ListOfTwoStrs,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialize the DifferenceTransformer.
 
@@ -760,7 +757,7 @@ class RatioTransformer(BaseNumericTransformer):
         self,
         columns: ListOfTwoStrs,
         return_dtype: FloatTypeAnnotated = "Float32",
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialize the RatioTransformer.
 
@@ -905,8 +902,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Optional[Union[str, list[str]]],
-        base: Optional[PositiveNumber] = None,
+        columns: str | list[str] | None,
+        base: PositiveNumber | None = None,
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
@@ -1050,7 +1047,7 @@ class CutTransformer(BaseNumericTransformer):
         self,
         column: str,
         new_column_name: str,
-        cut_kwargs: Optional[GenericKwargs] = None,
+        cut_kwargs: GenericKwargs | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -1183,8 +1180,8 @@ class TwoColumnOperatorTransformer(
         pd_method_name: str,
         columns: ListOfTwoStrs,
         new_column_name: str,
-        pd_method_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: Optional[bool],
+        pd_method_kwargs: dict[str, object] | None = None,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -1307,7 +1304,7 @@ class ScalingTransformer(BaseNumericTransformer):
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
     scaler_options: ClassVar[
-        dict[str, Union[MinMaxScaler, MaxAbsScaler, StandardScaler]]
+        dict[str, MinMaxScaler | MaxAbsScaler | StandardScaler]
     ] = {
         "min_max": MinMaxScaler,
         "max_abs": MaxAbsScaler,
@@ -1680,14 +1677,10 @@ class PCATransformer(BaseNumericTransformer):
     @beartype
     def __init__(
         self,
-        columns: Optional[Union[str, list[str]]],
-        n_components: Union[
-            StrictlyPositiveInt,
-            FloatBetweenZeroOne,
-            Literal["mle"],
-        ] = 2,
+        columns: str | list[str] | None,
+        n_components: StrictlyPositiveInt | FloatBetweenZeroOne | Literal["mle"] = 2,
         svd_solver: Literal["auto", "full", "arpack", "randomized"] = "auto",
-        random_state: Optional[int] = None,
+        random_state: int | None = None,
         pca_column_prefix: str = "pca_",
         **kwargs: bool,
     ) -> None:

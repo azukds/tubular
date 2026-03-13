@@ -1,28 +1,18 @@
 """Generic typehints used throughout package."""
 
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated
 
 import narwhals as nw
 import pandas as pd
 import polars as pl
 from beartype.vale import Is
 
-DataFrame = Union[
-    pd.DataFrame,
-    pl.DataFrame,
-    pl.LazyFrame,
-    nw.DataFrame,
-    nw.LazyFrame,
-]
+DataFrame = pd.DataFrame | pl.DataFrame | pl.LazyFrame | nw.DataFrame | nw.LazyFrame
 
-NarwhalsFrame = Union[nw.DataFrame, nw.LazyFrame]
+NarwhalsFrame = nw.DataFrame | nw.LazyFrame
 
-Series = Union[
-    pd.Series,
-    pl.Series,
-    nw.Series,
-]
+Series = pd.Series | pl.Series | nw.Series
 
 NumericTypes = [
     nw.Int8,
@@ -72,10 +62,10 @@ ListOfThreeStrs = Annotated[
     Is[lambda list_arg: len(list_arg) == 3],  # noqa: PLR2004
 ]
 
-Number = Union[int, float]
+Number = int | float
 
 PositiveNumber = Annotated[
-    Union[int, float],
+    int | float,
     Is[lambda v: v > 0],
 ]
 
@@ -86,7 +76,7 @@ FloatBetweenZeroOne = Annotated[float, Is[lambda i: (i > 0) & (i < 1)]]
 StrictlyPositiveInt = Annotated[int, Is[lambda i: (i >= 1)]]
 
 GenericKwargs = Annotated[
-    dict[str, Union[int, float, str, list[int], list[str], list[float]]],
+    dict[str, int | float | str | list[int] | list[str] | list[float]],
     Is[lambda dict_arg: all(isinstance(key, str) for key in dict_arg)],
 ]
 

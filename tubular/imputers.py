@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import narwhals as nw
 import polars as pl
@@ -186,7 +186,7 @@ class BaseImputer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Impute missing values with values calculated from fit method.
 
@@ -306,9 +306,9 @@ class ArbitraryImputer(BaseImputer):
     @beartype
     def __init__(
         self,
-        impute_value: Union[int, float, str, bool],
-        columns: Union[str, list[str]],
-        **kwargs: Optional[bool],
+        impute_value: int | float | str | bool,
+        columns: str | list[str],
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -659,8 +659,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -683,7 +683,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> MedianImputer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> MedianImputer:
         """Calculate median values to impute with from X.
 
         Parameters
@@ -855,8 +855,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -879,7 +879,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> MeanImputer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> MeanImputer:
         """Calculate mean values to impute with from X.
 
         Parameters
@@ -1025,8 +1025,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -1050,7 +1050,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> ModeImputer:
         """Calculate mode values to impute with from X.
 
         In the event of a tie, the highest modal value will be returned.
@@ -1216,11 +1216,8 @@ class NullIndicator(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[
-            NonEmptyListOfStrs,
-            str,
-        ],
-        **kwargs: Optional[bool],
+        columns: NonEmptyListOfStrs | str,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 

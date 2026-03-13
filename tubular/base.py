@@ -5,7 +5,7 @@ These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any
 
 import narwhals as nw
 import pandas as pd
@@ -155,10 +155,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[
-            NonEmptyListOfStrs,
-            str,
-        ],
+        columns: NonEmptyListOfStrs | str,
         copy: bool = False,
         verbose: bool = False,
         return_native: bool = True,
@@ -321,7 +318,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseTransformer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> BaseTransformer:
         """Check data before fit.
 
         Fit calls the columns_check method which will check that the columns
@@ -435,7 +432,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
     @beartype
-    def _process_return_native(self, return_native_override: Optional[bool]) -> bool:
+    def _process_return_native(self, return_native_override: bool | None) -> bool:
         """Determine whether to override return_native attr.
 
         Parameters
@@ -469,7 +466,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Check data before child transform.
 
@@ -660,12 +657,12 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
     @beartype
     def __init__(
         self,
-        new_column_names: Union[list[str], str],
+        new_column_names: list[str] | str,
         pd_method_name: str,
-        columns: Optional[Union[list[str], str]],
-        pd_method_kwargs: Optional[GenericKwargs] = None,
+        columns: list[str] | str | None,
+        pd_method_kwargs: GenericKwargs | None = None,
         drop_original: bool = False,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Init method for class.
 

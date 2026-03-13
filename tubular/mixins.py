@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import narwhals as nw
 from beartype import beartype
@@ -96,7 +96,7 @@ class DropOriginalMixin:
     def drop_original_column(
         X: DataFrame,
         drop_original: bool,
-        columns: Optional[Union[list[str], str]],
+        columns: list[str] | str | None,
         return_native: bool = True,
     ) -> DataFrame:
         """Drop input columns from X if drop_original set to True.

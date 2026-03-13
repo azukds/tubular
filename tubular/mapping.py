@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import narwhals as nw
 import numpy as np
@@ -93,8 +93,8 @@ class BaseMappingTransformer(BaseTransformer):
     def __init__(
         self,
         mappings: dict[str, dict[Any, Any]],
-        return_dtypes: Union[dict[str, RETURN_DTYPES], None] = None,
-        **kwargs: Optional[bool],
+        return_dtypes: dict[str, RETURN_DTYPES] | None = None,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -215,7 +215,7 @@ class BaseMappingTransformer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Check mappings dict has been fitted.
 
@@ -310,7 +310,7 @@ class BaseMappingTransformMixin(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Apply mapping defined in the mappings dict to each column in the columns attribute.
 

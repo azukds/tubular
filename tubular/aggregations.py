@@ -1,7 +1,7 @@
 """Contains transformers for performing data aggregations."""
 
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 import narwhals as nw
 from beartype import beartype
@@ -123,11 +123,10 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        aggregations: Union[
-            ListOfColumnsOverRowAggregations,
-            ListOfRowsOverColumnsAggregations,
-        ],
+        columns: str | list[str],
+        aggregations: (
+            ListOfColumnsOverRowAggregations | ListOfRowsOverColumnsAggregations
+        ),
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -328,7 +327,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: str | list[str],
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
@@ -561,7 +560,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: str | list[str],
         aggregations: ListOfColumnsOverRowAggregations,
         drop_original: bool = False,
         **kwargs: bool,
