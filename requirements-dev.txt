@@ -4,8 +4,10 @@ auto-walrus==0.3.4
     # via tubular (pyproject.toml)
 beartype==0.21.0
     # via tubular (pyproject.toml)
-black==25.11.0
-    # via blacken-docs
+black==26.3.1
+    # via
+    #   tubular (pyproject.toml)
+    #   blacken-docs
 blacken-docs==1.20.0
     # via tubular (pyproject.toml)
 click==8.1.8
@@ -22,7 +24,7 @@ joblib==1.5.2
     # via scikit-learn
 mypy-extensions==1.1.0
     # via black
-narwhals==2.15.0
+narwhals==2.18.0
     # via tubular (pyproject.toml)
 numpy==2.0.2
     # via
@@ -63,7 +65,7 @@ pytest-mock==3.15.1
     #   test-aide
 python-dateutil==2.9.0.post0
     # via pandas
-pytokens==0.3.0
+pytokens==0.4.1
     # via black
 pytz==2025.2
     # via pandas
