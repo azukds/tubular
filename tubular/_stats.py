@@ -1,5 +1,3 @@
-from typing import Optional
-
 import narwhals as nw
 from beartype import beartype
 
@@ -7,7 +5,7 @@ from beartype import beartype
 @beartype
 def _get_median_calculation_expression(
     initial_column_expr: nw.Expr = None,
-    initial_weights_expr: Optional[nw.Expr] = None,
+    initial_weights_expr: nw.Expr | None = None,
 ) -> nw.Expr:
     """Produce expressions for calculating medians in provided dataframe.
 
@@ -56,8 +54,8 @@ def _get_median_calculation_expression(
 def _get_mean_calculation_expressions(
     columns: list[str],
     weights_column: str,
-    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
-    initial_weights_expr: Optional[nw.Expr] = None,
+    initial_columns_exprs: dict[str, nw.Expr] | None = None,
+    initial_weights_expr: nw.Expr | None = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating means in provided dataframe.
 
@@ -136,8 +134,8 @@ def _get_mean_calculation_expressions(
 def _get_mode_calculation_expressions(
     columns: list[str],
     weights_column: str,
-    initial_columns_exprs: Optional[dict[str, nw.Expr]] = None,
-    initial_weights_expr: Optional[nw.Expr] = None,
+    initial_columns_exprs: dict[str, nw.Expr] | None = None,
+    initial_weights_expr: nw.Expr | None = None,
 ) -> dict[str, nw.Expr]:
     """Produce expressions for calculating modes in provided dataframe.
 
