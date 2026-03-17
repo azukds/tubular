@@ -19,7 +19,7 @@ dependencies = [
     "pandas>=1.5.0, <3.0.0",
     "scikit-learn>=1.2.0",
     "narwhals >= 2.16.0",
-    "polars >= 1.9.0",
+    "polars >= 1.9.0, <= 1.38.1",
     "beartype >= 0.19.0",
     "typing-extensions>=4.5.0",
 ]
@@ -43,7 +43,7 @@ dev = [
     "test-aide>=0.1.0",
     "pytest>=5.4.1",
     "pytest-mock>=3.5.1",
-    "pyarrow>=17.0.0, <=23.0.0",
+    "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
     "prek",
     "ruff>=0.2.2",
