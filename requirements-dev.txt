@@ -16,8 +16,6 @@ codespell==2.4.1
     # via tubular (pyproject.toml)
 coverage==7.10.7
     # via pytest-cov
-exceptiongroup==1.3.0
-    # via pytest
 iniconfig==2.1.0
     # via pytest
 joblib==1.5.2
@@ -83,16 +81,8 @@ test-aide==0.1.1
     # via tubular (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tomli==2.2.1
-    # via
-    #   auto-walrus
-    #   black
-    #   pytest
 typing-extensions==4.15.0
-    # via
-    #   tubular (pyproject.toml)
-    #   black
-    #   exceptiongroup
+    # via tubular (pyproject.toml)
 typos==1.40.0
     # via tubular (pyproject.toml)
 tzdata==2025.2
