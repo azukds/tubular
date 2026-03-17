@@ -235,7 +235,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Raises
         ------
-            RuntimeError: if transformer does not have to/from json functionality
+        RuntimeError: if transformer does not have to/from json functionality
             enabled
 
         Examples
@@ -286,7 +286,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Raises
         ------
-            RuntimeError: if transformer does not have to/from json
+        RuntimeError: if transformer does not have to/from json
             functionality enabled
 
         Examples

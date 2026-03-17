@@ -256,8 +256,8 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         Raises
         ------
-            ValueError: if provided columns are not keys of
-                provided new_column_names
+        ValueError: if provided columns are not keys of
+            provided new_column_names
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -352,7 +352,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         Raises
         ------
-            ValueError: if new_column_names values are already present in X
+        ValueError: if new_column_names values are already present in X
 
         Examples
         --------

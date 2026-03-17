@@ -90,8 +90,8 @@ class BaseImputer(BaseTransformer):
 
         Raises
         ------
-            RuntimeError:
-                if class is not jsonable
+        RuntimeError:
+            if class is not jsonable
 
         Examples
         --------
@@ -170,7 +170,7 @@ class BaseImputer(BaseTransformer):
 
         Raises
         ------
-            ValueError: if impute_values_ have come out as None
+        ValueError: if impute_values_ have come out as None
 
         """
         for col in self.columns:
@@ -367,17 +367,14 @@ class ArbitraryImputer(BaseImputer):
         native_namespace: str
             'pandas' or 'polars'
 
-        Raises
-        ------
-            TypeError: if given impute value clashes with types of given columns
-
         Returns
         -------
         pandas_object_cols_to_polars_types: dict[str, str]
             dictionary of type conversions for tricky pandas object types
 
-        null_columns: list[str]
-            list of Unknown type columns, singled out for different type handling
+        Raises
+        ------
+        TypeError: if given impute value clashes with types of given columns
 
         """
         object_columns = set()
@@ -499,10 +496,6 @@ class ArbitraryImputer(BaseImputer):
         ----------
         X : DataFrame
             Data containing columns to impute.
-
-        return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
 
         Returns
         -------
@@ -1362,13 +1355,13 @@ class NearestMeanResponseImputer(BaseImputer):
             each level of every column is calculated. The level which has the closest average response
             to the average response of the unknown levels is selected as the imputation value.
 
-        Raises
-        ------
-            ValueError: provided y contains nulls
-
         Returns
         -------
         NearestMeanResponseImputer: fitted class instance
+
+        Raises
+        ------
+        ValueError: provided y contains nulls
 
         """
         X = _convert_dataframe_to_narwhals(X)

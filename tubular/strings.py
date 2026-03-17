@@ -105,7 +105,7 @@ class SeriesStrMethodTransformer(BaseTransformer):
 
         Raises
         ------
-            AttributeError: if pd_method_name is not pd.Series method
+        AttributeError: if pd_method_name is not pd.Series method
 
         """
         super().__init__(columns=columns, copy=copy, **kwargs)

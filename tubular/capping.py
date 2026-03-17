@@ -125,7 +125,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if capping values/quantiles passed are invalid
+        ValueError: if capping values/quantiles passed are invalid
 
         Examples
         --------
@@ -189,7 +189,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if capping values are invalid, e.g. lower_cap>upper_cap
+        ValueError: if capping values are invalid, e.g. lower_cap>upper_cap
 
         Examples
         --------
@@ -228,7 +228,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if quantile_capping_values have fit as None where values were expected
+        ValueError: if quantile_capping_values have fit as None where values were expected
 
         """
         failed_columns = []
@@ -488,7 +488,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if method is quantile capping and fit has not been called
+        ValueError: if method is quantile capping and fit has not been called
 
         Examples
         --------

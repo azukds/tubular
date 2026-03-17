@@ -414,7 +414,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Raises
         ------
-            TypeError: if columns are not str-like
+        TypeError: if columns are not str-like
 
         Examples
         --------
@@ -482,7 +482,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if nulls are detected
+        ValueError: if nulls are detected
 
         Examples
         --------
@@ -1170,7 +1170,7 @@ class MeanResponseTransformer(
 
         Raises
         ------
-            ValueError: if user provided levels are not present in y
+        ValueError: if user provided levels are not present in y
 
         """
         self.response_levels = self.level
@@ -1205,7 +1205,7 @@ class MeanResponseTransformer(
 
         Raises
         ------
-            ValueError: if mapping values or unseen_level_handling_dict values
+        ValueError: if mapping values or unseen_level_handling_dict values
             have come out as None unexpectedly
 
         """
@@ -1272,13 +1272,13 @@ class MeanResponseTransformer(
         y : Series
             Response variable or target.
 
-        Raises
-        ------
-            ValueError: if y contains null values
-
         Returns
         -------
-            MeanResponseTransformer: fitted class instance
+        MeanResponseTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if y contains null values
 
         Examples
         --------
@@ -1798,7 +1798,7 @@ class OneHotEncodingTransformer(
 
         Raises
         ------
-            ValueError: if keys of wanted_values arg are not in columns arg
+        ValueError: if keys of wanted_values arg are not in columns arg
 
         """
         BaseTransformer.__init__(
@@ -1939,13 +1939,13 @@ class OneHotEncodingTransformer(
         y : None
             Ignored. This parameter exists only for compatibility with sklearn.pipeline.Pipeline.
 
-        Raises
-        ------
-            ValueError: if column has >100 levels
-
         Returns
         -------
-            OneHotEncodingTransformer: fitted class instance
+        OneHotEncodingTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if column has >100 levels
 
         Examples
         --------
@@ -2234,7 +2234,7 @@ class OrdinalEncoderTransformer(
 
         Raises
         ------
-            ValueError: if mapping values have come out as None unexpectedly
+        ValueError: if mapping values have come out as None unexpectedly
 
         """
         for col in self.columns:
@@ -2263,13 +2263,13 @@ class OrdinalEncoderTransformer(
         y : Series
             Response column or target.
 
-        Raises
-        ------
-            ValueError: if y contains nulls
-
         Returns
         -------
             OrdinalEncoderTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if y contains nulls
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -2452,7 +2452,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
 
         Raises
         ------
-            ValueError: if `start_encoding` is not int
+        ValueError: if `start_encoding` is not int
 
         """
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
@@ -2479,13 +2479,13 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         y : None or pd.DataFrame or pd.Series, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
-        Raises
-        ------
-            ValueError: if column has more levels than can be encoded as int8
-
         Returns
         -------
             NominalToIntegerTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if column has more levels than can be encoded as int8
 
         """
         BaseNominalTransformer.fit(self, X, y)

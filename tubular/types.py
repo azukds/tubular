@@ -73,7 +73,7 @@ PositiveInt = Annotated[int, Is[lambda i: i >= 0]]
 
 FloatBetweenZeroOne = Annotated[float, Is[lambda i: (i > 0) & (i < 1)]]
 
-StrictlyPositiveInt = Annotated[int, Is[lambda i: (i >= 1)]]
+StrictlyPositiveInt = Annotated[int, Is[lambda i: i >= 1]]
 
 GenericKwargs = Annotated[
     dict[str, int | float | str | list[int] | list[str] | list[float]],

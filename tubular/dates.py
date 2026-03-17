@@ -1450,7 +1450,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Raises
         ------
-            ValueError: keys in datetime mapping do not match values in include
+        ValueError: keys in datetime mapping do not match values in include
 
         Examples
         --------
@@ -1995,7 +1995,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Raises
         ------
-            ValueError: if keys in provided period dictionary do match provided columns
+        ValueError: if keys in provided period dictionary do match provided columns
 
         """
         if "new_column_name" in kwargs:
@@ -2480,7 +2480,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
         Raises
         ------
-            AttributeError: if requested pd.Series.dt method does not exist
+        AttributeError: if requested pd.Series.dt method does not exist
 
         """
         super().__init__(
