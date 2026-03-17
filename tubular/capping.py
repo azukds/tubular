@@ -291,6 +291,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
@@ -1022,6 +1023,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(

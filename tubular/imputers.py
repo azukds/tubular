@@ -929,6 +929,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1099,6 +1100,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
