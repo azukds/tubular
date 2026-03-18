@@ -6,7 +6,7 @@ import copy
 import datetime
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
 import narwhals as nw
 import numpy as np
@@ -88,10 +88,10 @@ class BaseGenericDateTransformer(
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: list[str] | str,
         new_column_name: str,
         drop_original: bool = False,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -287,7 +287,7 @@ class BaseGenericDateTransformer(
         self,
         X: DataFrame,
         datetime_only: bool = False,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Validate data pre transform.
 
@@ -398,10 +398,10 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[list[str], str],
+        columns: list[str] | str,
         new_column_name: str,
         drop_original: bool = False,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -431,7 +431,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Check types of selected columns in provided data.
 
@@ -576,7 +576,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         new_column_name: str,
         units: DateDifferenceUnitsOptionsStr = "D",
         drop_original: bool = False,
-        custom_days_divider: Optional[int] = None,
+        custom_days_divider: int | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -812,8 +812,8 @@ class ToDatetimeTransformer(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        time_format: Optional[str] = None,
+        columns: str | list[str],
+        time_format: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -1308,11 +1308,11 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        include: Optional[Union[DatetimeInfoOptionList, DatetimeInfoOptionStr]] = None,
-        datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]] = None,
-        drop_original: Optional[bool] = False,
-        **kwargs: Union[str, bool],
+        columns: str | list[str],
+        include: DatetimeInfoOptionList | DatetimeInfoOptionStr | None = None,
+        datetime_mappings: dict[DatetimeInfoOptionStr, dict[int, str]] | None = None,
+        drop_original: bool | None = False,
+        **kwargs: str | bool,
     ) -> None:
         """Initialise class instance.
 
@@ -1442,7 +1442,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     def _check_provided_mappings(
         self,
-        datetime_mappings: Optional[dict[DatetimeInfoOptionStr, dict[int, str]]],
+        datetime_mappings: dict[DatetimeInfoOptionStr, dict[int, str]] | None,
     ) -> None:
         """Process user provided mappings.
 
@@ -1450,7 +1450,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         Raises
         ------
-            ValueError: keys in datetime mapping do not match values in include
+        ValueError: keys in datetime mapping do not match values in include
 
         Examples
         --------
@@ -1676,9 +1676,9 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        include: Union[DatetimeComponentOptionList, DatetimeComponentOptionStr],
-        **kwargs: Union[str, bool],
+        columns: str | list[str],
+        include: DatetimeComponentOptionList | DatetimeComponentOptionStr,
+        **kwargs: str | bool,
     ) -> None:
         """Initialize the DatetimeComponentExtractor.
 
@@ -1887,7 +1887,7 @@ MethodOptionList = Annotated[
 ]
 
 NumberNotBool = Annotated[
-    Union[int, float],
+    int | float,
     Is[
         # exclude bools which would pass isinstance(..., (float, int))
         lambda value: type(value) in {int, float}
@@ -1960,15 +1960,13 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        method: Union[MethodOptionStr, MethodOptionList],
-        units: Union[
-            DatetimeSinusoidUnitsOptionStr,
-            dict[str, DatetimeSinusoidUnitsOptionStr],
-        ],
-        period: Union[NumberNotBool, dict[str, NumberNotBool]] = 2 * np.pi,
+        columns: str | list[str],
+        method: MethodOptionStr | MethodOptionList,
+        units: DatetimeSinusoidUnitsOptionStr
+        | dict[str, DatetimeSinusoidUnitsOptionStr],
+        period: NumberNotBool | dict[str, NumberNotBool] = 2 * np.pi,
         drop_original: bool = False,
-        **kwargs: Union[bool, str],
+        **kwargs: bool | str,
     ) -> None:
         """Initialise class instance.
 
@@ -1997,7 +1995,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         Raises
         ------
-            ValueError: if keys in provided period dictionary do match provided columns
+        ValueError: if keys in provided period dictionary do match provided columns
 
         """
         if "new_column_name" in kwargs:
@@ -2110,7 +2108,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Transform - creates column containing sine or cosine of another datetime column.
 
@@ -2262,7 +2260,7 @@ class DateDiffLeapYearTransformer(BaseGenericDateTransformer):
         self,
         columns: ListOfTwoStrs,
         new_column_name: str,
-        missing_replacement: Optional[Union[float, int, str]] = None,
+        missing_replacement: float | int | str | None = None,
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -2449,13 +2447,10 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
         self,
         new_column_name: str,
         pd_method_name: str,
-        columns: Union[
-            ListOfOneStr,
-            str,
-        ],
-        pd_method_kwargs: Optional[GenericKwargs] = None,
+        columns: ListOfOneStr | str,
+        pd_method_kwargs: GenericKwargs | None = None,
         drop_original: bool = False,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -2485,7 +2480,7 @@ class SeriesDtMethodTransformer(BaseDatetimeTransformer):
 
         Raises
         ------
-            AttributeError: if requested pd.Series.dt method does not exist
+        AttributeError: if requested pd.Series.dt method does not exist
 
         """
         super().__init__(

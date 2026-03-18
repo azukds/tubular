@@ -341,13 +341,13 @@ class GenericCappingFitTests(
         names = actuals_dict.keys()
 
         # round to 1dp to avoid mismatches due to numerical precision
-        for name, value in zip(names, actuals):
+        for name, value in zip(names, actuals, strict=False):
             if value:
                 actuals_dict[name] = np.round(value, 1)
             else:
                 actuals_dict[name] = value
 
-        for name, value in zip(names, expected_quantiles):
+        for name, value in zip(names, expected_quantiles, strict=False):
             assert actuals_dict[name] == value, (
                 f"unexpected replacement values fit, for {name} value expected {value} but got {actuals_dict[name]}"
             )

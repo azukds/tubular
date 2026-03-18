@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 import narwhals as nw
 import numpy as np
@@ -85,7 +85,7 @@ class BaseNominalTransformer(BaseTransformer):
     def check_mappable_rows(
         self,
         X: DataFrame,
-        present_values: Optional[dict[str, set[Any]]] = None,
+        present_values: dict[str, set[Any]] | None = None,
     ) -> None:
         """Check that all the rows are able to be mapped.
 
@@ -149,8 +149,8 @@ class BaseNominalTransformer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
-        present_values: Optional[dict[str, set[Any]]] = None,
+        return_native_override: bool | None = None,
+        present_values: dict[str, set[Any]] | None = None,
     ) -> DataFrame:
         """Check that all the rows are able to be mapped.
 
@@ -296,10 +296,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
         self,
-        columns: Optional[Union[str, ListOfStrs]] = None,
+        columns: str | ListOfStrs | None = None,
         cut_off_percent: FloatBetweenZeroOne = 0.01,
-        weights_column: Optional[str] = None,
-        rare_level_name: Union[str, ListOfStrs] = "rare",
+        weights_column: str | None = None,
+        rare_level_name: str | ListOfStrs = "rare",
         record_rare_levels: bool = True,
         unseen_levels_to_rare: bool = True,
         **kwargs: bool,
@@ -413,7 +413,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Raises
         ------
-            TypeError: if columns are not str-like
+        TypeError: if columns are not str-like
 
         Examples
         --------
@@ -466,7 +466,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     def fit(
         self,
         X: DataFrame,
-        y: Optional[Series] = None,
+        y: Series | None = None,
     ) -> GroupRareLevelsTransformer:
         """Record non-rare levels for categorical variables.
 
@@ -519,6 +519,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -794,13 +795,14 @@ class MeanResponseTransformer(
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
         self,
-        columns: Optional[Union[str, list[str]]] = None,
-        weights_column: Optional[str] = None,
+        columns: str | list[str] | None = None,
+        weights_column: str | None = None,
         prior: PositiveInt = 0,
-        level: Optional[Union[float, int, str, list]] = None,
-        unseen_level_handling: Optional[
-            Union[float, int, Literal["mean", "median", "min", "max"]]
-        ] = None,
+        level: float | int | str | list | None = None,
+        unseen_level_handling: float
+        | int
+        | Literal["mean", "median", "min", "max"]
+        | None = None,
         return_type: Literal["Float32", "Float64"] = "Float32",
         drop_original: bool = True,
         **kwargs: bool,
@@ -1070,7 +1072,7 @@ class MeanResponseTransformer(
     @block_from_json
     def _setup_fit_multi_level(
         self,
-        y_vals: list[Union[int, float]],
+        y_vals: list[int | float],
         response_column: str,
     ) -> None:
         """Set attrs needed for fit, for multi level case.
@@ -1088,7 +1090,7 @@ class MeanResponseTransformer(
 
         Raises
         ------
-            ValueError: if user provided levels are not present in y
+        ValueError: if user provided levels are not present in y
 
         """
         self.response_levels = self.level
@@ -1123,7 +1125,7 @@ class MeanResponseTransformer(
 
         Raises
         ------
-            ValueError: if mapping values or unseen_level_handling_dict values
+        ValueError: if mapping values or unseen_level_handling_dict values
             have come out as None unexpectedly
 
         """
@@ -1190,13 +1192,13 @@ class MeanResponseTransformer(
         y : Series
             Response variable or target.
 
-        Raises
-        ------
-            ValueError: if y contains null values
-
         Returns
         -------
-            MeanResponseTransformer: fitted class instance
+        MeanResponseTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if y contains null values
 
         Examples
         --------
@@ -1230,6 +1232,7 @@ class MeanResponseTransformer(
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1345,6 +1348,7 @@ class MeanResponseTransformer(
                             self.encoded_columns_to_columns[encoded_column]
                         ],
                         results_dict[encoded_column][encoded_column + "_mapped"],
+                        strict=False,
                     ),
                 )
                 for encoded_column in self.encoded_columns
@@ -1683,8 +1687,8 @@ class OneHotEncodingTransformer(
     @beartype
     def __init__(
         self,
-        columns: Optional[Union[str, ListOfStrs]] = None,
-        wanted_values: Optional[dict[str, ListOfStrs]] = None,
+        columns: str | ListOfStrs | None = None,
+        wanted_values: dict[str, ListOfStrs] | None = None,
         separator: str = "_",
         drop_original: bool = False,
         **kwargs: bool,
@@ -1712,7 +1716,7 @@ class OneHotEncodingTransformer(
 
         Raises
         ------
-            ValueError: if keys of wanted_values arg are not in columns arg
+        ValueError: if keys of wanted_values arg are not in columns arg
 
         """
         BaseTransformer.__init__(
@@ -1839,7 +1843,7 @@ class OneHotEncodingTransformer(
     def fit(
         self,
         X: DataFrame,
-        y: Optional[Series] = None,
+        y: Series | None = None,
     ) -> OneHotEncodingTransformer:
         """Get list of levels for each column to be transformed.
 
@@ -1853,13 +1857,13 @@ class OneHotEncodingTransformer(
         y : None
             Ignored. This parameter exists only for compatibility with sklearn.pipeline.Pipeline.
 
-        Raises
-        ------
-            ValueError: if column has >100 levels
-
         Returns
         -------
-            OneHotEncodingTransformer: fitted class instance
+        OneHotEncodingTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if column has >100 levels
 
         Examples
         --------
@@ -1965,7 +1969,7 @@ class OneHotEncodingTransformer(
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Create new dummy columns from categorical fields.
 
@@ -2113,8 +2117,8 @@ class OrdinalEncoderTransformer(
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -2148,7 +2152,7 @@ class OrdinalEncoderTransformer(
 
         Raises
         ------
-            ValueError: if mapping values have come out as None unexpectedly
+        ValueError: if mapping values have come out as None unexpectedly
 
         """
         for col in self.columns:
@@ -2177,13 +2181,13 @@ class OrdinalEncoderTransformer(
         y : Series
             Response column or target.
 
-        Raises
-        ------
-            ValueError: if y contains nulls
-
         Returns
         -------
             OrdinalEncoderTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if y contains nulls
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -2198,6 +2202,7 @@ class OrdinalEncoderTransformer(
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -2365,7 +2370,7 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
 
         Raises
         ------
-            ValueError: if `start_encoding` is not int
+        ValueError: if `start_encoding` is not int
 
         """
         BaseNominalTransformer.__init__(self, columns=columns, **kwargs)
@@ -2392,13 +2397,13 @@ class NominalToIntegerTransformer(BaseNominalTransformer, BaseMappingTransformMi
         y : None or pd.DataFrame or pd.Series, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
-        Raises
-        ------
-            ValueError: if column has more levels than can be encoded as int8
-
         Returns
         -------
             NominalToIntegerTransformer: fitted class instance
+
+        Raises
+        ------
+        ValueError: if column has more levels than can be encoded as int8
 
         """
         BaseNominalTransformer.fit(self, X, y)

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sklearn.pipeline import Pipeline
 
 from tubular.capping import CappingTransformer, OutOfRangeNullTransformer
@@ -105,7 +103,7 @@ class TubularPipelineGenerator:
 
     def generate_pipeline(
         self,
-        transformers_to_include: Optional[list] = None,
+        transformers_to_include: list | None = None,
         verbose: bool = False,
     ) -> Pipeline:
         if not transformers_to_include:

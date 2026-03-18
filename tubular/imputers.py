@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import narwhals as nw
 import polars as pl
@@ -90,8 +90,8 @@ class BaseImputer(BaseTransformer):
 
         Raises
         ------
-            RuntimeError:
-                if class is not jsonable
+        RuntimeError:
+            if class is not jsonable
 
         Examples
         --------
@@ -170,7 +170,7 @@ class BaseImputer(BaseTransformer):
 
         Raises
         ------
-            ValueError: if impute_values_ have come out as None
+        ValueError: if impute_values_ have come out as None
 
         """
         failed_columns = [
@@ -185,7 +185,7 @@ class BaseImputer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Impute missing values with values calculated from fit method.
 
@@ -305,9 +305,9 @@ class ArbitraryImputer(BaseImputer):
     @beartype
     def __init__(
         self,
-        impute_value: Union[int, float, str, bool],
-        columns: Union[str, list[str]],
-        **kwargs: Optional[bool],
+        impute_value: int | float | str | bool,
+        columns: str | list[str],
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -366,17 +366,14 @@ class ArbitraryImputer(BaseImputer):
         native_namespace: str
             'pandas' or 'polars'
 
-        Raises
-        ------
-            TypeError: if given impute value clashes with types of given columns
-
         Returns
         -------
         pandas_object_cols_to_polars_types: dict[str, str]
             dictionary of type conversions for tricky pandas object types
 
-        null_columns: list[str]
-            list of Unknown type columns, singled out for different type handling
+        Raises
+        ------
+        TypeError: if given impute value clashes with types of given columns
 
         """
         object_columns = set()
@@ -498,10 +495,6 @@ class ArbitraryImputer(BaseImputer):
         ----------
         X : DataFrame
             Data containing columns to impute.
-
-        return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
 
         Returns
         -------
@@ -658,8 +651,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -682,7 +675,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> MedianImputer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> MedianImputer:
         """Calculate median values to impute with from X.
 
         Parameters
@@ -854,8 +847,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -878,7 +871,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> MeanImputer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> MeanImputer:
         """Calculate mean values to impute with from X.
 
         Parameters
@@ -928,6 +921,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1021,8 +1015,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        weights_column: Optional[str] = None,
+        columns: str | list[str],
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -1046,7 +1040,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> ModeImputer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> ModeImputer:
         """Calculate mode values to impute with from X.
 
         In the event of a tie, the highest modal value will be returned.
@@ -1098,6 +1092,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1195,11 +1190,8 @@ class NullIndicator(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[
-            NonEmptyListOfStrs,
-            str,
-        ],
-        **kwargs: Optional[bool],
+        columns: NonEmptyListOfStrs | str,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -1344,13 +1336,13 @@ class NearestMeanResponseImputer(BaseImputer):
             each level of every column is calculated. The level which has the closest average response
             to the average response of the unknown levels is selected as the imputation value.
 
-        Raises
-        ------
-            ValueError: provided y contains nulls
-
         Returns
         -------
         NearestMeanResponseImputer: fitted class instance
+
+        Raises
+        ------
+        ValueError: provided y contains nulls
 
         """
         X = _convert_dataframe_to_narwhals(X)
