@@ -1578,8 +1578,12 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             for include_option in self.include
         }
 
-        X = X.with_columns(
-            **transform_dict,
+        X = (
+            X.with_columns(
+                **transform_dict,
+            )
+            if transform_dict
+            else X
         )
 
         # Drop original columns if self.drop_original is True
@@ -1836,8 +1840,12 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
             for include_option in self.include
         }
 
-        X = X.with_columns(
-            **transform_dict,
+        X = (
+            X.with_columns(
+                **transform_dict,
+            )
+            if transform_dict
+            else X
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
@@ -2187,7 +2195,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for method in self.method
         }
 
-        X = X.with_columns(**exprs)
+        X = X.with_columns(**exprs) if exprs else X
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
             X,

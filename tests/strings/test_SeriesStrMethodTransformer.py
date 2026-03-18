@@ -6,6 +6,7 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
@@ -13,7 +14,9 @@ from tests.base_tests import (
 from tubular.strings import SeriesStrMethodTransformer
 
 
-class TestInit(ColumnStrListInitTests, NewColumnNameInitMixintests):
+class TestInit(
+    ColumnStrListInitTests, NewColumnNameInitMixintests, EmptyColumnsFailTests
+):
     """Generic tests for transformer.init()."""
 
     @classmethod

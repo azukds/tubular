@@ -383,8 +383,12 @@ class BaseMappingTransformMixin(BaseTransformer):
             for col in mapping_exprs
         }
 
-        X = X.with_columns(
-            **mapping_exprs,
+        X = (
+            X.with_columns(
+                **mapping_exprs,
+            )
+            if mapping_exprs
+            else X
         )
 
         # this last section is needed to ensure pandas bool columns

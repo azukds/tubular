@@ -9,6 +9,7 @@ from tests.aggregations.test_BaseAggregationTransformer import (
     TestBaseAggregationTransformerInit,
     TestBaseAggregationTransformerTransform,
 )
+from tests.base_tests import EmptyColumnsFitTransformPassTests, OtherBaseBehaviourTests
 from tests.test_data import create_aggregate_over_rows_test_df
 
 
@@ -310,3 +311,17 @@ class TestAggregateRowsOverColumnTransformerTransform(
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
+    """
+    Class to run tests for AggregateRowsOverColumnTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "AggregateRowsOverColumnTransformer"

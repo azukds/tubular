@@ -5,7 +5,7 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
-    EmptyColumnsFitTransformPassTests,
+    EmptyColumnsFailTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
 )
@@ -16,7 +16,9 @@ from tests.numeric.test_BaseNumericTransformer import (
 from tubular.numeric import CutTransformer
 
 
-class TestInit(BaseNumericTransformerInitTests, NewColumnNameInitMixintests):
+class TestInit(
+    BaseNumericTransformerInitTests, NewColumnNameInitMixintests, EmptyColumnsFailTests
+):
     """Tests for CutTransformer.init()."""
 
     @classmethod
@@ -125,7 +127,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
 ):
     """
     Class to run tests for CutTransformer outside the three standard methods.

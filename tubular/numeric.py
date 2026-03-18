@@ -35,7 +35,6 @@ from tubular.types import (
     GenericKwargs,
     ListOfMoreThanOneStrings,
     ListOfOneStr,
-    ListOfStrs,
     ListOfTwoStrs,
     PositiveNumber,
     StrictlyPositiveInt,
@@ -942,6 +941,17 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         self.add_1 = add_1
         self.suffix = suffix
 
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        """
+        return [f"{column}_{self.suffix}" for column in self.columns]
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the log transform to the specified columns.
 
@@ -967,7 +977,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         """
         X = super().transform(X)
 
-        new_column_names = [f"{column}_{self.suffix}" for column in self.columns]
+        new_column_names = self.get_feature_names_out()
 
         if self.add_1:
             if (X[self.columns] <= -1).sum().sum() > 0:
@@ -1046,7 +1056,7 @@ class CutTransformer(BaseNumericTransformer):
     @beartype
     def __init__(
         self,
-        column: str | ListOfStrs,
+        column: str,
         new_column_name: str,
         cut_kwargs: GenericKwargs | None = None,
         **kwargs: bool,

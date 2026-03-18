@@ -26,6 +26,7 @@ from tubular.types import (
     DataFrame,
     GenericKwargs,
     ListOfStrs,
+    NonEmptyListOfStrs,
     Series,
 )
 
@@ -659,7 +660,7 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         self,
         new_column_names: list[str] | str,
         pd_method_name: str,
-        columns: list[str] | str | None,
+        columns: NonEmptyListOfStrs | str | None,
         pd_method_kwargs: GenericKwargs | None = None,
         drop_original: bool = False,
         **kwargs: bool | None,

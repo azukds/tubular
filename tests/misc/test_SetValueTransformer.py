@@ -6,6 +6,7 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -100,7 +101,9 @@ class TestTransform(GenericTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for SetValueTransformer behaviour outside the three standard methods.
 
