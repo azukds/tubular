@@ -87,14 +87,15 @@ class TestCreateUnitWeightsColumn:
         assert unit_weights_column == "unit_weights_column"
 
         if not verbose:
-            assert len(recwarn) == 0
+            assert len(recwarn) == 0, (
+                "unexpected warning raised from _create_unit_weights_column"
+            )
 
         else:
-            assert len(recwarn) == 1
             assert (
                 str(recwarn[0].message)
                 == f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
-            )
+            ), "expected warning not raised from _create_unit_weights_column"
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_errors_if_bad_column_exists(

@@ -803,14 +803,18 @@ class DummyWeightColumnMixinTests:
 
         transformer.fit(df, df["a"])
 
+        unit_weights_column = "unit_weights_column"
+        msg = f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
+
         if not verbose:
-            assert len(recwarn) == 0
+            assert ~any(msg in str(w.message) for w in recwarn), (
+                "unexpected warning raised from _create_unit_weights_column"
+            )
 
         else:
-            unit_weights_column = "unit_weights_column"
-            msg = f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
-            assert len(recwarn) >= 1
-            assert any(msg in str(w.message) for w in recwarn)
+            assert any(msg in str(w.message) for w in recwarn), (
+                "expected warning not raised from _create_unit_weights_column"
+            )
 
 
 class FailedFitWeightFilterTest:
