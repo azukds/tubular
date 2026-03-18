@@ -25,7 +25,7 @@ from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     GenericKwargs,
-    NonEmptyListOfStrs,
+    ListOfStrs,
     Series,
 )
 
@@ -156,7 +156,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         columns: Union[
-            NonEmptyListOfStrs,
+            ListOfStrs,
             str,
         ],
         copy: bool = False,

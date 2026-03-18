@@ -35,6 +35,7 @@ from tubular.types import (
     GenericKwargs,
     ListOfMoreThanOneStrings,
     ListOfOneStr,
+    ListOfStrs,
     ListOfTwoStrs,
     PositiveNumber,
     StrictlyPositiveInt,
@@ -1048,7 +1049,7 @@ class CutTransformer(BaseNumericTransformer):
     @beartype
     def __init__(
         self,
-        column: str,
+        column: str | ListOfStrs,
         new_column_name: str,
         cut_kwargs: Optional[GenericKwargs] = None,
         **kwargs: bool,
@@ -1393,7 +1394,8 @@ class ScalingTransformer(BaseNumericTransformer):
 
         """
         super().fit(X, y)
-        self.scaler.fit(X[self.columns])
+        if self.columns:
+            self.scaler.fit(X[self.columns])
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -1414,12 +1416,13 @@ class ScalingTransformer(BaseNumericTransformer):
 
         # quick fix for empty frames, not spending much
         # time on this as transformer is deprecated
-        if X.empty:
-            for col in self.columns:
-                X[col] = pd.Series(dtype=float)
+        if self.columns:
+            if X.empty:
+                for col in self.columns:
+                    X[col] = pd.Series(dtype=float)
 
-        else:
-            X[self.columns] = self.scaler.transform(X[self.columns])
+            else:
+                X[self.columns] = self.scaler.transform(X[self.columns])
 
         return X
 
@@ -1680,7 +1683,7 @@ class PCATransformer(BaseNumericTransformer):
     @beartype
     def __init__(
         self,
-        columns: Optional[Union[str, list[str]]],
+        columns: ListOfMoreThanOneStrings,
         n_components: Union[
             StrictlyPositiveInt,
             FloatBetweenZeroOne,

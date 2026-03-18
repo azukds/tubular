@@ -1208,8 +1208,8 @@ class MeanResponseTransformer(
             have come out as None unexpectedly
 
         """
+        failed_columns = []
         for col in self.encoded_columns:
-            failed_columns = []
             if any(_is_null(value) for value in self.mappings[col].values()):
                 failed_columns.append(col)
                 break
@@ -2118,7 +2118,11 @@ class OneHotEncodingTransformer(
         # make column order consistent
         sorted_keys = sorted(transform_expressions.keys())
 
-        X = X.with_columns(**{key: transform_expressions[key] for key in sorted_keys})
+        X = (
+            X.with_columns(**{key: transform_expressions[key] for key in sorted_keys})
+            if transform_expressions
+            else X
+        )
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(
@@ -2235,8 +2239,8 @@ class OrdinalEncoderTransformer(
             ValueError: if mapping values have come out as None unexpectedly
 
         """
+        failed_columns = []
         for col in self.columns:
-            failed_columns = []
             if len(self.mappings[col]) == 0:
                 failed_columns.append(col)
                 break

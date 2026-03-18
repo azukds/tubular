@@ -173,8 +173,8 @@ class BaseImputer(BaseTransformer):
             ValueError: if impute_values_ have come out as None
 
         """
+        failed_columns = []
         for col in self.columns:
-            failed_columns = []
             if _is_null(self.impute_values_[col]):
                 failed_columns.append(col)
 

@@ -4,7 +4,11 @@ import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
-from tests.base_tests import NewColumnNameInitMixintests
+from tests.base_tests import (
+    EmptyColumnsFitTransformPassTests,
+    NewColumnNameInitMixintests,
+    OtherBaseBehaviourTests,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -118,3 +122,17 @@ class TestTransform(BaseNumericTransformerTransformTests):
             actual=df_transformed,
             msg="CutTransformer.transform output",
         )
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
+    """
+    Class to run tests for CutTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "CutTransformer"

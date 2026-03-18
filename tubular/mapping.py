@@ -121,10 +121,6 @@ class BaseMappingTransformer(BaseTransformer):
                 if multiple mappings for null values are provided
 
         """
-        if not len(mappings) > 0:
-            msg = f"{self.classname()}: mappings has no values"
-            raise ValueError(msg)
-
         mappings_from_null = dict.fromkeys(mappings)
         for col, col_mappings in mappings.items():
             null_keys = [key for key in col_mappings if pd.isna(key)]
