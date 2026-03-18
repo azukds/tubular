@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import narwhals as nw
 import numpy as np
@@ -153,7 +153,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Validate data and attributes prior to the child objects transform logic.
 
@@ -302,15 +302,12 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
         self,
-        columns: Union[
-            str,
-            ListOfOneStr,
-        ],
+        columns: str | ListOfOneStr,
         new_column_name: str,
-        n_init: Union[str, int] = "auto",
+        n_init: str | int = "auto",
         n_clusters: int = 8,
         drop_original: bool = False,
-        kmeans_kwargs: Optional[dict[str, object]] = None,
+        kmeans_kwargs: dict[str, object] | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -403,15 +400,15 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         y : None
             Required for pipeline.
 
-        Raises
-        ------
-            ValueError:
-                if columns in X contain missing values.
-
         Returns
         -------
             OneDKmeansTransformer:
                 Fitted class instance.
+
+        Raises
+        ------
+        ValueError:
+            if columns in X contain missing values.
 
         Examples
         --------
@@ -599,7 +596,7 @@ class DifferenceTransformer(BaseNumericTransformer):
     def __init__(
         self,
         columns: ListOfTwoStrs,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialize the DifferenceTransformer.
 
@@ -761,7 +758,7 @@ class RatioTransformer(BaseNumericTransformer):
         self,
         columns: ListOfTwoStrs,
         return_dtype: FloatTypeAnnotated = "Float32",
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialize the RatioTransformer.
 
@@ -906,8 +903,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Optional[Union[str, list[str]]],
-        base: Optional[PositiveNumber] = None,
+        columns: str | list[str] | None,
+        base: PositiveNumber | None = None,
         add_1: bool = False,
         drop_original: bool = True,
         suffix: str = "log",
@@ -964,8 +961,8 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
 
         Raises
         ------
-            ValueError:
-                if provided columns contain negative values.
+        ValueError:
+            if provided columns contain negative values.
 
         """
         X = super().transform(X)
@@ -1051,7 +1048,7 @@ class CutTransformer(BaseNumericTransformer):
         self,
         column: str | ListOfStrs,
         new_column_name: str,
-        cut_kwargs: Optional[GenericKwargs] = None,
+        cut_kwargs: GenericKwargs | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -1184,8 +1181,8 @@ class TwoColumnOperatorTransformer(
         pd_method_name: str,
         columns: ListOfTwoStrs,
         new_column_name: str,
-        pd_method_kwargs: Optional[dict[str, object]] = None,
-        **kwargs: Optional[bool],
+        pd_method_kwargs: dict[str, object] | None = None,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -1208,8 +1205,8 @@ class TwoColumnOperatorTransformer(
 
         Raises
         ------
-            ValueError:
-                if axis=0 or axis=1 missing from pd_method_kwargs
+        ValueError:
+            if axis=0 or axis=1 missing from pd_method_kwargs
 
         """
         if pd_method_kwargs is None:
@@ -1308,7 +1305,7 @@ class ScalingTransformer(BaseNumericTransformer):
 
     # Dictionary mapping scaler types to their corresponding sklearn classes
     scaler_options: ClassVar[
-        dict[str, Union[MinMaxScaler, MaxAbsScaler, StandardScaler]]
+        dict[str, MinMaxScaler | MaxAbsScaler | StandardScaler]
     ] = {
         "min_max": MinMaxScaler,
         "max_abs": MaxAbsScaler,
@@ -1341,11 +1338,11 @@ class ScalingTransformer(BaseNumericTransformer):
 
         Raises
         ------
-            TypeError:
-                if scaler_kwargs is not dict with str keys
+        TypeError:
+            if scaler_kwargs is not dict with str keys
 
-            ValueError:
-                if scaler_type is invalid
+        ValueError:
+            if scaler_type is invalid
 
         """
         if scaler_kwargs is None:
@@ -1528,17 +1525,17 @@ class InteractionTransformer(BaseNumericTransformer):
 
         Raises
         ------
-            ValueError:
-                if <=1 column provided
+        ValueError:
+            if <=1 column provided
 
-            ValueError:
-                if min_degree is not int <2
+        ValueError:
+            if min_degree is not int <2
 
-            ValueError:
-                if max_degree is not int > min_degree
+        ValueError:
+            if max_degree is not int > min_degree
 
-            ValueError:
-                if max_degree is not < len(columns)
+        ValueError:
+            if max_degree is not < len(columns)
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -1575,6 +1572,10 @@ class InteractionTransformer(BaseNumericTransformer):
         X : pd.DataFrame
             Input X with additional column or columns (self.interaction_colname) added. These contain the output of
             running the  product pandas DataFrame method on identified combinations.
+
+        Raises
+        ------
+        TypeError: for invalid PolynomialFeatures._combinations arguments
 
         """
         X = super().transform(X)
@@ -1683,14 +1684,10 @@ class PCATransformer(BaseNumericTransformer):
     @beartype
     def __init__(
         self,
-        columns: ListOfMoreThanOneStrings,
-        n_components: Union[
-            StrictlyPositiveInt,
-            FloatBetweenZeroOne,
-            Literal["mle"],
-        ] = 2,
+        columns: str | ListOfMoreThanOneStrings | None,
+        n_components: StrictlyPositiveInt | FloatBetweenZeroOne | Literal["mle"] = 2,
         svd_solver: Literal["auto", "full", "arpack", "randomized"] = "auto",
-        random_state: Optional[int] = None,
+        random_state: int | None = None,
         pca_column_prefix: str = "pca_",
         **kwargs: bool,
     ) -> None:
@@ -1747,25 +1744,25 @@ class PCATransformer(BaseNumericTransformer):
 
         Raises
         ------
-            ValueError:
-                if n_components is numeric and is not both
-                strictly positive and either a float in (0,1)
-                or an int>=1.
+        ValueError:
+            if n_components is numeric and is not both
+            strictly positive and either a float in (0,1)
+            or an int>=1.
 
-            ValueError:
-                if svd_solver is unknown.
+        ValueError:
+            if svd_solver is unknown.
 
-            TypeError:
-                if random_state is not int.
+        TypeError:
+            if random_state is not int.
 
-            ValueError:
-                if n_components is a str and incompatible with svd_solver.
+        ValueError:
+            if n_components is a str and incompatible with svd_solver.
 
-            TypeError:
-                if n_components is numeric and incompatible with svd_solver.
+        TypeError:
+            if n_components is numeric and incompatible with svd_solver.
 
-            TypeError:
-                if pca_column_prefix is not str
+        TypeError:
+            if pca_column_prefix is not str
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -1806,15 +1803,15 @@ class PCATransformer(BaseNumericTransformer):
         y : None
             Required for pipeline.
 
-        Raises
-        ------
-            ValueError:
-                if n_components is invalid for data
-
         Returns
         -------
             PCATransformer:
                 fitted class instance.
+
+        Raises
+        ------
+        ValueError:
+            if n_components is invalid for data
 
         """
         super().fit(X, y)

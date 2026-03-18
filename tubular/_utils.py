@@ -3,7 +3,7 @@ import numbers
 from contextlib import suppress
 from functools import wraps
 from importlib.metadata import version
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import narwhals as nw
 import pandas as pd
@@ -56,7 +56,7 @@ def _convert_dataframe_to_narwhals(X: DataFrame) -> NarwhalsFrame:
 
 
 @beartype
-def _convert_series_to_narwhals(y: Optional[Series] = None) -> Optional[nw.Series]:
+def _convert_series_to_narwhals(y: Series | None = None) -> nw.Series | None:
     """Narwhalifies series, if series is not already narwhals.
 
     Parameters

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import narwhals as nw
 from beartype import beartype
@@ -46,15 +46,15 @@ class CheckNumericMixin:
         return_native: bool
             indicates whether to return nw or pd/pl dataframe
 
-        Raises
-        ------
-            TypeError:
-                if provided columns are non-numeric
-
         Returns
         -------
-            DataFrame:
-                validated dataframe
+        DataFrame:
+            validated dataframe
+
+        Raises
+        ------
+        TypeError:
+            if provided columns are non-numeric
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -96,7 +96,7 @@ class DropOriginalMixin:
     def drop_original_column(
         X: DataFrame,
         drop_original: bool,
-        columns: Optional[Union[list[str], str]],
+        columns: list[str] | str | None,
         return_native: bool = True,
     ) -> DataFrame:
         """Drop input columns from X if drop_original set to True.
@@ -173,15 +173,15 @@ class WeightColumnMixin:
         return_native: bool
             controls whether to return nw or pd/pl dataframe
 
-        Raises
-        ------
-            RuntimeError:
-                if invalid 'unit_weights_column' already exists
-
         Returns
         -------
         DataFrame:
             DataFrame with added 'unit_weights_column'
+
+        Raises
+        ------
+        RuntimeError:
+            if invalid 'unit_weights_column' already exists
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -232,11 +232,11 @@ class WeightColumnMixin:
 
         Raises
         ------
-            ValueError:
-                if weights_column is missing from data
+        ValueError:
+            if weights_column is missing from data
 
-            ValueError:
-                if weights_column is non-numeric
+        ValueError:
+            if weights_column is non-numeric
 
         """
         X = _convert_dataframe_to_narwhals(X)

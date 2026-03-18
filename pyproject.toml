@@ -19,11 +19,11 @@ dependencies = [
     "pandas>=1.5.0, <3.0.0",
     "scikit-learn>=1.2.0",
     "narwhals >= 2.16.0",
-    "polars >= 1.9.0",
+    "polars >= 1.9.0, <= 1.38.1",
     "beartype >= 0.19.0",
     "typing-extensions>=4.5.0",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "Allianz UK Data Science Team", email="datasciencepackages@allianz.co.uk"}]
 description = "Python package implementing ML feature engineering and pre-processing for polars or pandas dataframes."
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -31,7 +31,6 @@ license = {file = "LICENSE"}
 keywords = ["polars", "pandas", "feature engineering", "pre-processing", "machine learning", "ML", "data science", "data transforms", "pipeline", "sklearn", "DS"]
 classifiers=[
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -53,6 +52,7 @@ dev = [
     "codespell",
     "typos",
     "blacken-docs",
+    "black >= 26.3.1"
     ]
 
 [project.urls]
@@ -72,8 +72,7 @@ ignore-words-list = [
 # Same as Black.
 line-length = 88
 
-# Assume Python 3.9.
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
@@ -135,7 +134,6 @@ select = [
 preview = true
 
 ignore = [
-    "B905", # this rule makes changes that error for python3.9, as the strict argument for zip() was introduced in python3.10
     "PYI041", # clashes with beartype
     "TC001", # clashes with beartype, was previously "TCH001"
     "D203", # clashes with D211

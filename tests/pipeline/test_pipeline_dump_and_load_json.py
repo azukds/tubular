@@ -34,7 +34,7 @@ class TestPipelineDumpAndLoadJson:
         )
 
         for i, (original_transformer, loaded_transformer) in enumerate(
-            zip(original_pipeline.steps, pipeline.steps)
+            zip(original_pipeline.steps, pipeline.steps, strict=False)
         ):
             assert original_transformer[0] == loaded_transformer[0], (
                 f"loaded pipeline does not match the original pipeline at step {i}, expected step name {original_transformer[0]} but got {loaded_transformer[0]}"
