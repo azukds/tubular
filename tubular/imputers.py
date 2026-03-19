@@ -10,7 +10,6 @@ import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
 
-from tubular._checks import _get_all_null_columns
 from tubular._stats import (
     _get_mean_calculation_expressions,
     _get_median_calculation_expression,
@@ -642,7 +641,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -720,21 +719,6 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        all_null_cols = _get_all_null_columns(X, self.columns)
-
-        if all_null_cols:
-            # touch the dict entry for each all null col so that they are recorded
-            self.impute_values_.update(
-                dict.fromkeys(all_null_cols),
-            )
-
-            warnings.warn(
-                f"{self.classname()}: The Median of columns {all_null_cols} will be None",
-                stacklevel=2,
-            )
-
-        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
-
         # as median depends on data ordering, it is less amenable to writing in
         # pure expression form, so implementation here is still
         # slightly pandas-like
@@ -747,7 +731,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             )
             X = X.filter(valid_weights_filter_expr)
 
-            for c in not_all_null_columns:
+            for c in self.columns:
                 col_not_null_expr = ~nw.col(c).is_null()
 
                 X = X.sort(c)
@@ -761,14 +745,14 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
                 )
 
                 # impute value is weighted median
-                self.impute_values_[c] = X.select(median_expr).item(0, 0)
+                self.impute_values_[c] = _collect_frame(X.select(median_expr)).item(0, 0)
 
         else:
             median_exprs = {
                 c: _get_median_calculation_expression(nw.col(c), None)
-                for c in not_all_null_columns
+                for c in self.columns
             }
-            results_dict = X.select(
+            results_dict = _collect_frame(X).select(
                 **median_exprs,
             ).to_dict(as_series=False)
 
