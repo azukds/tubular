@@ -38,6 +38,7 @@ Changed
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
 - chore: bump minimum python to 310, upgrade black for security fix (need for py310 forced a major version upgrade)
+- feat: converted MeanImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 
 2.8.0 (23/02/2026)
 ------------------
