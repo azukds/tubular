@@ -5,7 +5,6 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import (
     GenericNominalTransformTests,
-    TestOtherBaseBehaviour,
 )
 
 import tests.test_data as d
