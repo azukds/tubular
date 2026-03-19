@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
-
 import pandas as pd
 from beartype import beartype
 from typing_extensions import deprecated
@@ -76,8 +74,8 @@ class SeriesStrMethodTransformer(BaseTransformer):
         pd_method_name: str,
         columns: ListOfOneStr,
         copy: bool = False,
-        pd_method_kwargs: Optional[GenericKwargs] = None,
-        **kwargs: Optional[bool],
+        pd_method_kwargs: GenericKwargs | None = None,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class.
 
@@ -107,7 +105,7 @@ class SeriesStrMethodTransformer(BaseTransformer):
 
         Raises
         ------
-            AttributeError: if pd_method_name is not pd.Series method
+        AttributeError: if pd_method_name is not pd.Series method
 
         """
         super().__init__(columns=columns, copy=copy, **kwargs)
@@ -206,7 +204,7 @@ class StringConcatenator(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: str | list[str],
         new_column_name: str = "new_column",
         separator: str = " ",
         **kwargs: bool,

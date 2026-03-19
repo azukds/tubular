@@ -15,16 +15,15 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     pipeline: Pipeline
         sequence of transformer objects
 
-    Raises
-    ------
-    RuntimeError
-        If any of the transformer in pipeline is not jsonable it raises RuntimeError.
-
-
     Returns
     -------
     dict
         json dictionary representing the pipeline.
+
+    Raises
+    ------
+    RuntimeError
+        If any of the transformer in pipeline is not jsonable it raises RuntimeError.
 
     Examples
     --------

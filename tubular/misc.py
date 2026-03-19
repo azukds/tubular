@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any
 
 import narwhals as nw
 from beartype import beartype
@@ -68,11 +68,8 @@ class SetValueTransformer(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[
-            NonEmptyListOfStrs,
-            str,
-        ],
-        value: Optional[Union[int, float, str, bool]],
+        columns: NonEmptyListOfStrs | str,
+        value: int | float | str | bool | None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -236,10 +233,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[
-            NonEmptyListOfStrs,
-            str,
-        ],
+        columns: NonEmptyListOfStrs | str,
         new_column_names: dict[str, str],
         drop_original: bool = True,
         **kwargs: bool,
@@ -262,8 +256,8 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         Raises
         ------
-            ValueError: if provided columns are not keys of
-                provided new_column_names
+        ValueError: if provided columns are not keys of
+            provided new_column_names
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -358,7 +352,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         Raises
         ------
-            ValueError: if new_column_names values are already present in X
+        ValueError: if new_column_names values are already present in X
 
         Examples
         --------
@@ -471,7 +465,7 @@ class ColumnDtypeSetter(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, NonEmptyListOfStrs],
+        columns: str | NonEmptyListOfStrs,
         dtype: SimpleCastDtypesStr,
         **kwargs: bool,
     ) -> None:

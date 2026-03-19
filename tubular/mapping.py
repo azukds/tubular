@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import narwhals as nw
 import numpy as np
@@ -93,8 +93,8 @@ class BaseMappingTransformer(BaseTransformer):
     def __init__(
         self,
         mappings: dict[str, dict[Any, Any]],
-        return_dtypes: Union[dict[str, RETURN_DTYPES], None] = None,
-        **kwargs: Optional[bool],
+        return_dtypes: dict[str, RETURN_DTYPES] | None = None,
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
@@ -114,11 +114,11 @@ class BaseMappingTransformer(BaseTransformer):
 
         Raises
         ------
-            ValueError:
-                if mappings is empty
+        ValueError:
+            if mappings is empty
 
-            ValueError:
-                if multiple mappings for null values are provided
+        ValueError:
+            if multiple mappings for null values are provided
 
         """
         if not len(mappings) > 0:
@@ -215,7 +215,7 @@ class BaseMappingTransformer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Check mappings dict has been fitted.
 
@@ -310,7 +310,7 @@ class BaseMappingTransformMixin(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Apply mapping defined in the mappings dict to each column in the columns attribute.
 
@@ -627,8 +627,8 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
 
         Raises
         ------
-            TypeError:
-                if adjust_column is not string type.
+        TypeError:
+            if adjust_column is not string type.
 
         """
         super().__init__(mappings=mappings, **kwargs)
@@ -654,8 +654,8 @@ class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
 
         Raises
         ------
-            ValueError:
-                if provided adjust_column is not in DataFrame.
+        ValueError:
+            if provided adjust_column is not in DataFrame.
 
         """
         X = super().transform(X)
@@ -743,8 +743,8 @@ class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
 
         Raises
         ------
-            TypeError:
-                if mappings is not ordered dict, or only contains one key.
+        TypeError:
+            if mappings is not ordered dict, or only contains one key.
 
         """
         super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
@@ -850,8 +850,8 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
 
         Raises
         ------
-            TypeError:
-                if provided columns are non-numeric.
+        TypeError:
+            if provided columns are non-numeric.
 
         """
         super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
@@ -877,8 +877,8 @@ class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
 
         Raises
         ------
-            TypeError:
-                if provided columns are non-numeric
+        TypeError:
+            if provided columns are non-numeric
 
         """
         X = super().transform(X)

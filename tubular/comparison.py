@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
 import narwhals as nw
 
@@ -108,7 +108,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         columns: NonEmptyListOfStrs,
         when_column: str,
         then_column: str,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialize the WhenThenOtherwiseTransformer.
 
@@ -325,7 +325,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         self,
         columns: ListOfTwoStrs,
         condition: ConditionEnumStr,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialize the CompareTwoColumnsTransformer.
 
@@ -522,7 +522,7 @@ class EqualityChecker(
         columns: ListOfTwoStrs,
         new_column_name: str,
         drop_original: bool = False,
-        **kwargs: Optional[bool],
+        **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
 
