@@ -473,7 +473,7 @@ class ColumnDtypeSetter(BaseTransformer):
 
         Parameters
         ----------
-        columns : Union[str, NonEmptyListOfStrs]
+        columns : Union[str, ListOfStrs]
             Columns to set dtype. Must be set or transform will not run.
 
         dtype : SimpleCastDtypesStr

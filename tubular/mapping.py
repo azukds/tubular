@@ -115,9 +115,6 @@ class BaseMappingTransformer(BaseTransformer):
         Raises
         ------
         ValueError:
-            if mappings is empty
-
-        ValueError:
             if multiple mappings for null values are provided
 
         """
