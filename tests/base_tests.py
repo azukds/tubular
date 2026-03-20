@@ -451,7 +451,7 @@ class GenericFitTests:
 
 
 class EmptyColumnsFailTests:
-    "Test that fit/transform errors if columns is empty."
+    "Test that init errors if columns is empty."
 
     def test_init_is_unsuccessful(
         self,
