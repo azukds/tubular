@@ -1456,6 +1456,9 @@ class MeanResponseTransformer(
                             values_column=c,
                             weights_column=weights_column,
                         )
+                        print(X_temp.select(
+                            median_expr
+                        ))
 
                         self.unseen_levels_encoding_dict[c] = X_temp.select(
                             median_expr
@@ -1597,7 +1600,7 @@ class MeanResponseTransformer(
             for col in self.columns
             for encoded_col in self.column_to_encoded_columns[col]
         }
-
+        print(transform_expressions)
         X = X.with_columns(
             **transform_expressions,
         )

@@ -35,7 +35,7 @@ def _get_median_calculation_expression(
 
     """
     if weights_column is not None:
-        weighted_quantile_expr = _weighted_quantile_expr(weights_column=weights_column)
+        weighted_quantile_expr = _weighted_quantile_expr(weights_column=weights_column, values_column=values_column)
 
         QUANTILE_50 = 0.5
         median_expr = (
@@ -131,6 +131,7 @@ def _get_mean_calculation_expressions(
 @beartype
 def _weighted_quantile_expr(
     weights_column: str,
+    values_column: str,
 ) -> nw.Expr:
     """Produce an expression that computes the cumulative fraction of weights.
 
@@ -145,6 +146,9 @@ def _weighted_quantile_expr(
     ----------
     weights_column:
         name of weights column
+
+    values_column:
+        name of values column
 
     Returns
     -------
@@ -179,6 +183,6 @@ def _weighted_quantile_expr(
     ```
 
     """
-    return (nw.col(weights_column).cum_sum().over(order_by=weights_column)) / nw.col(
+    return (nw.col(weights_column).cum_sum().over(order_by=values_column)) / nw.col(
         weights_column
     ).sum()

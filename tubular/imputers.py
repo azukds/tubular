@@ -734,7 +734,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             for c in self.columns:
                 col_not_null_expr = ~nw.col(c).is_null()
 
-                X_c = X_temp.sort(c).filter(col_not_null_expr)
+                X_c = X_temp.filter(col_not_null_expr)
 
                 median_expr = _get_median_calculation_expression(
                     values_column=c,
@@ -754,7 +754,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
                 for c in self.columns
             }
             results_dict = (
-                _collect_frame(X_temp)
+                _collect_frame(X)
                 .select(
                     **median_exprs,
                 )
