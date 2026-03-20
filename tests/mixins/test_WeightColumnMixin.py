@@ -35,20 +35,27 @@ class TestCreateUnitWeightsColumn:
             dataframe_dict=expected_dict,
             library=library,
         )
+        expected = (
+            nw.from_native(expected)
+            .with_columns(nw.col("unit_weights_column").cast(nw.Int8))
+            .to_native()
+        )
 
         output, unit_weights_column = obj._create_unit_weights_column(
             df,
-            backend=library,
         )
 
         assert_frame_equal_dispatch(expected, output)
 
         assert unit_weights_column == "unit_weights_column"
 
+    @pytest.mark.parametrize("verbose", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_existing_column_used_if_possible(
         self,
         library,
+        verbose,
+        recwarn,
     ):
         """Test existing unit weights column used if possible"""
 
@@ -72,20 +79,30 @@ class TestCreateUnitWeightsColumn:
         )
 
         output, unit_weights_column = obj._create_unit_weights_column(
-            df,
-            backend=library,
+            df, verbose=verbose
         )
 
         assert_frame_equal_dispatch(expected, output)
 
         assert unit_weights_column == "unit_weights_column"
 
+        if not verbose:
+            assert len(recwarn) == 0, (
+                "unexpected warning raised from _create_unit_weights_column"
+            )
+
+        else:
+            assert (
+                str(recwarn[0].message)
+                == f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
+            ), "expected warning not raised from _create_unit_weights_column"
+
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_errors_if_bad_column_exists(
         self,
         library,
     ):
-        """Test that error is raised if unit_weights_column exists but is not all 1"""
+        """Test that error is raised if unit_weights_column exists but is non-numeric"""
 
         obj = WeightColumnMixin()
 
@@ -93,16 +110,18 @@ class TestCreateUnitWeightsColumn:
             "a": [1, 2, 3, 4],
         }
 
-        df_dict["unit_weights_column"] = [1, 2, 1, 1]
+        df_dict["unit_weights_column"] = ["a"] * 4
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        msg = "Attempting to insert column of unit weights named 'unit_weights_column', but an existing column shares this name and is not all 1, please rename existing column"
+        unit_weights_column = "unit_weights_column"
+
+        msg = f"{unit_weights_column} is present in X and non-numeric, transformer logic requires this to be an all 1 value column."
         with pytest.raises(
-            RuntimeError,
+            TypeError,
             match=msg,
         ):
-            obj._create_unit_weights_column(df, backend=library)
+            obj._create_unit_weights_column(df)
 
 
 class TestCheckWeightsColumn:
