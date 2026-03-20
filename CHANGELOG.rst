@@ -27,16 +27,22 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.0.0 (13/03/2026)
+3.1.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
+- feat: edited dummy unit weight handling to be more lazy friendly
+- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+
+3.0.0 (19/03/2026)
 ------------------
 
 Changed
 ^^^^^^^
 - feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
 - chore: small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
-- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
-- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
-- feat: edited dummy unit weight handling to be more lazy friendly
 - chore: bump minimum python to 310, upgrade black for security fix (need for py310 forced a major version upgrade)
 - feat: converted MeanImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 
