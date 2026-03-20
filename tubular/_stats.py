@@ -35,7 +35,10 @@ def _get_median_calculation_expression(
 
     """
     if weights_column is not None:
-        weighted_quantile_expr = _weighted_quantile_expr(weights_column=weights_column, values_column=values_column)
+        weighted_quantile_expr = _weighted_quantile_expr(
+            weights_column=weights_column,
+            values_column=values_column,
+        )
 
         QUANTILE_50 = 0.5
         median_expr = (
@@ -161,8 +164,8 @@ def _weighted_quantile_expr(
     ```pycon
     >>> import polars as pl
     >>> import narwhals as nw
-    >>> expr = _weighted_quantile_expr("w")
-    >>> df = pl.DataFrame({"w": [1, 2, 3]})
+    >>> expr = _weighted_quantile_expr(weights_column="w", values_column="v")
+    >>> df = pl.DataFrame({"w": [1, 2, 3], "v": [2, 3, 4]})
     >>> df = nw.from_native(df)
     >>> df.select(expr)
     ┌──────────────────┐
