@@ -1442,19 +1442,19 @@ class MeanResponseTransformer(
                 # else, median
                 else:
                     for c in self.encoded_columns:
-                        X_temp = X_y.with_columns(**encoded_column_exprs).sort(c)
-
                         null_filter_expr = ~nw.col(
                             self.encoded_columns_to_columns[c]
                         ).is_null()
 
+                        X_temp = (
+                            X_y.with_columns(**encoded_column_exprs)
+                            .filter(null_filter_expr)
+                            .sort(c)
+                        )
+
                         median_expr = _get_median_calculation_expression(
-                            initial_weights_expr=nw.col(weights_column).filter(
-                                null_filter_expr
-                            ),
-                            initial_column_expr=mapping_expressions[c].filter(
-                                null_filter_expr
-                            ),
+                            values_column=c,
+                            weights_column=weights_column,
                         )
 
                         self.unseen_levels_encoding_dict[c] = X_temp.select(

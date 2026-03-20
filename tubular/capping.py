@@ -433,14 +433,11 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         nonzero_weight_expr = ~(nw.col(weights_column) == 0)
         combined_filter = not_null_expr & nonzero_weight_expr
 
-        X = X.sort(by=values_column, descending=False)
+        X = X.sort(by=values_column, descending=False).filter(combined_filter)
 
-        weights_expr = nw.col(weights_column).filter(combined_filter)
-        values_expr = nw.col(values_column).filter(combined_filter)
+        values_expr = nw.col(values_column)
 
-        weighted_quantiles_expr = _weighted_quantile_expr(
-            initial_weights_expr=weights_expr
-        )
+        weighted_quantiles_expr = _weighted_quantile_expr(weights_column=weights_column)
         results_dict = X.select(weighted_quantiles_expr, values_expr).to_dict()
 
         # TODO - once narwhals implements interpolate, replace this with nw

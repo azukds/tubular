@@ -729,32 +729,37 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
                 self.weights_column, self.verbose
             )
-            X = X.filter(valid_weights_filter_expr)
+            X_temp = X.filter(valid_weights_filter_expr)
 
             for c in self.columns:
                 col_not_null_expr = ~nw.col(c).is_null()
 
-                X = X.sort(c)
-
-                col_expr = nw.col(c).filter(col_not_null_expr)
-                weight_expr = nw.col(self.weights_column).filter(col_not_null_expr)
+                X_c = X_temp.sort(c).filter(col_not_null_expr)
 
                 median_expr = _get_median_calculation_expression(
-                    initial_column_expr=col_expr,
-                    initial_weights_expr=weight_expr,
+                    values_column=c,
+                    weights_column=self.weights_column,
                 )
 
                 # impute value is weighted median
-                self.impute_values_[c] = _collect_frame(X.select(median_expr)).item(0, 0)
+                self.impute_values_[c] = _collect_frame(X_c.select(median_expr)).item(
+                    0, 0
+                )
 
         else:
             median_exprs = {
-                c: _get_median_calculation_expression(nw.col(c), None)
+                c: _get_median_calculation_expression(
+                    values_column=c, weights_column=None
+                )
                 for c in self.columns
             }
-            results_dict = _collect_frame(X).select(
-                **median_exprs,
-            ).to_dict(as_series=False)
+            results_dict = (
+                _collect_frame(X_temp)
+                .select(
+                    **median_exprs,
+                )
+                .to_dict(as_series=False)
+            )
 
             self.impute_values_.update(
                 {col: value[0] for col, value in results_dict.items()},

@@ -4,8 +4,8 @@ from beartype import beartype
 
 @beartype
 def _get_median_calculation_expression(
-    initial_column_expr: nw.Expr = None,
-    initial_weights_expr: nw.Expr | None = None,
+    values_column: str,
+    weights_column: str | None = None,
 ) -> nw.Expr:
     """Produce expressions for calculating medians in provided dataframe.
 
@@ -15,20 +15,18 @@ def _get_median_calculation_expression(
     in which case (in pseudocode) we would do something like:
 
     mapped_expr=nw.col('c').map_batches(...)
-    mode_expr=_get_median_calculation_expressions(
+    median_expr=_get_median_calculation_expressions(
                 columns='c',
                 initial_columns_exprs=mapped_expr
                 )
 
     Parameters
     ----------
-    initial_column_expr: nw.Expr
-        initial column expressions to build on. Defaults to None,
-        and in this case nw.col(column) is taken as the initial expr
+    values_column:
+        name of values column
 
-    initial_weights_expr: Optional[nw.Expr]
-        initial expression for weights column. Defaults to None,
-        and in this case nw.col(weights_column) is taken as the initial expr
+    weights_column:
+        name of weights column
 
     Returns
     -------
@@ -36,16 +34,16 @@ def _get_median_calculation_expression(
         dict of format col: expression for calculating median
 
     """
-    if initial_weights_expr is not None:
-        weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
+    if weights_column is not None:
+        weighted_quantile_expr = _weighted_quantile_expr(weights_column=weights_column)
 
         QUANTILE_50 = 0.5
-        median_expr = initial_column_expr.filter(
-            weighted_quantile_expr >= QUANTILE_50
-        ).min()
+        median_expr = (
+            nw.col(values_column).filter(weighted_quantile_expr >= QUANTILE_50).min()
+        )
 
     else:
-        median_expr = initial_column_expr.drop_nulls().median()
+        median_expr = nw.col(values_column).drop_nulls().median()
 
     return median_expr
 
@@ -132,7 +130,7 @@ def _get_mean_calculation_expressions(
 
 @beartype
 def _weighted_quantile_expr(
-    initial_weights_expr: nw.Expr,
+    weights_column: str,
 ) -> nw.Expr:
     """Produce an expression that computes the cumulative fraction of weights.
 
@@ -145,8 +143,8 @@ def _weighted_quantile_expr(
 
     Parameters
     ----------
-    initial_weights_expr : nw.Expr
-        initial expression for weights column.
+    weights_column:
+        name of weights column
 
     Returns
     -------
@@ -159,7 +157,7 @@ def _weighted_quantile_expr(
     ```pycon
     >>> import polars as pl
     >>> import narwhals as nw
-    >>> expr = _weighted_quantile_expr(nw.col("w"))
+    >>> expr = _weighted_quantile_expr("w")
     >>> df = pl.DataFrame({"w": [1, 2, 3]})
     >>> df = nw.from_native(df)
     >>> df.select(expr)
@@ -181,4 +179,6 @@ def _weighted_quantile_expr(
     ```
 
     """
-    return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()
+    return (nw.col(weights_column).cum_sum().over(order_by=weights_column)) / nw.col(
+        weights_column
+    ).sum()
