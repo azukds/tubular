@@ -32,7 +32,8 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
+- feat: edited dummy unit weight handling to be more lazy friendly
 
 3.0.0 (19/03/2026)
 ------------------
