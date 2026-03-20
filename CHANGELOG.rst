@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- feat: allow suitable transformers to pass with empty columns `#478 <https://github.com/azukds/tubular/issues/478>_`
 
 3.0.0 (19/03/2026)
 ------------------
@@ -41,7 +41,6 @@ Changed
 ^^^^^^^
 - feat: made OneHotEncoder lazyframe compatible `#532 <https://github.com/azukds/tubular/issues/532>`_
 - chore: small refactor of BaseCappingTransformer to remove prepare_quantiles method for readability
-- feat: allow suitable transformers to pass with empty columns `#478 <https://github.com/azukds/tubular/issues/478>_`
 - chore: bump minimum python to 310, upgrade black for security fix (need for py310 forced a major version upgrade)
 
 2.8.0 (23/02/2026)
