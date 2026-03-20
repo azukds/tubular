@@ -941,6 +941,17 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         self.add_1 = add_1
         self.suffix = suffix
 
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        """
+        return [f"{column}_{self.suffix}" for column in self.columns]
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the log transform to the specified columns.
 
@@ -966,7 +977,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         """
         X = super().transform(X)
 
-        new_column_names = [f"{column}_{self.suffix}" for column in self.columns]
+        new_column_names = self.get_feature_names_out()
 
         if self.add_1:
             if (X[self.columns] <= -1).sum().sum() > 0:
@@ -1390,7 +1401,8 @@ class ScalingTransformer(BaseNumericTransformer):
 
         """
         super().fit(X, y)
-        self.scaler.fit(X[self.columns])
+        if self.columns:
+            self.scaler.fit(X[self.columns])
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -1411,12 +1423,13 @@ class ScalingTransformer(BaseNumericTransformer):
 
         # quick fix for empty frames, not spending much
         # time on this as transformer is deprecated
-        if X.empty:
-            for col in self.columns:
-                X[col] = pd.Series(dtype=float)
+        if self.columns:
+            if X.empty:
+                for col in self.columns:
+                    X[col] = pd.Series(dtype=float)
 
-        else:
-            X[self.columns] = self.scaler.transform(X[self.columns])
+            else:
+                X[self.columns] = self.scaler.transform(X[self.columns])
 
         return X
 
@@ -1681,7 +1694,7 @@ class PCATransformer(BaseNumericTransformer):
     @beartype
     def __init__(
         self,
-        columns: str | list[str] | None,
+        columns: str | ListOfMoreThanOneStrings | None,
         n_components: StrictlyPositiveInt | FloatBetweenZeroOne | Literal["mle"] = 2,
         svd_solver: Literal["auto", "full", "arpack", "randomized"] = "auto",
         random_state: int | None = None,

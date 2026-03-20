@@ -1,6 +1,6 @@
 import pytest
 
-from tests.base_tests import OtherBaseBehaviourTests
+from tests.base_tests import EmptyCappingsFitTransformPassTests, OtherBaseBehaviourTests
 from tests.capping.test_BaseCappingTransformer import (
     GenericCappingFitTests,
     GenericCappingInitTests,
@@ -32,7 +32,9 @@ class TestTransform(GenericCappingTransformTests):
         cls.transformer_name = "CappingTransformer"
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyCappingsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

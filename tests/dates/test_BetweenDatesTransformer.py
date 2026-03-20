@@ -12,6 +12,7 @@ from tests.base_tests import (
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
     DropOriginalTransformMixinTests,
+    EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
@@ -32,6 +33,7 @@ class TestInit(
     ColumnStrListInitTests,
     NewColumnNameInitMixintests,
     DropOriginalInitMixinTests,
+    EmptyColumnsFailTests,
 ):
     "tests for BetweenDatesTransformer.__init__."
 
