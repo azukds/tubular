@@ -32,6 +32,13 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- placeholder
+
+3.1.0 (20/03/2026)
+------------------
+
+Changed
+^^^^^^^
 - feat: allow suitable transformers to pass with empty columns `#478 <https://github.com/azukds/tubular/issues/478>_`
 
 3.0.0 (19/03/2026)
