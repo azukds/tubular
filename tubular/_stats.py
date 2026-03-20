@@ -4,31 +4,29 @@ from beartype import beartype
 
 @beartype
 def _get_median_calculation_expression(
-    initial_column_expr: nw.Expr = None,
-    initial_weights_expr: nw.Expr | None = None,
+    values_column: str,
+    weights_column: str | None = None,
 ) -> nw.Expr:
     """Produce expressions for calculating medians in provided dataframe.
 
     Note, this function supports either operating on raw columns or chained expressions,
     this is to enable chaining together longer expressions across transformers. For
-    example, we may wish to find the mode of a column that has already been mapped,
+    example, we may wish to find the median of a column that has already been mapped,
     in which case (in pseudocode) we would do something like:
 
     mapped_expr=nw.col('c').map_batches(...)
-    mode_expr=_get_mode_calculation_expressions(
+    median_expr=_get_median_calculation_expressions(
                 columns='c',
                 initial_columns_exprs=mapped_expr
                 )
 
     Parameters
     ----------
-    initial_column_expr: nw.Expr
-        initial column expressions to build on. Defaults to None,
-        and in this case nw.col(column) is taken as the initial expr
+    values_column:
+        name of values column
 
-    initial_weights_expr: Optional[nw.Expr]
-        initial expression for weights column. Defaults to None,
-        and in this case nw.col(weights_column) is taken as the initial expr
+    weights_column:
+        name of weights column
 
     Returns
     -------
@@ -36,16 +34,19 @@ def _get_median_calculation_expression(
         dict of format col: expression for calculating median
 
     """
-    if initial_weights_expr is not None:
-        weighted_quantile_expr = _weighted_quantile_expr(initial_weights_expr)
+    if weights_column is not None:
+        weighted_quantile_expr = _weighted_quantile_expr(
+            weights_column=weights_column,
+            values_column=values_column,
+        )
 
         QUANTILE_50 = 0.5
-        median_expr = initial_column_expr.filter(
-            weighted_quantile_expr >= QUANTILE_50
-        ).min()
+        median_expr = (
+            nw.col(values_column).filter(weighted_quantile_expr >= QUANTILE_50).min()
+        )
 
     else:
-        median_expr = initial_column_expr.drop_nulls().median()
+        median_expr = nw.col(values_column).drop_nulls().median()
 
     return median_expr
 
@@ -131,77 +132,9 @@ def _get_mean_calculation_expressions(
 
 
 @beartype
-def _get_mode_calculation_expressions(
-    columns: list[str],
-    weights_column: str,
-    initial_columns_exprs: dict[str, nw.Expr] | None = None,
-    initial_weights_expr: nw.Expr | None = None,
-) -> dict[str, nw.Expr]:
-    """Produce expressions for calculating modes in provided dataframe.
-
-    Note, this function supports either operating on raw columns or chained expressions,
-    this is to enable chaining together longer expressions across transformers. For
-    example, we may wish to find the mode of a column that has already been mapped,
-    in which case (in pseudocode) we would do something like:
-
-    mapped_expr=nw.col('c').map_batches(...)
-    mode_expr=_get_mode_calculation_expressions(
-                columns=['c'],
-                initial_columns_exprs={'c': mapped_expr}
-                )
-
-    Parameters
-    ----------
-    columns: list[str]
-        list of columns to find modes for
-
-    weights_column: str
-        name of weights column
-
-    initial_columns_exprs: Optional[dict[str, nw.Expr]]
-        dict containing initial column expressions to build on. Defaults to None,
-        and in this case nw.col(c) is taken as the initial expr for each column c
-
-    initial_weights_expr: Optional[nw.Expr]
-        initial expression for weights column. Defaults to None,
-        and in this case nw.col(weights_column) is taken as the initial expr
-
-    Returns
-    -------
-    mode_value_exprs: dict[str, nw.Expr]
-        dict of format col: expression for calculating modes
-
-    """
-    if initial_columns_exprs is None:
-        initial_columns_exprs = {c: nw.col(c) for c in columns}
-
-    if initial_weights_expr is None:
-        initial_weights_expr = nw.col(weights_column)
-
-    level_weights_exprs = {
-        c: (
-            nw.when(~initial_columns_exprs[c].is_null())
-            .then(initial_weights_expr)
-            .otherwise(None)
-            .sum()
-            .over(c)
-        )
-        for c in columns
-    }
-
-    return {
-        c: (
-            nw.when(level_weights_exprs[c] == level_weights_exprs[c].max())
-            .then(nw.col(c))
-            .otherwise(None)
-        )
-        for c in columns
-    }
-
-
-@beartype
 def _weighted_quantile_expr(
-    initial_weights_expr: nw.Expr,
+    weights_column: str,
+    values_column: str,
 ) -> nw.Expr:
     """Produce an expression that computes the cumulative fraction of weights.
 
@@ -214,8 +147,11 @@ def _weighted_quantile_expr(
 
     Parameters
     ----------
-    initial_weights_expr : nw.Expr
-        initial expression for weights column.
+    weights_column:
+        name of weights column
+
+    values_column:
+        name of values column
 
     Returns
     -------
@@ -228,8 +164,8 @@ def _weighted_quantile_expr(
     ```pycon
     >>> import polars as pl
     >>> import narwhals as nw
-    >>> expr = _weighted_quantile_expr(nw.col("w"))
-    >>> df = pl.DataFrame({"w": [1, 2, 3]})
+    >>> expr = _weighted_quantile_expr(weights_column="w", values_column="v")
+    >>> df = pl.DataFrame({"w": [1, 2, 3], "v": [2, 3, 4]})
     >>> df = nw.from_native(df)
     >>> df.select(expr)
     ┌──────────────────┐
@@ -250,4 +186,6 @@ def _weighted_quantile_expr(
     ```
 
     """
-    return (initial_weights_expr.cum_sum()) / initial_weights_expr.sum()
+    return (nw.col(weights_column).cum_sum().over(order_by=values_column)) / nw.col(
+        weights_column
+    ).sum()

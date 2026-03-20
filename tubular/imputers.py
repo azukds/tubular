@@ -10,14 +10,13 @@ import polars as pl
 from beartype import beartype
 from typing_extensions import deprecated
 
-from tubular._checks import _get_all_null_columns
 from tubular._stats import (
     _get_mean_calculation_expressions,
     _get_median_calculation_expression,
-    _get_mode_calculation_expressions,
 )
 from tubular._utils import (
     _assess_pandas_object_column,
+    _collect_frame,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _is_null,
@@ -173,10 +172,9 @@ class BaseImputer(BaseTransformer):
         ValueError: if impute_values_ have come out as None
 
         """
-        for col in self.columns:
-            failed_columns = []
-            if _is_null(self.impute_values_[col]):
-                failed_columns.append(col)
+        failed_columns = [
+            col for col in self.columns if _is_null(self.impute_values_[col])
+        ]
 
         if failed_columns:
             msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
@@ -643,7 +641,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -721,21 +719,6 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        all_null_cols = _get_all_null_columns(X, self.columns)
-
-        if all_null_cols:
-            # touch the dict entry for each all null col so that they are recorded
-            self.impute_values_.update(
-                dict.fromkeys(all_null_cols),
-            )
-
-            warnings.warn(
-                f"{self.classname()}: The Median of columns {all_null_cols} will be None",
-                stacklevel=2,
-            )
-
-        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
-
         # as median depends on data ordering, it is less amenable to writing in
         # pure expression form, so implementation here is still
         # slightly pandas-like
@@ -746,32 +729,37 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
                 self.weights_column, self.verbose
             )
-            X = X.filter(valid_weights_filter_expr)
+            X_temp = X.filter(valid_weights_filter_expr)
 
-            for c in not_all_null_columns:
+            for c in self.columns:
                 col_not_null_expr = ~nw.col(c).is_null()
 
-                X = X.sort(c)
-
-                col_expr = nw.col(c).filter(col_not_null_expr)
-                weight_expr = nw.col(self.weights_column).filter(col_not_null_expr)
+                X_c = X_temp.filter(col_not_null_expr)
 
                 median_expr = _get_median_calculation_expression(
-                    initial_column_expr=col_expr,
-                    initial_weights_expr=weight_expr,
+                    values_column=c,
+                    weights_column=self.weights_column,
                 )
 
                 # impute value is weighted median
-                self.impute_values_[c] = X.select(median_expr).item(0, 0)
+                self.impute_values_[c] = _collect_frame(X_c.select(median_expr)).item(
+                    0, 0
+                )
 
         else:
             median_exprs = {
-                c: _get_median_calculation_expression(nw.col(c), None)
-                for c in not_all_null_columns
+                c: _get_median_calculation_expression(
+                    values_column=c, weights_column=None
+                )
+                for c in self.columns
             }
-            results_dict = X.select(
-                **median_exprs,
-            ).to_dict(as_series=False)
+            results_dict = (
+                _collect_frame(X)
+                .select(
+                    **median_exprs,
+                )
+                .to_dict(as_series=False)
+            )
 
             self.impute_values_.update(
                 {col: value[0] for col, value in results_dict.items()},
@@ -917,14 +905,12 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         self.impute_values_ = {}
 
-        native_backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=native_backend.__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1009,7 +995,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -1090,14 +1076,12 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1108,44 +1092,30 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
         self.impute_values_ = {}
 
-        all_null_cols = _get_all_null_columns(X, self.columns)
-
-        if all_null_cols:
-            # touch the dict entry for each all null col so that they are recorded
-            self.impute_values_.update(
-                dict.fromkeys(all_null_cols),
+        for c in self.columns:
+            group = (
+                X.filter(~nw.col(c).is_null())
+                .group_by(c)
+                .agg(nw.col(weights_column).sum().alias(f"{c}_count"))
+                .filter(nw.col(f"{c}_count") == nw.col(f"{c}_count").max())
             )
 
-            warnings.warn(
-                f"{self.classname()}: The Mode of columns {all_null_cols} will be None",
-                stacklevel=2,
-            )
+            results_dict = _collect_frame(group).to_dict(as_series=True)
 
-        not_all_null_columns = sorted(set(self.columns).difference(set(all_null_cols)))
-
-        mode_value_exprs = _get_mode_calculation_expressions(
-            not_all_null_columns,
-            weights_column,
-        )
-
-        results_dict = X.select(**mode_value_exprs).to_dict(as_series=True)
-
-        for c in results_dict:
-            mode_values = results_dict[c]
-
-            mode_values = mode_values.drop_nulls().sort(
-                descending=True,
-            )
+            mode_values = results_dict[c].sort(descending=True).to_list()
 
             n_mode_vals = len(mode_values)
 
-            if n_mode_vals > 1:
-                warnings.warn(
-                    f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
-                    stacklevel=2,
-                )
+            if n_mode_vals >= 1:
+                if n_mode_vals > 1:
+                    warnings.warn(
+                        f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
+                        stacklevel=2,
+                    )
+                self.impute_values_[c] = mode_values[0]
 
-            self.impute_values_[c] = mode_values.item(0)
+            elif n_mode_vals == 0:
+                self.impute_values_[c] = None
 
         self._check_for_failed_fit()
 

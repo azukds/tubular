@@ -286,14 +286,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
 
@@ -435,15 +433,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         nonzero_weight_expr = ~(nw.col(weights_column) == 0)
         combined_filter = not_null_expr & nonzero_weight_expr
 
-        X = X.sort(by=values_column, descending=False)
+        X_temp = X.sort(by=values_column, descending=False).filter(combined_filter)
 
-        weights_expr = nw.col(weights_column).filter(combined_filter)
-        values_expr = nw.col(values_column).filter(combined_filter)
+        values_expr = nw.col(values_column)
 
-        weighted_quantiles_expr = _weighted_quantile_expr(
-            initial_weights_expr=weights_expr
-        )
-        results_dict = X.select(weighted_quantiles_expr, values_expr).to_dict()
+        weighted_quantiles_expr = _weighted_quantile_expr(weights_column=weights_column, values_column=values_column)
+        results_dict = X_temp.select(weighted_quantiles_expr, values_expr).to_dict()
 
         # TODO - once narwhals implements interpolate, replace this with nw
         # syntax
@@ -1017,15 +1012,13 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         super().fit(X=X, y=y)
 
-        backend = nw.get_native_namespace(X)
-
         original_weights_column = self.weights_column
         weights_column = original_weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
         WeightColumnMixin.check_weights_column(self, X, weights_column)
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(

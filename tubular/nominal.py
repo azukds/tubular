@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import warnings
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -288,7 +287,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -462,63 +461,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             msg = f"{self.classname()}: transformer must run on str-like columns, but got non str-like {non_str_like_columns}"
             raise TypeError(msg)
 
-    @beartype
-    def _check_for_nulls(self, present_levels: dict[str, list[Any]]) -> None:
-        """Check that transformer being called on only non-null columns.
-
-        Note, found including nulls to be quite complicated due to:
-        - categorical variables make use of NaN not None
-        - pl/nw categorical variables do not allow categories to be edited,
-        so adjusting requires converting to str as interim step
-        - NaNs are converted to nan, introducing complications
-
-        As this transformer is generally used post imputation, elected to remove null
-        functionality.
-
-        Parameters
-        ----------
-        present_levels : dict[str, list[Any]]
-            dict of format column:levels present in column
-
-        Raises
-        ------
-        ValueError: if nulls are detected
-
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-
-        >>> transformer = GroupRareLevelsTransformer(
-        ...     columns="a",
-        ...     cut_off_percent=0.02,
-        ...     rare_level_name="rare_level",
-        ... )
-
-        >>> # non erroring example
-        >>> test_dict = {"a": ["x", "y"], "b": ["w", "z"]}
-
-        >>> transformer._check_for_nulls(test_dict)
-
-        >>> # erroring  example
-        >>> test_dict = {"a": [None, "y"], "b": ["w", "z"]}
-
-        >>> transformer._check_for_nulls(test_dict)
-        Traceback (most recent call last):
-        ...
-        ValueError: ...
-
-        ```
-
-        """
-        columns_with_nulls = [
-            c for c in present_levels if any(_is_null(val) for val in present_levels[c])
-        ]
-
-        if columns_with_nulls:
-            msg = f"{self.classname()}: transformer can only fit/apply on columns without nulls, columns {', '.join(columns_with_nulls)} need to be imputed first"
-            raise ValueError(msg)
-
     @block_from_json
     @beartype
     def fit(
@@ -572,14 +514,12 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         super().fit(X, y)
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -592,43 +532,38 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self._check_str_like_columns(schema)
 
-        present_levels = {c: list(set(X.get_column(c).unique())) for c in self.columns}
-
-        self._check_for_nulls(present_levels)
-
-        # sort once nulls are removed
-        present_levels = {c: sorted(present_levels[c]) for c in self.columns}
-
         self.non_rare_levels = {}
+        self.rare_levels_record_ = {}
+        present_levels = {}
 
-        if self.record_rare_levels:
-            self.rare_levels_record_ = {}
+        total_weight = _collect_frame(X.select(nw.col(weights_column).sum())).item()
 
-        level_weights_exprs = {
-            c: (nw.col(weights_column).sum().over(c)) for c in self.columns
-        }
+        level_weights_expr = nw.col(weights_column) / total_weight
 
-        total_weight_expr = nw.col(weights_column).sum()
-
-        level_weight_perc_exprs = {
-            c: level_weights_exprs[c] / total_weight_expr for c in self.columns
-        }
-
-        non_rare_levels_exprs = {
-            c: nw.when(level_weight_perc_exprs[c] >= self.cut_off_percent)
-            .then(nw.col(c))
-            .otherwise(None)
-            for c in self.columns
-        }
-
-        results_dict = X.select(**non_rare_levels_exprs).to_dict(as_series=True)
+        if not self.unseen_levels_to_rare:
+            self.training_data_levels = {}
 
         for c in self.columns:
-            self.non_rare_levels[c] = [
-                val for val in results_dict[c].unique().to_list() if not _is_null(val)
-            ]
+            group = X.group_by(c).agg(nw.col(weights_column).sum())
 
-            self.non_rare_levels[c] = sorted(self.non_rare_levels[c], key=str)
+            non_rare_levels_expr = (
+                nw.when(level_weights_expr >= self.cut_off_percent)
+                .then(nw.col(c))
+                .otherwise(None)
+                .alias(f"{c}_non_rare_levels")
+            )
+
+            results = group.select(non_rare_levels_expr, nw.col(c))
+
+            results = _collect_frame(results).to_dict(as_series=True)
+
+            self.non_rare_levels[c] = sorted(
+                val
+                for val in results[f"{c}_non_rare_levels"].unique().to_list()
+                if not _is_null(val)
+            )
+
+            present_levels[c] = sorted(value for value in results[c].unique().to_list())
 
             if self.record_rare_levels:
                 self.rare_levels_record_[c] = sorted(
@@ -640,9 +575,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                     key=str,
                 )
 
-        if not self.unseen_levels_to_rare:
-            self.training_data_levels = {}
-            for c in self.columns:
+            if not self.unseen_levels_to_rare:
                 self.training_data_levels[c] = present_levels[c]
 
         return self
@@ -688,14 +621,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         │ rare_level ┆ z   │
         └────────────┴─────┘
 
-        >>> # erroring example (with nulls)
-        >>> test_df = pl.DataFrame({"a": ["x", "x", None], "b": ["w", "z", "z"]})
-
-        >>> transformer.transform(test_df)
-        Traceback (most recent call last):
-        ...
-        ValueError: ...
-
         ```
 
         """
@@ -708,50 +633,45 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.check_is_fitted(["non_rare_levels"])
 
-        # copy non_rare_levels, as unseen values may be added, and transform should not
-        # change the transformer state
-        non_rare_levels = copy.deepcopy(self.non_rare_levels)
+        non_rare_condition_expressions = {}
 
-        present_levels = {c: list(set(X.get_column(c).unique())) for c in self.columns}
+        transform_expressions = {}
 
-        self._check_for_nulls(present_levels)
-
-        # sort once nulls removed
-        present_levels = {c: sorted(present_levels[c]) for c in self.columns}
-
-        if not self.unseen_levels_to_rare:
-            for c in self.columns:
-                unseen_vals = set(present_levels[c]).difference(
-                    set(self.training_data_levels[c]),
+        for col in self.columns:
+            non_rare_condition_expressions[col] = (
+                nw.col(col).is_in(self.non_rare_levels[col])
+                if self.unseen_levels_to_rare
+                # if unseen levels are mapped to rare,
+                # the condition becomes either in
+                # non rare levels OR not in training data
+                # levels (unseen)
+                else (
+                    nw.col(col).is_in(self.non_rare_levels[col])
+                    | ~nw.col(col).is_in(self.training_data_levels[col])
                 )
-                non_rare_levels[c].extend(unseen_vals)
-
-        transform_expressions = {
-            c: nw.col(c).cast(
-                nw.String,
             )
-            if schema[c] in {nw.Categorical, nw.Enum}
-            else nw.col(c)
-            for c in self.columns
-        }
 
-        transform_expressions = {
-            c: (
-                nw.when(transform_expressions[c].is_in(non_rare_levels[c]))
-                .then(transform_expressions[c])
+            transform_expressions[col] = (
+                nw.col(col).cast(
+                    nw.String,
+                )
+                if schema[col] in {nw.Categorical, nw.Enum}
+                else nw.col(col)
+            )
+
+            transform_expressions[col] = (
+                nw.when(non_rare_condition_expressions[col] | nw.col(col).is_null())
+                .then(transform_expressions[col])
                 .otherwise(nw.lit(self.rare_level_name))
             )
-            for c in self.columns
-        }
 
-        transform_expressions = {
-            c: transform_expressions[c].cast(
-                nw.Enum(self.non_rare_levels[c] + [self.rare_level_name]),
+            transform_expressions[col] = (
+                transform_expressions[col].cast(
+                    nw.Enum(self.non_rare_levels[col] + [self.rare_level_name]),
+                )
+                if (schema[col] in {nw.Categorical, nw.Enum})
+                else transform_expressions[col]
             )
-            if (schema[c] in {nw.Categorical, nw.Enum})
-            else transform_expressions[c]
-            for c in self.columns
-        }
 
         X = X.with_columns(**transform_expressions)
 
@@ -1307,14 +1227,12 @@ class MeanResponseTransformer(
         self.mappings = {}
         self.unseen_levels_encoding_dict = {}
 
-        backend = nw.get_native_namespace(X)
-
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=backend.__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)
@@ -1524,19 +1442,19 @@ class MeanResponseTransformer(
                 # else, median
                 else:
                     for c in self.encoded_columns:
-                        X_temp = X_y.with_columns(**encoded_column_exprs).sort(c)
-
                         null_filter_expr = ~nw.col(
                             self.encoded_columns_to_columns[c]
                         ).is_null()
 
+                        X_temp = (
+                            X_y.with_columns(**encoded_column_exprs)
+                            .filter(null_filter_expr)
+                            .sort(c)
+                        )
+
                         median_expr = _get_median_calculation_expression(
-                            initial_weights_expr=nw.col(weights_column).filter(
-                                null_filter_expr
-                            ),
-                            initial_column_expr=mapping_expressions[c].filter(
-                                null_filter_expr
-                            ),
+                            values_column=self.encoded_columns_to_response_columns[c],
+                            weights_column=weights_column,
                         )
 
                         self.unseen_levels_encoding_dict[c] = X_temp.select(
@@ -2283,8 +2201,8 @@ class OrdinalEncoderTransformer(
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
                 X,
-                backend=nw.get_native_namespace(X).__name__,
                 return_native=False,
+                verbose=self.verbose,
             )
 
         WeightColumnMixin.check_weights_column(self, X, weights_column)

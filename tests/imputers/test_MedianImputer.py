@@ -35,14 +35,15 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
     def setup_class(cls):
         cls.transformer_name = "MedianImputer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values(self, library):
+    def test_learnt_values(self, library, lazy):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
         transformer = MedianImputer(columns=["a", "b", "c"])
 
-        transformer.fit(df)
+        transformer.fit(u._convert_to_lazy(df, lazy))
 
         assert transformer.impute_values_ == {
             "a": df["a"].median(),
@@ -50,27 +51,29 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             "c": df["c"].median(),
         }, "impute_values_ attribute"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weighted(self, library):
+    def test_learnt_values_weighted(self, library, lazy):
         """Test that the impute values learnt during fit are expected - when using weights."""
         df = d.create_df_9_with_null_weight_row(library=library)
 
         transformer = MedianImputer(columns=["a"], weights_column="c")
 
-        transformer.fit(df)
+        transformer.fit(u._convert_to_lazy(df, lazy))
 
         assert transformer.impute_values_ == {
             "a": np.int64(4),
         }, "impute_values_ attribute"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_fit_not_changing_data(self, library):
+    def test_fit_not_changing_data(self, library, lazy):
         """Test fit does not change X."""
         df = d.create_df_1(library=library)
 
         transformer = MedianImputer(columns="a")
 
-        transformer.fit(df)
+        transformer.fit(u._convert_to_lazy(df, lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
