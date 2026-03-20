@@ -13,7 +13,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import GenericImputerTransformTests
 from tests.utils import _handle_from_json
@@ -53,7 +52,6 @@ class TestFit(GenericFitTests):
 class TestTransform(
     GenericImputerTransformTests,
     GenericTransformTests,
-    ReturnNativeTests,
 ):
     """Tests for transformer.transform."""
 

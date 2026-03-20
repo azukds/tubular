@@ -7,7 +7,6 @@ from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -28,7 +27,7 @@ class TestInit(ColumnStrListInitTests):
         cls.transformer_name = "NullIndicator"
 
 
-class TestTransform(GenericTransformTests, ReturnNativeTests):
+class TestTransform(GenericTransformTests):
     """Tests for NullIndicator.transform()."""
 
     @classmethod

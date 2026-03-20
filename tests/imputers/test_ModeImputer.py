@@ -9,7 +9,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
@@ -256,7 +255,6 @@ class TestTransform(
     GenericTransformTests,
     GenericImputerTransformTestsWeight,
     GenericImputerTransformTests,
-    ReturnNativeTests,
 ):
     """Tests for transformer.transform."""
 

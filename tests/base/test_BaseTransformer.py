@@ -6,11 +6,9 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
 )
 from tests.utils import (
     _check_if_skip_test,
-    _collect_frame,
     _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
@@ -33,7 +31,7 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "BaseTransformer"
 
 
-class TestTransform(GenericTransformTests, ReturnNativeTests):
+class TestTransform(GenericTransformTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseTransformer"
@@ -41,10 +39,6 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
         "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize(
-        "return_native",
         [True, False],
     )
     @pytest.mark.parametrize(
@@ -57,14 +51,12 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         minimal_dataframe_lookup,
         uninitialized_transformers,
         minimal_attribute_dict,
-        return_native,
         lazy,
         from_json,
     ):
         """Test that X is returned from transform."""
         df = minimal_dataframe_lookup[self.transformer_name]
         args = minimal_attribute_dict[self.transformer_name]
-        args["return_native"] = return_native
         x = uninitialized_transformers[self.transformer_name](**args)
 
         if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
@@ -80,12 +72,9 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 
         df_transformed = x.transform(X=_convert_to_lazy(df, lazy))
 
-        if not x.return_native:
-            df_transformed = nw.to_native(df_transformed)
-
         assert_frame_equal_dispatch(
             expected,
-            _collect_frame(df_transformed, lazy),
+            df_transformed.collect().to_native(),
         )
 
 

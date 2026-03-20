@@ -1072,88 +1072,11 @@ class GenericTransformTests:
             _convert_to_lazy(df, lazy),
         )
 
-        output = nw.from_native(output)
+        output = nw.from_native(output).collect().to_native()
 
-        assert _collect_frame(output, lazy).shape[0] == 0, (
+        assert output.shape[0] == 0, (
             "expected empty frame transform to return empty frame"
         )
-
-
-class ReturnNativeTests:
-    """
-    Class to test that transform method can return either narwhals or native types.
-    Writing this as mixin test until all transformers have been converted
-    """
-
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=True,
-    )
-    def test_return_native_true(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        minimal_dataframe_lookup,
-    ):
-        """test native dataframe returned when return_native=True"""
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-        args = minimal_attribute_dict[self.transformer_name]
-        args["return_native"] = True
-        x = uninitialized_transformers[self.transformer_name](**args)
-
-        x.fit(df, df["a"])
-
-        native_namespace = nw.get_native_namespace(df).__name__
-
-        output = x.transform(df)
-
-        if native_namespace == "pandas":
-            assert isinstance(
-                output,
-                pd.DataFrame,
-            ), "transformer should return native type when return_native=True"
-
-        if native_namespace == "polars":
-            assert isinstance(
-                output,
-                pl.DataFrame,
-            ), "transformer should return native type when return_native=True"
-
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=True,
-    )
-    def test_return_native_false(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        minimal_dataframe_lookup,
-    ):
-        """test narwhals dataframe returned when return_native=False"""
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-        args = minimal_attribute_dict[self.transformer_name]
-        args["return_native"] = False
-        x = uninitialized_transformers[self.transformer_name](**args)
-
-        x.fit(df, df["a"])
-
-        output = x.transform(df)
-
-        assert isinstance(
-            output,
-            nw.DataFrame,
-        ), "transformer should return narwhals type when return_native=True"
-
-        # double check that both settings are equivalent
-        x.return_native = True
-
-        output2 = x.transform(df)
-
-        assert_frame_equal_dispatch(output2, output.to_native())
 
 
 class DropOriginalTransformMixinTests:
@@ -1257,10 +1180,6 @@ class ColumnsCheckTests:
     """
 
     @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize(
         "minimal_dataframe_lookup",
         ["pandas", "polars"],
         indirect=True,
@@ -1269,7 +1188,6 @@ class ColumnsCheckTests:
         self,
         initialized_transformers,
         minimal_dataframe_lookup,
-        lazy,
     ):
         """Test an error is raised if self.columns contains a value not in X."""
         df = nw.from_native(minimal_dataframe_lookup[self.transformer_name])
@@ -1284,7 +1202,7 @@ class ColumnsCheckTests:
 
         msg = f"variables {set(missing_col)} not in X"
         with pytest.raises(ValueError, match=msg):
-            x.columns_check(X=_convert_to_lazy(df, lazy))
+            x.columns_check(X=df.lazy())
 
 
 class CombineXYTests:
@@ -1331,8 +1249,8 @@ class CombineXYTests:
         x = initialized_transformers[self.transformer_name]
 
         result = x._combine_X_y(
-            X=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
-            y=pd.Series([2, 4], index=[1, 2]),
+            X=nw.from_native(pd.DataFrame({"a": [1, 2]}, index=[1, 2])).lazy(),
+            y=nw.from_native(pd.Series([2, 4], index=[1, 2]), allow_series=True),
         )
 
         expected_output = pd.DataFrame(
@@ -1340,7 +1258,7 @@ class CombineXYTests:
             index=[1, 2],
         )
 
-        pd.testing.assert_frame_equal(result, expected_output)
+        pd.testing.assert_frame_equal(result.collect().to_native(), expected_output)
 
     @pytest.mark.parametrize(
         "minimal_dataframe_lookup",

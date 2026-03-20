@@ -9,7 +9,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import (
     GenericImputerTransformTests,
@@ -82,7 +81,6 @@ class TestFit(GenericFitTests):
 class TestTransform(
     GenericTransformTests,
     GenericImputerTransformTests,
-    ReturnNativeTests,
 ):
     """Tests for transformer.transform."""
 

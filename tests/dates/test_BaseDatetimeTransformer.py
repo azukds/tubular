@@ -12,7 +12,6 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
 )
 from tests.utils import _check_if_skip_test, _convert_to_lazy
 from tubular.dates import TIME_UNITS
@@ -110,7 +109,6 @@ class TestFit(GenericFitTests):
 class TestTransform(
     GenericTransformTests,
     DatetimeMixinTransformTests,
-    ReturnNativeTests,
 ):
     """Tests for BaseDatetimeTransformer.transform."""
 

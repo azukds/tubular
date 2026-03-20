@@ -13,7 +13,6 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    ReturnNativeTests,
 )
 from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
 from tests.utils import (
@@ -290,7 +289,6 @@ class TestFit(GenericFitTests):
 class TestTransform(
     GenericTransformTests,
     GenericDatesMixinTransformTests,
-    ReturnNativeTests,
 ):
     """Tests for BaseGenericDateTransformer.transform."""
 

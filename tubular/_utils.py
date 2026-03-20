@@ -36,23 +36,23 @@ def _collect_frame(X: DataFrame) -> NarwhalsFrame:
 
 
 @beartype
-def _convert_dataframe_to_narwhals(X: DataFrame) -> NarwhalsFrame:
+def _convert_dataframe_to_narwhals(X: DataFrame) -> nw.LazyFrame:
     """Narwhalifies dataframe, if dataframe is not already narwhals.
 
     Parameters
     ----------
-    X: DataFrame
+    X:
         DataFrame to narwhalify if pd/pl type
 
     Returns
     -------
-    NarwhalsFrame: narwhalified dataframe
+    narwhals lazyframe
 
     """
     if not isinstance(X, (nw.DataFrame, nw.LazyFrame)):
         X = nw.from_native(X)
 
-    return X
+    return X.lazy()
 
 
 @beartype

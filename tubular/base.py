@@ -18,7 +18,6 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _get_version,
-    _return_narwhals_or_native_dataframe,
     block_from_json,
 )
 from tubular.mixins import DropOriginalMixin
@@ -327,16 +326,16 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : DataFrame
+        X:
             Data to fit the transformer on.
 
-        y : None or Series, default = None
+        y:
             Optional argument only required for the transformer to work with sklearn
             pipelines.
 
         Returns
         -------
-            BaseTransformer: returns self
+        self
 
         Examples
         --------
@@ -365,8 +364,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     @block_from_json
     @beartype
     def _combine_X_y(
-        self, X: DataFrame, y: Series, return_native_override: bool = True
-    ) -> DataFrame:
+        self,
+        X: nw.LazyFrame,
+        y: nw.Series,
+    ) -> nw.LazyFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
         The new column response column will be called `_temporary_response`.
@@ -376,19 +377,19 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : DataFrame
-            Data containing explanatory variables.
+        X:
+          Data containing explanatory variables.
 
-        y : Series
-            Response variable.
+        y:
+          Response variable.
 
-        return_native_override: Optional[bool]
+        return_native_override:
             option to override return_native attr in transformer, useful when calling parent
             methods
 
         Returns
         -------
-            DataFrame: DataFrame with added column containing y
+        DataFrame with added column containing y
 
         Examples
         --------
@@ -398,23 +399,27 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         >>> transformer = BaseTransformer(
         ...     columns="a",
         ... )
-        >>> X = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
-        >>> y = pl.Series(name="a", values=[1, 2])
-        >>> transformer._combine_X_y(X, y)
-        shape: (2, 3)
-        ┌─────┬─────┬─────────────────────┐
-        │ a   ┆ b   ┆ _temporary_response │
-        │ --- ┆ --- ┆ ---                 │
-        │ i64 ┆ i64 ┆ i64                 │
-        ╞═════╪═════╪═════════════════════╡
-        │ 1   ┆ 3   ┆ 1                   │
-        │ 2   ┆ 4   ┆ 2                   │
-        └─────┴─────┴─────────────────────┘
+        >>> X = nw.from_native(pl.DataFrame({"a": [1, 2], "b": [3, 4]})).lazy()
+        >>> y = nw.from_native(pl.Series(name="a", values=[1, 2]), allow_series=True)
+        >>> transformer._combine_X_y(X, y).collect()
+        ┌───────────────────────────────────┐
+        |        Narwhals DataFrame         |
+        |-----------------------------------|
+        |shape: (2, 3)                      |
+        |┌─────┬─────┬─────────────────────┐|
+        |│ a   ┆ b   ┆ _temporary_response │|
+        |│ --- ┆ --- ┆ ---                 │|
+        |│ i64 ┆ i64 ┆ i64                 │|
+        |╞═════╪═════╪═════════════════════╡|
+        |│ 1   ┆ 3   ┆ 1                   │|
+        |│ 2   ┆ 4   ┆ 2                   │|
+        |└─────┴─────┴─────────────────────┘|
+        └───────────────────────────────────┘
 
         # example error from mismatched X/y
-        >>> X = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
-        >>> y = pl.Series(name="a", values=[1])
-        >>> transformer._combine_X_y(X, y)
+        >>> X = nw.from_native(pl.DataFrame({"a": [1, 2], "b": [3, 4]})).lazy()
+        >>> y = nw.from_native(pl.Series(name="a", values=[1]), allow_series=True)
+        >>> transformer._combine_X_y(X, y).collect()
         Traceback (most recent call last):
         ...
         narwhals.exceptions.InvalidOperationError: Series _temporary_response, length 1 doesn't match the DataFrame height of 2
@@ -423,15 +428,11 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         ```
 
         """  # noqa: E501
-        X = _convert_dataframe_to_narwhals(X)
-        y = _convert_series_to_narwhals(y)
-
-        return_native = self._process_return_native(return_native_override)
-
         X = X.with_columns(_temporary_response=y)
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return X
 
+    # TODO - delete
     @beartype
     def _process_return_native(self, return_native_override: bool | None) -> bool:
         """Determine whether to override return_native attr.
@@ -467,8 +468,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: bool | None = None,
-    ) -> DataFrame:
+    ) -> nw.LazyFrame:
         """Check data before child transform.
 
         Transform calls the columns_check method which will check columns in columns
@@ -476,16 +476,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : DataFrame
+        X:
             Data to transform with the transformer.
-
-        return_native_override: Optional[bool]
-            option to override return_native attr in transformer,
-            useful when calling parent methods
 
         Returns
         -------
-        X : DataFrame
+        X:
             Input X, copied if specified by user.
 
         Examples
@@ -498,34 +494,32 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         >>> df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
-        >>> transformer.transform(df)
-        shape: (2, 2)
-        ┌─────┬─────┐
-        │ a   ┆ b   │
-        │ --- ┆ --- │
-        │ i64 ┆ i64 │
-        ╞═════╪═════╡
-        │ 1   ┆ 3   │
-        │ 2   ┆ 4   │
-        └─────┴─────┘
+        >>> transformer.transform(df).collect()
+        ┌──────────────────┐
+        |Narwhals DataFrame|
+        |------------------|
+        |  shape: (2, 2)   |
+        |  ┌─────┬─────┐   |
+        |  │ a   ┆ b   │   |
+        |  │ --- ┆ --- │   |
+        |  │ i64 ┆ i64 │   |
+        |  ╞═════╪═════╡   |
+        |  │ 1   ┆ 3   │   |
+        |  │ 2   ┆ 4   │   |
+        |  └─────┴─────┘   |
+        └──────────────────┘
 
         ```
 
         """
-        return_native = self._process_return_native(return_native_override)
-
         X = _convert_dataframe_to_narwhals(X)
-
-        if self.copy and not isinstance(X, nw.LazyFrame):
-            # to prevent overwriting original dataframe
-            X = X.clone()
 
         self.columns_check(X)
 
         if self.verbose:
             print("BaseTransformer.transform() called")
 
-        return _return_narwhals_or_native_dataframe(X, return_native)
+        return X
 
     def check_is_fitted(self, attribute: str) -> None:
         """Check if particular attributes are on the object.
@@ -555,12 +549,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         check_is_fitted(self, attribute)
 
     @beartype
-    def columns_check(self, X: DataFrame) -> None:
+    def columns_check(self, X: nw.LazyFrame) -> None:
         """Check that the columns attribute is set and all values are present in X.
 
         Parameters
         ----------
-        X : DataFrame
+        X : nw.LazyFrame
             Data to check columns are in.
 
         Raises
@@ -575,15 +569,13 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         ...     columns="a",
         ... )
 
-        >>> df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+        >>> df = nw.from_native(pl.DataFrame({"a": [1, 2], "b": [3, 4]})).lazy()
 
         >>> transformer.columns_check(df)
 
         ```
 
         """
-        X = _convert_dataframe_to_narwhals(X)
-
         missing_columns = set(self.columns).difference(X.columns)
         if len(missing_columns) != 0:
             msg = f"{self.classname()}: variables {missing_columns} not in X"
