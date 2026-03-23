@@ -9,6 +9,9 @@ from tests.capping.test_BaseCappingTransformer import (
     GenericCappingTransformTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -31,6 +34,7 @@ class TestFit(GenericCappingFitTests):
     def setup_class(cls):
         cls.transformer_name = "OutOfRangeNullTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("values", "sample_weight", "quantiles"),
@@ -51,6 +55,7 @@ class TestFit(GenericCappingFitTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        lazy,
     ):
         """Test that weighted_quantile gives the expected outputs."""
 
@@ -71,7 +76,10 @@ class TestFit(GenericCappingFitTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        transformer.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy))
 
         lower_replacement = None if quantiles[0] else False
         upper_replacement = None if quantiles[1] else False
@@ -99,6 +107,7 @@ class TestTransform(GenericCappingTransformTests):
 
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_min_and_max_combinations(
@@ -107,6 +116,7 @@ class TestTransform(GenericCappingTransformTests):
         uninitialized_transformers,
         library,
         from_json,
+        lazy,
     ):
         """Test that capping is applied correctly in transform."""
 
@@ -118,21 +128,26 @@ class TestTransform(GenericCappingTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json=from_json)
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy), expected)
 
         # Check outcomes for single rows
         df = nw.from_native(df)
         expected = nw.from_native(expected)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 

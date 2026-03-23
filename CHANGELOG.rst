@@ -34,8 +34,9 @@ Changed
 ^^^^^^^
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
-- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
-- feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>`_
+- feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>`_
+- feat: updated CappingTransformers to work with lazyframes `#704 <https://github.com/azukds/tubular/issues/704>`_
 
 3.0.0 (19/03/2026)
 ------------------

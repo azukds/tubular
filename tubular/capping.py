@@ -13,6 +13,7 @@ from beartype.vale import Is
 
 from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
+    _collect_frame,
     _convert_dataframe_to_narwhals,
     _is_null,
     _return_narwhals_or_native_dataframe,
@@ -80,7 +81,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = True
 
@@ -437,8 +438,12 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         values_expr = nw.col(values_column)
 
-        weighted_quantiles_expr = _weighted_quantile_expr(weights_column=weights_column, values_column=values_column)
-        results_dict = X_temp.select(weighted_quantiles_expr, values_expr).to_dict()
+        weighted_quantiles_expr = _weighted_quantile_expr(
+            weights_column=weights_column, values_column=values_column
+        )
+        results_dict = _collect_frame(
+            X_temp.select(weighted_quantiles_expr, values_expr)
+        ).to_dict()
 
         # TODO - once narwhals implements interpolate, replace this with nw
         # syntax
@@ -516,6 +521,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
+        schema = X.schema
+
         return_native = self._process_return_native(return_native_override)
 
         X = super().transform(X, return_native_override=False)
@@ -576,7 +583,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             # from float to int
             # TODO - look into better ways to achieve this
             exprs[col] = col_expr.cast(
-                X[col].dtype,
+                schema[col],
             ).alias(col)
 
         X = X.with_columns(**exprs)
@@ -698,7 +705,7 @@ class CappingTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = True
 
@@ -876,7 +883,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = True
 
@@ -1012,23 +1019,6 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         super().fit(X=X, y=y)
 
-        original_weights_column = self.weights_column
-        weights_column = original_weights_column
-        if self.weights_column is None:
-            X, weights_column = WeightColumnMixin._create_unit_weights_column(
-                X,
-                return_native=False,
-                verbose=self.verbose,
-            )
-        WeightColumnMixin.check_weights_column(self, X, weights_column)
-        valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
-            weights_column, self.verbose
-        )
-        X = X.filter(valid_weights_filter_expr)
-
-        # need to overwrite attr for fit method to work
-        self.weights_column = weights_column
-
         if self.quantiles:
             BaseCappingTransformer.fit(self, X=X, y=y)
             self._replacement_values = OutOfRangeNullTransformer.set_replacement_values(
@@ -1040,8 +1030,5 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 f"{self.classname()}: quantiles not set so no fitting done in OutOfRangeNullTransformer",
                 stacklevel=2,
             )
-
-        # restore attr
-        self.weights_column = original_weights_column
 
         return self
