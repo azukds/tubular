@@ -18,7 +18,7 @@ from tubular.base import BaseTransformer, register
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
-    NonEmptyListOfStrs,
+    ListOfStrs,
 )
 
 
@@ -68,7 +68,7 @@ class SetValueTransformer(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: NonEmptyListOfStrs | str,
+        columns: ListOfStrs | str,
         value: int | float | str | bool | None,
         **kwargs: bool,
     ) -> None:
@@ -233,7 +233,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: NonEmptyListOfStrs | str,
+        columns: ListOfStrs | str,
         new_column_names: dict[str, str],
         drop_original: bool = True,
         **kwargs: bool,
@@ -465,7 +465,7 @@ class ColumnDtypeSetter(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: str | NonEmptyListOfStrs,
+        columns: str | ListOfStrs,
         dtype: SimpleCastDtypesStr,
         **kwargs: bool,
     ) -> None:
@@ -473,7 +473,7 @@ class ColumnDtypeSetter(BaseTransformer):
 
         Parameters
         ----------
-        columns : Union[str, NonEmptyListOfStrs]
+        columns : Union[str, ListOfStrs]
             Columns to set dtype. Must be set or transform will not run.
 
         dtype : SimpleCastDtypesStr

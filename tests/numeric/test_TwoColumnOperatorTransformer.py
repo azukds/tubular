@@ -3,6 +3,7 @@ import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
+    EmptyColumnsFailTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
     TwoColumnListInitTests,
@@ -16,6 +17,7 @@ from tubular.numeric import TwoColumnOperatorTransformer
 class TestInit(
     NewColumnNameInitMixintests,
     TwoColumnListInitTests,
+    EmptyColumnsFailTests,
 ):
     """Generic tests for transformer.init()."""
 

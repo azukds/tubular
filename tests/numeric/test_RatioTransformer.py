@@ -5,6 +5,7 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 from tests import utils as u
+from tests.base_tests import EmptyColumnsFailTests
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -20,7 +21,7 @@ def create_ratio_test_df(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
-class TestRatioTransformerInit(BaseNumericTransformerInitTests):
+class TestRatioTransformerInit(BaseNumericTransformerInitTests, EmptyColumnsFailTests):
     """Tests for init method in RatioTransformer."""
 
     @classmethod

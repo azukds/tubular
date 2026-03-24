@@ -10,6 +10,7 @@ import tests.test_data as d
 from tests.base_tests import (
     DropOriginalInitMixinTests,
     DropOriginalTransformMixinTests,
+    EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
@@ -26,6 +27,7 @@ class TestInit(
     NewColumnNameInitMixintests,
     DropOriginalInitMixinTests,
     TwoColumnListInitTests,
+    EmptyColumnsFailTests,
 ):
     """Tests for DateDiffLeapYearTransformer.init()."""
 

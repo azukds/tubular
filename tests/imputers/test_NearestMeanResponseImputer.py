@@ -5,8 +5,10 @@ import pytest
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
+    OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import (
@@ -132,3 +134,17 @@ class TestTransform(
         output = transformer.transform(df_transform)
 
         assert_frame_equal_dispatch(output, expected_output)
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
+    """
+    Class to run tests for NearestMeanResponseImputer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "NearestMeanResponseImputer"

@@ -4,6 +4,7 @@ import test_aide as ta
 import tests.test_data as d
 from tests.base_tests import (
     DropOriginalInitMixinTests,
+    EmptyColumnsFailTests,
     GenericFitTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -17,6 +18,7 @@ class TestInit(
     DropOriginalInitMixinTests,
     NewColumnNameInitMixintests,
     TwoColumnListInitTests,
+    EmptyColumnsFailTests,
 ):
     """Generic tests for transformer.init()."""
 
