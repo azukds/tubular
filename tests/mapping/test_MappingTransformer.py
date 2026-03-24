@@ -2,7 +2,7 @@ import narwhals as nw
 import pytest
 
 import tests.test_data as d
-from tests.base_tests import ReturnNativeTests
+from tests.base_tests import EmptyMappingsFitTransformPassTests, ReturnNativeTests
 from tests.mapping.test_BaseMappingTransformer import (
     BaseMappingTransformerInitTests,
     BaseMappingTransformerTransformTests,
@@ -338,7 +338,9 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyMappingsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

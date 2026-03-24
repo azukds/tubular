@@ -9,6 +9,7 @@ import tests.test_data as d
 from tests.base_tests import (
     DropOriginalInitMixinTests,
     DropOriginalTransformMixinTests,
+    EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
@@ -33,6 +34,7 @@ class TestInit(
     TwoColumnListInitTests,
     DropOriginalInitMixinTests,
     NewColumnNameInitMixintests,
+    EmptyColumnsFailTests,
 ):
     """Tests for DateDifferenceTransformer.init()."""
 

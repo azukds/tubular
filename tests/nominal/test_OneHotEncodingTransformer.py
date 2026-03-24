@@ -9,8 +9,10 @@ from tests.base_tests import (
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
     DropOriginalTransformMixinTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
+    OtherBaseBehaviourTests,
     SeparatorInitMixintests,
 )
 from tests.utils import (
@@ -524,3 +526,17 @@ class TestTransform(
         assert_frame_equal_dispatch(
             _collect_frame(df_transformed, lazy=lazy), expected_df.to_native()
         )
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
+    """
+    Class to run tests for BaseTransformerBehaviour outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "OneHotEncodingTransformer"

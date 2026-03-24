@@ -3,7 +3,12 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 import tests.utils as u
-from tests.base_tests import DropOriginalInitMixinTests, DropOriginalTransformMixinTests
+from tests.base_tests import (
+    DropOriginalInitMixinTests,
+    DropOriginalTransformMixinTests,
+    EmptyColumnsFailTests,
+    OtherBaseBehaviourTests,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerFitTests,
     BaseNumericTransformerInitTests,
@@ -15,6 +20,7 @@ from tubular.numeric import OneDKmeansTransformer
 class TestInit(
     BaseNumericTransformerInitTests,
     DropOriginalInitMixinTests,
+    EmptyColumnsFailTests,
 ):
     """Tests for OneDKmeansTransformer.init()"""
 
@@ -318,3 +324,15 @@ class TestTransform(
         df_transformed = x.transform(df)
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
+
+
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for OneDKmeansTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "OneDKmeansTransformer"

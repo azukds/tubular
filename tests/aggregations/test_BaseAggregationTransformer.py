@@ -5,6 +5,7 @@ from tests.base_tests import (
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
     GenericTransformTests,
+    OtherBaseBehaviourTests,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -99,3 +100,15 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
             match=msg,
         ):
             transformer.transform(_convert_to_lazy(test_df, lazy))
+
+
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for BaseAggregationTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "BaseAggregationTransformer"

@@ -14,6 +14,7 @@ from tests.test_data import (
     create_numeric_df_1,
     create_numeric_df_2,
     create_object_df,
+    create_when_then_otherwise_test_df,
 )
 from tubular import base
 from tubular.comparison import ConditionEnum
@@ -316,9 +317,9 @@ def minimal_attribute_dict():
             "return_dtype": "Float32",  # Default dtype for the resulting column
         },
         "WhenThenOtherwiseTransformer": {
-            "columns": ["a", "b"],
-            "when_column": "condition_col",
-            "then_column": "update_col",
+            "columns": ["a"],
+            "when_column": "b",
+            "then_column": "c",
         },
         "CompareTwoColumnsTransformer": {
             "columns": ["a", "b"],
@@ -351,6 +352,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     agg_df = create_aggregate_over_rows_test_df(
         library=library,
     )
+    when_then_df = create_when_then_otherwise_test_df(library=library)
 
     # generally most transformers will work with num_df
     min_df_dict = {x[0]: num_df for x in get_all_classes()}
@@ -390,6 +392,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
 
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
+    min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
 
     return min_df_dict
 

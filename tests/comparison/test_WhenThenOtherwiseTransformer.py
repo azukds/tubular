@@ -5,7 +5,12 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 from tests import utils as u
-from tests.base_tests import ColumnStrListInitTests
+from tests.base_tests import (
+    ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
+    GenericTransformTests,
+    OtherBaseBehaviourTests,
+)
 
 
 def create_when_then_test_df(library="pandas"):
@@ -98,7 +103,7 @@ class TestWhenThenOtherwiseTransformerInit(ColumnStrListInitTests):
             uninitialized_transformers[self.transformer_name](**args)
 
 
-class TestWhenThenOtherwiseTransformerTransform:
+class TestWhenThenOtherwiseTransformerTransform(GenericTransformTests):
     """Tests for transform method in WhenThenOtherwiseTransformer."""
 
     @classmethod
@@ -293,3 +298,17 @@ class TestWhenThenOtherwiseTransformerTransform:
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
+    """
+    Class to run tests for WhenThenOtherwiseTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "WhenThenOtherwiseTransformer"
