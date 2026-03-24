@@ -168,7 +168,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         self.capping_values = capping_values
         self.weights_column = weights_column
 
-        if capping_values:
+        if capping_values is not None:
             self._replacement_values = copy.deepcopy(self.capping_values)
 
     @beartype
@@ -327,7 +327,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
                 self.quantile_capping_values[col] = results
 
-                self._replacement_values = copy.deepcopy(self.quantile_capping_values)
+            self._replacement_values = copy.deepcopy(self.quantile_capping_values)
 
             self._check_for_failed_fit()
 
@@ -437,7 +437,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         values_expr = nw.col(values_column)
 
-        weighted_quantiles_expr = _weighted_quantile_expr(weights_column=weights_column, values_column=values_column)
+        weighted_quantiles_expr = _weighted_quantile_expr(
+            weights_column=weights_column, values_column=values_column
+        )
         results_dict = X_temp.select(weighted_quantiles_expr, values_expr).to_dict()
 
         # TODO - once narwhals implements interpolate, replace this with nw
@@ -480,10 +482,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         -------
         X : DataFrame
             Transformed input X with min and max capping applied to the specified columns.
-
-        Raises
-        ------
-        ValueError: if method is quantile capping and fit has not been called
 
         Examples
         --------
@@ -534,10 +532,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
             dict_attrs = [*dict_attrs, "capping_values"]
 
-        for attr_name in dict_attrs:
-            if getattr(self, attr_name) == {}:
-                msg = f"{self.classname()}: {attr_name} attribute is an empty dict - perhaps the fit method has not been run yet"
-                raise ValueError(msg)
         exprs = {}
         for col in self.columns:
             cap_value_min = capping_values_for_transform[col][0]

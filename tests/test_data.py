@@ -669,3 +669,15 @@ def expected_date_diff_df_2(library="pandas"):
     }
 
     return u.dataframe_init_dispatch(df_dict, library=library)
+
+
+def create_when_then_otherwise_test_df(library="pandas"):
+    "create test df for WhenThenOtherwiseTransformer."
+
+    df_dict = {
+        "a": [1, 2, 3],
+        "b": [True, False, True],
+        "c": [4, 5, 6],
+    }
+
+    return u.dataframe_init_dispatch(df_dict, library=library)

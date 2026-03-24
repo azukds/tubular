@@ -7,6 +7,7 @@ from test_BaseNominalTransformer import GenericNominalTransformTests
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     OtherBaseBehaviourTests,
 )
@@ -153,7 +154,9 @@ class TestTransform(GenericNominalTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

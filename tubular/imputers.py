@@ -25,7 +25,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.mixins import WeightColumnMixin
-from tubular.types import DataFrame, NonEmptyListOfStrs, Series
+from tubular.types import DataFrame, ListOfStrs, Series
 
 pl.enable_string_cache()
 
@@ -579,7 +579,7 @@ class ArbitraryImputer(BaseImputer):
             for col in self.columns
         }
 
-        X = X.with_columns(**transform_expressions)
+        X = X.with_columns(**transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -1179,7 +1179,7 @@ class NullIndicator(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: NonEmptyListOfStrs | str,
+        columns: ListOfStrs | str,
         **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
