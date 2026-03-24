@@ -9,6 +9,7 @@ import tests.test_data as d
 import tests.utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -550,7 +551,9 @@ class TestTransform(
             transformer.transform(u._convert_to_lazy(df, lazy))
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

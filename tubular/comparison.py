@@ -23,8 +23,8 @@ from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     Is,
+    ListOfStrs,
     ListOfTwoStrs,
-    NonEmptyListOfStrs,
     NumericTypes,
 )
 
@@ -105,7 +105,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: NonEmptyListOfStrs,
+        columns: ListOfStrs,
         when_column: str,
         then_column: str,
         **kwargs: bool | None,
@@ -114,7 +114,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         Parameters
         ----------
-        columns : ListOfMoreThanOneStrings
+        columns : ListOfStrs
             List of columns to be transformed.
 
         when_column : bool
@@ -255,7 +255,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
             for col in self.columns
         }
 
-        X = X.with_columns(**exprs_dict)
+        X = X.with_columns(**exprs_dict) if exprs_dict else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -342,7 +342,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
 
         """
         super().__init__(columns=columns, **kwargs)
-        self.condition = ConditionEnum(condition)
+        self.condition = condition
 
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Serialize the transformer to a JSON-compatible dictionary.
@@ -376,7 +376,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         """
         json_dict = super().to_json()
 
-        json_dict["init"]["condition"] = self.condition.value
+        json_dict["init"]["condition"] = self.condition
 
         return json_dict
 
@@ -444,7 +444,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         expr = (
             nw.when(~null_filter_expr)
             .then(
-                self.ops_map[self.condition](
+                self.ops_map[ConditionEnum(self.condition)](
                     nw.col(self.columns[0]), nw.col(self.columns[1])
                 )
             )
@@ -456,9 +456,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         if backend == "polars":
             expr = expr.cast(nw.Boolean)
 
-        outcome_column_name = (
-            f"{self.columns[0]}{self.condition.value}{self.columns[1]}"
-        )
+        outcome_column_name = f"{self.columns[0]}{self.condition}{self.columns[1]}"
 
         X = X.with_columns(expr.alias(outcome_column_name))
 

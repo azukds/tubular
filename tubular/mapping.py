@@ -115,16 +115,9 @@ class BaseMappingTransformer(BaseTransformer):
         Raises
         ------
         ValueError:
-            if mappings is empty
-
-        ValueError:
             if multiple mappings for null values are provided
 
         """
-        if not len(mappings) > 0:
-            msg = f"{self.classname()}: mappings has no values"
-            raise ValueError(msg)
-
         mappings_from_null = dict.fromkeys(mappings)
         for col, col_mappings in mappings.items():
             null_keys = [key for key in col_mappings if pd.isna(key)]
@@ -387,8 +380,12 @@ class BaseMappingTransformMixin(BaseTransformer):
             for col in mapping_exprs
         }
 
-        X = X.with_columns(
-            **mapping_exprs,
+        X = (
+            X.with_columns(
+                **mapping_exprs,
+            )
+            if mapping_exprs
+            else X
         )
 
         # this last section is needed to ensure pandas bool columns

@@ -35,6 +35,13 @@ Changed
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
 
+3.1.0 (20/03/2026)
+------------------
+
+Changed
+^^^^^^^
+- feat: allow suitable transformers to pass with empty columns `#478 <https://github.com/azukds/tubular/issues/478>_`
+
 3.0.0 (19/03/2026)
 ------------------
 

@@ -3,6 +3,7 @@ import pytest
 
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -165,7 +166,9 @@ class TestTransform(GenericTransformTests):
             transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for RenameColumnsTransformer behaviour outside the three standard methods.
 

@@ -26,7 +26,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.mixins import WeightColumnMixin
-from tubular.types import DataFrame, NonEmptyListOfStrs, Series
+from tubular.types import DataFrame, ListOfStrs, Series
 
 pl.enable_string_cache()
 
@@ -173,10 +173,9 @@ class BaseImputer(BaseTransformer):
         ValueError: if impute_values_ have come out as None
 
         """
-        for col in self.columns:
-            failed_columns = []
-            if _is_null(self.impute_values_[col]):
-                failed_columns.append(col)
+        failed_columns = [
+            col for col in self.columns if _is_null(self.impute_values_[col])
+        ]
 
         if failed_columns:
             msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
@@ -581,7 +580,7 @@ class ArbitraryImputer(BaseImputer):
             for col in self.columns
         }
 
-        X = X.with_columns(**transform_expressions)
+        X = X.with_columns(**transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -1205,7 +1204,7 @@ class NullIndicator(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: NonEmptyListOfStrs | str,
+        columns: ListOfStrs | str,
         **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
