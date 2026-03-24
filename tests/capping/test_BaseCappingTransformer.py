@@ -599,71 +599,6 @@ class GenericCappingTransformTests(GenericTransformTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("from_json", [True, False])
-    def test_quantile_capping_values_empty_error(
-        self,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-        library,
-        from_json,
-        lazy,
-    ):
-        """Test that transform will raise an error if quantile_capping_values is empty dict"""
-        df = d.create_df_9(library=library)
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["quantiles"] = {"a": [0.1, 0.2]}
-        args["capping_values"] = None
-
-        transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
-            return
-
-        transformer.fit(_convert_to_lazy(df, lazy))
-        transformer = _handle_from_json(transformer, from_json)
-        transformer.quantile_capping_values = {}
-
-        with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: quantile_capping_values attribute is an empty dict - perhaps the fit method has not been run yet",
-        ):
-            transformer.transform(_convert_to_lazy(df, lazy))
-
-    @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("from_json", [True, False])
-    def test_capping_values_empty_error(
-        self,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-        library,
-        from_json,
-        lazy,
-    ):
-        """Test that transform will raise an error if capping_values is empty dict"""
-        df = d.create_df_9(library=library)
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["capping_values"] = {"a": [0.1, 0.2]}
-
-        transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
-            return
-
-        transformer.fit(_convert_to_lazy(df, lazy))
-        transformer = _handle_from_json(transformer, from_json)
-        transformer.capping_values = {}
-
-        with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: capping_values attribute is an empty dict - perhaps the fit method has not been run yet",
-        ):
-            transformer.transform(_convert_to_lazy(df, lazy))
-
-    @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_replacement_values_not_fit_error(
         self,
         minimal_attribute_dict,
@@ -687,41 +622,6 @@ class GenericCappingTransformTests(GenericTransformTests):
         with pytest.raises(
             ValueError,
             match=f"This {self.transformer_name} instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator",
-        ):
-            transformer.transform(_convert_to_lazy(df, lazy))
-
-    @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize("from_json", [True, False])
-    def test_replacement_values_dict_empty_error(
-        self,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-        library,
-        from_json,
-        lazy,
-    ):
-        """Test that transform will raise an error if _replacement_values is an empty dict."""
-        df = d.create_df_9(library=library)
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["quantiles"] = {"a": [0.1, 0.2]}
-        args["capping_values"] = None
-
-        transformer = uninitialized_transformers[self.transformer_name](**args)
-
-        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
-            return
-
-        # manually set attribute to get past the capping_values attribute is an empty dict exception
-        transformer.quantile_capping_values = {"a": [1, 4]}
-        transformer._replacement_values = {}
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: _replacement_values attribute is an empty dict - perhaps the fit method has not been run yet",
         ):
             transformer.transform(_convert_to_lazy(df, lazy))
 

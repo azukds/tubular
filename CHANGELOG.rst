@@ -27,7 +27,7 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.1.0 (unreleased)
+3.2.0 (unreleased)
 ------------------
 
 Changed
@@ -37,6 +37,13 @@ Changed
 - feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>`_
 - feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>`_
 - feat: updated CappingTransformers to work with lazyframes `#704 <https://github.com/azukds/tubular/issues/704>`_
+
+3.1.0 (20/03/2026)
+------------------
+
+Changed
+^^^^^^^
+- feat: allow suitable transformers to pass with empty columns `#478 <https://github.com/azukds/tubular/issues/478>_`
 
 3.0.0 (19/03/2026)
 ------------------

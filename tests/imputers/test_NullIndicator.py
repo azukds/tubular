@@ -4,6 +4,7 @@ import pytest
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
     ReturnNativeTests,
@@ -108,7 +109,9 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
             )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

@@ -2,7 +2,7 @@ import narwhals as nw
 import pytest
 
 import tests.test_data as d
-from tests.base_tests import OtherBaseBehaviourTests
+from tests.base_tests import EmptyCappingsFitTransformPassTests, OtherBaseBehaviourTests
 from tests.capping.test_BaseCappingTransformer import (
     GenericCappingFitTests,
     GenericCappingInitTests,
@@ -152,7 +152,9 @@ class TestTransform(GenericCappingTransformTests):
             )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyCappingsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

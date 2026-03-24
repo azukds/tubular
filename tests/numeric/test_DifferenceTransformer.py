@@ -5,6 +5,7 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 from tests import utils as u
+from tests.base_tests import EmptyColumnsFailTests, OtherBaseBehaviourTests
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -20,7 +21,9 @@ def create_difference_test_df(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
-class TestDifferenceTransformerInit(BaseNumericTransformerInitTests):
+class TestDifferenceTransformerInit(
+    BaseNumericTransformerInitTests, EmptyColumnsFailTests
+):
     """Tests for init method in DifferenceTransformer."""
 
     @classmethod
@@ -203,3 +206,15 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
+
+
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for DifferenceTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "DifferenceTransformer"

@@ -7,7 +7,7 @@ from beartype import beartype
 from typing_extensions import deprecated
 
 from tubular.base import BaseTransformer
-from tubular.types import GenericKwargs, ListOfOneStr
+from tubular.types import GenericKwargs, ListOfOneStr, ListOfStrs
 
 
 # DEPRECATED TRANSFORMERS
@@ -204,7 +204,7 @@ class StringConcatenator(BaseTransformer):
     @beartype
     def __init__(
         self,
-        columns: str | list[str],
+        columns: str | ListOfStrs,
         new_column_name: str = "new_column",
         separator: str = " ",
         **kwargs: bool,

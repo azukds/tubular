@@ -4,6 +4,7 @@ import pytest
 
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
@@ -282,7 +283,9 @@ class TestTransform(
         cls.transformer_name = "ModeImputer"
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
