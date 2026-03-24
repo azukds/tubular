@@ -7,6 +7,7 @@ from tests.base_tests import (
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
     DropOriginalTransformMixinTests,
+    EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
@@ -22,6 +23,7 @@ class TestInit(
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
     NewColumnNameInitMixintests,
+    EmptyColumnsFailTests,
 ):
     """Tests for SeriesDtMethodTransformer.init()."""
 

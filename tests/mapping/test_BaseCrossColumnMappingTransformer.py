@@ -3,6 +3,7 @@ import pytest
 from pandas.testing import assert_series_equal
 
 import tests.test_data as d
+from tests.base_tests import OtherBaseBehaviourTests
 from tests.mapping.test_BaseMappingTransformer import (
     BaseMappingTransformerInitTests,
     BaseMappingTransformerTransformTests,
@@ -136,6 +137,20 @@ class TestInit(BaseCrossColumnMappingTransformerInitTests):
 
 
 class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "BaseCrossColumnMappingTransformer"
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests,
+):
+    """
+    Class to run tests for BaseCrossColumnMappingTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseCrossColumnMappingTransformer"

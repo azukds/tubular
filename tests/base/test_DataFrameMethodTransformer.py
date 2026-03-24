@@ -8,6 +8,7 @@ from tests.base_tests import (
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
     DropOriginalTransformMixinTests,
+    EmptyColumnsFailTests,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -16,7 +17,9 @@ from tests.utils import assert_frame_equal_dispatch
 from tubular.base import DataFrameMethodTransformer
 
 
-class DataFrameMethodTransformerInitTests(ColumnStrListInitTests):
+class DataFrameMethodTransformerInitTests(
+    ColumnStrListInitTests, EmptyColumnsFailTests
+):
     """Inheritable tests for DataFrameMethodTransformer.init()."""
 
     @pytest.mark.parametrize("not_dictionary", ["a", [1, 2], True, 1.5])

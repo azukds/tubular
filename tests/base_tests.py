@@ -85,19 +85,6 @@ class ColumnStrListInitTests(GenericInitTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    def test_columns_empty_list_error(
-        self,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        """Test an error is raised if columns is specified as an empty list."""
-
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["columns"] = []
-
-        with pytest.raises(BeartypeCallHintParamViolation):
-            uninitialized_transformers[self.transformer_name](**args)
-
     @pytest.mark.parametrize(
         "non_string",
         [1, True, {"a": 1}, [1, 2], None, np.inf, np.nan],
@@ -461,6 +448,150 @@ class GenericFitTests:
             match=r"Transformers that are reconstructed from json only support .transform functionality, reinitialise a new transformer to use this method",
         ):
             transformer.fit(_convert_to_lazy(df, lazy), df["a"])
+
+
+class EmptyColumnsFailTests:
+    "Test that init errors if columns is empty."
+
+    def test_init_is_unsuccessful(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        "Test transform can errors for empty columns."
+
+        args = minimal_attribute_dict[self.transformer_name]
+        args["columns"] = []
+
+        with pytest.raises(BeartypeCallHintParamViolation):
+            uninitialized_transformers[self.transformer_name](**args)
+
+
+class EmptyColumnsFitTransformPassTests:
+    "test that fit/transform does not error if columns is empty."
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_empty_columns_is_successful(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        minimal_dataframe_lookup,
+        lazy,
+    ):
+        "Test fit and transform can run successfully for empty columns."
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        args = minimal_attribute_dict[self.transformer_name]
+        args["columns"] = []
+        x = uninitialized_transformers[self.transformer_name](**args)
+
+        # skip polars test if not narwhalified
+        if _check_if_skip_test(x, df, lazy):
+            return
+
+        x.fit(
+            _convert_to_lazy(df, lazy),
+            df["a"],
+        )
+
+        output = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(df, _collect_frame(output, lazy))
+
+
+class EmptyMappingsFitTransformPassTests:
+    "test that fit/transform does not error if mappings is empty."
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_empty_mappings_is_successful(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        minimal_dataframe_lookup,
+        lazy,
+    ):
+        "Test fit and transform can run successfully for empty mappings."
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        args = minimal_attribute_dict[self.transformer_name]
+        args["mappings"] = {}
+        x = uninitialized_transformers[self.transformer_name](**args)
+
+        # skip polars test if not narwhalified
+        if _check_if_skip_test(x, df, lazy):
+            return
+
+        x.fit(
+            _convert_to_lazy(df, lazy),
+            df["a"],
+        )
+
+        output = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(df, _collect_frame(output, lazy))
+
+
+class EmptyCappingsFitTransformPassTests:
+    "test that fit/transform does not error if cappings dicts are empty."
+
+    @pytest.mark.parametrize(
+        "arg",
+        ["capping_values", "quantiles"],
+    )
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_empty_cappings_is_successful(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        minimal_dataframe_lookup,
+        lazy,
+        arg,
+    ):
+        "Test fit and transform can run successfully for empty cappings dicts."
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        args = minimal_attribute_dict[self.transformer_name]
+        args[arg] = {}
+        other_arg = "quantiles" if arg == "capping_values" else "capping_values"
+        args[other_arg] = None
+        x = uninitialized_transformers[self.transformer_name](**args)
+
+        # skip polars test if not narwhalified
+        if _check_if_skip_test(x, df, lazy):
+            return
+
+        x.fit(
+            _convert_to_lazy(df, lazy),
+            df["a"],
+        )
+
+        output = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(df, _collect_frame(output, lazy))
 
 
 class CheckNumericFitMixinTests:

@@ -5,6 +5,12 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 from tests import utils as u
+from tests.base_tests import (
+    ColumnStrListInitTests,
+    EmptyColumnsFailTests,
+    GenericTransformTests,
+    OtherBaseBehaviourTests,
+)
 from tubular.comparison import ConditionEnum
 
 
@@ -17,7 +23,9 @@ def create_compare_test_df(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library=library)
 
 
-class TestCompareTwoColumnsTransformerInit:
+class TestCompareTwoColumnsTransformerInit(
+    ColumnStrListInitTests, EmptyColumnsFailTests
+):
     """Tests for the initialization of CompareTwoColumnsTransformer."""
 
     @classmethod
@@ -44,7 +52,7 @@ class TestCompareTwoColumnsTransformerInit:
             uninitialized_transformers[self.transformer_name](**args)
 
 
-class TestCompareTwoColumnsTransformerTransform:
+class TestCompareTwoColumnsTransformerTransform(GenericTransformTests):
     """Tests for the transform method of CompareTwoColumnsTransformer."""
 
     @classmethod
@@ -218,3 +226,15 @@ class TestCompareTwoColumnsTransformerTransform:
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
+
+
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for CompareTwoColumnsTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "CompareTwoColumnsTransformer"

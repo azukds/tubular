@@ -4,7 +4,12 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
-from tests.base_tests import DropOriginalInitMixinTests, DropOriginalTransformMixinTests
+from tests.base_tests import (
+    DropOriginalInitMixinTests,
+    DropOriginalTransformMixinTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTests,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -325,3 +330,17 @@ class TestTransform(
             match=f"LogTransformer: values less than or equal to 0 in columns{extra_exception_text}, make greater than 0 before using transform",
         ):
             x.transform(df)
+
+
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
+    """
+    Class to run tests for LogTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "LogTransformer"

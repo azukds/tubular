@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 import tests.test_data as d
-from tests.base_tests import OtherBaseBehaviourTests
+from tests.base_tests import EmptyMappingsFitTransformPassTests, OtherBaseBehaviourTests
 from tests.mapping.test_BaseCrossColumnNumericTransformer import (
     BaseCrossColumnNumericTransformerInitTests,
     BaseCrossColumnNumericTransformerTransformTests,
@@ -104,7 +104,9 @@ class TestTransform(BaseCrossColumnNumericTransformerTransformTests):
             assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyMappingsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

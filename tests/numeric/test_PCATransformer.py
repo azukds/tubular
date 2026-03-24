@@ -6,8 +6,10 @@ import tests.test_data as d
 from tests.base_tests import (
     CheckNumericFitMixinTests,
     ColumnStrListInitTests,
+    EmptyColumnsFailTests,
     GenericFitTests,
     GenericTransformTests,
+    OtherBaseBehaviourTests,
 )
 from tests.utils import assert_frame_equal_dispatch
 from tubular.numeric import PCATransformer
@@ -15,6 +17,7 @@ from tubular.numeric import PCATransformer
 
 class TestInit(
     ColumnStrListInitTests,
+    EmptyColumnsFailTests,
 ):
     """Generic tests for transformer.init()."""
 
@@ -334,3 +337,15 @@ class TestTransform(GenericTransformTests):
         assert type(df_transformed) is pd.DataFrame, (
             "unexpected output type from transform"
         )
+
+
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for PCATransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "PCATransformer"

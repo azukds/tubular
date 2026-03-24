@@ -1,7 +1,7 @@
 """Contains transformers for performing data aggregations."""
 
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 import narwhals as nw
 from beartype import beartype
@@ -15,7 +15,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.mixins import DropOriginalMixin
-from tubular.types import DataFrame, NumericTypes
+from tubular.types import DataFrame, ListOfStrs, NumericTypes
 
 
 class ColumnsOverRowAggregationOptions(str, Enum):
@@ -123,11 +123,10 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
-        aggregations: Union[
-            ListOfColumnsOverRowAggregations,
-            ListOfRowsOverColumnsAggregations,
-        ],
+        columns: str | ListOfStrs,
+        aggregations: (
+            ListOfColumnsOverRowAggregations | ListOfRowsOverColumnsAggregations
+        ),
         drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
@@ -328,7 +327,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: str | ListOfStrs,
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
         drop_original: bool = False,
@@ -489,7 +488,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             for agg in self.aggregations
         }
 
-        X = X.with_columns(**expr_dict)
+        X = X.with_columns(**expr_dict) if expr_dict else X
 
         X = DropOriginalMixin.drop_original_column(
             X,
@@ -561,7 +560,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     @beartype
     def __init__(
         self,
-        columns: Union[str, list[str]],
+        columns: str | ListOfStrs,
         aggregations: ListOfColumnsOverRowAggregations,
         drop_original: bool = False,
         **kwargs: bool,
@@ -661,21 +660,29 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        expr_map = {
-            "min": nw.min_horizontal(*self.columns),
-            "max": nw.max_horizontal(*self.columns),
-            "sum": nw.sum_horizontal(*self.columns),
-            "mean": nw.mean_horizontal(*self.columns),
-        }
+        expr_map = (
+            {
+                "min": nw.min_horizontal(*self.columns),
+                "max": nw.max_horizontal(*self.columns),
+                "sum": nw.sum_horizontal(*self.columns),
+                "mean": nw.mean_horizontal(*self.columns),
+            }
+            if self.columns
+            else {}
+        )
 
-        transform_dict = {
-            "_".join(self.columns) + "_" + aggregation: expr_map[aggregation].alias(
-                "_".join(self.columns) + "_" + aggregation,
-            )
-            for aggregation in self.aggregations
-        }
+        transform_dict = (
+            {
+                "_".join(self.columns) + "_" + aggregation: expr_map[aggregation].alias(
+                    "_".join(self.columns) + "_" + aggregation,
+                )
+                for aggregation in self.aggregations
+            }
+            if expr_map
+            else {}
+        )
 
-        X = X.with_columns(**transform_dict)
+        X = X.with_columns(**transform_dict) if transform_dict else X
 
         X = DropOriginalMixin.drop_original_column(
             X,

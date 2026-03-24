@@ -29,22 +29,6 @@ class BaseMappingTransformerInitTests(GenericInitTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    def test_no_keys_dict_error(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-    ):
-        """Test that an exception is raised if mappings is a dict but with no keys."""
-
-        kwargs = minimal_attribute_dict[self.transformer_name]
-        kwargs["mappings"] = {}
-
-        with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: mappings has no values",
-        ):
-            uninitialized_transformers[self.transformer_name](**kwargs)
-
     def test_inferred_return_dtypes(
         self,
         uninitialized_transformers,

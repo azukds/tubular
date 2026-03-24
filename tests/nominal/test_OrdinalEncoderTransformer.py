@@ -8,6 +8,7 @@ import pytest
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
+    EmptyColumnsFitTransformPassTests,
     FailedFitWeightFilterTest,
     GenericFitTests,
     GenericTransformTests,
@@ -220,7 +221,9 @@ class TestTransform(GenericTransformTests):
             assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for OrdinalEncoderTransformer outside the three standard methods.
 

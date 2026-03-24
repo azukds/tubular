@@ -4,6 +4,7 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
+from tests.base_tests import EmptyColumnsFailTests, OtherBaseBehaviourTests
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -12,7 +13,7 @@ from tests.utils import assert_frame_equal_dispatch
 from tubular.numeric import InteractionTransformer
 
 
-class TestInit(BaseNumericTransformerInitTests):
+class TestInit(BaseNumericTransformerInitTests, EmptyColumnsFailTests):
     """Tests for InteractionTransformer.init()."""
 
     @classmethod
@@ -161,3 +162,15 @@ class TestTransform(BaseNumericTransformerTransformTests):
             row_expected = expected.iloc[[i]]
 
             assert_frame_equal_dispatch(row_transformed, row_expected)
+
+
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+    """
+    Class to run tests for InteractionTransformer outside the three standard methods.
+
+    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.transformer_name = "InteractionTransformer"

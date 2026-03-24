@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Annotated, Optional
+from typing import Annotated
 
 import narwhals as nw
 import numpy as np
@@ -23,7 +23,7 @@ from tubular.numeric import BaseNumericTransformer
 from tubular.types import DataFrame, Number, Series
 
 CappingValues = Annotated[
-    list[Optional[Number]],
+    list[Number | None],
     Is[
         lambda list_arg: (
             (len(list_arg) == 2)  # noqa: PLR2004
@@ -89,9 +89,9 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     @beartype
     def __init__(
         self,
-        capping_values: Optional[dict[str, CappingValues]] = None,
-        quantiles: Optional[dict[str, CappingValues]] = None,
-        weights_column: Optional[str] = None,
+        capping_values: dict[str, CappingValues] | None = None,
+        quantiles: dict[str, CappingValues] | None = None,
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -125,7 +125,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if capping values/quantiles passed are invalid
+        ValueError: if capping values/quantiles passed are invalid
 
         Examples
         --------
@@ -168,7 +168,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         self.capping_values = capping_values
         self.weights_column = weights_column
 
-        if capping_values:
+        if capping_values is not None:
             self._replacement_values = copy.deepcopy(self.capping_values)
 
     @beartype
@@ -189,7 +189,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if capping values are invalid, e.g. lower_cap>upper_cap
+        ValueError: if capping values are invalid, e.g. lower_cap>upper_cap
 
         Examples
         --------
@@ -228,7 +228,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         Raises
         ------
-            ValueError: if quantile_capping_values have fit as None where values were expected
+        ValueError: if quantile_capping_values have fit as None where values were expected
 
         """
         failed_columns = []
@@ -245,7 +245,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> BaseCappingTransformer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> BaseCappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -329,7 +329,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
                 self.quantile_capping_values[col] = results
 
-                self._replacement_values = copy.deepcopy(self.quantile_capping_values)
+            self._replacement_values = copy.deepcopy(self.quantile_capping_values)
 
             self._check_for_failed_fit()
 
@@ -349,7 +349,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         quantiles: list[Number],
         values_column: str,
         weights_column: str,
-    ) -> list[Optional[Number]]:
+    ) -> list[Number | None]:
         """Calculate weighted quantiles.
 
         This method is adapted from the "Completely vectorized numpy solution" answer from user
@@ -465,7 +465,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Apply capping to columns in X.
 
@@ -485,10 +485,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         -------
         X : DataFrame
             Transformed input X with min and max capping applied to the specified columns.
-
-        Raises
-        ------
-            ValueError: if method is quantile capping and fit has not been called
 
         Examples
         --------
@@ -539,10 +535,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
             dict_attrs = [*dict_attrs, "capping_values"]
 
-        for attr_name in dict_attrs:
-            if getattr(self, attr_name) == {}:
-                msg = f"{self.classname()}: {attr_name} attribute is an empty dict - perhaps the fit method has not been run yet"
-                raise ValueError(msg)
         exprs = {}
         for col in self.columns:
             cap_value_min = capping_values_for_transform[col][0]
@@ -712,9 +704,9 @@ class CappingTransformer(BaseCappingTransformer):
     @beartype
     def __init__(
         self,
-        capping_values: Optional[dict[str, CappingValues]] = None,
-        quantiles: Optional[dict[str, CappingValues]] = None,
-        weights_column: Optional[str] = None,
+        capping_values: dict[str, CappingValues] | None = None,
+        quantiles: dict[str, CappingValues] | None = None,
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -751,7 +743,7 @@ class CappingTransformer(BaseCappingTransformer):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Optional[Series] = None) -> CappingTransformer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> CappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -890,9 +882,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     @beartype
     def __init__(
         self,
-        capping_values: Optional[dict[str, CappingValues]] = None,
-        quantiles: Optional[dict[str, CappingValues]] = None,
-        weights_column: Optional[str] = None,
+        capping_values: dict[str, CappingValues] | None = None,
+        quantiles: dict[str, CappingValues] | None = None,
+        weights_column: str | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -939,8 +931,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     @beartype
     @staticmethod
     def set_replacement_values(
-        capping_values: dict[str, list[Optional[Number]]],
-    ) -> dict[str, list[Optional[bool]]]:
+        capping_values: dict[str, list[Number | None]],
+    ) -> dict[str, list[bool | None]]:
         """Set the _replacement_values to have all null values.
 
         Keeps the existing keys in the _replacement_values dict and sets all values (except None) in the lists to np.NaN. Any None
@@ -977,9 +969,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     @block_from_json
     @beartype
-    def fit(
-        self, X: DataFrame, y: Optional[Series] = None
-    ) -> OutOfRangeNullTransformer:
+    def fit(self, X: DataFrame, y: Series | None = None) -> OutOfRangeNullTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied

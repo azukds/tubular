@@ -7,6 +7,7 @@ import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
     DropOriginalInitMixinTests,
+    EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -517,7 +518,9 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
             )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(
+    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
