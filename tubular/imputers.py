@@ -241,7 +241,7 @@ class BaseImputer(BaseTransformer):
             for col in self.columns
         }
 
-        X = X.with_columns(**transform_expressions)
+        X = X.with_columns(**transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

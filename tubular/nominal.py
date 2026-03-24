@@ -673,7 +673,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 else transform_expressions[col]
             )
 
-        X = X.with_columns(**transform_expressions)
+        X = X.with_columns(**transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
