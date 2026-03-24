@@ -578,7 +578,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 schema[col],
             ).alias(col)
 
-        X = X.with_columns(**exprs)
+        X = X.with_columns(**exprs) if exprs else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
