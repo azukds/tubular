@@ -16,7 +16,7 @@ from tests.base_tests import (
     ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import GenericImputerTransformTests
-from tests.utils import _handle_from_json
+from tests.utils import _handle_from_json, dataframe_init_dispatch
 from tubular.imputers import ArbitraryImputer
 
 
@@ -48,6 +48,24 @@ class TestFit(GenericFitTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "ArbitraryImputer"
+
+
+def create_expected_df_3(library="pandas"):
+    "expected df for transform test."
+    expected_df_dict = {
+        "a": [1, 2, 3, 4, 5, 6, None],
+        "b": ["a", "b", "c", "d", "e", "f", "g"],
+        "c": ["a", "b", "c", "d", "e", "f", "g"],
+    }
+
+    expected_df = dataframe_init_dispatch(
+        dataframe_dict=expected_df_dict, library=library
+    )
+
+    narwhals_df = nw.from_native(expected_df)
+    narwhals_df = narwhals_df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
+
+    return narwhals_df.to_native()
 
 
 class TestTransform(
@@ -104,28 +122,33 @@ class TestTransform(
 
         transformer = _handle_from_json(transformer, from_json)
 
-        if col_type in {"Categorical", "String"}:
-            msg_required_impute_value_type = "str"
-            msg_col_type = "Categorical or String"
+        if isinstance(impute_value, str):
+            col_dtype = getattr(nw, col_type)
+            msg = f"""
+                ArbitraryImputer: transformer can only handle String/Categorical/Enum/Unknown type columns
+                but got columns with types {[col_dtype]}
+                """
 
-        elif col_type == "Boolean":
-            msg_required_impute_value_type = "bool"
-            msg_col_type = "Boolean"
+        elif isinstance(impute_value, bool):
+            allowed_types_str = "Boolean/Unknown"
+            col_dtype = getattr(nw, col_type)
+            if library == "pandas":
+                allowed_types_str += "/Object"
+            msg = f"""
+                ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
+                but got columns with types {[col_dtype]}
+                """
 
         else:
-            msg_required_impute_value_type = "numeric"
-            msg_col_type = "Numeric"
-
-        msg = rf"""
-                {self.transformer_name}: Attempting to impute non-{msg_required_impute_value_type} value {transformer.impute_value} into
-                {msg_col_type} type columns, this is not type safe,
-                please use {msg_required_impute_value_type} impute_value for these columns
-                \(this may require separate ArbitraryImputer instances for different column types\)
+            col_dtype = getattr(nw, col_type)
+            msg = f"""
+                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                but got columns with types {[col_dtype]}
                 """
 
         with pytest.raises(
             TypeError,
-            match=msg,
+            match=re.escape(msg),
         ):
             transformer.transform(u._convert_to_lazy(df, lazy))
 
@@ -254,21 +277,9 @@ class TestTransform(
 
         transformer = _handle_from_json(transformer, from_json)
 
-        # for pandas, the all null column is inferred as string type
-        # for polars, it is Unknown type, which triggers a warning
-        if library == "polars" and input_col == [None, None]:
-            with pytest.warns(
-                UserWarning,
-                match=f"{self.transformer_name}: X contains all null columns { {column}!s}, types for these columns will be inferred as {type(transformer.impute_value)}",
-            ):
-                df_transformed_native = transformer.transform(
-                    u._convert_to_lazy(df_nw.to_native(), lazy),
-                )
-
-        else:
-            df_transformed_native = transformer.transform(
-                u._convert_to_lazy(df_nw.to_native(), lazy),
-            )
+        df_transformed_native = transformer.transform(
+            u._convert_to_lazy(df_nw.to_native(), lazy),
+        )
 
         df_transformed_nw = nw.from_native(
             u._collect_frame(df_transformed_native, lazy),
@@ -366,19 +377,14 @@ class TestTransform(
         [True, False],
     )
     @pytest.mark.parametrize(
-        ("library", "expected_df_3", "impute_values_dict"),
-        [
-            ("pandas", "pandas", {"b": "g", "c": "f"}),
-            ("polars", "polars", {"b": "g", "c": "f"}),
-        ],
-        indirect=["expected_df_3"],
+        ("library"),
+        ["pandas", "polars"],
     )
     def test_expected_output_with_object_and_categorical_columns(
         self,
         library,
-        expected_df_3,
-        initialized_transformers,
-        impute_values_dict,
+        minimal_attribute_dict,
+        uninitialized_transformers,
         lazy,
         from_json,
     ):
@@ -386,18 +392,17 @@ class TestTransform(
         # Create the DataFrame using the library parameter
         df2 = d.create_df_2(library=library)
 
+        args = minimal_attribute_dict[self.transformer_name]
+        args["columns"] = ["b", "c"]
+        args["impute_value"] = "g"
+
         # Initialize the transformer
-        transformer = initialized_transformers[self.transformer_name]
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        expected_df_3 = create_expected_df_3(library)
 
         if u._check_if_skip_test(transformer, df2, lazy, from_json):
             return
-
-        transformer.impute_values_ = impute_values_dict
-
-        if self.transformer_name == "ArbitraryImputer":
-            transformer.impute_value = "f"
-
-        transformer.columns = ["b", "c"]
 
         transformer = _handle_from_json(transformer, from_json)
 
@@ -533,13 +538,14 @@ class TestTransform(
 
         if u._check_if_skip_test(transformer, df, lazy, from_json):
             return
+
         transformer = _handle_from_json(transformer, from_json)
 
-        bad_types = dict(nw.from_native(df).select(nw.col(column)).schema.items())
+        bad_types = [nw.from_native(df).schema[column]]
 
         msg = re.escape(
             f"""
-                {self.transformer_name}: transformer can only handle Float/Int/Boolean/String/Categorical/Unknown type columns
+                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """,
         )
