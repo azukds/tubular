@@ -27,12 +27,12 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.1.0 (unreleased)
+3.2.0 (unreleased)
 ------------------
 
 Changed
 ^^^^^^^
-- placeholder
+- chore: updated pre commit black version
 
 3.1.0 (20/03/2026)
 ------------------
