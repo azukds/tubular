@@ -334,7 +334,7 @@ class _NumberImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
-        >>> imputer = NumberImputer(columns=["a", "b"], impute_value=5)
+        >>> imputer = _NumberImputer(columns=["a", "b"], impute_value=5)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -490,7 +490,7 @@ class _StringImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": ["cat", None, "dog"]})
-        >>> imputer = ArbitraryImputer(columns=["a"], impute_value="missing")
+        >>> imputer = _StringImputer(columns=["a"], impute_value="missing")
         >>> imputer = imputer.fit(test_df)
         >>> imputer.transform(test_df)
         shape: (3, 1)
@@ -645,7 +645,7 @@ class _BooleanImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": [True, None, False]})
-        >>> imputer = ArbitraryImputer(columns=["a"], impute_value=True)
+        >>> imputer = _BooleanImputer(columns=["a"], impute_value=True)
         >>> imputer = imputer.fit(test_df)
         >>> imputer.transform(test_df)
         shape: (3, 1)
