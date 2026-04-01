@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - chore: updated pre commit black version
+- chore: updated pygments version on dependabot recommendation
 
 3.1.0 (20/03/2026)
 ------------------
