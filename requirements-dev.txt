@@ -51,8 +51,10 @@ prek==0.3.6
     # via tubular (pyproject.toml)
 pyarrow==23.0.1
     # via tubular (pyproject.toml)
-pygments==2.19.2
-    # via pytest
+pygments==2.20.0
+    # via
+    #   tubular (pyproject.toml)
+    #   pytest
 pytest==9.0.2
     # via
     #   tubular (pyproject.toml)

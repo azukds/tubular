@@ -34,6 +34,8 @@ Changed
 ^^^^^^^
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
+- chore: updated pre commit black version
+- chore: updated pygments version on dependabot recommendation
 
 3.1.0 (20/03/2026)
 ------------------
