@@ -633,12 +633,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.check_is_fitted(["non_rare_levels"])
 
-        non_rare_condition_expressions = {}
-
-        transform_expressions = {}
+        transform_expressions = []
 
         for col in self.columns:
-            non_rare_condition_expressions[col] = (
+            non_rare_condition_expression = (
                 nw.col(col).is_in(self.non_rare_levels[col])
                 if self.unseen_levels_to_rare
                 # if unseen levels are mapped to rare,
@@ -651,7 +649,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 )
             )
 
-            transform_expressions[col] = (
+            transform_expression = (
                 nw.col(col).cast(
                     nw.String,
                 )
@@ -659,21 +657,23 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 else nw.col(col)
             )
 
-            transform_expressions[col] = (
-                nw.when(non_rare_condition_expressions[col] | nw.col(col).is_null())
-                .then(transform_expressions[col])
+            transform_expression = (
+                nw.when(non_rare_condition_expression | nw.col(col).is_null())
+                .then(transform_expression)
                 .otherwise(nw.lit(self.rare_level_name))
             )
 
-            transform_expressions[col] = (
-                transform_expressions[col].cast(
+            transform_expression = (
+                transform_expression.cast(
                     nw.Enum(self.non_rare_levels[col] + [self.rare_level_name]),
                 )
                 if (schema[col] in {nw.Categorical, nw.Enum})
-                else transform_expressions[col]
+                else transform_expression
             )
 
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+            transform_expressions.append(transform_expression)
+
+        X = X.with_columns(*transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
