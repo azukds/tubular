@@ -239,7 +239,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         Should the 'rare' levels that will be grouped together be recorded? If not they will be lost
         after the fit and the only information remaining will be the 'non'rare' levels.
 
-    rare_levels_record_ : dict
+    rare_levels_record : dict
         Only created (in fit) if record_rare_levels is True. This is dict containing a list of
         levels that were grouped into 'rare' for each column the transformer was applied to.
 
@@ -325,7 +325,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             Label for the new 'rare' level.
 
         record_rare_levels : bool, default = False
-            If True, an attribute called rare_levels_record_ will be added to the object. This will be a dict
+            If True, an attribute called rare_levels_record will be added to the object. This will be a dict
             of key (column name) value (level from column considered rare according to cut_off_percent) pairs.
             Care should be taken if working with nominal variables with many levels as this could potentially
             result in many being stored in this attribute.
@@ -375,7 +375,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                                    unseen_levels_to_rare=False)
 
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}, 'rare_levels_record_': {'b': ['x', 'y', 'z'], 'c': ['b', 'c']}}}
+        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}, 'rare_levels_record': {'b': ['x', 'y', 'z'], 'c': ['b', 'c']}}}
 
         ```
 
@@ -397,8 +397,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             self.check_is_fitted(["training_data_levels"])
             json_dict["fit"]["training_data_levels"] = self.training_data_levels
         if self.record_rare_levels:
-            self.check_is_fitted(["rare_levels_record_"])
-            json_dict["fit"]["rare_levels_record_"] = self.rare_levels_record_
+            self.check_is_fitted(["rare_levels_record"])
+            json_dict["fit"]["rare_levels_record"] = self.rare_levels_record
 
         return json_dict
 
@@ -533,7 +533,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         self._check_str_like_columns(schema)
 
         self.non_rare_levels = {}
-        self.rare_levels_record_ = {}
+        self.rare_levels_record = {}
         present_levels = {}
 
         total_weight = _collect_frame(X.select(nw.col(weights_column).sum())).item()
@@ -566,12 +566,12 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             present_levels[c] = sorted(value for value in results[c].unique().to_list())
 
             if self.record_rare_levels:
-                self.rare_levels_record_[c] = sorted(
+                self.rare_levels_record[c] = sorted(
                     set(present_levels[c]).difference(self.non_rare_levels[c]),
                 )
 
-                self.rare_levels_record_[c] = sorted(
-                    self.rare_levels_record_[c],
+                self.rare_levels_record[c] = sorted(
+                    self.rare_levels_record[c],
                     key=str,
                 )
 
