@@ -468,6 +468,7 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_mismatched_datetypes_error(
         self,
@@ -475,6 +476,7 @@ class TestTransform(
         datetime_col,
         uninitialized_transformers,
         library,
+        lazy,
         from_json,
     ):
         "Test that transform raises an error if one column is a date and one is datetime"
@@ -496,6 +498,11 @@ class TestTransform(
             )
             .to_native()
         )
+
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        df = _convert_to_lazy(df, lazy)
 
         present_types = (
             {nw.Datetime, nw.Date()} if datetime_col == 0 else {nw.Date(), nw.Datetime}
@@ -578,12 +585,14 @@ class TestTransform(
         assert msg in str(exc_info.value)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_only_typechecks_self_columns(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        lazy,
         from_json,
     ):
         "Test that type checks are only performed on self.columns"
@@ -615,6 +624,11 @@ class TestTransform(
                 backend=nw.get_native_namespace(df),
             ),
         ).to_native()
+
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        df = _convert_to_lazy(df, lazy)
 
         # if transformer is not yet polars compatible, skip this test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):
