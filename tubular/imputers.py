@@ -251,7 +251,7 @@ class _NumberImputer(BaseImputer):
 
     Attributes
     ----------
-    impute_value : bool
+    impute_value : int | float
         Value to impute nulls with.
 
     built_from_json: bool
@@ -296,9 +296,8 @@ class _NumberImputer(BaseImputer):
         ----------
         impute_value : int or float
             Value to impute nulls with.
-        columns : None or str or list, default = None
-            Columns to impute, if the default of None is supplied all columns in X are used
-            when the transform method is called.
+        columns : str or list of strs
+            Columns to impute
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -435,9 +434,8 @@ class _StringImputer(BaseImputer):
         ----------
         impute_value : str
             Value to impute nulls with.
-        columns : None or str or list, default = None
-            Columns to impute, if the default of None is supplied all columns in X are used
-            when the transform method is called.
+        columns : str or list of strs
+            Columns to impute
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -607,9 +605,8 @@ class _BooleanImputer(BaseImputer):
         ----------
         impute_value : bool
             Value to impute nulls with.
-        columns : None or str or list, default = None
-            Columns to impute, if the default of None is supplied all columns in X are used
-            when the transform method is called.
+        columns : str or list of strs
+            Columns to impute
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -770,9 +767,8 @@ class ArbitraryImputer(BaseImputer):
         ----------
         impute_value : int or float or str or bool
             Value to impute nulls with.
-        columns : None or str or list, default = None
-            Columns to impute, if the default of None is supplied all columns in X are used
-            when the transform method is called.
+        columns : str or list of strs
+            Columns to impute
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
