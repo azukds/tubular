@@ -33,6 +33,9 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - refactored ArbitraryImputer into separate type specific subclasses `#527 <https://github.com/azukds/tubular/issues/527>_`
+- chore: updated pre commit black version
+- chore: updated pygments version on dependabot recommendation
+- feat: turned on lazyframe_compatible for BetweenDatesTransformer, and setup lazy tests `#536 <https://github.com/azukds/tubular/issues/536>`_
 
 3.1.0 (20/03/2026)
 ------------------
