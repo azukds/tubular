@@ -366,7 +366,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mappging dict directly rather than fitting x on df so test works with decorators
         transformer.non_rare_levels = {"b": ["a"], "c": ["e", "c", "a"]}
-        transformer.rare_levels_record_ = {}
+        transformer.rare_levels_record = {}
         transformer = _handle_from_json(transformer, from_json)
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
@@ -399,7 +399,7 @@ class TestTransform(GenericNominalTransformTests):
 
         # set the mapping dict directly rather than fitting x on df so test works with decorators
         transformer.non_rare_levels = {"b": ["a"]}
-        transformer.rare_levels_record_ = {}
+        transformer.rare_levels_record = {}
         transformer = _handle_from_json(transformer, from_json)
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
