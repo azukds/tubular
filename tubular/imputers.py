@@ -1133,7 +1133,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
                 mode_value = mode_values[0]
 
-        self.impute_values_[c] = mode_value
+            self.impute_values_[c] = mode_value
 
         self._check_for_failed_fit()
 
