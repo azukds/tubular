@@ -1119,16 +1119,21 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
             n_mode_vals = len(mode_values)
 
-            if n_mode_vals >= 1:
-                if n_mode_vals > 1:
-                    warnings.warn(
-                        f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
-                        stacklevel=2,
-                    )
-                self.impute_values_[c] = mode_values[0]
+            if n_mode_vals == 0:
+                mode_value = None
 
-            elif n_mode_vals == 0:
-                self.impute_values_[c] = None
+            elif n_mode_vals == 1:
+                mode_value = mode_values[0]
+
+            elif n_mode_vals > 1:
+                warnings.warn(
+                    f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
+                    stacklevel=2,
+                )
+
+                mode_value = mode_values[0]
+
+        self.impute_values_[c] = mode_value
 
         self._check_for_failed_fit()
 
