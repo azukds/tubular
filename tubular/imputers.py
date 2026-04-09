@@ -1112,8 +1112,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             group = (
                 X.filter(~nw.col(c).is_null())
                 .group_by(c)
-                .agg(nw.col(weights_column).sum().alias(f"{c}_count"))
-                .filter(nw.col(f"{c}_count") == nw.col(f"{c}_count").max())
+                .agg(nw.col(weights_column).sum().alias(f"{c}_total_weight"))
+                .filter(
+                    nw.col(f"{c}_total_weight") == nw.col(f"{c}_total_weight").max()
+                )
             )
 
             results_dict = _collect_frame(group).to_dict(as_series=True)
@@ -1122,16 +1124,21 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
             n_mode_vals = len(mode_values)
 
-            if n_mode_vals >= 1:
-                if n_mode_vals > 1:
-                    warnings.warn(
-                        f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
-                        stacklevel=2,
-                    )
-                self.impute_values_[c] = mode_values[0]
+            if n_mode_vals == 0:
+                mode_value = None
 
-            elif n_mode_vals == 0:
-                self.impute_values_[c] = None
+            elif n_mode_vals == 1:
+                mode_value = mode_values[0]
+
+            elif n_mode_vals > 1:
+                warnings.warn(
+                    f"ModeImputer: The Mode of column {c} is tied, will sort in descending order and return first candidate",
+                    stacklevel=2,
+                )
+
+                mode_value = mode_values[0]
+
+            self.impute_values_[c] = mode_value
 
         self._check_for_failed_fit()
 
