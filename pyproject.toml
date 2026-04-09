@@ -52,7 +52,8 @@ dev = [
     "codespell",
     "typos",
     "blacken-docs",
-    "black >= 26.3.1"
+    "black >= 26.3.1",
+    "pygments >= 2.20.0",
     ]
 
 [project.urls]
