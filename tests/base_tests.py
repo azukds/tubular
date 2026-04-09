@@ -847,14 +847,14 @@ class DummyWeightColumnMixinTests:
         ["pandas", "polars"],
         indirect=True,
     )
-    def test_errors_raised_if_unit_weights_column_exists_but_not_all_one(
+    def test_errors_raised_if_unit_weights_column_exists_but_bad_type(
         self,
         minimal_attribute_dict,
         minimal_dataframe_lookup,
         uninitialized_transformers,
     ):
         """Test that error is raised if 'unit_weights_column' already
-        exists in data, but is not all one"""
+        exists in data, but is non-numeric"""
 
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["weights_column"] = None
@@ -866,7 +866,7 @@ class DummyWeightColumnMixinTests:
 
         df_dict = {}
 
-        bad_weight_values = [2] + [1] * (len(df) - 1)
+        bad_weight_values = ["a"] * len(df)
 
         df_dict["unit_weights_column"] = bad_weight_values
 
@@ -881,12 +881,71 @@ class DummyWeightColumnMixinTests:
         )
         df = df.to_native()
 
-        msg = "Attempting to insert column of unit weights named 'unit_weights_column', but an existing column shares this name and is not all 1, please rename existing column"
+        unit_weights_column = "unit_weights_column"
+
+        msg = f"{unit_weights_column} is present in X and non-numeric, transformer logic requires this to be an all 1 value column."
         with pytest.raises(
-            RuntimeError,
+            TypeError,
             match=msg,
         ):
             transformer.fit(df, df["a"])
+
+    @pytest.mark.parametrize("verbose", [True, False])
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_warns_if_unit_weights_column_reused(
+        self,
+        minimal_attribute_dict,
+        minimal_dataframe_lookup,
+        uninitialized_transformers,
+        verbose,
+        recwarn,
+    ):
+        """Test that a warning is raised is unit_weight_column is reused (if verbose)"""
+
+        args = minimal_attribute_dict[self.transformer_name].copy()
+        args["weights_column"] = None
+        args["verbose"] = verbose
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        uninitialized_transformer = uninitialized_transformers[self.transformer_name]
+
+        transformer = uninitialized_transformer(**args)
+
+        df_dict = {}
+
+        weight_values = [1] * len(df)
+
+        df_dict["unit_weights_column"] = weight_values
+
+        df = nw.from_native(df)
+        backend = nw.get_native_namespace(df)
+        new_cols = [
+            nw.new_series(name=name, values=df_dict[name], backend=backend).alias(name)
+            for name in df_dict
+        ]
+        df = df.with_columns(
+            new_cols,
+        )
+        df = df.to_native()
+
+        transformer.fit(df, df["a"])
+
+        unit_weights_column = "unit_weights_column"
+        msg = f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
+
+        if not verbose:
+            assert ~any(msg in str(w.message) for w in recwarn), (
+                "unexpected warning raised from _create_unit_weights_column"
+            )
+
+        else:
+            assert any(msg in str(w.message) for w in recwarn), (
+                "expected warning not raised from _create_unit_weights_column"
+            )
 
 
 class FailedFitWeightFilterTest:
