@@ -1083,7 +1083,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     jsonable = True
 
@@ -1161,6 +1161,9 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
         self.impute_values_ = {}
 
+        if not self.columns:
+            return self
+
         weights_column = self.weights_column
         if self.weights_column is None:
             X, weights_column = WeightColumnMixin._create_unit_weights_column(
@@ -1180,7 +1183,9 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
             weights_column,
         )
 
-        results_dict = X.select(**weighted_mean_exprs).to_dict(as_series=False)
+        results_dict = _collect_frame(X.select(**weighted_mean_exprs)).to_dict(
+            as_series=False
+        )
 
         # results looks like {key: [value]} so extract value from list
         self.impute_values_.update(
