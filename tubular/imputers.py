@@ -389,7 +389,7 @@ class _StringImputer(BaseImputer):
 
     Attributes
     ----------
-    impute_value : bool
+    impute_value : string
         Value to impute nulls with.
 
     built_from_json: bool
