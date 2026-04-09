@@ -146,6 +146,10 @@ def minimal_attribute_dict():
             "new_column_name": "e",
             "columns": ["a", "c", "b"],
         },
+        "_BooleanImputer": {
+            "columns": ["b"],
+            "impute_value": True,
+        },
         "CappingTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
         },
@@ -239,6 +243,10 @@ def minimal_attribute_dict():
         "NullIndicator": {
             "columns": ["a"],
         },
+        "_NumberImputer": {
+            "columns": ["b"],
+            "impute_value": 1,
+        },
         "OneDKmeansTransformer": {
             "columns": "a",
             "new_column_name": "new",
@@ -283,6 +291,10 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "new_column_name": "c",
             "separator": "-",
+        },
+        "_StringImputer": {
+            "columns": ["b"],
+            "impute_value": "missing",
         },
         "ToDatetimeTransformer": {
             "columns": "a",
