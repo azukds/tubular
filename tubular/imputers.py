@@ -507,7 +507,6 @@ class _StringImputer(BaseImputer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        schema = X.schema
         native_namespace = nw.get_native_namespace(X).__name__
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
