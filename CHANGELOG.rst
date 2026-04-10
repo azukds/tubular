@@ -36,6 +36,7 @@ Changed
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
 - feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 - feat: converted MeanImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 - chore: updated pre commit black version
 - chore: updated pygments version on dependabot recommendation
