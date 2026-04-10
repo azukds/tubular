@@ -33,6 +33,14 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - chore: removed  test-aide from the env
+- refactored ArbitraryImputer into separate type specific subclasses `#527 <https://github.com/azukds/tubular/issues/527>_`
+- feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
+- feat: edited dummy unit weight handling to be more lazy friendly
+- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- feat: converted MeanImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- chore: updated pre commit black version
+- chore: updated pygments version on dependabot recommendation
+- feat: turned on lazyframe_compatible for BetweenDatesTransformer, and setup lazy tests `#536 <https://github.com/azukds/tubular/issues/536>`_
 
 3.1.0 (20/03/2026)
 ------------------

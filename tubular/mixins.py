@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal
 
 import narwhals as nw
 from beartype import beartype
@@ -146,8 +145,8 @@ class WeightColumnMixin:
     @staticmethod
     def _create_unit_weights_column(
         X: DataFrame,
-        backend: Literal["pandas", "polars"],
         return_native: bool = True,
+        verbose: bool = False,
     ) -> tuple[DataFrame, str]:
         """Create unit weights column.
 
@@ -158,20 +157,20 @@ class WeightColumnMixin:
         - does 'unit_weights_column' already exist in data? (unlikely but
         check to be thorough)
         - if it does not, create unit weight 'unit_weights_column'
-        - if it does, is it valid for our purposes? i.e. all unit weights
-        - if it is, then just reuse this existing column
-        - if is not, throw error
+        - if it does, then reuse column
+        - is it valid for our purposes? i.e. all unit weights
+        - if not, raise warning (for verbose=True)
 
         Parameters
         ----------
         X: DataFrame
             pandas, polars, or narwhals df
 
-        backend: Literal['pandas', 'polars']
-            backed of original df
-
         return_native: bool
             controls whether to return nw or pd/pl dataframe
+
+        verbose:
+            controls verbosity
 
         Returns
         -------
@@ -180,8 +179,7 @@ class WeightColumnMixin:
 
         Raises
         ------
-        RuntimeError:
-            if invalid 'unit_weights_column' already exists
+        TypeError: if unit_weights_column already exists and is non numeric.
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -189,30 +187,19 @@ class WeightColumnMixin:
         unit_weights_column = "unit_weights_column"
 
         if unit_weights_column in X.columns:
-            all_one = len(X.filter(nw.col(unit_weights_column) == 1)) == len(
-                X,
-            )
-            # if exists already and is valid, return
-            if all_one:
-                return _return_narwhals_or_native_dataframe(
-                    X,
-                    return_native,
-                ), unit_weights_column
+            if X.schema[unit_weights_column] not in NumericTypes:
+                error_msg = f"{unit_weights_column} is present in X and non-numeric, transformer logic requires this to be an all 1 value column."
+                raise TypeError(
+                    error_msg,
+                )
 
-            # error if column already exists but is not suitable
-            msg = "Attempting to insert column of unit weights named 'unit_weights_column', but an existing column shares this name and is not all 1, please rename existing column"
-            raise RuntimeError(
-                msg,
-            )
+            if verbose:
+                warn_msg = f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
+                warnings.warn(warn_msg, stacklevel=2)
 
-        # finally create dummy weights column if valid option not found
-        X = X.with_columns(
-            nw.new_series(
-                name=unit_weights_column,
-                values=[1] * len(X),
-                backend=backend,
-            ),
-        )
+        else:
+            # finally create dummy weights column if valid option not found
+            X = X.with_columns(nw.lit(1).alias(unit_weights_column).cast(nw.Int8))
 
         return _return_narwhals_or_native_dataframe(
             X,

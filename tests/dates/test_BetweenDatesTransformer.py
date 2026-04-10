@@ -22,6 +22,9 @@ from tests.dates.test_BaseGenericDateTransformer import (
     create_date_diff_different_dtypes,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -189,8 +192,9 @@ class TestTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output(self, df, expected, from_json):
+    def test_output(self, df, expected, lazy, from_json):
         """Test the output of transform is as expected."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -201,9 +205,15 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy),
+            expected,
+        )
 
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -218,8 +228,9 @@ class TestTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_both_exclusive(self, df, expected, from_json):
+    def test_output_both_exclusive(self, df, expected, lazy, from_json):
         """Test the output of transform is as expected if both limits are exclusive."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -230,9 +241,15 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy),
+            expected,
+        )
 
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -247,8 +264,9 @@ class TestTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_lower_exclusive(self, df, expected, from_json):
+    def test_output_lower_exclusive(self, df, expected, lazy, from_json):
         """Test the output of transform is as expected if the lower limits are exclusive only."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -259,9 +277,15 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy),
+            expected,
+        )
 
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -276,8 +300,9 @@ class TestTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_upper_exclusive(self, df, expected, from_json):
+    def test_output_upper_exclusive(self, df, expected, lazy, from_json):
         """Test the output of transform is as expected if the upper limits are exclusive only."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -288,9 +313,15 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy),
+            expected,
+        )
 
     @pytest.mark.parametrize(
         ("df", "expected"),
@@ -305,8 +336,9 @@ class TestTransform(
             ),
         ],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_both_inclusive(self, df, expected, from_json):
+    def test_output_both_inclusive(self, df, expected, lazy, from_json):
         """Test the output of transform is as expected if the both limits are inclusive."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
@@ -317,13 +349,20 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
 
-        assert_frame_equal_dispatch(expected, df_transformed)
+        df_transformed = x.transform(_convert_to_lazy(df, lazy))
 
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy),
+            expected,
+        )
+
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_warning_message(self, from_json):
-        """Test a warning is generated if not all the values in column_upper are greater than or equal to column_lower."""
+    def test_invalid_rows_return_null(self, from_json, lazy):
+        """Test rows where lower_column > upper_column return null instead of raising a warning."""
         x = BetweenDatesTransformer(
             columns=["a", "b", "c"],
             new_column_name="e",
@@ -333,21 +372,34 @@ class TestTransform(
 
         x = _handle_from_json(x, from_json)
 
-        df = d.create_is_between_dates_df_2()
-        df = nw.from_native(df)
+        df_dict = {
+            "a": [datetime.date(1990, 1, 1), datetime.date(1990, 1, 1)],
+            "b": [datetime.date(1990, 1, 2), datetime.date(1990, 1, 1)],
+            "c": [datetime.date(1989, 1, 1), datetime.date(1990, 1, 2)],
+        }
 
-        df = (
-            df.with_row_index("i")
-            .with_columns(
-                c=nw.when(nw.col("i") == 0)
-                .then(datetime.datetime(1989, 3, 1, tzinfo=datetime.timezone.utc))
-                .otherwise("c"),
-            )
-            .drop("i")
-        ).to_native()
+        df = dataframe_init_dispatch(df_dict, library="polars")
+        df = _convert_to_lazy(df, lazy=lazy)
 
-        with pytest.warns(Warning, match="not all c are greater than or equal to a"):
-            x.transform(df)
+        expected = dataframe_init_dispatch(
+            {
+                "a": df_dict["a"],
+                "b": df_dict["b"],
+                "c": df_dict["c"],
+                "e": [None, True],
+            },
+            library="polars",
+        )
+
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
+
+        df_transformed = x.transform(df)
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=lazy),
+            expected,
+        )
 
     @pytest.mark.parametrize(
         ("columns"),
@@ -364,8 +416,9 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    def test_output_different_date_dtypes(self, columns, library, from_json):
+    def test_output_different_date_dtypes(self, columns, library, lazy, from_json):
         """Test the output of transform is as expected if both limits are exclusive."""
         x = BetweenDatesTransformer(
             columns=columns,
@@ -393,9 +446,15 @@ class TestTransform(
                 ],
             ).to_native()
 
-        df_transformed = x.transform(df)
+        if _check_if_skip_test(x, df, lazy, from_json):
+            return
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        df_transformed = x.transform(_convert_to_lazy(df.to_native(), lazy))
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy),
+            expected,
+        )
 
     # overloading below test as column count is different for this one
     @pytest.mark.parametrize(
@@ -409,6 +468,7 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_mismatched_datetypes_error(
         self,
@@ -416,6 +476,7 @@ class TestTransform(
         datetime_col,
         uninitialized_transformers,
         library,
+        lazy,
         from_json,
     ):
         "Test that transform raises an error if one column is a date and one is datetime"
@@ -437,6 +498,11 @@ class TestTransform(
             )
             .to_native()
         )
+
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        df = _convert_to_lazy(df, lazy)
 
         present_types = (
             {nw.Datetime, nw.Date()} if datetime_col == 0 else {nw.Date(), nw.Datetime}
@@ -519,12 +585,14 @@ class TestTransform(
         assert msg in str(exc_info.value)
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     def test_only_typechecks_self_columns(
         self,
         uninitialized_transformers,
         minimal_attribute_dict,
         library,
+        lazy,
         from_json,
     ):
         "Test that type checks are only performed on self.columns"
@@ -556,6 +624,11 @@ class TestTransform(
                 backend=nw.get_native_namespace(df),
             ),
         ).to_native()
+
+        if _check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        df = _convert_to_lazy(df, lazy)
 
         # if transformer is not yet polars compatible, skip this test
         if not transformer.polars_compatible and isinstance(df, pl.DataFrame):

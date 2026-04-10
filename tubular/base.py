@@ -132,7 +132,11 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         deprecated = getattr(cls, "deprecated", False)
 
         # ignore deprecated transformers and base classes
-        if deprecated or cls.__name__.startswith("Base"):
+        if (
+            deprecated
+            or cls.__name__.startswith("Base")
+            or cls.__name__.startswith("_")
+        ):
             return
 
         FEATURE_REGISTRY[cls.__name__] = {
