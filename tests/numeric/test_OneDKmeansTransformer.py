@@ -4,8 +4,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 import tests.utils as u
 from tests.base_tests import (
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFailTests,
     OtherBaseBehaviourTests,
 )
@@ -19,7 +17,6 @@ from tubular.numeric import OneDKmeansTransformer
 
 class TestInit(
     BaseNumericTransformerInitTests,
-    DropOriginalInitMixinTests,
     EmptyColumnsFailTests,
 ):
     """Tests for OneDKmeansTransformer.init()"""
@@ -103,17 +100,6 @@ def expected_numeric_df_1(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
-def expected_numeric_df_1_drop(library="pandas"):
-    """Example with numeric dataframe."""
-
-    df_dict = {
-        "a": [4, 5, 4, 5, 2, 1, 3, 2, 1, 5],
-        "new": [0, 1, 0, 0, 1, 0, 0, 0, 1, 1],
-    }
-
-    return u.dataframe_init_dispatch(df_dict, library)
-
-
 def create_numeric_df_2(library="pandas"):
     """Example with numeric dataframe."""
 
@@ -171,37 +157,8 @@ def expected_numeric_df_2(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
-def expected_numeric_df_2_drop(library="pandas"):
-    """Example with numeric dataframe."""
-
-    df_dict = {
-        "a": [4, 5, 4, 5, 2, 1, 3, 2, 1, 5, 10, 12, 4, 16, 17],
-        "c": [
-            "a",
-            "b",
-            "a",
-            "b",
-            "a",
-            "b",
-            "b",
-            "a",
-            "c",
-            "b",
-            "a",
-            "c",
-            "a",
-            "c",
-            "a",
-        ],
-        "new": [3, 0, 0, 3, 4, 3, 1, 3, 4, 0, 2, 1, 2, 1, 2],
-    }
-
-    return u.dataframe_init_dispatch(df_dict, library)
-
-
 class TestTransform(
     BaseNumericTransformerTransformTests,
-    DropOriginalTransformMixinTests,
 ):
     """Tests for OneDKmeansTransformer.transform()"""
 
@@ -223,13 +180,12 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_without_drop(self, df, expected, from_json):
-        """Test that the output is expected from transform, when there are no negative numbers and dont drop original"""
+    def test_expected_output_without(self, df, expected, from_json):
+        """Test that the output is expected from transform, when there are no negative numbers"""
         x = OneDKmeansTransformer(
             columns="b",
             n_clusters=2,
             new_column_name="new",
-            drop_original=False,
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
@@ -245,21 +201,20 @@ class TestTransform(
         [
             (
                 create_numeric_df_1(library="pandas"),
-                expected_numeric_df_1_drop(library="pandas"),
+                expected_numeric_df_1(library="pandas"),
             ),
             (
                 create_numeric_df_1(library="polars"),
-                expected_numeric_df_1_drop(library="polars"),
+                expected_numeric_df_1(library="polars"),
             ),
         ],
     )
-    def test_expected_output_with_drop(self, df, expected, from_json):
-        """Test that the output is expected from transform, when there are no negative numbers and drop original"""
+    def test_expected_output(self, df, expected, from_json):
+        """Test that the output is expected from transform, when there are no negative numbers"""
         x = OneDKmeansTransformer(
             columns="b",
             n_clusters=2,
             new_column_name="new",
-            drop_original=True,
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
 
@@ -282,44 +237,14 @@ class TestTransform(
             ),
         ],
     )
-    def test_expected_output_without_drop_negatives(self, df, expected, from_json):
-        """Test that the output is expected from transform, when there are negative numbers and dont drop original"""
+    def test_expected_output_negatives(self, df, expected, from_json):
+        """Test that the output is expected from transform, when there are negative numbers"""
         x = OneDKmeansTransformer(
             columns="b",
             n_clusters=5,
             new_column_name="new",
-            drop_original=False,
             kmeans_kwargs={"random_state": 42},
         ).fit(df)
-        x = u._handle_from_json(x, from_json)
-        df_transformed = x.transform(df)
-
-        u.assert_frame_equal_dispatch(expected, df_transformed)
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        [
-            (
-                create_numeric_df_2(library="pandas"),
-                expected_numeric_df_2_drop(library="pandas"),
-            ),
-            (
-                create_numeric_df_2(library="polars"),
-                expected_numeric_df_2_drop(library="polars"),
-            ),
-        ],
-    )
-    def test_expected_output_with_drop_negatives(self, df, expected, from_json):
-        """Test that the output is expected from transform, when there are negative numbers and drop original"""
-        x = OneDKmeansTransformer(
-            columns="b",
-            n_clusters=5,
-            new_column_name="new",
-            drop_original=True,
-            kmeans_kwargs={"random_state": 42},
-        ).fit(df)
-
         x = u._handle_from_json(x, from_json)
         df_transformed = x.transform(df)
 

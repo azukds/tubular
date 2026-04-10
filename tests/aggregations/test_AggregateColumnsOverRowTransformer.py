@@ -78,7 +78,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        # transformer = transformer_setup(columns, aggregations, key, drop_original)
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if _check_if_skip_test(transformer, df, lazy):

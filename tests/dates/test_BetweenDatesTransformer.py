@@ -10,8 +10,6 @@ from dateutil.tz import gettz
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -35,7 +33,6 @@ from tubular.dates import TIME_UNITS, BetweenDatesTransformer
 class TestInit(
     ColumnStrListInitTests,
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     EmptyColumnsFailTests,
 ):
     "tests for BetweenDatesTransformer.__init__."
@@ -171,7 +168,6 @@ def expected_df_5(library="pandas"):
 class TestTransform(
     GenericTransformTests,
     GenericDatesMixinTransformTests,
-    DropOriginalTransformMixinTests,
 ):
     """Tests for BetweenDatesTransformer.transform."""
 
