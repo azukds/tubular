@@ -194,7 +194,6 @@ class WeightColumnMixin:
                 )
 
             if verbose:
-                # error if column already exists but is not suitable
                 warn_msg = f"column {unit_weights_column} is present in X, transformer logic will assume this column contains all 1 values."
                 warnings.warn(warn_msg, stacklevel=2)
 

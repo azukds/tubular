@@ -32,11 +32,16 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- refactored ArbitraryImputer into separate type specific subclasses `#527 <https://github.com/azukds/tubular/issues/527>_`
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
-- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>`_
-- feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>`_
 - feat: updated CappingTransformers to work with lazyframes `#704 <https://github.com/azukds/tubular/issues/704>`_
+- feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- feat: converted MeanImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
+- chore: updated pre commit black version
+- chore: updated pygments version on dependabot recommendation
+- feat: turned on lazyframe_compatible for BetweenDatesTransformer, and setup lazy tests `#536 <https://github.com/azukds/tubular/issues/536>`_
 
 3.1.0 (20/03/2026)
 ------------------
@@ -89,13 +94,6 @@ Changed
 - bugfix - tests with staticmethod decorator were not being detected for earlier python versions, have removed this from test files
 - feat: add module for serializing and deserializing pipelines `#588 <https://github.com/azukds/tubular/issues/588>_`
 - bug: fix issue with rare_levels_record_ attr in to_json method of GroupRareLevelsTransformer
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> feature/lazy_weightsmixin
-=======
->>>>>>> main
-=======
->>>>>>> feature/lazy_grouprare
 
 2.5.0 (16/12/2025)
 ------------------

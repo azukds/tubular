@@ -928,8 +928,8 @@ class ToDatetimeTransformer(BaseTransformer):
 class BetweenDatesTransformer(BaseGenericDateTransformer):
     """Transformer to generate a boolean column indicating if one date is between two others.
 
-    If not all column_lower values are less than or equal to column_upper when transform is run
-    then a warning will be raised.
+    If any row has column_lower greater than column_upper, the output column for that row
+    will be null instead of raising a warning.
 
     Attributes:
     ----------
@@ -995,7 +995,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
     polars_compatible = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = False
 
@@ -1092,8 +1092,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     def transform(self, X: FrameT) -> FrameT:
         """Transform - creates column indicating if middle date is between the other two.
 
-        If not all column_lower values are less than or equal to column_upper when transform is run
-        then a warning will be raised.
+        Rows where the lower bound is greater than the upper bound will produce null in the
+        resulting output column for that row.
 
         Parameters
         ----------
@@ -1121,14 +1121,26 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
 
         >>> test_df = pl.DataFrame(
         ...     {
-        ...         "a": [datetime.date(1990, 9, 27), datetime.date(2005, 10, 7)],
-        ...         "b": [datetime.date(1991, 5, 22), datetime.date(2001, 12, 10)],
-        ...         "c": [datetime.date(1993, 4, 20), datetime.date(2007, 11, 8)],
+        ...         "a": [
+        ...             datetime.date(1990, 9, 27),
+        ...             datetime.date(2005, 10, 7),
+        ...             datetime.date(2010, 1, 1),
+        ...         ],
+        ...         "b": [
+        ...             datetime.date(1991, 5, 22),
+        ...             datetime.date(2001, 12, 10),
+        ...             datetime.date(2009, 1, 1),
+        ...         ],
+        ...         "c": [
+        ...             datetime.date(1993, 4, 20),
+        ...             datetime.date(2007, 11, 8),
+        ...             datetime.date(2008, 1, 1),
+        ...         ],
         ...     },
         ... )
 
         >>> transformer.transform(test_df)
-        shape: (2, 4)
+        shape: (3, 4)
         ┌────────────┬────────────┬────────────┬───────────────┐
         │ a          ┆ b          ┆ c          ┆ b_between_a_c │
         │ ---        ┆ ---        ┆ ---        ┆ ---           │
@@ -1136,20 +1148,13 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         ╞════════════╪════════════╪════════════╪═══════════════╡
         │ 1990-09-27 ┆ 1991-05-22 ┆ 1993-04-20 ┆ true          │
         │ 2005-10-07 ┆ 2001-12-10 ┆ 2007-11-08 ┆ false         │
+        │ 2010-01-01 ┆ 2009-01-01 ┆ 2008-01-01 ┆ null          │
         └────────────┴────────────┴────────────┴───────────────┘
 
         ```
 
         """
         X = nw.from_native(super().transform(X))
-
-        if not (
-            X.select((nw.col(self.columns[0]) <= nw.col(self.columns[2])).all()).item()
-        ):
-            warnings.warn(
-                f"{self.classname()}: not all {self.columns[2]} are greater than or equal to {self.columns[0]}",
-                stacklevel=2,
-            )
 
         lower_comparison = (
             nw.col(self.columns[0]) <= nw.col(self.columns[1])
@@ -1164,7 +1169,11 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         )
 
         X = X.with_columns(
-            (lower_comparison & upper_comparison).alias(self.new_column_name),
+            nw.when(nw.col(self.columns[0]) > nw.col(self.columns[2]))
+            .then(None)
+            .otherwise(lower_comparison & upper_comparison)
+            .cast(nw.Boolean)
+            .alias(self.new_column_name),
         )
 
         # Drop original columns if self.drop_original is True

@@ -16,6 +16,9 @@ from tests.imputers.test_BaseImputer import (
     GenericImputerTransformTests,
     GenericImputerTransformTestsWeight,
 )
+from tests.utils import (
+    _convert_to_lazy,
+)
 from tubular.imputers import MeanImputer
 
 
@@ -34,14 +37,15 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
     def setup_class(cls):
         cls.transformer_name = "MeanImputer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values(self, library):
+    def test_learnt_values(self, library, lazy):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
         x = MeanImputer(columns=["a", "b", "c"])
 
-        x.fit(df)
+        x.fit(_convert_to_lazy(df, lazy))
 
         expected_impute_values = {
             "a": df["a"].mean(),
@@ -53,14 +57,15 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             f"impute_values_attr not as expected, expected {expected_impute_values} but got {x.impute_values_}"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weighted(self, library):
+    def test_learnt_values_weighted(self, library, lazy):
         """Test that the impute values learnt during fit are expected - when weights are used."""
         df = d.create_df_9_with_null_weight_row(library=library)
 
         x = MeanImputer(columns=["a", "b"], weights_column="c")
 
-        x.fit(df)
+        x.fit(_convert_to_lazy(df, lazy))
 
         expected_impute_values = {
             "a": (3 + 4 + 16 + 36) / (3 + 2 + 4 + 6),
