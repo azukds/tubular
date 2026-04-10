@@ -7,8 +7,6 @@ from test_BaseNominalTransformer import GenericNominalTransformTests
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
@@ -28,7 +26,6 @@ from tubular.nominal import OneHotEncodingTransformer
 
 class TestInit(
     SeparatorInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""
@@ -218,7 +215,6 @@ class TestFit(GenericFitTests):
 
 
 class TestTransform(
-    DropOriginalTransformMixinTests,
     GenericNominalTransformTests,
     GenericTransformTests,
 ):
@@ -394,7 +390,6 @@ class TestTransform(
         transformer = OneHotEncodingTransformer(
             columns=["b", "c"],
             separator="|",
-            drop_original=True,
         )
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):

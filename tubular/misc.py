@@ -15,7 +15,6 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     ListOfStrs,
@@ -164,7 +163,7 @@ class SetValueTransformer(BaseTransformer):
 
 
 @register
-class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
+class RenameColumnsTransformer(BaseTransformer):
     """Transformer to rename a given set of columns.
 
     This can be useful for personalising the auto-output names from
@@ -209,7 +208,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
      'fit': {},
      'init': {'columns': ['a'],
               'copy': False,
-              'drop_original': True,
               'new_column_names': {'a': 'new_a'},
               'return_native': True,
               'verbose': False},
@@ -235,7 +233,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         self,
         columns: ListOfStrs | str,
         new_column_names: dict[str, str],
-        drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -247,9 +244,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         new_column_names: dict[str, str]
             dictionary mapping provided columns to updated names
-
-        drop_original: bool
-            indicates whether to drop original columns.
 
         **kwargs: bool
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -268,7 +262,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
                 raise ValueError(msg)
 
         self.new_column_names = new_column_names
-        self.drop_original = drop_original
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -316,7 +309,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
          'fit': {},
          'init': {'columns': ['a'],
                   'copy': False,
-                  'drop_original': True,
                   'new_column_names': {'a': 'new_a'},
                   'return_native': True,
                   'verbose': False},
@@ -330,7 +322,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         json_dict["init"].update(
             {
                 "new_column_names": self.new_column_names,
-                "drop_original": self.drop_original,
             }
         )
 
@@ -366,16 +357,16 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         >>> test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
         >>> transformer.transform(test_df)
-        shape: (3, 2)
-        ┌─────┬───────┐
-        │ b   ┆ new_a │
-        │ --- ┆ ---   │
-        │ i64 ┆ i64   │
-        ╞═════╪═══════╡
-        │ 4   ┆ 1     │
-        │ 5   ┆ 2     │
-        │ 6   ┆ 3     │
-        └─────┴───────┘
+        shape: (3, 3)
+        ┌─────┬─────┬───────┐
+        │ a   ┆ b   ┆ new_a │
+        │ --- ┆ --- ┆ ---   │
+        │ i64 ┆ i64 ┆ i64   │
+        ╞═════╪═════╪═══════╡
+        │ 1   ┆ 4   ┆ 1     │
+        │ 2   ┆ 5   ┆ 2     │
+        │ 3   ┆ 6   ┆ 3     │
+        └─────┴─────┴───────┘
 
         ```
 
@@ -394,8 +385,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         X = X.with_columns(
             [nw.col(c).alias(self.new_column_names[c]) for c in self.columns]
         )
-
-        X = DropOriginalMixin.drop_original_column(X, self.drop_original, self.columns)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

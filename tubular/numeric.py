@@ -26,7 +26,6 @@ from tubular._utils import (
 from tubular.base import BaseTransformer, DataFrameMethodTransformer, register
 from tubular.mixins import (
     CheckNumericMixin,
-    DropOriginalMixin,
 )
 from tubular.types import (
     DataFrame,
@@ -206,7 +205,7 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
 
 @register
-class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
+class OneDKmeansTransformer(BaseNumericTransformer):
     """Generates a new column based on kmeans algorithm.
 
     Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
@@ -237,7 +236,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
     ...     columns="a",
     ...     n_clusters=2,
     ...     new_column_name="new",
-    ...     drop_original=False,
     ...     kmeans_kwargs={"random_state": 42},
     ... )
     OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
@@ -271,7 +269,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         ... columns='a',
         ... n_clusters=2,
         ... new_column_name="new",
-        ... drop_original=False,
         ... kmeans_kwargs={"random_state": 42},
         ...    )
         >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
@@ -279,7 +276,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
+        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
 
         """
         self.check_is_fitted(["bins"])
@@ -290,7 +287,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
                 "new_column_name": self.new_column_name,
                 "n_init": self.n_init,
                 "n_clusters": self.n_clusters,
-                "drop_original": self.drop_original,
                 "kmeans_kwargs": self.kmeans_kwargs,
             },
         )
@@ -299,13 +295,12 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         return json_dict
 
     @beartype
-    def __init__(  # noqa: PLR0917, PLR0913
+    def __init__(
         self,
         columns: str | ListOfOneStr,
         new_column_name: str,
         n_init: str | int = "auto",
         n_clusters: int = 8,
-        drop_original: bool = False,
         kmeans_kwargs: dict[str, object] | None = None,
         **kwargs: bool,
     ) -> None:
@@ -330,10 +325,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
             1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
 
-        drop_original : bool, default=False
-            Should the original columns to be transformed be dropped after applying the
-            OneDKmeanstransformer?
-
         kmeans_kwargs : dict, default = {}
             A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
 
@@ -348,7 +339,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         self.new_column_name = new_column_name
         self.n_init = n_init
         self.kmeans_kwargs = kmeans_kwargs
-        self.drop_original = drop_original
 
         if isinstance(columns, str):
             self.columns = [columns]
@@ -372,7 +362,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         ...     columns="a",
         ...     n_clusters=2,
         ...     new_column_name="kmeans_column",
-        ...     drop_original=False,
         ...     kmeans_kwargs={"random_state": 42},
         ... )
 
@@ -418,7 +407,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         ...     columns="a",
         ...     n_clusters=2,
         ...     new_column_name="new",
-        ...     drop_original=False,
         ...     kmeans_kwargs={"random_state": 42},
         ... )
 
@@ -496,7 +484,6 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         ...     columns="a",
         ...     n_clusters=2,
         ...     new_column_name="new",
-        ...     drop_original=False,
         ...     kmeans_kwargs={"random_state": 42},
         ... )
 
@@ -530,17 +517,12 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             right=True,
         )
 
-        X = X.with_columns(
+        return X.with_columns(
             nw.new_series(
                 name=self.new_column_name,
                 values=groups,
                 backend=native_backend,
             ),
-        )
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns[0],
         )
 
 
@@ -850,20 +832,16 @@ class RatioTransformer(BaseNumericTransformer):
     for it to be modernised
     """,
 )
-class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
+class LogTransformer(BaseNumericTransformer):
     """Transformer to apply log transformation.
 
-    Transformer has the option to add 1 to the columns to log and drop the
-    original columns.
+    Transformer has the option to add 1 to the columns to log.
 
     Attributes
     ----------
     add_1 : bool
         The name of the column or columns to be assigned to the output of running the
         pandas method in transform.
-
-    drop_original : bool
-        The name of the pandas.DataFrame method to call.
 
     suffix : str
         The suffix to add onto the end of column names for new columns.
@@ -905,7 +883,6 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         columns: str | list[str] | None,
         base: PositiveNumber | None = None,
         add_1: bool = False,
-        drop_original: bool = True,
         suffix: str = "log",
         **kwargs: bool,
     ) -> None:
@@ -923,10 +900,6 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
             Should a constant of 1 be added to the columns to be transformed prior to
             applying the log transform?
 
-        drop_original : bool
-            Should the original columns to be transformed be dropped after applying the
-            log transform?
-
         suffix : str, default = '_log'
             The suffix to add onto the end of column names for new columns.
 
@@ -936,7 +909,6 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         """
         super().__init__(columns=columns, **kwargs)
 
-        self.drop_original = drop_original
         self.base = base
         self.add_1 = add_1
         self.suffix = suffix
@@ -955,8 +927,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the log transform to the specified columns.
 
-        If the drop attribute is True then the original columns are dropped. If
-        the add_1 attribute is True then the original columns + 1 are logged.
+        If the add_1 attribute is True then the original columns + 1 are logged.
 
         Parameters
         ----------
@@ -966,8 +937,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         Returns
         -------
         X : pd.DataFrame
-            The dataframe with the specified columns logged, optionally dropping the original
-            columns if self.drop is True.
+            The dataframe with the specified columns logged.
 
         Raises
         ------
@@ -1001,11 +971,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
             else:
                 X[new_column_names] = np.log(X[self.columns]) / np.log(self.base)
 
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-        )
+        return X
 
 
 @deprecated(

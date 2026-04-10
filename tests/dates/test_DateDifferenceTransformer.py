@@ -7,8 +7,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
 from tests.base_tests import (
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -32,7 +30,6 @@ from tubular.dates import DateDifferenceTransformer
 
 class TestInit(
     TwoColumnListInitTests,
-    DropOriginalInitMixinTests,
     NewColumnNameInitMixintests,
     EmptyColumnsFailTests,
 ):
@@ -345,7 +342,6 @@ def generic_expected_df():
 class TestTransform(
     GenericTransformTests,
     GenericDatesMixinTransformTests,
-    DropOriginalTransformMixinTests,
     ReturnNativeTests,
 ):
     """Tests for DateDifferenceTransformer.transform()."""

@@ -14,7 +14,6 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, ListOfStrs, NumericTypes
 
 
@@ -62,7 +61,7 @@ ListOfRowsOverColumnsAggregations = Annotated[
 
 
 @register
-class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
+class BaseAggregationTransformer(BaseTransformer):
     """Base class for aggregation transformers.
 
     This class provides the foundation for aggregation-based transformations,
@@ -76,9 +75,6 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
     aggregations : list[str]
         Aggregation methods to apply.
-
-    drop_original : bool
-        Indicator for dropping original columns.
 
     verbose : bool
         Indicator for verbose output.
@@ -127,7 +123,6 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         aggregations: (
             ListOfColumnsOverRowAggregations | ListOfRowsOverColumnsAggregations
         ),
-        drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
         """Initialise class.
@@ -139,8 +134,6 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         aggregations : list[str]
             List of aggregation methods to apply. Valid methods include 'min', 'max',
             'mean', 'median', and 'count'.
-        drop_original : bool, optional
-            Whether to drop the original columns after transformation. Default is False.
         kwargs: bool
             parameters for base class, e.g. verbose
 
@@ -148,8 +141,6 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         super().__init__(columns=columns, **kwargs)
 
         self.aggregations = aggregations
-
-        self.drop_original = drop_original
 
     @block_from_json
     def to_json(self) -> dict[str, Any]:
@@ -169,24 +160,14 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         ...     columns="a",
         ...     aggregations=["min", "max"],
         ... )
-        >>> baseAggregationTransformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
-        {'tubular_version': ...,
-        'classname': 'BaseAggregationTransformer',
-        'init': {'columns': ['a'],
-        'copy': False,
-        'verbose': False,
-        'return_native': True,
-        'aggregations': ['min', 'max'],
-        'drop_original': False},
-        'fit': {}}
+        >>> baseAggregationTransformer.to_json()
+        {'tubular_version': 'dev', 'classname': 'BaseAggregationTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'aggregations': ['min', 'max']}, 'fit': {}}
 
         ```
 
         """
         json_dict = super().to_json()
-        json_dict["init"].update(
-            {"aggregations": self.aggregations, "drop_original": self.drop_original}
-        )
+        json_dict["init"].update({"aggregations": self.aggregations})
         return json_dict
 
     @beartype
@@ -282,9 +263,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     key : str
         Column name to group by for aggregation.
 
-    drop_original : bool, optional
-        Whether to drop the original columns after transformation. Default is False.
-
     built_from_json: bool
         indicates if transformer was reconstructed from json,
         which limits it's supported functionality to .transform
@@ -330,7 +308,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         columns: str | ListOfStrs,
         aggregations: ListOfRowsOverColumnsAggregations,
         key: str,
-        drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
         """Initialise class.
@@ -346,9 +323,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         key : str
             Column name to group by for aggregation.
 
-        drop_original : bool, optional
-            Whether to drop the original columns after transformation. Default is False.
-
         kwargs: bool
             parameters for base class, e.g. verbose
 
@@ -356,7 +330,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         super().__init__(
             columns=columns,
             aggregations=aggregations,
-            drop_original=drop_original,
             **kwargs,
         )
         self.key = key
@@ -388,7 +361,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
          'verbose': False,
          'return_native': True,
          'aggregations': ['min', 'max'],
-         'drop_original': False,
          'key': 'c'},
          'fit': {}}
 
@@ -490,14 +462,6 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**expr_dict) if expr_dict else X
 
-        X = DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-            return_native=False,
-        )
-
-        # Use mixin method to drop original columns
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
@@ -505,8 +469,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     """Aggregate provided columns over each row.
 
-    This transformer aggregates data within specified columns
-    and can optionally drop the original columns post-transformation.
+    This transformer aggregates data within specified columns.
 
     Attributes:
     ----------
@@ -515,9 +478,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
     aggregations : list[str]
         List of aggregation methods to apply.
-
-    drop_original : bool, optional
-        Whether to drop the original columns after transformation. Default is False.
 
     built_from_json: bool
         indicates if transformer was reconstructed from json,
@@ -562,7 +522,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         self,
         columns: str | ListOfStrs,
         aggregations: ListOfColumnsOverRowAggregations,
-        drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
         """Initialise class.
@@ -575,9 +534,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         aggregations : list[str]
             List of aggregation methods to apply.
 
-        drop_original : bool, optional
-            Whether to drop the original columns after transformation. Default is False.
-
         kwargs: bool
             parameters for base class, e.g. verbose
 
@@ -585,7 +541,6 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         super().__init__(
             columns=columns,
             aggregations=aggregations,
-            drop_original=drop_original,
             **kwargs,
         )
 
@@ -684,12 +639,4 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = X.with_columns(**transform_dict) if transform_dict else X
 
-        X = DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-            return_native=False,
-        )
-
-        # Use mixin method to drop original columns
         return _return_narwhals_or_native_dataframe(X, self.return_native)

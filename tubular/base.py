@@ -5,6 +5,7 @@ These transformers contain key checks to be applied in all cases.
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import narwhals as nw
@@ -21,7 +22,6 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     GenericKwargs,
@@ -164,6 +164,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         copy: bool = False,
         verbose: bool = False,
         return_native: bool = True,
+        drop_original: bool | None = None,
     ) -> None:
         """Init method for class.
 
@@ -184,11 +185,20 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         return_native: bool, default = True
             Controls whether transformer returns narwhals or native pandas/polars type
 
+        drop_original: Optional[bool], default = None
+            deprecated argument, has no effect.
+
         """
         self.verbose = verbose
+        self.drop_original = drop_original
 
         if self.verbose:
             print("BaseTransformer.__init__() called")
+
+            if self.drop_original:
+                warnings.warn(
+                    f"{self.classname()}: drop_original argument has been deprecated and will have no effect"
+                )
 
         # make sure columns is a single str or list of strs
         if isinstance(columns, str):
@@ -605,7 +615,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     issue for it to be redeveloped!
     """,
 )
-class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
+class DataFrameMethodTransformer(BaseTransformer):
     """Transformer that applies a pandas.DataFrame method.
 
     Transformer assigns the output of the method to a new column or columns.
@@ -666,7 +676,6 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         pd_method_name: str,
         columns: NonEmptyListOfStrs | str | None,
         pd_method_kwargs: GenericKwargs | None = None,
-        drop_original: bool = False,
         **kwargs: bool | None,
     ) -> None:
         """Init method for class.
@@ -693,9 +702,6 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
             A dictionary of keyword arguments to be passed to the pd.DataFrame method
             when it is called.
 
-        drop_original : bool, default = False
-            Should original columns be dropped?
-
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.__init__().
 
@@ -712,7 +718,6 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
         self.new_column_names = new_column_names
         self.pd_method_name = pd_method_name
         self.pd_method_kwargs = pd_method_kwargs
-        self.drop_original = drop_original
 
         try:
             df = pd.DataFrame()
@@ -767,9 +772,4 @@ class DataFrameMethodTransformer(DropOriginalMixin, BaseTransformer):
                 **self.pd_method_kwargs,
             )
 
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-        )
+        return X

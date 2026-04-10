@@ -3,7 +3,6 @@ import test_aide as ta
 
 import tests.test_data as d
 from tests.base_tests import (
-    DropOriginalInitMixinTests,
     EmptyColumnsFailTests,
     GenericFitTests,
     GenericTransformTests,
@@ -15,7 +14,6 @@ from tubular.comparison import EqualityChecker
 
 
 class TestInit(
-    DropOriginalInitMixinTests,
     NewColumnNameInitMixintests,
     TwoColumnListInitTests,
     EmptyColumnsFailTests,
@@ -76,12 +74,10 @@ class TestTransform(GenericTransformTests):
         """
         expected = test_dataframe.copy()
         expected["bool_logic"] = expected["b"] == expected["c"]
-        expected = expected.drop(["b", "c"], axis=1)
 
         example_transformer = EqualityChecker(
             columns=["b", "c"],
             new_column_name="bool_logic",
-            drop_original=True,
         )
         actual = example_transformer.transform(test_dataframe)
 
