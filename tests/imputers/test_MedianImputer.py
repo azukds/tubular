@@ -66,22 +66,6 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             "a": np.int64(4),
         }, "impute_values_ attribute"
 
-    @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_fit_not_changing_data(self, library, lazy):
-        """Test fit does not change X."""
-        df = d.create_df_1(library=library)
-
-        transformer = MedianImputer(columns="a")
-
-        transformer.fit(u._convert_to_lazy(df, lazy))
-
-        # Check whole dataframes
-        u.assert_frame_equal_dispatch(
-            d.create_df_1(library=library),
-            df,
-        )
-
 
 class TestTransform(
     GenericImputerTransformTests,
