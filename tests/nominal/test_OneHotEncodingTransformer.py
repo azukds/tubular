@@ -401,7 +401,7 @@ class TestTransform(
 
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        expected_columns = ["b|x", "b|y", "b|z", "c|a", "c|b", "c|c"]
+        expected_columns = ["b", "c", "b|x", "b|y", "b|z", "c|a", "c|b", "c|c"]
 
         df_transformed = nw.from_native(df_transformed)
         actual_columns = df_transformed.columns

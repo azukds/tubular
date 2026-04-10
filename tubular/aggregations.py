@@ -156,12 +156,20 @@ class BaseAggregationTransformer(BaseTransformer):
         Example:
         -------
         ```pycon
+        >>> from pprint import pprint
         >>> baseAggregationTransformer = BaseAggregationTransformer(
         ...     columns="a",
         ...     aggregations=["min", "max"],
         ... )
-        >>> baseAggregationTransformer.to_json()
-        {'tubular_version': 'dev', 'classname': 'BaseAggregationTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'aggregations': ['min', 'max']}, 'fit': {}}
+        >>> pprint(baseAggregationTransformer.to_json())
+        {'classname': 'BaseAggregationTransformer',
+         'fit': {},
+         'init': {'aggregations': ['min', 'max'],
+                  'columns': ['a'],
+                  'copy': False,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
 
         ```
 

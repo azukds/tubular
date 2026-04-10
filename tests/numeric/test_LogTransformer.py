@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -134,12 +136,10 @@ class TestTransform(
             },
         )
         # Values created using np.log1p() of original df
-        expected = pd.DataFrame(
-            {
-                "a_log": [9.999950e-06, 1.999980e-05, 2.999955e-05],
-                "b_log": [3.99992000e-05, 4.99987500e-05, 5.99982001e-05],
-            },
-        )
+        expected = deepcopy(df)
+        expected["a_log"] = [9.999950e-06, 1.999980e-05, 2.999955e-05]
+        expected["b_log"] = [3.99992000e-05, 4.99987500e-05, 5.99982001e-05]
+
         log_transformer = LogTransformer(
             columns=["a", "b"],
             add_1=True,

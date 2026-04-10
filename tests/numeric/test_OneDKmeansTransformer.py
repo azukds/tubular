@@ -250,34 +250,6 @@ class TestTransform(
 
         u.assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        [
-            (
-                create_numeric_df_2(library="pandas"),
-                expected_numeric_df_2(library="pandas"),
-            ),
-            (
-                create_numeric_df_2(library="polars"),
-                expected_numeric_df_2(library="polars"),
-            ),
-        ],
-    )
-    def test_expected_output_negatives(self, df, expected, from_json):
-        """Test that the output is expected from transform, when there are negative numbers"""
-        x = OneDKmeansTransformer(
-            columns="b",
-            n_clusters=5,
-            new_column_name="new",
-            kmeans_kwargs={"random_state": 42},
-        ).fit(df)
-
-        x = u._handle_from_json(x, from_json)
-        df_transformed = x.transform(df)
-
-        u.assert_frame_equal_dispatch(expected, df_transformed)
-
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """

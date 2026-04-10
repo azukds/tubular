@@ -197,7 +197,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
             if self.drop_original:
                 warnings.warn(
-                    f"{self.classname()}: drop_original argument has been deprecated and will have no effect"
+                    f"{self.classname()}: drop_original argument has "
+                    "been deprecated and will have no effect",
+                    stacklevel=2,
                 )
 
         # make sure columns is a single str or list of strs
