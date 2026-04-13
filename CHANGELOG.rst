@@ -35,6 +35,7 @@ Changed
 - refactored ArbitraryImputer into separate type specific subclasses `#527 <https://github.com/azukds/tubular/issues/527>_`
 - feat: made GroupRareLevelsTransformer lazyframe compatible `#531 <https://github.com/azukds/tubular/issues/531>`_
 - feat: edited dummy unit weight handling to be more lazy friendly
+- feat: updated CappingTransformers to work with lazyframes `#704 <https://github.com/azukds/tubular/issues/704>`_
 - feat: updated ModeImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 - feat: updated MedianImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
 - feat: converted MeanImputer to work with lazyframes `#530 <https://github.com/azukds/tubular/issues/530>_`
