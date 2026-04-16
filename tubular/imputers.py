@@ -98,7 +98,7 @@ class BaseImputer(BaseTransformer):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> arbitrary_imputer.to_json()
-        {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 1}, 'fit': {'impute_values_': {'a': 1, 'b': 1}}}
+        {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 1}, 'fit': {'is_fitted_': True, 'impute_values_': {'a': 1, 'b': 1}}}
 
         >>> mean_imputer = MeanImputer(columns=["a", "b"])
 
@@ -107,7 +107,7 @@ class BaseImputer(BaseTransformer):
         >>> _ = mean_imputer.fit(test_df)
 
         >>> mean_imputer.to_json()
-        {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 1.0, 'b': 2.0}}}
+        {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'is_fitted_': True, 'impute_values_': {'a': 1.0, 'b': 2.0}}}
 
         ```
 
@@ -308,6 +308,7 @@ class _NumberImputer(BaseImputer):
 
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
+        self.is_fitted_ = True  # Does not fit
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -350,7 +351,7 @@ class _NumberImputer(BaseImputer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         bad_types = [
             schema[col]
@@ -447,6 +448,8 @@ class _StringImputer(BaseImputer):
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
 
+        self.is_fitted_ = True  # Does not fit
+
     def cat_to_enum_expr(self, expr: nw.Expr, categories: list[str]) -> nw.Expr:
         """Update expression to include handling of category types.
 
@@ -509,7 +512,7 @@ class _StringImputer(BaseImputer):
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         bad_types = [
             schema[col]
@@ -616,6 +619,8 @@ class _BooleanImputer(BaseImputer):
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
 
+        self.is_fitted_ = True  # Does not fit
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Impute missing values with the supplied impute_value.
@@ -657,7 +662,7 @@ class _BooleanImputer(BaseImputer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         allowed_types = [nw.Boolean, nw.Unknown]
         allowed_types_str = "Boolean/Unknown"
@@ -733,7 +738,7 @@ class ArbitraryImputer(BaseImputer):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = arbitrary_imputer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 5}, 'fit': {'impute_values_': {'a': 5, 'b': 5}}}
+    {'tubular_version': ..., 'classname': 'ArbitraryImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'impute_value': 5}, 'fit': {'is_fitted_': True, 'impute_values_': {'a': 5, 'b': 5}}}
 
     >>> ArbitraryImputer.from_json(json_dump)
     ArbitraryImputer(columns=['a', 'b'], impute_value=5)
@@ -776,6 +781,7 @@ class ArbitraryImputer(BaseImputer):
 
         for c in self.columns:
             self.impute_values_[c] = self.impute_value
+        self.is_fitted_ = True  # Does not fit
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -886,7 +892,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     >>> json_dump = median_imputer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+    {'tubular_version': ..., 'classname': 'MedianImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'is_fitted_': True, 'impute_values_': {'a': 0.0, 'b': 1.0}}}
 
     >>> MedianImputer.from_json(json_dump)
     MedianImputer(columns=['a', 'b'])
@@ -927,6 +933,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         """
         super().__init__(columns=columns, **kwargs)
         self.weights_column = weights_column
+        self.is_fitted_ = False  # to be set to True at end of fit method, once impute_values_ have been calculated
 
     @block_from_json
     @beartype
@@ -1022,6 +1029,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
             )
 
         self._check_for_failed_fit()
+        self.is_fitted_ = True
 
         return self
 
@@ -1072,7 +1080,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     >>> json_dump = mean_imputer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0.0, 'b': 1.0}}}
+    {'tubular_version': ..., 'classname': 'MeanImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'is_fitted_': True, 'impute_values_': {'a': 0.0, 'b': 1.0}}}
 
     >>> MeanImputer.from_json(json_dump)
     MeanImputer(columns=['a', 'b'])
@@ -1113,6 +1121,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         """
         super().__init__(columns=columns, **kwargs)
         self.weights_column = weights_column
+        self.is_fitted_ = False  # to be set to True at end of fit method, once impute_values_ have been calculated
 
     @block_from_json
     @beartype
@@ -1193,6 +1202,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         )
 
         self._check_for_failed_fit()
+        self.is_fitted_ = True
 
         return self
 
@@ -1245,7 +1255,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     >>> json_dump = mode_imputer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'ModeImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'impute_values_': {'a': 0, 'b': 1}}}
+    {'tubular_version': ..., 'classname': 'ModeImputer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None}, 'fit': {'is_fitted_': True, 'impute_values_': {'a': 0, 'b': 1}}}
 
     >>> ModeImputer.from_json(json_dump)
     ModeImputer(columns=['a', 'b'])
@@ -1287,6 +1297,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         """
         super().__init__(columns=columns, **kwargs)
         self.weights_column = weights_column
+        self.is_fitted_ = False  # to be set to True at end of fit method, once impute_values_ have been calculated
 
     @block_from_json
     @beartype
@@ -1386,6 +1397,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
             self.impute_values_[c] = mode_value
 
         self._check_for_failed_fit()
+        self.is_fitted_ = True
 
         return self
 
@@ -1427,7 +1439,7 @@ class NullIndicator(BaseTransformer):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = null_indicator.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'NullIndicator', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'NullIndicator', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {'is_fitted_': True}}
 
     >>> NullIndicator.from_json(json_dump)
     NullIndicator(columns=['a', 'b'])
@@ -1463,6 +1475,7 @@ class NullIndicator(BaseTransformer):
 
         """
         super().__init__(columns=columns, **kwargs)
+        self.is_fitted_ = True  # does not fit
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
