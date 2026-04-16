@@ -375,7 +375,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                                    unseen_levels_to_rare=False)
 
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}, 'rare_levels_record': {'b': ['x', 'y', 'z'], 'c': ['b', 'c']}}}
+        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'is_fitted_': True, 'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}, 'rare_levels_record': {'b': ['x', 'y', 'z'], 'c': ['b', 'c']}}}
 
         ```
 
@@ -513,6 +513,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         y = _convert_series_to_narwhals(y)
 
         super().fit(X, y)
+        self.is_fitted_ = False  # will be set to True at end of method, set here to prevent issues with calling parent fit method
 
         weights_column = self.weights_column
         if self.weights_column is None:
@@ -528,7 +529,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         )
         X = X.filter(valid_weights_filter_expr)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         self._check_str_like_columns(schema)
 
@@ -577,6 +578,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
             if not self.unseen_levels_to_rare:
                 self.training_data_levels[c] = present_levels[c]
+
+        self.is_fitted_ = True
 
         return self
 
@@ -627,7 +630,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         X = BaseTransformer.transform(self, X, return_native_override=False)
         X = _convert_dataframe_to_narwhals(X)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         self._check_str_like_columns(schema)
 
@@ -776,7 +779,7 @@ class MeanResponseTransformer(
 
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 1, 'level': None, 'unseen_level_handling': 'mean', 'return_type': 'Float32', 'drop_original': True}, 'fit': {'mappings': {'a': {'x': 0.25, 'y': 0.75}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a'], 'unseen_levels_encoding_dict': {'a': 0.5}}}
+    {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 1, 'level': None, 'unseen_level_handling': 'mean', 'return_type': 'Float32', 'drop_original': True}, 'fit': {'is_fitted_': True, 'mappings': {'a': {'x': 0.25, 'y': 0.75}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a'], 'unseen_levels_encoding_dict': {'a': 0.5}}}
     >>> MeanResponseTransformer.from_json(json_dump)
     MeanResponseTransformer(columns=['a'], prior=1, unseen_level_handling='mean')
 
@@ -887,7 +890,7 @@ class MeanResponseTransformer(
         >>> _ = transformer.fit(test_df[["a"]], test_df["b"])
 
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 0, 'level': None, 'unseen_level_handling': None, 'return_type': 'Float32', 'drop_original': True}, 'fit': {'mappings': {'a': {'x': 0.0, 'y': 1.0}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a']}}
+        {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 0, 'level': None, 'unseen_level_handling': None, 'return_type': 'Float32', 'drop_original': True}, 'fit': {'is_fitted_': True, 'mappings': {'a': {'x': 0.0, 'y': 1.0}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a']}}
 
         ```
 
@@ -1373,6 +1376,7 @@ class MeanResponseTransformer(
         self._fit_unseen_level_handling_dict(X_y, encoded_column_exprs, weights_column)
 
         self._check_for_failed_fit()
+        self.is_fitted_ = True
 
         return self
 
@@ -1665,7 +1669,7 @@ class OneHotEncodingTransformer(
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'is_fitted_': True, 'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
 
     >>> OneHotEncodingTransformer.from_json(json_dump)
     OneHotEncodingTransformer(columns=['a'])
@@ -1756,7 +1760,7 @@ class OneHotEncodingTransformer(
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'is_fitted_': True, 'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
 
         ```
 
@@ -1923,7 +1927,7 @@ class OneHotEncodingTransformer(
                 )
 
             self.new_feature_names_[c] = self._get_feature_names(column=c)
-
+        self.is_fitted_ = True
         return self
 
     @beartype
