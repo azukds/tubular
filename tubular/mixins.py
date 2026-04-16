@@ -57,7 +57,7 @@ class CheckNumericMixin:
 
         """
         X = _convert_dataframe_to_narwhals(X)
-        schema = X.schema
+        schema = X.collect_schema()
 
         non_numeric_columns = [
             col for col in self.columns if schema[col] not in NumericTypes
@@ -234,7 +234,7 @@ class WeightColumnMixin:
             raise ValueError(msg)
 
         # check weight is numeric
-        schema = X.schema
+        schema = X.collect_schema()
         if schema[weights_column] not in NumericTypes:
             msg = f"{self.classname()}: weight column must be numeric."
             raise ValueError(msg)
