@@ -69,7 +69,10 @@ class TestPipelineDumpAndLoadJson:
         expected_json = {
             "MeanImputer": {
                 "classname": "MeanImputer",
-                "fit": {"impute_values_": mean_imputer.impute_values_},
+                "fit": {
+                    "is_fitted_": True,
+                    "impute_values_": mean_imputer.impute_values_,
+                },
                 "init": {
                     "columns": mean_imputer.columns,
                     "copy": mean_imputer.copy,
@@ -80,7 +83,10 @@ class TestPipelineDumpAndLoadJson:
             },
             "MedianImputer": {
                 "classname": "MedianImputer",
-                "fit": {"impute_values_": median_imputer.impute_values_},
+                "fit": {
+                    "is_fitted_": True,
+                    "impute_values_": median_imputer.impute_values_,
+                },
                 "init": {
                     "columns": median_imputer.columns,
                     "copy": median_imputer.copy,
