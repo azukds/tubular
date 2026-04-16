@@ -186,7 +186,7 @@ class WeightColumnMixin:
 
         unit_weights_column = "unit_weights_column"
 
-        if unit_weights_column in X.columns:
+        if unit_weights_column in X.collect_schema().names():
             if X.schema[unit_weights_column] not in NumericTypes:
                 error_msg = f"{unit_weights_column} is present in X and non-numeric, transformer logic requires this to be an all 1 value column."
                 raise TypeError(
@@ -229,7 +229,7 @@ class WeightColumnMixin:
         X = _convert_dataframe_to_narwhals(X)
 
         # check if given weight is in columns
-        if weights_column not in X.columns:
+        if weights_column not in X.collect_schema().names():
             msg = f"{self.classname()}: weight col ({weights_column}) is not present in columns of data"
             raise ValueError(msg)
 
