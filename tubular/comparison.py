@@ -174,7 +174,6 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
                 "then_column": self.then_column,
             },
         )
-        json_dict["fit"]["is_fitted_"] = self.is_fitted_
 
         return json_dict
 
@@ -380,7 +379,6 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         json_dict = super().to_json()
 
         json_dict["init"]["condition"] = self.condition
-        json_dict["fit"]["is_fitted_"] = self.is_fitted_
 
         return json_dict
 
