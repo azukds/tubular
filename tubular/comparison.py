@@ -132,6 +132,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         self.when_column = when_column
         self.then_column = then_column
+        self.is_fitted_ = True  # Set is_fitted to True as no fitting is required
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -153,7 +154,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         ... )
         >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'WhenThenOtherwiseTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a', 'b'],
                   'copy': False,
                   'return_native': True,
@@ -173,6 +174,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
                 "then_column": self.then_column,
             },
         )
+        json_dict["fit"]["is_fitted_"] = self.is_fitted_
 
         return json_dict
 
@@ -235,7 +237,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        schema = X.schema
+        schema = X.collect_schema()
         if schema[self.when_column] != nw.Boolean:
             message = f"The column '{self.when_column}' must be of type Boolean."
             raise TypeError(message)
@@ -343,6 +345,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         """
         super().__init__(columns=columns, **kwargs)
         self.condition = condition
+        self.is_fitted_ = True  # Set is_fitted to True as no fitting is required
 
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Serialize the transformer to a JSON-compatible dictionary.
@@ -363,7 +366,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         >>> from pprint import pprint
         >>> pprint(json_dict, sort_dicts=True)
         {'classname': 'CompareTwoColumnsTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a', 'b'],
                   'condition': '>',
                   'copy': False,
@@ -377,6 +380,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         json_dict = super().to_json()
 
         json_dict["init"]["condition"] = self.condition
+        json_dict["fit"]["is_fitted_"] = self.is_fitted_
 
         return json_dict
 
@@ -427,7 +431,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         bad_cols = [col for col in self.columns if schema[col] not in NumericTypes]
         if bad_cols:
