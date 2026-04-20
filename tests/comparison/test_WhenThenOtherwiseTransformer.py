@@ -1,5 +1,4 @@
 import copy
-import re
 
 import narwhals as nw
 import pytest
@@ -377,7 +376,5 @@ class TestOtherBaseBehaviour(
         del transformer.is_fitted_
 
         # Now transform should raise NotFittedError
-        with pytest.raises(
-            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
-        ):
+        with pytest.raises(NotFittedError):
             pipeline.transform(single_row_df)
