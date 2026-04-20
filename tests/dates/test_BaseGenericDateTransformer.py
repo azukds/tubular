@@ -13,6 +13,7 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsDatetime,
     ReturnNativeTests,
 )
 from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
@@ -299,7 +300,7 @@ class TestTransform(
         cls.transformer_name = "BaseGenericDateTransformer"
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsDatetime):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

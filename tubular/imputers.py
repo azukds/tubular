@@ -818,6 +818,7 @@ class ArbitraryImputer(BaseImputer):
         ```
 
         """
+        self.check_is_fitted("is_fitted_")
         X = _convert_dataframe_to_narwhals(X)
 
         if isinstance(self.impute_value, (int, float)) and not isinstance(

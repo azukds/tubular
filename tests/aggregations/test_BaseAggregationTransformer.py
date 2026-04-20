@@ -6,6 +6,7 @@ from tests.base_tests import (
     DropOriginalInitMixinTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -102,7 +103,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
             transformer.transform(_convert_to_lazy(test_df, lazy))
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
     """
     Class to run tests for BaseAggregationTransformer outside the three standard methods.
 

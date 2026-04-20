@@ -1,6 +1,9 @@
+import re
+
 import narwhals as nw
 import pytest
 from sklearn.exceptions import NotFittedError
+from sklearn.pipeline import Pipeline
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -121,3 +124,40 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseTransformer"
+
+    def test_pipeline_raises_not_fitted_error_when_unfitted(self):
+        """Test that a sklearn Pipeline with BaseTransformer works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
+        df = d.create_df_1(library="pandas")
+        transformer = BaseTransformer(columns=["a"])
+
+        pipeline = Pipeline([("base_transformer", transformer)])
+
+        # Fit the pipeline
+        pipeline.fit(df)
+
+        # Transform should work
+        result = pipeline.transform(df)
+        assert result is not None
+
+        # Delete is_fitted_ from the transformer
+        del transformer.is_fitted_
+
+        # Now transform should raise NotFittedError
+        with pytest.raises(
+            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
+        ):
+            pipeline.transform(df)
+
+    def test_pipeline_raises_not_fitted_error_when_not_fitted(self):
+        """Test that a sklearn Pipeline with BaseTransformer raises NotFittedError when transform is called without fitting."""
+        df = d.create_df_1(library="pandas")
+        transformer = BaseTransformer(columns=["a"])
+        del transformer.is_fitted_  # Simulate not fitted
+
+        pipeline = Pipeline([("base_transformer", transformer)])
+
+        # Transform without fitting should raise NotFittedError
+        with pytest.raises(
+            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
+        ):
+            pipeline.transform(df)

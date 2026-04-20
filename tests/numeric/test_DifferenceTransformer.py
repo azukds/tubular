@@ -5,7 +5,11 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 from tests import utils as u
-from tests.base_tests import EmptyColumnsFailTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFailTests,
+    OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,
@@ -208,7 +212,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
     """
     Class to run tests for DifferenceTransformer outside the three standard methods.
 

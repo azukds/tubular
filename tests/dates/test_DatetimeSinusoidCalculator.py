@@ -11,6 +11,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsDates,
 )
 from tests.dates.test_BaseDatetimeTransformer import DatetimeMixinTransformTests
 from tests.utils import (
@@ -519,7 +520,9 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsDates,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

@@ -1,7 +1,11 @@
 import pandas as pd
 import pytest
 
-from tests.base_tests import EmptyColumnsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerFitTests,
     BaseNumericTransformerInitTests,
@@ -109,7 +113,9 @@ class TestTransform(BaseNumericTransformerTransformTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for ScalingTransformer outside the three standard methods.

@@ -258,7 +258,7 @@ class BaseMappingTransformer(BaseTransformer):
 
         return_native = self._process_return_native(return_native_override)
 
-        self.check_is_fitted(["mappings", "return_dtypes"])
+        self.check_is_fitted(["mappings", "return_dtypes", "is_fitted_"])
 
         X = super().transform(X, return_native_override=False)
 
@@ -300,8 +300,6 @@ class BaseMappingTransformMixin(BaseTransformer):
 
     jsonable = False
 
-    is_fitted = True  # Does not fit so set to True to avoid issues
-
     @beartype
     def transform(
         self,
@@ -328,7 +326,9 @@ class BaseMappingTransformMixin(BaseTransformer):
         #  independently (should be inherited as a mixin)
 
         """
-        self.check_is_fitted(["mappings", "return_dtypes", "mappings_from_null"])
+        self.check_is_fitted(
+            ["mappings", "return_dtypes", "mappings_from_null", "is_fitted_"]
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -495,8 +495,6 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
     jsonable = True
 
-    is_fitted_ = True  # Does not fit so set to True to avoid issues
-
     @beartype
     def transform(
         self,
@@ -545,6 +543,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         ```
 
         """
+        self.check_is_fitted("is_fitted_")
         X = _convert_dataframe_to_narwhals(X)
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
