@@ -12,7 +12,7 @@ DataFrame = pd.DataFrame | pl.DataFrame | pl.LazyFrame | nw.DataFrame | nw.LazyF
 
 NarwhalsFrame = nw.DataFrame | nw.LazyFrame
 
-Series = pd.Series | pl.Series | pl.LazyFrame | nw.Series
+Series = pd.Series | pl.Series | pl.LazyFrame | nw.Series | nw.LazyFrame
 
 NumericTypes = [
     nw.Int8,
