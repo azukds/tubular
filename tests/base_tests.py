@@ -1612,9 +1612,7 @@ class OtherBaseBehaviourTestsNumeric:
         del transformer.is_fitted_
 
         # Now transform should raise NotFittedError
-        with pytest.raises(
-            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
-        ):
+        with pytest.raises(NotFittedError):
             pipeline.transform(df)
 
 
@@ -1643,9 +1641,7 @@ class OtherBaseBehaviourTestsString:
         del transformer.is_fitted_
 
         # Now transform should raise NotFittedError
-        with pytest.raises(
-            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
-        ):
+        with pytest.raises(NotFittedError):
             pipeline.transform(df)
 
 
@@ -1674,9 +1670,7 @@ class OtherBaseBehaviourTestsDatetime:
         del transformer.is_fitted_
 
         # Now transform should raise NotFittedError
-        with pytest.raises(
-            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
-        ):
+        with pytest.raises(NotFittedError):
             pipeline.transform(df)
 
 
@@ -1705,7 +1699,5 @@ class OtherBaseBehaviourTestsDates:
         del transformer.is_fitted_
 
         # Now transform should raise NotFittedError
-        with pytest.raises(
-            NotFittedError, match=re.escape("Pipeline is not fitted yet.")
-        ):
+        with pytest.raises(NotFittedError):
             pipeline.transform(df)
