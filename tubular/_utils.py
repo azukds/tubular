@@ -56,6 +56,39 @@ def _convert_dataframe_to_narwhals(X: DataFrame) -> NarwhalsFrame:
 
 
 @beartype
+def _collect_series(y: nw.Series | nw.LazyFrame | None = None) -> nw.Series | None:
+    """Collect lazy series/frames, or return inputs if eager.
+
+    Parameters
+    ----------
+    y: nw.Series or nw.LazyFrame
+        Series or LazyFrame to be collected if lazy
+
+    Returns
+    -------
+    nw.Series: collected series
+
+    """
+    if y is None:
+        return None
+
+    if isinstance(y, nw.LazyFrame):
+        # Convert LazyFrame to native, collect, then back to narwhals Series
+        native_lazy = y.to_native()
+        collected = native_lazy.collect()
+        # Get the first column as a Series
+        if hasattr(collected, "columns"):
+            first_col = collected.columns[0]
+            series_native = collected[first_col]
+            y = nw.from_native(series_native, allow_series=True)
+        else:
+            # If it's already a Series, just convert it
+            y = nw.from_native(collected, allow_series=True)
+
+    return y
+
+
+@beartype
 def _convert_series_to_narwhals(
     y: Series | None = None,
 ) -> nw.Series | nw.LazyFrame | None:
