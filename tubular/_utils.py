@@ -56,7 +56,9 @@ def _convert_dataframe_to_narwhals(X: DataFrame) -> NarwhalsFrame:
 
 
 @beartype
-def _convert_series_to_narwhals(y: Series | None = None) -> nw.Series | None:
+def _convert_series_to_narwhals(
+    y: Series | None = None,
+) -> nw.Series | nw.LazyFrame | None:
     """Narwhalifies series, if series is not already narwhals.
 
     Parameters
@@ -69,7 +71,7 @@ def _convert_series_to_narwhals(y: Series | None = None) -> nw.Series | None:
     nw.Series: narwhalified series
 
     """
-    if y is not None and not isinstance(y, nw.Series):
+    if y is not None and not isinstance(y, (nw.Series, nw.LazyFrame)):
         y = nw.from_native(y, allow_series=True)
 
     return y
