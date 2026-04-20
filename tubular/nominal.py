@@ -18,6 +18,7 @@ from tubular._stats import (
 )
 from tubular._utils import (
     _collect_frame,
+    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _is_null,
@@ -1224,6 +1225,9 @@ class MeanResponseTransformer(
 
         BaseNominalTransformer.fit(self, X, y)
 
+        # Collect lazy y to enable operations like .unique().to_list()
+        y = _collect_series(y)
+
         self.mappings = {}
         self.unseen_levels_encoding_dict = {}
 
@@ -2198,6 +2202,9 @@ class OrdinalEncoderTransformer(
         y = _convert_series_to_narwhals(y)
 
         BaseNominalTransformer.fit(self, X, y)
+
+        # Collect lazy y to enable operations like .is_null().sum()
+        y = _collect_series(y)
 
         self.mappings = {}
 
