@@ -25,6 +25,7 @@ from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     GenericKwargs,
+    LazyFrame,
     ListOfStrs,
     NonEmptyListOfStrs,
     Series,
@@ -323,7 +324,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> BaseTransformer:
+    def fit(self, X: DataFrame, y: Series | LazyFrame | None = None) -> BaseTransformer:
         """Check data before fit.
 
         Fit calls the columns_check method which will check that the columns
@@ -334,7 +335,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : DataFrame
             Data to fit the transformer on.
 
-        y : None or Series, default = None
+        y : None or Series or LazyFrame, default = None
             Optional argument only required for the transformer to work with sklearn
             pipelines.
 

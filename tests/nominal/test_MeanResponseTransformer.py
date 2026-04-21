@@ -1396,3 +1396,28 @@ class TestOtherBaseBehaviour(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
+
+
+class TestLazyYSupport:
+    """Tests for lazy y parameter support in MeanResponseTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_support(self, library):
+        """Test that MeanResponseTransformer accepts LazyFrame as y parameter."""
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        # Create lazy y
+        y_lazy = nw.from_native(df["a"].to_frame().lazy(), allow_series=False)
+
+        x = MeanResponseTransformer(columns="b")
+
+        # Should not raise an error
+        x.fit(df, y_lazy)
+
+        # Verify mappings were created correctly
+        assert "b" in x.mappings
+        assert len(x.mappings["b"]) > 0
+
+        # Test transform works
+        result = x.transform(df)
+        assert result is not None

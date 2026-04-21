@@ -12,7 +12,7 @@ from beartype import beartype
 from narwhals.typing import IntoDType
 from numpy.typing import ArrayLike
 
-from tubular.types import DataFrame, NarwhalsFrame, Series
+from tubular.types import DataFrame, LazyFrame, NarwhalsFrame, Series
 
 
 @beartype
@@ -84,7 +84,7 @@ def _collect_series(y: nw.Series | nw.LazyFrame | None = None) -> nw.Series | No
 
 @beartype
 def _convert_series_to_narwhals(
-    y: Series | None = None,
+    y: Series | LazyFrame | None = None,
 ) -> nw.Series | nw.LazyFrame | None:
     """Narwhalifies series, if series is not already narwhals.
 
