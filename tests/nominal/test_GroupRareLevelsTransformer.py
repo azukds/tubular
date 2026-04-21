@@ -14,6 +14,7 @@ from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsString,
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
 )
@@ -514,7 +515,9 @@ class TestTransform(GenericNominalTransformTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsString,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

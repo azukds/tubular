@@ -5,6 +5,8 @@ import narwhals as nw
 import numpy as np
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
+from sklearn.exceptions import NotFittedError
+from sklearn.pipeline import Pipeline
 
 from tests.base_tests import (
     ColumnStrListInitTests,
@@ -1396,3 +1398,25 @@ class TestOtherBaseBehaviour(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_learnt_values_not_modified(self, library):
+        """Test that the mappings from fit are not changed in transform."""
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        x = MeanResponseTransformer(columns="b")
+        pipeline = Pipeline([("MeanResponseTransformer", x)])
+
+        pipeline.fit(df, df["a"])
+
+        pipeline.transform(df)
+        # Transform should work
+        result = pipeline.transform(df)
+        assert result is not None
+
+        # Delete is_fitted_ from the transformer
+        del x.is_fitted_
+
+        # Now transform should raise NotFittedError
+        with pytest.raises(NotFittedError):
+            pipeline.transform(df)
