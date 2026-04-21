@@ -21,7 +21,7 @@ from tubular._utils import (
 from tubular.base import block_from_json, register
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
-from tubular.types import DataFrame, Number, Series
+from tubular.types import DataFrame, LazyFrame, Number, Series
 
 CappingValues = Annotated[
     list[Number | None],
@@ -246,7 +246,10 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> BaseCappingTransformer:
+    @beartype
+    def fit(
+        self, X: DataFrame, y: Series | LazyFrame | None = None
+    ) -> BaseCappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -258,7 +261,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X : DataFrame
             A dataframe with required columns to be capped.
 
-        y : Series or None. Defaults to None
+        y : Series or LazyFrame or None. Defaults to None
             Required for pipeline.
 
         Returns
@@ -745,7 +748,9 @@ class CappingTransformer(BaseCappingTransformer):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> CappingTransformer:
+    def fit(
+        self, X: DataFrame, y: Series | LazyFrame | None = None
+    ) -> CappingTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied
@@ -971,7 +976,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> OutOfRangeNullTransformer:
+    def fit(
+        self, X: DataFrame, y: Series | LazyFrame | None = None
+    ) -> OutOfRangeNullTransformer:
         """Learn capping values from input data X.
 
         Calculates the quantiles to cap at given the quantiles dictionary supplied

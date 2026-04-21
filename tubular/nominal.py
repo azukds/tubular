@@ -31,6 +31,7 @@ from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
     DataFrame,
     FloatBetweenZeroOne,
+    LazyFrame,
     ListOfStrs,
     PositiveInt,
     Series,
@@ -1175,7 +1176,7 @@ class MeanResponseTransformer(
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
+    def fit(self, X: DataFrame, y: Series | LazyFrame) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
         """Identify mapping of categorical levels to mean response values.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -1190,7 +1191,7 @@ class MeanResponseTransformer(
             Data to with catgeorical variable columns to transform and also containing response_column
             column.
 
-        y : Series
+        y : Series or LazyFrame
             Response variable or target.
 
         Returns
@@ -2174,7 +2175,7 @@ class OrdinalEncoderTransformer(
             raise ValueError(msg)
 
     @beartype
-    def fit(self, X: DataFrame, y: Series) -> OrdinalEncoderTransformer:
+    def fit(self, X: DataFrame, y: Series | LazyFrame) -> OrdinalEncoderTransformer:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -2186,7 +2187,7 @@ class OrdinalEncoderTransformer(
             Data to with catgeorical variable columns to transform and response_column column
             specified when object was initialised.
 
-        y : Series
+        y : Series or LazyFrame
             Response column or target.
 
         Returns
