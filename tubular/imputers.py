@@ -1581,7 +1581,7 @@ class NearestMeanResponseImputer(BaseImputer):
         super().__init__(columns=columns, **kwargs)
 
     @beartype
-    def fit(self, X: DataFrame, y: Series | LazyFrame) -> NearestMeanResponseImputer:
+    def fit(self, X: DataFrame, y: Series) -> NearestMeanResponseImputer:
         """Calculate mean values to impute with.
 
         Parameters
