@@ -76,7 +76,7 @@ def _collect_series(y: nw.Series | nw.LazyFrame | None = None) -> nw.Series | No
         # Collect directly without converting to native first
         collected_df = y.collect()
         # Get the first column as a Series
-        col_name = collected_df.columns[0]
+        col_name = collected_df.collect_schema().names()[0]
         y = collected_df.get_column(col_name)
 
     return y
