@@ -1848,7 +1848,7 @@ class OneHotEncodingTransformer(
     def fit(
         self,
         X: DataFrame,
-        y: Series | None = None,
+        y: Series | LazyFrame | None = None,
     ) -> OneHotEncodingTransformer:
         """Get list of levels for each column to be transformed.
 
