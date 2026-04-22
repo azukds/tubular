@@ -1176,7 +1176,7 @@ class MeanResponseTransformer(
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | LazyFrame) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
+    def fit(self, X: DataFrame, y: Series) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
         """Identify mapping of categorical levels to mean response values.
 
         If the user specified the weights_column arg in when initialising the transformer
