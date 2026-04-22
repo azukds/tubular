@@ -1,5 +1,6 @@
 import narwhals as nw
 import numpy as np
+import polars as pl
 import pytest
 
 from tests.base_tests import (
@@ -281,6 +282,23 @@ class TestTransform(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "ModeImputer"
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in ModeImputer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that ModeImputer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "z", "x", "y"]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = ModeImputer(columns="b")
+
+        # Should not raise an error
+        transformer.fit(df, y_lazy)
 
 
 class TestOtherBaseBehaviour(

@@ -1,4 +1,5 @@
 import narwhals as nw
+import polars as pl
 import pytest
 
 import tests.test_data as d
@@ -150,6 +151,25 @@ class TestTransform(GenericCappingTransformTests):
                 _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in OutOfRangeNullTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that OutOfRangeNullTransformer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": [1.0, 2.0, 3.0, 4.0, 5.0]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = OutOfRangeNullTransformer(
+            quantiles={"a": [0.1, 0.9], "b": [0.1, 0.9]}
+        )
+
+        # Should not raise an error
+        transformer.fit(df, y_lazy)
 
 
 class TestOtherBaseBehaviour(

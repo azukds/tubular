@@ -1,3 +1,4 @@
+import polars as pl
 import pytest
 
 import tests.test_data as d
@@ -16,9 +17,7 @@ from tests.imputers.test_BaseImputer import (
     GenericImputerTransformTests,
     GenericImputerTransformTestsWeight,
 )
-from tests.utils import (
-    _convert_to_lazy,
-)
+from tests.utils import _convert_to_lazy, dataframe_init_dispatch
 from tubular.imputers import MeanImputer
 
 
@@ -88,6 +87,23 @@ class TestTransform(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "MeanImputer"
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in MeanImputer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that MeanImputer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": [1.0, 2.0, None, 4.0, 5.0]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = MeanImputer(columns="b")
+
+        # Should not raise an error
+        transformer.fit(df, y_lazy)
 
 
 class TestOtherBaseBehaviour(

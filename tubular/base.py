@@ -370,7 +370,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     @block_from_json
     @beartype
     def _combine_X_y(
-        self, X: DataFrame, y: Series, return_native_override: bool = True
+        self, X: DataFrame, y: Series | LazyFrame, return_native_override: bool = True
     ) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
@@ -384,7 +384,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : DataFrame
             Data containing explanatory variables.
 
-        y : Series
+        y : Series or LazyFrame
             Response variable.
 
         return_native_override: Optional[bool]
@@ -433,7 +433,23 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         return_native = self._process_return_native(return_native_override)
 
-        X = X.with_columns(_temporary_response=y)
+        # If both X and y are LazyFrames, use join to maintain lazy evaluation
+        if isinstance(X, nw.LazyFrame) and isinstance(y, nw.LazyFrame):
+            # Convert LazyFrame y to LazyFrame with row index for joining
+            y_named = y.with_row_index("__row_idx__")
+            X_indexed = X.with_row_index("__row_idx__")
+            y_col = y.columns[0]
+            X = (
+                X_indexed.join(
+                    y_named.select("__row_idx__", y_col), on="__row_idx__", how="inner"
+                )
+                .select("*")
+                .exclude("__row_idx__")
+                .rename({y_col: "_temporary_response"})
+            )
+        else:
+            # For eager frames or Series, use with_columns
+            X = X.with_columns(_temporary_response=y)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

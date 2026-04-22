@@ -1,6 +1,7 @@
 import re
 
 import narwhals as nw
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import (
@@ -511,6 +512,27 @@ class TestTransform(GenericNominalTransformTests):
             assert cat not in output_categories, (
                 f"{transformer.classname} output columns should forget rare encoded categories, expected {cat} to be forgotten from column {column}"
             )
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in GroupRareLevelsTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that GroupRareLevelsTransformer accepts LazyFrame for y parameter."""
+        df_dict = {
+            "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
+            "b": ["a", "a", "a", "d", "e", "f", "g", "h", "i", "j"],
+            "c": ["a", "b", "c", "d", "f", "f", "f", "g", "g", "k"],
+        }
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": list(range(10))})
+
+        transformer = GroupRareLevelsTransformer(columns=["b", "c"])
+
+        # Should not raise an error
+        transformer.fit(df, y_lazy)
 
 
 class TestOtherBaseBehaviour(

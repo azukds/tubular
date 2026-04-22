@@ -1,3 +1,4 @@
+import polars as pl
 import pytest
 
 from tests.base_tests import EmptyCappingsFitTransformPassTests, OtherBaseBehaviourTests
@@ -6,6 +7,8 @@ from tests.capping.test_BaseCappingTransformer import (
     GenericCappingInitTests,
     GenericCappingTransformTests,
 )
+from tests.utils import dataframe_init_dispatch
+from tubular.capping import CappingTransformer
 
 
 class TestInit(GenericCappingInitTests):
@@ -30,6 +33,23 @@ class TestTransform(GenericCappingTransformTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "CappingTransformer"
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in CappingTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that CappingTransformer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": [1.0, 2.0, 3.0, 4.0, 5.0]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = CappingTransformer(quantiles={"b": [0.1, 0.9]})
+
+        # Should not raise an error
+        transformer.fit(df, y_lazy)
 
 
 class TestOtherBaseBehaviour(
