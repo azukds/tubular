@@ -2175,7 +2175,7 @@ class OrdinalEncoderTransformer(
             raise ValueError(msg)
 
     @beartype
-    def fit(self, X: DataFrame, y: Series | LazyFrame) -> OrdinalEncoderTransformer:
+    def fit(self, X: DataFrame, y: Series) -> OrdinalEncoderTransformer:
         """Identify mapping of categorical levels to rank-ordered integer values by target-mean in ascending order.
 
         If the user specified the weights_column arg in when initialising the transformer
