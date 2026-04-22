@@ -468,7 +468,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     def fit(
         self,
         X: DataFrame,
-        y: Series | None = None,
+        y: Series | LazyFrame | None = None,
     ) -> GroupRareLevelsTransformer:
         """Record non-rare levels for categorical variables.
 
@@ -483,7 +483,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         X : DataFrame
             Data to identify non-rare levels from.
 
-        y : Series or None, default = None
+        y : Series or LazyFrame or None, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
         Returns
