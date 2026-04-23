@@ -168,8 +168,19 @@ class TestLazyYSupport:
             quantiles={"a": [0.1, 0.9], "b": [0.1, 0.9]}
         )
 
-        # Should not raise an error
+        # Fit should accept lazy y and not raise an error
         transformer.fit(df, y_lazy)
+
+        expected = pl.DataFrame(
+            {
+                "a": [1, 2, 3, 4, None],
+                "b": [1.0, 2.0, 3.0, 4.0, None],
+            }
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
 
 
 class TestOtherBaseBehaviour(
