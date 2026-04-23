@@ -1226,9 +1226,6 @@ class MeanResponseTransformer(
 
         BaseNominalTransformer.fit(self, X, y)
 
-        # Collect lazy y to enable operations like .unique().to_list()
-        y = _collect_series(y)
-
         self.mappings = {}
         self.unseen_levels_encoding_dict = {}
 
