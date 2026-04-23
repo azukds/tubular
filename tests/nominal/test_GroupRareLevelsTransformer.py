@@ -529,10 +529,37 @@ class TestLazyYSupport:
 
         y_lazy = pl.LazyFrame({"a": list(range(10))})
 
-        transformer = GroupRareLevelsTransformer(columns=["b", "c"])
+        transformer = GroupRareLevelsTransformer(
+            columns=["b", "c"], cut_off_percent=0.2
+        )
 
-        # Should not raise an error
+        # Fit should accept lazy y and not raise an error
         transformer.fit(df, y_lazy)
+
+        # Transform should group rare levels correctly
+        expected = dataframe_init_dispatch(
+            {
+                "a": [2, 2, 2, 2, 0, 2, 2, 2, 3, 3],
+                "b": [
+                    "a",
+                    "a",
+                    "a",
+                    "rare",
+                    "rare",
+                    "rare",
+                    "rare",
+                    "rare",
+                    "rare",
+                    "rare",
+                ],
+                "c": ["rare", "rare", "rare", "rare", "f", "f", "f", "g", "g", "rare"],
+            },
+            library,
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
 
 
 class TestOtherBaseBehaviour(
