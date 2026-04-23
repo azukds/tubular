@@ -20,6 +20,7 @@ from tests.imputers.test_BaseImputer import (
 )
 from tests.utils import (
     _convert_to_lazy,
+    assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
 from tubular.imputers import ModeImputer
@@ -297,8 +298,18 @@ class TestLazyYSupport:
 
         transformer = ModeImputer(columns="b")
 
-        # Should not raise an error
+        # Fit should accept lazy y and not raise an error
         transformer.fit(df, y_lazy)
+
+        # Transform should work correctly (no nulls to impute, so unchanged)
+        expected = dataframe_init_dispatch(
+            {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "z", "x", "y"]},
+            library,
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
 
 
 class TestOtherBaseBehaviour(
