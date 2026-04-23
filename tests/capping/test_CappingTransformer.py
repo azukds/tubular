@@ -7,7 +7,7 @@ from tests.capping.test_BaseCappingTransformer import (
     GenericCappingInitTests,
     GenericCappingTransformTests,
 )
-from tests.utils import dataframe_init_dispatch
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.capping import CappingTransformer
 
 
@@ -48,8 +48,20 @@ class TestLazyYSupport:
 
         transformer = CappingTransformer(quantiles={"b": [0.1, 0.9]})
 
-        # Should not raise an error
+        # Fit should accept lazy y and not raise an error
         transformer.fit(df, y_lazy)
+
+        # Transform should apply caps correctly based on learned quantiles
+        expected = pl.DataFrame(
+            {
+                "a": [1, 2, 3, 4, 5],
+                "b": [1.0, 2.0, 3.0, 4.0, 4.5],
+            }
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
 
 
 class TestOtherBaseBehaviour(
