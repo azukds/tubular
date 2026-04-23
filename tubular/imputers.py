@@ -24,7 +24,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.mixins import WeightColumnMixin
-from tubular.types import DataFrame, ListOfStrs, NumericTypes, Series
+from tubular.types import DataFrame, LazyFrame, ListOfStrs, NumericTypes, Series
 
 pl.enable_string_cache()
 
@@ -930,7 +930,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> MedianImputer:
+    def fit(self, X: DataFrame, y: Series | LazyFrame | None = None) -> MedianImputer:
         """Calculate median values to impute with from X.
 
         Parameters
@@ -938,7 +938,7 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         X : DataFrame
             Data to "learn" the median values from.
 
-        y : Series or None, default = None
+        y : Series or LazyFrame or None, default = None
             Not required.
 
         Returns
@@ -1116,7 +1116,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> MeanImputer:
+    def fit(self, X: DataFrame, y: Series | LazyFrame | None = None) -> MeanImputer:
         """Calculate mean values to impute with from X.
 
         Parameters
@@ -1124,7 +1124,7 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         X : DataFrame
             Data to "learn" the mean values from.
 
-        y : Series or None, default = None
+        y : Series or LazyFrame or None, default = None
             Not required.
 
         Returns
@@ -1290,7 +1290,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> ModeImputer:
+    def fit(self, X: DataFrame, y: Series | LazyFrame | None = None) -> ModeImputer:
         """Calculate mode values to impute with from X.
 
         In the event of a tie, the highest modal value will be returned.
@@ -1300,7 +1300,7 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         X : DataFrame
             Data to "learn" the mode values from.
 
-        y : Series or None, default = None
+        y : Series or LazyFrame or None, default = None
             Not required.
 
         Returns

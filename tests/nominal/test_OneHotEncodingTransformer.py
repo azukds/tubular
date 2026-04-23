@@ -1,5 +1,6 @@
 import narwhals as nw
 import numpy as np
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import GenericNominalTransformTests
@@ -526,6 +527,42 @@ class TestTransform(
         assert_frame_equal_dispatch(
             _collect_frame(df_transformed, lazy=lazy), expected_df.to_native()
         )
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in OneHotEncodingTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that OneHotEncodingTransformer accepts LazyFrame for y parameter."""
+        # Create a sample DataFrame
+        df_dict = {"a": ["x", "y", "z"], "b": [1, 2, 3]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        # Create a LazyFrame for y
+        y_lazy = pl.LazyFrame({"b": [1, 2, 3]})
+
+        # Initialise the transformer with drop_original=True
+        transformer = OneHotEncodingTransformer(columns="a", drop_original=True)
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        # Create the expected DataFrame
+        expected = pl.DataFrame(
+            {
+                "b": [1, 2, 3],
+                "a_x": [True, False, False],
+                "a_y": [False, True, False],
+                "a_z": [False, False, True],
+            }
+        )
+
+        # Transform the input DataFrame
+        transformed = transformer.transform(df)
+
+        # Assert that the transformed DataFrame matches the expected DataFrame
+        assert_frame_equal_dispatch(transformed, expected)
 
 
 class TestOtherBaseBehaviour(
