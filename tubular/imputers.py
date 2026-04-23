@@ -16,7 +16,6 @@ from tubular._stats import (
 )
 from tubular._utils import (
     _collect_frame,
-    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _is_null,
@@ -1607,9 +1606,6 @@ class NearestMeanResponseImputer(BaseImputer):
         y = _convert_series_to_narwhals(y)
 
         super().fit(X, y)
-
-        # Collect lazy y to enable operations like .is_null().sum()
-        y = _collect_series(y)
 
         if (n_nulls := y.is_null().sum()) > 0:
             msg = f"{self.classname()}: y has {n_nulls} null values"
