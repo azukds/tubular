@@ -15,6 +15,7 @@ from sklearn.utils.validation import check_is_fitted
 from typing_extensions import deprecated
 
 from tubular._utils import (
+    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _get_version,
@@ -447,6 +448,10 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
                 .exclude("__row_idx__")
                 .rename({y_col: "_temporary_response"})
             )
+        elif isinstance(y, nw.LazyFrame):
+            # If y is LazyFrame but X is not, collect y first
+            y = _collect_series(y)
+            X = X.with_columns(_temporary_response=y)
         else:
             # For eager frames or Series, use with_columns
             X = X.with_columns(_temporary_response=y)
