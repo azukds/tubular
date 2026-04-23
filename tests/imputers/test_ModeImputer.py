@@ -291,7 +291,7 @@ class TestLazyYSupport:
     @pytest.mark.parametrize("library", ["polars"])
     def test_lazy_y_accepted(self, library):
         """Test that ModeImputer accepts LazyFrame for y parameter."""
-        df_dict = {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "z", "x", "y"]}
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "x", "x", None]}
         df = dataframe_init_dispatch(df_dict, library)
 
         y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
@@ -303,7 +303,7 @@ class TestLazyYSupport:
 
         # Transform should work correctly (no nulls to impute, so unchanged)
         expected = dataframe_init_dispatch(
-            {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "z", "x", "y"]},
+            {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "x", "x", "x"]},
             library,
         )
 
