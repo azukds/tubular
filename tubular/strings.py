@@ -2,12 +2,248 @@
 
 from __future__ import annotations
 
+import narwhals as nw
 import pandas as pd
 from beartype import beartype
 from typing_extensions import deprecated
 
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+)
 from tubular.base import BaseTransformer
-from tubular.types import GenericKwargs, ListOfOneStr, ListOfStrs
+from tubular.types import DataFrame, GenericKwargs, ListOfOneStr, ListOfStrs
+
+
+class LowerCaseTransformer(BaseTransformer):
+    """Transformer class to lower case of text columns.
+
+    Attributes
+    ----------
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    jsonable = True
+
+    FITS = False
+
+    def __init__(
+        self,
+        columns: str | ListOfStrs,
+        **kwargs: bool | None,
+    ):
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: Union[str, ListOfStrings]
+            columns where values are to be lowercased.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return [nw.col(col).str.to_lowercase() for col in self.columns]
+
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Lower case of text in given columns.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data containing columns to lowercase.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with text lowercased in given columns.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({"a": ["HeLlO", None, "  HI"]})
+        >>> transformer = LowerCaseTransformer(columns="a")
+        >>> transformer.transform(test_df)
+        shape: (3, 1)
+        ┌───────┐
+        │ a     │
+        │ ---   │
+        │ str   │
+        ╞═══════╡
+        │ hello │
+        │ null  │
+        │   hi  │
+        └───────┘
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+class RemoveCharactersTransformer(BaseTransformer):
+    """Transformer class to remove unwanted characters from text columns.
+
+    Attributes
+    ----------
+    unwanted_characters: list[str]
+        list of characters to remove from text columns.
+
+    unwanted_characters_formatted: str
+        unwanted_characters attr formatted into regex string.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    jsonable = True
+
+    FITS = False
+
+    @beartype
+    def __init__(
+        self,
+        columns: str | ListOfStrs,
+        unwanted_characters: list[str],
+        **kwargs: bool | None,
+    ):
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: Union[str, ListOfStrings]
+            columns to remove unwanted characters from.
+
+        unwanted_characters: list[str]
+            characters to remove from specified columns.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        self.unwanted_characters = unwanted_characters
+        self.unwanted_characters_formatted = r"[{}]".format(
+            "".join(self.unwanted_characters)
+        )
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return [
+            nw.col(col).str.replace_all(self.unwanted_characters_formatted, "")
+            for col in self.columns
+        ]
+
+    def transform(self, X: DataFrame) -> DataFrame:
+        r"""Strip unwanted characters from specified columns.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data containing columns to strip.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with unwanted characters stripped from specified columns.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({"a": ["  8hi!", None, "9999hello  "]})
+        >>> transformer = RemoveCharactersTransformer(
+        ...     columns=["a"], unwanted_characters=["\W", "\s"]
+        ... )
+        >>> transformer.transform(test_df)
+        shape: (3, 1)
+        ┌───────────┐
+        │ a         │
+        │ ---       │
+        │ str       │
+        ╞═══════════╡
+        │ 8hi       │
+        │ null      │
+        │ 9999hello │
+        └───────────┘
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 # DEPRECATED TRANSFORMERS
