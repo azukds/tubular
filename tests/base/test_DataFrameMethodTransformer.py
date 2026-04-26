@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
@@ -14,6 +13,7 @@ from tests.base_tests import (
     GenericTransformTests,
     OtherBaseBehaviourTests,
 )
+from tests.utils import assert_frame_equal_dispatch
 from tubular.base import DataFrameMethodTransformer
 
 
@@ -102,7 +102,7 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
     def setup_class(cls):
         cls.transformer_name = "DataFrameMethodTransformer"
 
-    def expected_df_1():
+    def expected_df_1(self):
         """Expected output of test_expected_output_single_columns_assignment."""
         return pd.DataFrame(
             {
@@ -113,7 +113,7 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
             },
         )
 
-    def expected_df_2():
+    def expected_df_2(self):
         """Expected output of test_expected_output_multi_columns_assignment."""
         return pd.DataFrame(
             {
@@ -125,12 +125,12 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
             },
         )
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_1()),
-    )
-    def test_expected_output_single_columns_assignment(self, df, expected):
+    def test_expected_output_single_columns_assignment(self):
         """Test a single column output from transform gives expected results."""
+
+        df = d.create_df_3()
+        expected = self.expected_df_1()
+
         x = DataFrameMethodTransformer(
             new_column_names="d",
             pd_method_name="sum",
@@ -140,18 +140,20 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="DataFrameMethodTransformer sum columns b and c",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
 
-    @pytest.mark.parametrize(
-        ("df", "expected"),
-        ta.pandas.adjusted_dataframe_params(d.create_df_3(), expected_df_2()),
-    )
-    def test_expected_output_multi_columns_assignment(self, df, expected):
+        for i in range(len(df)):
+            row_transformed = x.transform(df.iloc[[i]])
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
+
+    def test_expected_output_multi_columns_assignment(self):
         """Test a multiple column output from transform gives expected results."""
+
+        df = d.create_df_3()
+        expected = self.expected_df_2()
+
         x = DataFrameMethodTransformer(
             new_column_names=["d", "e"],
             pd_method_name="div",
@@ -161,11 +163,14 @@ class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
 
         df_transformed = x.transform(df)
 
-        ta.equality.assert_equal_dispatch(
-            expected=expected,
-            actual=df_transformed,
-            msg="DataFrameMethodTransformer divide by 2 columns b and c",
-        )
+        assert_frame_equal_dispatch(expected, df_transformed)
+
+        for i in range(len(df)):
+            row = df.iloc[[i]]
+            row_transformed = x.transform(row)
+            row_expected = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(row_transformed, row_expected)
 
 
 class TestOtherBaseBehaviour(OtherBaseBehaviourTests):

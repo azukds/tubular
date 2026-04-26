@@ -60,13 +60,10 @@ pytest==9.0.2
     #   tubular (pyproject.toml)
     #   pytest-cov
     #   pytest-mock
-    #   test-aide
 pytest-cov==2.10.1
     # via tubular (pyproject.toml)
 pytest-mock==3.15.1
-    # via
-    #   tubular (pyproject.toml)
-    #   test-aide
+    # via tubular (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
 pytokens==0.4.1
@@ -82,8 +79,6 @@ scipy==1.15.3
 six==1.17.0
     # via python-dateutil
 tabulate==0.10.0
-    # via tubular (pyproject.toml)
-test-aide==0.1.1
     # via tubular (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
