@@ -652,25 +652,6 @@ def create_date_diff_different_dtypes_and_nans(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library=library)
 
 
-def expected_date_diff_df_2(library="pandas"):
-    """Expected output for test_expected_output_drop_cols_true."""
-
-    df_dict = {
-        "c": [
-            None,
-            19,
-            0,
-            0,
-            0,
-            -2,
-            -3,
-            30,
-        ],
-    }
-
-    return u.dataframe_init_dispatch(df_dict, library=library)
-
-
 def create_when_then_otherwise_test_df(library="pandas"):
     "create test df for WhenThenOtherwiseTransformer."
 

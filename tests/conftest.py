@@ -180,7 +180,6 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "new_column_names": "f",
             "pd_method_name": "sum",
-            "drop_original": True,
         },
         "DateDifferenceTransformer": {
             "columns": ["a", "b"],
@@ -205,7 +204,6 @@ def minimal_attribute_dict():
         "EqualityChecker": {
             "columns": ["a", "b"],
             "new_column_name": "c",
-            "drop_original": True,
         },
         "GroupRareLevelsTransformer": {
             "columns": ["b"],
@@ -253,7 +251,6 @@ def minimal_attribute_dict():
         },
         "OneHotEncodingTransformer": {
             "columns": ["a", "b"],
-            "drop_original": True,
             "separator": "-",
         },
         "OrdinalEncoderTransformer": {
@@ -308,18 +305,15 @@ def minimal_attribute_dict():
         "BaseAggregationTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
-            "drop_original": False,
         },
         "AggregateRowsOverColumnTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
             "key": "c",
-            "drop_original": False,
         },
         "AggregateColumnsOverRowTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
-            "drop_original": False,
         },
         "DifferenceTransformer": {
             "columns": ["a", "b"],
