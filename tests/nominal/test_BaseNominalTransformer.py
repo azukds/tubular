@@ -1,5 +1,6 @@
-"""Note, BaseNominalTransformer itself has now been removed, 
+"""Note, BaseNominalTransformer itself has now been removed,
 but it is still useful to have these inheritable tests."""
+
 import copy
 
 import narwhals as nw
@@ -15,6 +16,7 @@ from tests.utils import (
     _handle_from_json,
     assert_frame_equal_dispatch,
 )
+
 
 class GenericNominalTransformTests(GenericTransformTests):
     """
