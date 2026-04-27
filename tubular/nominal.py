@@ -18,7 +18,6 @@ from tubular._stats import (
 )
 from tubular._utils import (
     _collect_frame,
-    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _is_null,
@@ -1071,6 +1070,74 @@ class MeanResponseTransformer(
             for encoded_column in self.encoded_columns
         }
 
+    @beartype
+    def _compute_prior_encodings(
+        self,
+        X_y: DataFrame,
+        weights_column: str,
+        response_column: str,
+    ) -> dict[str, dict]:
+        """Compute prior-regularised encodings and return a dict of results per encoded column.
+
+        Returns:
+            results_dict: dict mapping encoded_column -> collected dataframe as dict
+            Also returns X_y with response and weighted response columns materialised.
+
+        """
+        # then setup binary response expressions for each level
+        response_exprs = {
+            response_column + "_" + level if self.MULTI_LEVEL else response_column: (
+                nw.col(response_column) == level
+            )
+            if self.MULTI_LEVEL
+            else nw.col(response_column)
+            for level in self.response_levels
+        }
+
+        weighted_response_exprs = {
+            "weighted_" + response_column: response_exprs[response_column]
+            * nw.col(weights_column).alias("weighted_" + response_column)
+            for response_column in self.response_columns
+        }
+
+        # materialise response and weighted response expressions for global mean calculations
+        X_y = X_y.with_columns(**{**response_exprs, **weighted_response_exprs})
+
+        global_means = _collect_frame(
+            X_y.select(
+                **_get_mean_calculation_expressions(
+                    self.response_columns, weights_column
+                )
+            )
+        ).to_dict(as_series=False)
+        global_means = {
+            response_column: global_means[response_column][0]
+            for response_column in self.response_columns
+        }
+
+        # now get the weighted response per group (build aggs inline)
+        groups = {
+            c: X_y.group_by(c).agg(
+                [
+                    nw.col(weights_column).sum().alias("weight_sum"),
+                    *[
+                        nw.col("weighted_" + binary_response_column)
+                        .sum()
+                        .alias(f"{binary_response_column}_weighted_sum")
+                        for binary_response_column in self.response_columns
+                    ],
+                ]
+            )
+            for c in self.columns
+        }
+
+        prior_encodings = self._prior_regularisation(global_means, groups)
+
+        return {
+            c: _collect_frame(prior_encodings[c]).to_dict(as_series=False)
+            for c in prior_encodings
+        }
+
     @block_from_json
     def _setup_fit_multi_level(
         self,
@@ -1176,7 +1243,9 @@ class MeanResponseTransformer(
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
+    def fit(
+        self, X: DataFrame, y: Series | LazyFrame | None = None
+    ) -> MeanResponseTransformer:
         """Identify mapping of categorical levels to mean response values.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -1223,8 +1292,9 @@ class MeanResponseTransformer(
         """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
-        # collect lazy y if needed so subsequent operations (unique, is_null, etc.) work
-        y = _collect_series(y)
+        # Do not eagerly collect y here. Combine X and y first, then compute
+        # response properties from the combined frame so lazy inputs (LazyFrame)
+        # are supported without forcing full materialisation.
 
         BaseNominalTransformer.fit(self, X, y)
 
@@ -1244,16 +1314,34 @@ class MeanResponseTransformer(
             weights_column, self.verbose
         )
 
-        y_vals = y.unique().to_list()
-
-        if (response_null_count := y.is_null().sum()) > 0:
-            msg = f"{self.classname()}: y has {response_null_count} null values"
-            raise ValueError(msg)
-
-        X_y = self._combine_X_y(X, y, return_native_override=False)
+        # Combine X and y into one frame with a temporary response column so we can
+        # derive response-level info and null counts without collecting entire y.
         response_column = "_temporary_response"
+        X_y = self._combine_X_y(X, y, return_native_override=False)
 
         X_y = X_y.filter(valid_weights_filter_expr)
+
+        # materialise only the aggregates needed
+        # get unique response values
+        y_vals = (
+            _collect_frame(X_y.select(nw.col(response_column)))
+            .get_column(response_column)
+            .unique()
+            .to_list()
+        )
+
+        # get null count for response
+        response_null_count = (
+            _collect_frame(
+                X_y.select(nw.col(response_column).is_null().sum().alias("null_count"))
+            )
+            .to_dict(as_series=True)["null_count"]
+            .item(0)
+        )
+
+        if response_null_count > 0:
+            msg = f"{self.classname()}: y has {response_null_count} null values"
+            raise ValueError(msg)
 
         if self.MULTI_LEVEL:
             self._setup_fit_multi_level(y_vals, response_column)
@@ -1282,70 +1370,10 @@ class MeanResponseTransformer(
             for encoded_column in self.encoded_columns
         }
 
-        # then setup binary response expressions for each level
-        response_exprs = {
-            response_column + "_" + level if self.MULTI_LEVEL else response_column: (
-                nw.col(response_column) == level
-            )
-            if self.MULTI_LEVEL
-            else nw.col(response_column)
-            for level in self.response_levels
-        }
-
-        weighted_response_exprs = {
-            "weighted_" + response_column: response_exprs[response_column]
-            * nw.col(weights_column).alias("weighted_" + response_column)
-            for response_column in self.response_columns
-        }
-
-        all_response_exprs = {}
-        all_response_exprs.update(response_exprs)
-        all_response_exprs.update(weighted_response_exprs)
-
-        # materialise these for global mean
-        # calculations to work with
-        X_y = X_y.with_columns(**all_response_exprs)
-
-        global_means = {}
-        global_mean_exprs = _get_mean_calculation_expressions(
-            self.response_columns,
-            weights_column,
+        # Delegate heavy aggregation work to helper to keep local variable count low
+        results_dict = self._compute_prior_encodings(
+            X_y, weights_column, response_column
         )
-
-        global_means = _collect_frame(X_y.select(**global_mean_exprs)).to_dict(
-            as_series=False
-        )
-        global_means = {
-            response_column: global_means[response_column][0]
-            for response_column in self.response_columns
-        }
-
-        # now get the weighted response per group
-        aggs = {
-            c: [
-                nw.col(weights_column).sum().alias("weight_sum"),
-                *[
-                    nw.col("weighted_" + binary_response_column)
-                    .sum()
-                    .alias(f"{binary_response_column}_weighted_sum")
-                    for binary_response_column in self.response_columns
-                ],
-            ]
-            for c in self.columns
-        }
-
-        groups = {c: X_y.group_by(c).agg(aggs[c]) for c in self.columns}
-
-        # the previous two then make up the inputs for our encoding algorithm
-        prior_encodings = self._prior_regularisation(
-            global_means,
-            groups,
-        )
-
-        results_dict = {
-            c: _collect_frame(prior_encodings[c]).to_dict(as_series=False)
-            for c in prior_encodings
-        }
 
         self.mappings.update(
             {
@@ -1569,12 +1597,11 @@ class MeanResponseTransformer(
         if isinstance(X, nw.LazyFrame):
             present_values = {}
             for col in self.columns:
-                # Use a group_by aggregation to obtain distinct values in a LazyFrame
-                # group_by with a non-order-dependent aggregation to list distinct keys
+                # Use groupby + select distinct keys then collect only that column
                 group = X.group_by(col).agg(nw.col(col).count().alias("__cnt__"))
                 group = _collect_frame(group)
-                group_dict = group.to_dict()
-                present_values[col] = set(group_dict[col].to_list())
+                # group is a narwhals.DataFrame; extract column values
+                present_values[col] = set(group.get_column(col).to_list())
         else:
             present_values = {
                 col: set(X.get_column(col).unique()) for col in self.columns
