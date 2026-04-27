@@ -191,13 +191,13 @@ class RemoveCharactersTransformer(BaseTransformer):
     >>> from pprint import pprint
     >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\\d"])
     >>> transformer
-    RemoveCharactersTransformer(characters=['\\\\d'], columns=['a'])
+    RemoveCharactersTransformer(characters=['\\d'], columns=['a'])
 
     >>> json_dump = transformer.to_json()
     >>> pprint(json_dump)
     {'classname': 'RemoveCharactersTransformer',
      'fit': {},
-     'init': {'characters': ['\\\\d'],
+     'init': {'characters': ['\\d'],
               'columns': ['a'],
               'copy': False,
               'return_native': True,
@@ -205,7 +205,7 @@ class RemoveCharactersTransformer(BaseTransformer):
      'tubular_version': ...}
 
     >>> RemoveCharactersTransformer.from_json(json_dump)
-    RemoveCharactersTransformer(characters=['\\\\d'], columns=['a'])
+    RemoveCharactersTransformer(characters=['\\d'], columns=['a'])
 
     ```
 
