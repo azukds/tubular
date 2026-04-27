@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-import narwhals as nw
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import narwhals as nw
 import pandas as pd
 from beartype import beartype
 from typing_extensions import deprecated
@@ -84,7 +87,7 @@ class LowerCaseTransformer(BaseTransformer):
         self,
         columns: str | ListOfStrs,
         **kwargs: bool | None,
-    ):
+    ) -> None:
         """Initialise class instance.
 
         Parameters
@@ -153,7 +156,7 @@ class LowerCaseTransformer(BaseTransformer):
 
 @register
 class RemoveCharactersTransformer(BaseTransformer):
-    """Transformer class to remove characters from text columns.
+    r"""Transformer class to remove characters from text columns.
 
     Attributes
     ----------
@@ -222,7 +225,7 @@ class RemoveCharactersTransformer(BaseTransformer):
         columns: str | ListOfStrs,
         characters: list[str],
         **kwargs: bool | None,
-    ):
+    ) -> None:
         """Initialise class instance.
 
         Parameters
@@ -230,7 +233,7 @@ class RemoveCharactersTransformer(BaseTransformer):
         columns: Union[str, ListOfStrings]
             columns to remove characters from.
 
-        unwanted_characters: list[str]
+        characters: list[str]
             characters to remove from specified columns.
 
         **kwargs
