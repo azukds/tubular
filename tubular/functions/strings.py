@@ -1,3 +1,5 @@
+"""Stateless string transforms."""
+
 import narwhals as nw
 
 
