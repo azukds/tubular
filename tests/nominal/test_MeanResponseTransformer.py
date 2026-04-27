@@ -3,6 +3,7 @@ from itertools import product
 
 import narwhals as nw
 import numpy as np
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -1396,3 +1397,37 @@ class TestOtherBaseBehaviour(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "MeanResponseTransformer"
+
+
+class TestLazyYSupport:
+    """Tests that MeanResponseTransformer accepts LazyFrame for y parameter."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "b": ["a", "b", "c", "d", "e", "f"],
+        }
+
+        # build a polars native dataframe for X
+        df = dataframe_init_dispatch(df_dict, library=library)
+
+        # Create a LazyFrame for y with the same values as df['a']
+        y_lazy = pl.LazyFrame({"a": df["a"].to_list()})
+
+        transformer = MeanResponseTransformer(
+            columns=["b"], unseen_level_handling="mean"
+        )
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        # Expected mappings for column 'b' are mapping 'a'..'f' to 1.0..6.0
+        expected = {"a": 1.0, "b": 2.0, "c": 3.0, "d": 4.0, "e": 5.0, "f": 6.0}
+
+        # mappings are stored under the encoded column name 'b'
+        mappings = transformer.mappings["b"]
+
+        for k, v in expected.items():
+            assert k in mappings
+            assert pytest.approx(mappings[k]) == v

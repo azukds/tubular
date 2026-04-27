@@ -1076,7 +1076,7 @@ class MeanResponseTransformer(
         X_y: DataFrame,
         weights_column: str,
         response_column: str,
-    ) -> dict[str, dict]:
+    ) -> tuple[dict[str, dict], DataFrame]:
         """Compute prior-regularised encodings and return a dict of results per encoded column.
 
         Returns:
@@ -1133,10 +1133,14 @@ class MeanResponseTransformer(
 
         prior_encodings = self._prior_regularisation(global_means, groups)
 
-        return {
+        results_dict = {
             c: _collect_frame(prior_encodings[c]).to_dict(as_series=False)
             for c in prior_encodings
         }
+
+        # return both the results and the materialised X_y so callers can reuse the
+        # response columns without needing to recompute.
+        return results_dict, X_y
 
     @block_from_json
     def _setup_fit_multi_level(
@@ -1371,7 +1375,7 @@ class MeanResponseTransformer(
         }
 
         # Delegate heavy aggregation work to helper to keep local variable count low
-        results_dict = self._compute_prior_encodings(
+        results_dict, X_y = self._compute_prior_encodings(
             X_y, weights_column, response_column
         )
 
