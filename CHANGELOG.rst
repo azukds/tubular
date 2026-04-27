@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - updated pytest version on dependabot recommendation
+- deprecated OneDKmeansTransformer
 
 3.2.0 (14/04/2026)
 ------------------
