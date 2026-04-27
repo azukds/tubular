@@ -38,6 +38,7 @@ from tubular.types import (
 if TYPE_CHECKING:
     import pandas as pd
 
+
 @register
 class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     """Group together rare levels of nominal variables into a new rare level.
@@ -886,12 +887,12 @@ class MeanResponseTransformer(
         }
 
         return {
-            encoded_column: _collect_frame(groups[
-                self.encoded_columns_to_columns[encoded_column]
-            ].select(
-                exprs_dict[encoded_column + "_mapped"],
-                nw.col(self.encoded_columns_to_columns[encoded_column]),
-            ))
+            encoded_column: _collect_frame(
+                groups[self.encoded_columns_to_columns[encoded_column]].select(
+                    exprs_dict[encoded_column + "_mapped"],
+                    nw.col(self.encoded_columns_to_columns[encoded_column]),
+                )
+            )
             for encoded_column in self.encoded_columns
         }
 
@@ -1134,7 +1135,9 @@ class MeanResponseTransformer(
             weights_column,
         )
 
-        global_means = _collect_frame(X_y.select(**global_mean_exprs)).to_dict(as_series=False)
+        global_means = _collect_frame(X_y.select(**global_mean_exprs)).to_dict(
+            as_series=False
+        )
         global_means = {
             response_column: global_means[response_column][0]
             for response_column in self.response_columns
@@ -1283,9 +1286,9 @@ class MeanResponseTransformer(
                             weights_column=weights_column,
                         )
 
-                        self.unseen_levels_encoding_dict[c] = _collect_frame(X_temp.select(
-                            median_expr
-                        )).item(0, 0)
+                        self.unseen_levels_encoding_dict[c] = _collect_frame(
+                            X_temp.select(median_expr)
+                        ).item(0, 0)
 
             # else, min/max
             else:
@@ -1298,7 +1301,9 @@ class MeanResponseTransformer(
 
             # median will already have fit as it requires sorting/materialising
             if self.unseen_level_handling != "median":
-                unseen_level_results = _collect_frame(X_y.select(**unseen_level_exprs)).to_dict(
+                unseen_level_results = _collect_frame(
+                    X_y.select(**unseen_level_exprs)
+                ).to_dict(
                     as_series=True,
                 )
 
@@ -1401,8 +1406,12 @@ class MeanResponseTransformer(
             for encoded_col in self.column_to_encoded_columns[col]
         }
 
-        X = X.with_columns(
-            **transform_expressions,
+        X = (
+            X.with_columns(
+                **transform_expressions,
+            )
+            if transform_expressions
+            else X
         )
 
         columns_to_drop = [
@@ -1868,7 +1877,6 @@ class OneHotEncodingTransformer(
     """,
 )
 class OrdinalEncoderTransformer(
-    BaseTransformer,
     BaseMappingTransformMixin,
     WeightColumnMixin,
 ):
@@ -2093,7 +2101,7 @@ class OrdinalEncoderTransformer(
             Transformed data with levels mapped to ordinal encoded values for categorical variables.
 
         """
-        X = super().transform(X)
+        X = BaseTransformer.transform(self, X)
 
         return BaseMappingTransformMixin.transform(self, X)
 
@@ -2104,7 +2112,7 @@ class OrdinalEncoderTransformer(
     for it to be modernised
     """,
 )
-class NominalToIntegerTransformer(BaseTransformer, BaseMappingTransformMixin):
+class NominalToIntegerTransformer(BaseMappingTransformMixin):
     """Transformer to convert columns containing nominal values into integer values.
 
     The nominal levels that are mapped to integers are not ordered in any way.
@@ -2254,6 +2262,6 @@ class NominalToIntegerTransformer(BaseTransformer, BaseMappingTransformMixin):
             Transformed input X with levels mapped according to mappings dict.
 
         """
-        X = super().transform(X)
+        X = BaseTransformer.transform(self, X)
 
         return BaseMappingTransformMixin.transform(self, X)

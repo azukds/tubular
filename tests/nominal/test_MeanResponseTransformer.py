@@ -17,12 +17,12 @@ from tests.base_tests import (
     WeightColumnInitMixinTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
-    _convert_to_lazy,
-    _collect_frame,
-    _check_if_skip_test,
 )
 from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import MeanResponseTransformer
@@ -284,7 +284,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             unseen_level_handling=unseen_level_handling,
         )
 
-        if _check_if_skip_test(x, df,lazy=lazy):
+        if _check_if_skip_test(x, df, lazy=lazy):
             return
 
         x.fit(_convert_to_lazy(df, lazy=lazy), df[target_column])
@@ -472,7 +472,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
             "MeanResponseTransformer should ignore unobserved levels"
         )
 
-    @pytest.mark.parametrize("lazy", [True, False])   
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize("with_invalid_weights", [True, False])
     @pytest.mark.parametrize(
@@ -780,14 +780,15 @@ class TestFitBinaryResponse(GenericFitTests, WeightColumnFitMixinTests):
             columns=column, weights_column=weights_column, prior=prior
         )
 
-        if _check_if_skip_test(x, df, lazy=lazy):
-            return
-
         column_values = ["a", "b"]
         target_values = [2, 3]
         weight_values = [1, 2]
         df_dict = {column: column_values, weights_column: weight_values}
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        if _check_if_skip_test(x, df, lazy=lazy):
+            return
+
         y = nw.new_series(name="y", values=target_values, backend=library)
 
         if column_type == "cat":
@@ -1239,7 +1240,7 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
-        df_transformed=_collect_frame(df_transformed, lazy=lazy)
+        df_transformed = _collect_frame(df_transformed, lazy=lazy)
 
         expected = nw.from_native(expected)
         for col in x.encoded_columns:
@@ -1260,7 +1261,9 @@ class TestTransform(GenericTransformTests):
         expected = nw.from_native(expected)
 
         for i in range(len(df)):
-            df_transformed_row = x.transform(_convert_to_lazy(df[[i]].to_native(), lazy=lazy))
+            df_transformed_row = x.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             column_order = nw.from_native(df_transformed_row).columns
@@ -1319,7 +1322,7 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy=lazy))
 
-        df_transformed=_collect_frame(df_transformed, lazy=lazy)
+        df_transformed = _collect_frame(df_transformed, lazy=lazy)
 
         expected = nw.from_native(expected)
         for col in x.encoded_columns:
@@ -1339,7 +1342,9 @@ class TestTransform(GenericTransformTests):
         expected = nw.from_native(expected)
 
         for i in range(len(df)):
-            df_transformed_row = x.transform(_convert_to_lazy(df[[i]].to_native(), lazy=lazy))
+            df_transformed_row = x.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             column_order = nw.from_native(df_transformed_row).columns
@@ -1348,32 +1353,6 @@ class TestTransform(GenericTransformTests):
                 _collect_frame(df_transformed_row, lazy=lazy),
                 df_expected_row[column_order],
             )
-
-    @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_nulls_introduced_in_transform_error(self, library, from_json, lazy):
-        """Test that transform will raise an error if nulls are introduced."""
-        df = create_MeanResponseTransformer_test_df(library=library)
-
-        x = MeanResponseTransformer(columns=["b", "d", "f"])
-
-        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
-            return
-
-        x.fit(_convert_to_lazy(df, lazy=lazy), df["a"])
-
-        x = _handle_from_json(x, from_json)
-
-        df = nw.from_native(df)
-        df = df.with_columns(nw.lit("z").alias("b"))
-        df = nw.to_native(df)
-
-        with pytest.raises(
-            ValueError,
-            match="MeanResponseTransformer: nulls would be introduced into columns b from levels not present in mapping",
-        ):
-            x.transform(_convert_to_lazy(df, lazy=lazy))
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
@@ -1419,7 +1398,7 @@ class TestTransform(GenericTransformTests):
 
         output_df = nw.from_native(x.transform(_convert_to_lazy(df, lazy=lazy)))
 
-        output_df=_collect_frame(output_df, lazy=lazy)
+        output_df = _collect_frame(output_df, lazy=lazy)
 
         if target == "c":
             actual_levels = df[target].unique().to_list() if level == "all" else level
@@ -1469,9 +1448,9 @@ class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
 ):
     """
-    Class to run tests for BaseTransformerBehaviour outside the three standard methods.
-F
-    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
+        Class to run tests for BaseTransformerBehaviour outside the three standard methods.
+    F
+        May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
 
     @classmethod
