@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - converted MeanResponseTransformer to work with lazyframes `#533 <https://github.com/azukds/tubular/issues/533>_`
+- updated pytest version on dependabot recommendation
 
 3.2.0 (14/04/2026)
 ------------------

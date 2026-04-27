@@ -30,6 +30,7 @@ from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
     DataFrame,
     FloatBetweenZeroOne,
+    LazyFrame,
     ListOfStrs,
     PositiveInt,
     Series,
@@ -293,7 +294,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     def fit(
         self,
         X: DataFrame,
-        y: Series | None = None,
+        y: Series | LazyFrame | None = None,
     ) -> GroupRareLevelsTransformer:
         """Record non-rare levels for categorical variables.
 
@@ -308,7 +309,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         X : DataFrame
             Data to identify non-rare levels from.
 
-        y : Series or None, default = None
+        y : Series or LazyFrame or None, default = None
             Optional argument only required for the transformer to work with sklearn pipelines.
 
         Returns
@@ -1016,7 +1017,7 @@ class MeanResponseTransformer(
             Data to with catgeorical variable columns to transform and also containing response_column
             column.
 
-        y : Series
+        y : Series or LazyFrame
             Response variable or target.
 
         Returns
@@ -1655,7 +1656,7 @@ class OneHotEncodingTransformer(
     def fit(
         self,
         X: DataFrame,
-        y: Series | None = None,
+        y: Series | LazyFrame | None = None,
     ) -> OneHotEncodingTransformer:
         """Get list of levels for each column to be transformed.
 
@@ -1993,7 +1994,7 @@ class OrdinalEncoderTransformer(
             Data to with catgeorical variable columns to transform and response_column column
             specified when object was initialised.
 
-        y : Series
+        y : Series or LazyFrame
             Response column or target.
 
         Returns
