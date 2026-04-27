@@ -18,6 +18,7 @@ from tubular._stats import (
 )
 from tubular._utils import (
     _collect_frame,
+    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _is_null,
@@ -789,7 +790,7 @@ class MeanResponseTransformer(
 
     jsonable = True
 
-    lazyframe_compatible = False
+    lazyframe_compatible = True
 
     FITS = True
 
@@ -1222,6 +1223,8 @@ class MeanResponseTransformer(
         """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
+        # collect lazy y if needed so subsequent operations (unique, is_null, etc.) work
+        y = _collect_series(y)
 
         BaseNominalTransformer.fit(self, X, y)
 
@@ -1309,7 +1312,9 @@ class MeanResponseTransformer(
             weights_column,
         )
 
-        global_means = X_y.select(**global_mean_exprs).to_dict(as_series=False)
+        global_means = _collect_frame(X_y.select(**global_mean_exprs)).to_dict(
+            as_series=False
+        )
         global_means = {
             response_column: global_means[response_column][0]
             for response_column in self.response_columns
@@ -1338,7 +1343,8 @@ class MeanResponseTransformer(
         )
 
         results_dict = {
-            c: prior_encodings[c].to_dict(as_series=False) for c in prior_encodings
+            c: _collect_frame(prior_encodings[c]).to_dict(as_series=False)
+            for c in prior_encodings
         }
 
         self.mappings.update(
@@ -1473,7 +1479,9 @@ class MeanResponseTransformer(
 
             # median will already have fit as it requires sorting/materialising
             if self.unseen_level_handling != "median":
-                unseen_level_results = X_y.select(**unseen_level_exprs).to_dict(
+                unseen_level_results = _collect_frame(
+                    X_y.select(**unseen_level_exprs)
+                ).to_dict(
                     as_series=True,
                 )
 
@@ -1557,7 +1565,20 @@ class MeanResponseTransformer(
 
         X = _convert_dataframe_to_narwhals(X)
 
-        present_values = {col: set(X.get_column(col).unique()) for col in self.columns}
+        # Compute present values per column. For LazyFrame collect the unique values; for eager frames use get_column
+        if isinstance(X, nw.LazyFrame):
+            present_values = {}
+            for col in self.columns:
+                # Use a group_by aggregation to obtain distinct values in a LazyFrame
+                # group_by with a non-order-dependent aggregation to list distinct keys
+                group = X.group_by(col).agg(nw.col(col).count().alias("__cnt__"))
+                group = _collect_frame(group)
+                group_dict = group.to_dict()
+                present_values[col] = set(group_dict[col].to_list())
+        else:
+            present_values = {
+                col: set(X.get_column(col).unique()) for col in self.columns
+            }
 
         # with columns created, can now run parent transforms
         if self.unseen_level_handling:
@@ -1599,9 +1620,7 @@ class MeanResponseTransformer(
             for encoded_col in self.column_to_encoded_columns[col]
         }
 
-        X = X.with_columns(
-            **transform_expressions,
-        )
+        X = X.with_columns(**transform_expressions) if transform_expressions else X
 
         columns_to_drop = [
             col for col in self.columns if col not in self.encoded_columns
