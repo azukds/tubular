@@ -10,11 +10,17 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
+from tubular.functions.strings import (
+    convert_string_columns_to_lowercase,
+    remove_characters_from_string_columns,
+)
 from tubular.types import DataFrame, GenericKwargs, ListOfOneStr, ListOfStrs
 
 
+@register
 class LowerCaseTransformer(BaseTransformer):
     """Transformer class to lower case of text columns.
 
@@ -38,6 +44,31 @@ class LowerCaseTransformer(BaseTransformer):
 
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = LowerCaseTransformer(
+    ...     columns=["a"],
+    ... )
+    >>> transformer
+    LowerCaseTransformer(columns=['a'])
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump)
+    {'classname': 'LowerCaseTransformer',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> LowerCaseTransformer.from_json(json_dump)
+    LowerCaseTransformer(columns=['a'])
+
+    ```
 
     """
 
@@ -75,7 +106,7 @@ class LowerCaseTransformer(BaseTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return [nw.col(col).str.to_lowercase() for col in self.columns]
+        return convert_string_columns_to_lowercase(columns=self.columns)
 
     def transform(self, X: DataFrame) -> DataFrame:
         """Lower case of text in given columns.
@@ -120,16 +151,17 @@ class LowerCaseTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class RemoveCharactersTransformer(BaseTransformer):
-    """Transformer class to remove unwanted characters from text columns.
+    """Transformer class to remove characters from text columns.
 
     Attributes
     ----------
-    unwanted_characters: list[str]
+    characters: list[str]
         list of characters to remove from text columns.
 
-    unwanted_characters_formatted: str
-        unwanted_characters attr formatted into regex string.
+    characters_formatted: str
+        characters attr formatted into regex string.
 
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
@@ -150,6 +182,30 @@ class RemoveCharactersTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\\d"])
+    >>> transformer
+    RemoveCharactersTransformer(characters=['\\\\d'], columns=['a'])
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump)
+    {'classname': 'RemoveCharactersTransformer',
+     'fit': {},
+     'init': {'characters': ['\\\\d'],
+              'columns': ['a'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> RemoveCharactersTransformer.from_json(json_dump)
+    RemoveCharactersTransformer(characters=['\\\\d'], columns=['a'])
+
+    ```
+
     """
 
     polars_compatible = True
@@ -164,7 +220,7 @@ class RemoveCharactersTransformer(BaseTransformer):
     def __init__(
         self,
         columns: str | ListOfStrs,
-        unwanted_characters: list[str],
+        characters: list[str],
         **kwargs: bool | None,
     ):
         """Initialise class instance.
@@ -172,7 +228,7 @@ class RemoveCharactersTransformer(BaseTransformer):
         Parameters
         ----------
         columns: Union[str, ListOfStrings]
-            columns to remove unwanted characters from.
+            columns to remove characters from.
 
         unwanted_characters: list[str]
             characters to remove from specified columns.
@@ -183,10 +239,43 @@ class RemoveCharactersTransformer(BaseTransformer):
         """
         super().__init__(columns=columns, **kwargs)
 
-        self.unwanted_characters = unwanted_characters
-        self.unwanted_characters_formatted = r"[{}]".format(
-            "".join(self.unwanted_characters)
-        )
+        self.characters = characters
+        self.characters_formatted = r"[{}]".format("".join(self.characters))
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = RemoveCharactersTransformer(columns=["a", "b"], characters=["a"])
+
+        >>> pprint(transformer.to_json())
+        {'classname': 'RemoveCharactersTransformer',
+         'fit': {},
+         'init': {'characters': ['a'],
+                  'columns': ['a', 'b'],
+                  'copy': False,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["characters"] = self.characters
+
+        return json_dict
 
     def get_transform_exprs(self) -> list[nw.Expr]:
         """Get transform expressions.
@@ -196,10 +285,9 @@ class RemoveCharactersTransformer(BaseTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return [
-            nw.col(col).str.replace_all(self.unwanted_characters_formatted, "")
-            for col in self.columns
-        ]
+        return remove_characters_from_string_columns(
+            columns=self.columns, characters_formatted=self.characters_formatted
+        )
 
     def transform(self, X: DataFrame) -> DataFrame:
         r"""Strip unwanted characters from specified columns.
@@ -212,16 +300,14 @@ class RemoveCharactersTransformer(BaseTransformer):
         Returns
         -------
         X : DataFrame
-            Transformed input X with unwanted characters stripped from specified columns.
+            Transformed input X with characters stripped from specified columns.
 
         Examples
         --------
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": ["  8hi!", None, "9999hello  "]})
-        >>> transformer = RemoveCharactersTransformer(
-        ...     columns=["a"], unwanted_characters=["\W", "\s"]
-        ... )
+        >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\W", "\s"])
         >>> transformer.transform(test_df)
         shape: (3, 1)
         ┌───────────┐

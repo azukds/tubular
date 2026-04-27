@@ -1553,7 +1553,6 @@ class GetFeatureNamesOutTests:
 
         if x.FITS:
             x.fit(df, df["a"])
-
         output = x.transform(df)
 
         output_columns = set(output.columns)
