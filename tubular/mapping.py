@@ -151,6 +151,7 @@ class BaseMappingTransformer(BaseTransformer):
         self.return_dtypes = return_dtypes
 
         super().__init__(columns=columns, **kwargs)
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -168,7 +169,7 @@ class BaseMappingTransformer(BaseTransformer):
         >>> mapping_transformer = BaseMappingTransformer(mappings={"a": {"x": 1}})
 
         >>> mapping_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -257,7 +258,7 @@ class BaseMappingTransformer(BaseTransformer):
 
         return_native = self._process_return_native(return_native_override)
 
-        self.check_is_fitted(["mappings", "return_dtypes"])
+        self.check_is_fitted(["mappings", "return_dtypes", "is_fitted_"])
 
         X = super().transform(X, return_native_override=False)
 
@@ -325,7 +326,9 @@ class BaseMappingTransformMixin(BaseTransformer):
         #  independently (should be inherited as a mixin)
 
         """
-        self.check_is_fitted(["mappings", "return_dtypes", "mappings_from_null"])
+        self.check_is_fitted(
+            ["mappings", "return_dtypes", "mappings_from_null", "is_fitted_"]
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -343,7 +346,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         # during the when/then logic, so we need to tell polars to use string
         # as a common type.
         # types are then corrected before returning at the end
-        schema = X.schema
+        schema = X.collect_schema()
         mapping_exprs = {
             col: nw.col(col).cast(nw.String)
             if schema[col] in {nw.Categorical, nw.Enum}
@@ -474,7 +477,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
 
     >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
@@ -540,6 +543,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         ```
 
         """
+        self.check_is_fitted("is_fitted_")
         X = _convert_dataframe_to_narwhals(X)
 
         X = BaseTransformer.transform(self, X, return_native_override=False)

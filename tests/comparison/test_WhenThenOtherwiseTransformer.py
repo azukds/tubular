@@ -3,6 +3,8 @@ import copy
 import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
+from sklearn.exceptions import NotFittedError
+from sklearn.pipeline import Pipeline
 
 from tests import utils as u
 from tests.base_tests import (
@@ -312,3 +314,67 @@ class TestOtherBaseBehaviour(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "WhenThenOtherwiseTransformer"
+
+    @pytest.mark.parametrize(
+        (
+            "a_values",
+            "b_values",
+            "condition_values",
+            "update_values",
+        ),
+        [
+            ([10], [40], [True], [100]),
+            ([10], [40], [False], [100]),
+            ([None], [40], [True], [100]),
+            ([10], [None], [False], [100]),
+            ([None], [None], [True], [100]),
+        ],
+    )
+    def test_pipeline_raises_not_fitted_error_when_unfitted(
+        self,
+        uninitialized_transformers,
+        minimal_attribute_dict,
+        a_values,
+        b_values,
+        condition_values,
+        update_values,
+    ):
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = ["a", "b"]
+        args["when_column"] = "condition_col"
+        args["then_column"] = "update_col"
+
+        single_row_df_dict = {
+            "a": a_values,
+            "b": b_values,
+            "condition_col": condition_values,
+            "update_col": update_values,
+        }
+        single_row_df = u.dataframe_init_dispatch(single_row_df_dict, "pandas")
+        single_row_df = (
+            nw.from_native(single_row_df)
+            .with_columns(
+                nw.col("a").cast(nw.Float64),
+                nw.col("b").cast(nw.Float64),
+                nw.col("condition_col").cast(nw.Boolean),
+                nw.col("update_col").cast(nw.Float64),
+            )
+            .to_native()
+        )
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+        pipeline = Pipeline([("base_transformer", transformer)])
+
+        # Fit the pipeline
+        pipeline.fit(single_row_df)
+
+        # Transform should work
+        result = pipeline.transform(single_row_df)
+        assert result is not None
+
+        # Delete is_fitted_ from the transformer
+        del transformer.is_fitted_
+
+        # Now transform should raise NotFittedError
+        with pytest.raises(NotFittedError):
+            pipeline.transform(single_row_df)

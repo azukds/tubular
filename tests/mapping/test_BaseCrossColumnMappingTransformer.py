@@ -3,7 +3,7 @@ import pytest
 import test_aide as ta
 
 import tests.test_data as d
-from tests.base_tests import OtherBaseBehaviourTests
+from tests.base_tests import OtherBaseBehaviourTests, OtherBaseBehaviourTestsString
 from tests.mapping.test_BaseMappingTransformer import (
     BaseMappingTransformerInitTests,
     BaseMappingTransformerTransformTests,
@@ -144,6 +144,7 @@ class TestTransform(BaseCrossColumnMappingTransformerTransformTests):
 
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsString,
 ):
     """
     Class to run tests for BaseCrossColumnMappingTransformer outside the three standard methods.

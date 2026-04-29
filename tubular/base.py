@@ -203,6 +203,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         self.return_native = return_native
 
         self.built_from_json = False
+        self.is_fitted_ = False
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -252,7 +253,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {'is_fitted_': False}}
 
         ```
 
@@ -274,7 +275,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
                 "verbose": self.verbose,
                 "return_native": self.return_native,
             },
-            "fit": {},
+            "fit": {"is_fitted_": self.is_fitted_},
         }
 
     @classmethod
@@ -365,7 +366,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y = _convert_series_to_narwhals(y)
 
         self.columns_check(X)
-
         return self
 
     @block_from_json
@@ -538,6 +538,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         ```
 
         """
+        self.check_is_fitted("is_fitted_")
         return_native = self._process_return_native(return_native_override)
 
         X = _convert_dataframe_to_narwhals(X)
@@ -610,7 +611,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        missing_columns = set(self.columns).difference(X.columns)
+        missing_columns = set(self.columns).difference(X.collect_schema().names())
         if len(missing_columns) != 0:
             msg = f"{self.classname()}: variables {missing_columns} not in X"
             raise ValueError(
