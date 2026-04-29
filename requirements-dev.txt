@@ -24,7 +24,7 @@ joblib==1.5.3
     # via scikit-learn
 mypy-extensions==1.1.0
     # via black
-narwhals==2.18.0
+narwhals==2.20.0
     # via tubular (pyproject.toml)
 numpy==2.2.6
     # via
