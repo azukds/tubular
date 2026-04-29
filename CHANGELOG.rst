@@ -34,6 +34,7 @@ Changed
 ^^^^^^^
 - feat: added `check_is_fitted` to all transformers `#494 <https://github.com/azukds/tubular/issues/494>`_
 - chore: added python 3.14 on automated testing `#494 <https://github.com/azukds/tubular/issues/494>`_
+- converted MeanResponseTransformer to work with lazyframes `#533 <https://github.com/azukds/tubular/issues/533>_`
 - updated pytest version on dependabot recommendation
 
 3.2.0 (14/04/2026)
