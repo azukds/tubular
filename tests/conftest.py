@@ -213,6 +213,7 @@ def minimal_attribute_dict():
         "InteractionTransformer": {
             "columns": ["a", "b"],
         },
+        "LowerCaseTransformer": {"columns": ["b"]},
         "LogTransformer": {
             "columns": ["a"],
         },
@@ -265,6 +266,10 @@ def minimal_attribute_dict():
         "PCATransformer": {
             "columns": ["a", "c"],
         },
+        "RemoveCharactersTransformer": {
+            "columns": ["b"],
+            "characters": [r"\s"],
+        },
         "RenameColumnsTransformer": {
             "columns": "a",
             "new_column_names": {"a": "new_a"},
@@ -291,6 +296,11 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "new_column_name": "c",
             "separator": "-",
+        },
+        "StringContainsTransformer": {
+            "columns": ["b"],
+            "reference": "c",
+            "reference_as_column": False,
         },
         "_StringImputer": {
             "columns": ["b"],

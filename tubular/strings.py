@@ -2,12 +2,570 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+import narwhals as nw
 import pandas as pd
 from beartype import beartype
 from typing_extensions import deprecated
 
-from tubular.base import BaseTransformer
-from tubular.types import GenericKwargs, ListOfOneStr, ListOfStrs
+from tubular._utils import (
+    _convert_dataframe_to_narwhals,
+    _return_narwhals_or_native_dataframe,
+    block_from_json,
+)
+from tubular.base import BaseTransformer, register
+from tubular.functions.strings import (
+    convert_string_columns_to_lowercase,
+    indicate_if_string_columns_contain_reference,
+    remove_characters_from_string_columns,
+)
+from tubular.types import DataFrame, GenericKwargs, ListOfOneStr, ListOfStrs
+
+
+@register
+class LowerCaseTransformer(BaseTransformer):
+    """Transformer class to lower case of text columns.
+
+    Attributes
+    ----------
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = LowerCaseTransformer(
+    ...     columns=["a"],
+    ... )
+    >>> transformer
+    LowerCaseTransformer(columns=['a'])
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump)
+    {'classname': 'LowerCaseTransformer',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> LowerCaseTransformer.from_json(json_dump)
+    LowerCaseTransformer(columns=['a'])
+
+    ```
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    jsonable = True
+
+    FITS = False
+
+    def __init__(
+        self,
+        columns: str | ListOfStrs,
+        **kwargs: bool | None,
+    ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: Union[str, ListOfStrings]
+            columns where values are to be lowercased.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return convert_string_columns_to_lowercase(columns=self.columns)
+
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Lower case of text in given columns.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data containing columns to lowercase.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with text lowercased in given columns.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({"a": ["HeLlO", None, "  HI"]})
+        >>> transformer = LowerCaseTransformer(columns="a")
+        >>> transformer.transform(test_df)
+        shape: (3, 1)
+        ┌───────┐
+        │ a     │
+        │ ---   │
+        │ str   │
+        ╞═══════╡
+        │ hello │
+        │ null  │
+        │   hi  │
+        └───────┘
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+@register
+class RemoveCharactersTransformer(BaseTransformer):
+    r"""Transformer class to remove characters from text columns.
+
+    Attributes
+    ----------
+    characters: list[str]
+        list of characters to remove from text columns.
+
+    characters_formatted: str
+        characters attr formatted into regex string.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\\d"])
+    >>> transformer
+    RemoveCharactersTransformer(characters=['\\d'], columns=['a'])
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump)
+    {'classname': 'RemoveCharactersTransformer',
+     'fit': {},
+     'init': {'characters': ['\\d'],
+              'columns': ['a'],
+              'copy': False,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> RemoveCharactersTransformer.from_json(json_dump)
+    RemoveCharactersTransformer(characters=['\\d'], columns=['a'])
+
+    ```
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    jsonable = True
+
+    FITS = False
+
+    @beartype
+    def __init__(
+        self,
+        columns: str | ListOfStrs,
+        characters: list[str],
+        **kwargs: bool | None,
+    ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: Union[str, ListOfStrings]
+            columns to remove characters from.
+
+        characters: list[str]
+            characters to remove from specified columns.
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        self.characters = characters
+        self.characters_formatted = r"[{}]".format("".join(self.characters))
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = RemoveCharactersTransformer(columns=["a", "b"], characters=["a"])
+
+        >>> pprint(transformer.to_json())
+        {'classname': 'RemoveCharactersTransformer',
+         'fit': {},
+         'init': {'characters': ['a'],
+                  'columns': ['a', 'b'],
+                  'copy': False,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["characters"] = self.characters
+
+        return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return remove_characters_from_string_columns(
+            columns=self.columns, characters_formatted=self.characters_formatted
+        )
+
+    def transform(self, X: DataFrame) -> DataFrame:
+        r"""Strip unwanted characters from specified columns.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data containing columns to strip.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with characters stripped from specified columns.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({"a": ["  8hi!", None, "9999hello  "]})
+        >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\W", "\s"])
+        >>> transformer.transform(test_df)
+        shape: (3, 1)
+        ┌───────────┐
+        │ a         │
+        │ ---       │
+        │ str       │
+        ╞═══════════╡
+        │ 8hi       │
+        │ null      │
+        │ 9999hello │
+        └───────────┘
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+@register
+class StringContainsTransformer(BaseTransformer):
+    r"""Transformer class to indicate if given columns contain reference values.
+
+    Attributes
+    ----------
+    reference: str
+
+    reference_as_column: bool
+
+    characters_formatted: str
+        characters attr formatted into regex string.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = StringContainsTransformer(
+    ...     columns=["a"], reference="b", reference_as_column=True
+    ... )
+    >>> transformer
+    StringContainsTransformer(columns=['a'], reference='b',
+                              reference_as_column=True)
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump)
+    {'classname': 'StringContainsTransformer',
+     'fit': {},
+     'init': {'columns': ['a'],
+              'copy': False,
+              'reference': 'b',
+              'reference_as_column': True,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> StringContainsTransformer.from_json(json_dump)
+    StringContainsTransformer(columns=['a'], reference='b',
+                              reference_as_column=True)
+
+    ```
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    jsonable = True
+
+    FITS = False
+
+    @beartype
+    def __init__(
+        self,
+        columns: str | ListOfStrs,
+        reference: str,
+        reference_as_column: bool = False,
+        **kwargs: bool | None,
+    ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: Union[str, ListOfStrings]
+            columns to remove characters from.
+
+        reference: str
+            reference value to search for
+
+        reference_as_column: bool
+            whether to treat reference as a column or a literal
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        self.reference = reference
+        self.reference_as_column = reference_as_column
+
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = transformer = StringContainsTransformer(columns=["a", "b"], reference="c")
+
+        >>> transformer.get_feature_names_out()
+        ['a_contains_c', 'b_contains_c']
+
+        ```
+
+        """
+        return [f"{col}_contains_{self.reference}" for col in self.columns]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = StringContainsTransformer(
+        ...     columns=["a"], reference="b", reference_as_column=True
+        ... )
+
+        >>> pprint(transformer.to_json())
+        {'classname': 'StringContainsTransformer',
+         'fit': {},
+         'init': {'columns': ['a'],
+                  'copy': False,
+                  'reference': 'b',
+                  'reference_as_column': True,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["reference"] = self.reference
+        json_dict["init"]["reference_as_column"] = self.reference_as_column
+
+        return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return indicate_if_string_columns_contain_reference(
+            columns=self.columns,
+            reference=self.reference,
+            reference_as_column=self.reference_as_column,
+        )
+
+    def transform(self, X: DataFrame) -> DataFrame:
+        r"""Indicate if provided columns contain reference values.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data containing columns to strip.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with characters stripped from specified columns.
+
+        Raises
+        ------
+        TypeError: if called on pandas df when reference_as_column=True
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame(
+        ...     {"a": ["cat", "dog", None, "mouse"], "b": ["cat", "rat", None, "mouse"]}
+        ... )
+        >>> transformer = StringContainsTransformer(
+        ...     columns=["a"], reference="b", reference_as_column=True
+        ... )
+        >>> transformer.transform(test_df)
+        shape: (4, 3)
+        ┌───────┬───────┬──────────────┐
+        │ a     ┆ b     ┆ a_contains_b │
+        │ ---   ┆ ---   ┆ ---          │
+        │ str   ┆ str   ┆ bool         │
+        ╞═══════╪═══════╪══════════════╡
+        │ cat   ┆ cat   ┆ true         │
+        │ dog   ┆ rat   ┆ false        │
+        │ null  ┆ null  ┆ null         │
+        │ mouse ┆ mouse ┆ true         │
+        └───────┴───────┴──────────────┘
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        backend = nw.get_native_namespace(X).__name__
+
+        if backend == "pandas" and self.reference_as_column:
+            msg = f"{self.classname()}: reference_as_column=True is only supported for polars backend"
+            raise TypeError(msg)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 # DEPRECATED TRANSFORMERS

@@ -32,7 +32,10 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- added LowerCaseTransformer and RemoveCharactersTransformer to string module
+- added functions module for stateless transforms
 - updated pytest version on dependabot recommendation
+- added StringContainsTransformer to flag if columns contain reference values
 
 3.2.0 (14/04/2026)
 ------------------
