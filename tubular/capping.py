@@ -284,7 +284,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         """
         super().fit(X, y)
-        self.is_fitted_ = False  # will be set to True at end of fit if no errors raised
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -338,7 +337,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 f"{self.classname()}: quantiles not set so no fitting done in CappingTransformer",
                 stacklevel=2,
             )
-        self.is_fitted_ = True
         return self
 
     @block_from_json
@@ -782,7 +780,6 @@ class CappingTransformer(BaseCappingTransformer):
         ```
 
         """
-        self.is_fitted_ = False  # will be set to True at end of fit if no errors raised
         X = _convert_dataframe_to_narwhals(X)
 
         super().fit(X, y)
@@ -1012,7 +1009,6 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         X = _convert_dataframe_to_narwhals(X)
 
         super().fit(X=X, y=y)
-        self.is_fitted_ = False  # will be set to True at end of fit if no errors raised
         if self.quantiles:
             BaseCappingTransformer.fit(self, X=X, y=y)
             self._replacement_values = OutOfRangeNullTransformer.set_replacement_values(

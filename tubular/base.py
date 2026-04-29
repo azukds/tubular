@@ -364,7 +364,6 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y = _convert_series_to_narwhals(y)
 
         self.columns_check(X)
-        self.is_fitted_ = True
         return self
 
     @block_from_json

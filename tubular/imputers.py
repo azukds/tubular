@@ -934,7 +934,6 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
         """
         super().__init__(columns=columns, **kwargs)
         self.weights_column = weights_column
-        self.is_fitted_ = False  # to be set to True at end of fit method, once impute_values_ have been calculated
 
     @block_from_json
     @beartype
@@ -1122,7 +1121,6 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
         """
         super().__init__(columns=columns, **kwargs)
         self.weights_column = weights_column
-        self.is_fitted_ = False  # to be set to True at end of fit method, once impute_values_ have been calculated
 
     @block_from_json
     @beartype
@@ -1298,7 +1296,6 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
         """
         super().__init__(columns=columns, **kwargs)
         self.weights_column = weights_column
-        self.is_fitted_ = False  # to be set to True at end of fit method, once impute_values_ have been calculated
 
     @block_from_json
     @beartype

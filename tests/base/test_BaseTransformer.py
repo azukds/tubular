@@ -108,7 +108,7 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
         df = d.create_df_1(library="pandas")
         transformer = BaseTransformer(columns=["a"]).fit(df)
 
-        assert transformer.is_fitted_ is True
+        assert transformer.is_fitted_ is False
         transformer.transform(df)
 
 

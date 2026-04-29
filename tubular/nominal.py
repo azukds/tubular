@@ -513,7 +513,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         y = _convert_series_to_narwhals(y)
 
         super().fit(X, y)
-        self.is_fitted_ = False  # will be set to True at end of method, set here to prevent issues with calling parent fit method
 
         weights_column = self.weights_column
         if self.weights_column is None:
