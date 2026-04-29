@@ -55,7 +55,7 @@ pygments==2.20.0
     # via
     #   tubular (pyproject.toml)
     #   pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   tubular (pyproject.toml)
     #   pytest-cov

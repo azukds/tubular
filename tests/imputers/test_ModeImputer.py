@@ -1,5 +1,6 @@
 import narwhals as nw
 import numpy as np
+import polars as pl
 import pytest
 
 from tests.base_tests import (
@@ -20,6 +21,7 @@ from tests.imputers.test_BaseImputer import (
 )
 from tests.utils import (
     _convert_to_lazy,
+    assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
 from tubular.imputers import ModeImputer
@@ -282,6 +284,33 @@ class TestTransform(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "ModeImputer"
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in ModeImputer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that ModeImputer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "x", "x", None]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = ModeImputer(columns="b")
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        # Transform should work correctly (no nulls to impute, so unchanged)
+        expected = dataframe_init_dispatch(
+            {"a": [1, 2, 3, 4, 5], "b": ["x", "y", "x", "x", "x"]},
+            library,
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
 
 
 class TestOtherBaseBehaviour(
