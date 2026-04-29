@@ -20,6 +20,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        sklearn-version: ["1.7", "1.8"]
 
     steps:
 
@@ -36,6 +37,7 @@ jobs:
           uv venv -p  ${{ matrix.python-version }} ${{ matrix.python-version }}
           source ${{ matrix.python-version }}/bin/activate
           uv pip install .[dev]
+          uv pip install "scikit-learn==${{ matrix.sklearn-version }}.*"
 
       - name: Test with pytest
         if: always()
