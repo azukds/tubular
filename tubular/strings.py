@@ -18,6 +18,7 @@ from tubular._utils import (
 from tubular.base import BaseTransformer, register
 from tubular.functions.strings import (
     convert_string_columns_to_lowercase,
+    extract_string_components,
     remove_characters_from_string_columns,
 )
 from tubular.types import DataFrame, GenericKwargs, ListOfOneStr, ListOfStrs
@@ -141,6 +142,228 @@ class LowerCaseTransformer(BaseTransformer):
         │ null  │
         │   hi  │
         └───────┘
+
+        ```
+
+        """
+        X = _convert_dataframe_to_narwhals(X)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+@register
+class ExtractStringComponentsTransformer(BaseTransformer):
+    r"""Transformer class to extract components from string columns, split by given character.
+
+    Attributes
+    ----------
+    by: str
+        character to split on
+
+    return_n_components: int
+        number of components to return
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    return_native: bool, default = True
+        Controls whether transformer returns narwhals or native pandas/polars type
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> from pprint import pprint
+    >>> transformer = ExtractStringComponentsTransformer(
+    ...     columns=["a"], by="@", return_n_components=2
+    ... )
+    >>> transformer
+    ExtractStringComponentsTransformer(by='@', columns=['a'], return_n_components=2)
+
+    >>> json_dump = transformer.to_json()
+    >>> pprint(json_dump)
+    {'classname': 'ExtractStringComponentsTransformer',
+     'fit': {},
+     'init': {'by': '@',
+              'columns': ['a'],
+              'copy': False,
+              'return_n_components': 2,
+              'return_native': True,
+              'verbose': False},
+     'tubular_version': ...}
+
+    >>> ExtractStringComponentsTransformer.from_json(json_dump)
+    ExtractStringComponentsTransformer(by='@', columns=['a'], return_n_components=2)
+
+    ```
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    jsonable = True
+
+    FITS = False
+
+    @beartype
+    def __init__(
+        self,
+        columns: str | ListOfStrs,
+        by: str,
+        return_n_components: int,
+        **kwargs: bool | None,
+    ) -> None:
+        """Initialise class instance.
+
+        Parameters
+        ----------
+        columns: Union[str, ListOfStrings]
+            columns to remove characters from.
+
+        by: str
+            character to split strings by
+
+        return_n_components:
+            number of components to return
+
+        **kwargs
+            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+
+        """
+        super().__init__(columns=columns, **kwargs)
+
+        self.by = by
+        self.return_n_components = return_n_components
+
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = ExtractStringComponentsTransformer(
+        ...     columns=["a"], by="@", return_n_components=2
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a_split_by_@_entry_0', 'a_split_by_@_entry_1']
+
+        ```
+
+        """
+        return [
+            f"{col}_split_by_{self.by}_entry_{i}"
+            for col in self.columns
+            for i in range(self.return_n_components)
+        ]
+
+    @block_from_json
+    def to_json(self) -> dict[str, dict[str, Any]]:
+        """Dump transformer to json dict.
+
+        Returns
+        -------
+        dict[str, dict[str, Any]]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+        Examples
+        --------
+        ```pycon
+        >>> from pprint import pprint
+        >>> transformer = ExtractStringComponentsTransformer(
+        ...     columns=["a"], by="@", return_n_components=2
+        ... )
+
+        >>> pprint(transformer.to_json())
+        {'classname': 'ExtractStringComponentsTransformer',
+         'fit': {},
+         'init': {'by': '@',
+                  'columns': ['a'],
+                  'copy': False,
+                  'return_n_components': 2,
+                  'return_native': True,
+                  'verbose': False},
+         'tubular_version': ...}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+
+        json_dict["init"]["by"] = self.by
+        json_dict["init"]["return_n_components"] = self.return_n_components
+
+        return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return extract_string_components(
+            columns=self.columns,
+            by=self.by,
+            return_n_components=self.return_n_components,
+        )
+
+    def transform(self, X: DataFrame) -> DataFrame:
+        r"""Extract components from string columns, split by given character.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data containing columns to strip.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with characters stripped from specified columns.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> test_df = pl.DataFrame({"a": ["greg@gmail.com", "bob@apple.net"]})
+        >>> transformer = ExtractStringComponentsTransformer(
+        ...     columns=["a"], by="@", return_n_components=2
+        ... )
+        >>> transformer.transform(test_df)
+        shape: (2, 3)
+        ┌────────────────┬──────────────────────┬──────────────────────┐
+        │ a              ┆ a_split_by_@_entry_0 ┆ a_split_by_@_entry_1 │
+        │ ---            ┆ ---                  ┆ ---                  │
+        │ str            ┆ str                  ┆ str                  │
+        ╞════════════════╪══════════════════════╪══════════════════════╡
+        │ greg@gmail.com ┆ greg                 ┆ gmail.com            │
+        │ bob@apple.net  ┆ bob                  ┆ apple.net            │
+        └────────────────┴──────────────────────┴──────────────────────┘
 
         ```
 

@@ -35,6 +35,7 @@ Changed
 - added LowerCaseTransformer and RemoveCharactersTransformer to string module
 - added functions module for stateless transforms
 - updated pytest version on dependabot recommendation
+- added 
 
 3.2.0 (14/04/2026)
 ------------------
