@@ -35,7 +35,7 @@ Changed
 - added LowerCaseTransformer and RemoveCharactersTransformer to string module
 - added functions module for stateless transforms
 - updated pytest version on dependabot recommendation
-- added 
+- added ExtractStringComponentsTransformer for e.g. pulling out email domains
 
 3.2.0 (14/04/2026)
 ------------------

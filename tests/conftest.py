@@ -202,6 +202,11 @@ def minimal_attribute_dict():
             "method": ["sin"],
             "units": "month",
         },
+        "ExtractStringComponentsTransformer": {
+            "columns": ["b"],
+            "by": "@",
+            "return_n_components": 1,
+        },
         "EqualityChecker": {
             "columns": ["a", "b"],
             "new_column_name": "c",
@@ -410,6 +415,14 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
+
+    pyarrow_transformers = ["ExtractStringComponentsTransformer"]
+
+    if library == "pandas":
+        for transformer in pyarrow_transformers:
+            min_df_dict[transformer] = min_df_dict[transformer].convert_dtypes(
+                dtype_backend="pyarrow"
+            )
 
     return min_df_dict
 

@@ -37,8 +37,13 @@ def extract_string_components(
     list[nw.Expr]: expressions for transformation
 
     """
+    split_exprs = {col: nw.col(col).str.split(by=by) for col in columns}
     return [
-        nw.col(col).str.split(by=by).list.get(i).alias(f"{col}_split_by_{by}_entry_{i}")
+        nw.when(split_exprs[col].list.len() > i)
+        .then(split_exprs[col])
+        .otherwise(None)
+        .list.get(i)
+        .alias(f"{col}_split_by_{by}_entry_{i}")
         for col in columns
         for i in range(return_n_components)
     ]
