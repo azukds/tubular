@@ -1,7 +1,11 @@
 import polars as pl
 import pytest
 
-from tests.base_tests import EmptyCappingsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyCappingsFitTransformPassTests,
+    OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
+)
 from tests.capping.test_BaseCappingTransformer import (
     GenericCappingFitTests,
     GenericCappingInitTests,
@@ -65,7 +69,9 @@ class TestLazyYSupport:
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyCappingsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyCappingsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

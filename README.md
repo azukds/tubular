@@ -148,7 +148,7 @@ track our progress below:
 | LowerCaseTransformer               | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | MappingTransformer                 | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | MeanImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
-| MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :x:                    |
+| MeanResponseTransformer            | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | MedianImputer                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | ModeImputer                        | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |
 | NullIndicator                      | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:     |

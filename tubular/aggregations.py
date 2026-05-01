@@ -150,6 +150,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         self.aggregations = aggregations
 
         self.drop_original = drop_original
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, Any]:
@@ -178,7 +179,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
         'return_native': True,
         'aggregations': ['min', 'max'],
         'drop_original': False},
-        'fit': {}}
+        'fit': {'is_fitted_': True}}
 
         ```
 
@@ -248,7 +249,7 @@ class BaseAggregationTransformer(BaseTransformer, DropOriginalMixin):
 
         X = super().transform(X, return_native_override=False)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         non_numerical_columns = [
             col for col in self.columns if schema[col] not in NumericTypes
@@ -360,6 +361,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             **kwargs,
         )
         self.key = key
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, Any]:
@@ -390,7 +392,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
          'aggregations': ['min', 'max'],
          'drop_original': False,
          'key': 'c'},
-         'fit': {}}
+         'fit': {'is_fitted_': True}}
 
         ```
 
@@ -478,7 +480,7 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        if self.key not in X.columns:
+        if self.key not in X.collect_schema().names():
             msg = f"{self.classname()}: key '{self.key}' not found in dataframe columns"
             raise ValueError(msg)
 
@@ -588,6 +590,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
             drop_original=drop_original,
             **kwargs,
         )
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
