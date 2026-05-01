@@ -19,6 +19,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
 )
 from tubular.base import block_from_json, register
+from tubular.functions.capping import cap_columns, set_out_of_range_to_none
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
 from tubular.types import DataFrame, LazyFrame, Number, Series
@@ -464,6 +465,40 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             float(value) if value is not None else value for value in interp_quantiles
         ]
 
+    def to_json(self) -> dict:
+        """Return a JSON-serializable representation of the transformer.
+
+        Returns
+        -------
+         dict
+        Dictionary containing all necessary attributes to recreate the transformer with
+        `from_json`. Keys include 'init' (initialization parameters) and 'fit' (fitted values).
+
+        """
+        data = super().to_json()
+
+        data["init"].pop("columns", None)
+        data["init"].update(
+            {
+                "capping_values": self.capping_values,
+                "quantiles": self.quantiles,
+                "weights_column": self.weights_column,
+            },
+        )
+
+        # transformer only fits for quantiles setting
+        if self.quantiles is not None:
+            self.check_is_fitted(["quantile_capping_values", "_replacement_values"])
+
+            data["fit"].update(
+                {
+                    "quantile_capping_values": self.quantile_capping_values,
+                    "_replacement_values": self._replacement_values,
+                },
+            )
+
+        return data
+
     @beartype
     def transform(
         self,
@@ -517,107 +552,20 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         """
         self.check_is_fitted(["_replacement_values"])
+        if self.quantiles:
+            self.check_is_fitted(["quantile_capping_values"])
 
         X = _convert_dataframe_to_narwhals(X)
-
-        schema = X.schema
 
         return_native = self._process_return_native(return_native_override)
 
         X = super().transform(X, return_native_override=False)
 
-        dict_attrs = ["_replacement_values"]
+        transform_exprs = self.get_transform_exprs()
 
-        if self.quantiles:
-            self.check_is_fitted(["quantile_capping_values"])
-
-            capping_values_for_transform = self.quantile_capping_values
-
-            dict_attrs = [*dict_attrs, "quantile_capping_values"]
-
-        else:
-            capping_values_for_transform = self.capping_values
-
-            dict_attrs = [*dict_attrs, "capping_values"]
-
-        exprs = {}
-        for col in self.columns:
-            cap_value_min = capping_values_for_transform[col][0]
-            cap_value_max = capping_values_for_transform[col][1]
-
-            replacement_min = self._replacement_values[col][0]
-            replacement_max = self._replacement_values[col][1]
-
-            if cap_value_min is not None and cap_value_max is not None:
-                col_expr = (
-                    nw.when(nw.col(col) < cap_value_min)
-                    .then(replacement_min)
-                    .otherwise(
-                        nw.when(nw.col(col) > cap_value_max)
-                        .then(replacement_max)
-                        .otherwise(nw.col(col)),
-                    )
-                )
-            elif cap_value_min is not None:
-                col_expr = (
-                    nw.when(nw.col(col) < cap_value_min)
-                    .then(replacement_min)
-                    .otherwise(nw.col(col))
-                )
-            elif cap_value_max is not None:
-                col_expr = (
-                    nw.when(nw.col(col) > cap_value_max)
-                    .then(replacement_max)
-                    .otherwise(nw.col(col))
-                )
-            else:
-                col_expr = nw.col(col)
-
-            # make sure type is preserved for single row,
-            # e.g. mapping single row to int could convert
-            # from float to int
-            # TODO - look into better ways to achieve this
-            exprs[col] = col_expr.cast(
-                schema[col],
-            ).alias(col)
-
-        X = X.with_columns(**exprs) if exprs else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
-
-    def to_json(self) -> dict:
-        """Return a JSON-serializable representation of the transformer.
-
-        Returns
-        -------
-         dict
-        Dictionary containing all necessary attributes to recreate the transformer with
-        `from_json`. Keys include 'init' (initialization parameters) and 'fit' (fitted values).
-
-        """
-        data = super().to_json()
-
-        data["init"].pop("columns", None)
-        data["init"].update(
-            {
-                "capping_values": self.capping_values,
-                "quantiles": self.quantiles,
-                "weights_column": self.weights_column,
-            },
-        )
-
-        # transformer only fits for quantiles setting
-        if self.quantiles is not None:
-            self.check_is_fitted(["quantile_capping_values", "_replacement_values"])
-
-            data["fit"].update(
-                {
-                    "quantile_capping_values": self.quantile_capping_values,
-                    "_replacement_values": self._replacement_values,
-                },
-            )
-
-        return data
 
 
 @register
@@ -791,6 +739,18 @@ class CappingTransformer(BaseCappingTransformer):
         super().fit(X, y)
 
         return self
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return cap_columns(
+            columns=self.columns, capping_values_for_transform=self._replacement_values
+        )
 
 
 @register
@@ -1031,3 +991,20 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             )
 
         return self
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        capping_values_for_transform = (
+            self.quantile_capping_values if self.quantiles else self.capping_values
+        )
+
+        return set_out_of_range_to_none(
+            columns=self.columns,
+            capping_values_for_transform=capping_values_for_transform,
+        )

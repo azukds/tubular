@@ -1,12 +1,10 @@
 """Contains transformers for performing data aggregations."""
 
-from enum import Enum
 from typing import Any
 
 import narwhals as nw
 from beartype import beartype
-from beartype.typing import Annotated, List, Optional
-from beartype.vale import Is
+from beartype.typing import Optional
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -14,51 +12,14 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.functions.aggregations import (
+    ListOfColumnsOverRowAggregations,
+    ListOfRowsOverColumnsAggregations,
+    aggregate_over_columns,
+    aggregate_over_rows,
+)
 from tubular.mixins import DropOriginalMixin
 from tubular.types import DataFrame, ListOfStrs, NumericTypes
-
-
-class ColumnsOverRowAggregationOptions(str, Enum):
-    """Aggregation options for ColumnsOverRowAggregationTransformer."""
-
-    MIN = "min"
-    MAX = "max"
-    MEAN = "mean"
-    SUM = "sum"
-    # not currently easy to implement row-wise
-    # median or count, so leaving out for now
-
-
-class RowsOverColumnsAggregationOptions(str, Enum):
-    """Aggregation options for RowsOverColumnAggregationTransformer."""
-
-    MIN = "min"
-    MAX = "max"
-    MEAN = "mean"
-    SUM = "sum"
-    MEDIAN = "median"
-    COUNT = "count"
-
-
-ListOfColumnsOverRowAggregations = Annotated[
-    List,
-    Is[
-        lambda list_value: all(
-            entry in ColumnsOverRowAggregationOptions._value2member_map_
-            for entry in list_value
-        )
-    ],
-]
-
-ListOfRowsOverColumnsAggregations = Annotated[
-    List,
-    Is[
-        lambda list_value: all(
-            entry in RowsOverColumnsAggregationOptions._value2member_map_
-            for entry in list_value
-        )
-    ],
-]
 
 
 @register
@@ -424,6 +385,18 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         """
         return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return aggregate_over_rows(
+            columns=self.columns, key=self.key, aggregations=self.aggregations
+        )
+
     @beartype
     def transform(
         self,
@@ -482,13 +455,9 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
             msg = f"{self.classname()}: key '{self.key}' not found in dataframe columns"
             raise ValueError(msg)
 
-        expr_dict = {
-            f"{col}_{agg}": getattr(nw.col(col), agg)().over(self.key)
-            for col in self.columns
-            for agg in self.aggregations
-        }
+        self.transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(**expr_dict) if expr_dict else X
+        X = X.with_columns(*self.transform_exprs) if self.transform_exprs else X
 
         X = DropOriginalMixin.drop_original_column(
             X,
@@ -613,6 +582,18 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         """
         return ["_".join(self.columns) + "_" + agg for agg in self.aggregations]
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return aggregate_over_columns(
+            columns=self.columns, aggregations=self.aggregations
+        )
+
     @beartype
     def transform(
         self,
@@ -660,29 +641,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        expr_map = (
-            {
-                "min": nw.min_horizontal(*self.columns),
-                "max": nw.max_horizontal(*self.columns),
-                "sum": nw.sum_horizontal(*self.columns),
-                "mean": nw.mean_horizontal(*self.columns),
-            }
-            if self.columns
-            else {}
-        )
+        transform_exprs = self.get_transform_exprs()
 
-        transform_dict = (
-            {
-                "_".join(self.columns) + "_" + aggregation: expr_map[aggregation].alias(
-                    "_".join(self.columns) + "_" + aggregation,
-                )
-                for aggregation in self.aggregations
-            }
-            if expr_map
-            else {}
-        )
-
-        X = X.with_columns(**transform_dict) if transform_dict else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         X = DropOriginalMixin.drop_original_column(
             X,
