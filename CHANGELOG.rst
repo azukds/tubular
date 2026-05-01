@@ -32,7 +32,8 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- added LowerCaseTransformer and RemoveCharactersTransformer to string module
+- added functions module for stateless transforms
 
 3.3.0 (30/04/2026)
 ------------------
