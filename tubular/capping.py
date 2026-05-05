@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Annotated
 
 import narwhals as nw
 import numpy as np
 from beartype import beartype
-from beartype.vale import Is
 
 from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
@@ -19,25 +17,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
 )
 from tubular.base import block_from_json, register
-from tubular.functions.capping import cap_columns, set_out_of_range_to_none
+from tubular.functions.capping import (
+    CappingValues,
+    cap_columns,
+    set_out_of_range_to_none,
+)
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
-from tubular.types import DataFrame, LazyFrame, Number, Series
-
-CappingValues = Annotated[
-    list[Number | None],
-    Is[
-        lambda list_arg: (
-            (len(list_arg) == 2)  # noqa: PLR2004
-            & (
-                all(
-                    (isinstance(value, (int, float)) or value is None)
-                    for value in list_arg
-                )
-            )
-        )
-    ],
-]
+from tubular.types import DataFrame, FloatTypeAnnotated, LazyFrame, Number, Series
 
 
 @register
@@ -817,12 +804,12 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     ┌──────┬──────┬─────┐
     │ a    ┆ b    ┆ c   │
     │ ---  ┆ ---  ┆ --- │
-    │ i64  ┆ i64  ┆ i64 │
+    │ f64  ┆ f64  ┆ i64 │
     ╞══════╪══════╪═════╡
     │ null ┆ null ┆ 1   │
-    │ 15   ┆ 2    ┆ 2   │
-    │ 18   ┆ null ┆ 3   │
-    │ null ┆ 1    ┆ 4   │
+    │ 15.0 ┆ 2.0  ┆ 2   │
+    │ 18.0 ┆ null ┆ 3   │
+    │ null ┆ 1.0  ┆ 4   │
     └──────┴──────┴─────┘
 
     >>> # transformer can also be dumped to json and reinitialised
@@ -852,6 +839,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         capping_values: dict[str, CappingValues] | None = None,
         quantiles: dict[str, CappingValues] | None = None,
         weights_column: str | None = None,
+        dtype: FloatTypeAnnotated = "Float64",
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -879,6 +867,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             Optional weights column argument that can be used in combination with quantiles. Not used
             if capping_values is supplied. Allows weighted quantiles to be calculated.
 
+        dtype: "Float64" or "Float32"
+            control dtype to return.
+
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -894,6 +885,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             self._replacement_values = OutOfRangeNullTransformer.set_replacement_values(
                 self.capping_values,
             )
+
+        self.dtype = dtype
 
     @beartype
     @staticmethod
@@ -1006,5 +999,6 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         return set_out_of_range_to_none(
             columns=self.columns,
-            capping_values_for_transform=capping_values_for_transform,
+            column_capping_ranges=capping_values_for_transform,
+            dtype=self.dtype,
         )

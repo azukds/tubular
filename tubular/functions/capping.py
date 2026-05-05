@@ -1,4 +1,24 @@
+from typing import Annotated
+
 import narwhals as nw
+from beartype.vale import Is
+
+from tubular.types import FloatTypeAnnotated, Number
+
+CappingValues = Annotated[
+    list[Number | None],
+    Is[
+        lambda list_arg: (
+            (len(list_arg) == 2)  # noqa: PLR2004
+            & (
+                all(
+                    (isinstance(value, (int, float)) or value is None)
+                    for value in list_arg
+                )
+            )
+        )
+    ],
+]
 
 
 def cap_columns(columns: list[str], capping_values_for_transform):
@@ -12,23 +32,54 @@ def cap_columns(columns: list[str], capping_values_for_transform):
     ]
 
 
-def set_out_of_range_to_none(columns, capping_values_for_transform):
+def set_out_of_range_to_none(
+    columns: list[str],
+    column_capping_ranges: dict[str, CappingValues],
+    dtype: FloatTypeAnnotated,
+) -> list[nw.Expr]:
+    """Get expression for mapping column values outside of provided range to None.
 
+    Parameters
+    ----------
+    columns:
+        columns to cap
+
+    column_capping_ranges:
+        dict containing per column capping ranges
+
+    dtype:
+        column dtype to return
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
     return [
-        nw.when(nw.col(col) < (cap_value_min := capping_values_for_transform[col][0]))
-        .then(None)
-        .otherwise(
-            nw.when(
-                nw.col(col) > (cap_value_max := capping_values_for_transform[col][1])
-            )
-            .then(None)
-            .otherwise(nw.col(col))
+        nw.when(
+            (nw.col(col) >= (column_capping_ranges[col][0]))
+            & (nw.col(col) <= (column_capping_ranges[col][1]))
         )
-        if cap_value_min and cap_value_max
-        else nw.when(nw.col(col) < cap_value_min).then(None).otherwise(nw.col(col))
-        if cap_value_min
-        else nw.when(nw.col(col) > cap_value_max).then(None).otherwise(nw.col(col))
-        if cap_value_max
-        else nw.col(col)
+        .then(nw.col(col))
+        .otherwise(None)
+        .cast(getattr(nw, dtype))
+        .alias(col)
+        if (
+            column_capping_ranges[col][0] is not None
+            and column_capping_ranges[col][1] is not None
+        )
+        else nw.when(nw.col(col) < column_capping_ranges[col][0])
+        .then(None)
+        .otherwise(nw.col(col))
+        .cast(getattr(nw, dtype))
+        .alias(col)
+        if (column_capping_ranges[col][0] is not None)
+        else nw.when(nw.col(col) > column_capping_ranges[col][1])
+        .then(None)
+        .otherwise(nw.col(col))
+        .cast(getattr(nw, dtype))
+        .alias(col)
+        if (column_capping_ranges[col][1] is not None)
+        else nw.col(col).cast(getattr(nw, dtype))
         for col in columns
     ]

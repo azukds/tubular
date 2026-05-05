@@ -173,7 +173,7 @@ class TestLazyYSupport:
 
         expected = pl.DataFrame(
             {
-                "a": [1, 2, 3, 4, None],
+                "a": [1.0, 2.0, 3.0, 4.0, None],
                 "b": [1.0, 2.0, 3.0, 4.0, None],
             }
         )
