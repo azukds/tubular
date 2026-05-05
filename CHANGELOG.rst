@@ -34,6 +34,7 @@ Changed
 ^^^^^^^
 - added LowerCaseTransformer and RemoveCharactersTransformer to string module
 - added functions module for stateless transforms
+- removed narwhals private import from nominal module `#725 <https://github.com/azukds/tubular/issues/725>_`
 
 3.3.0 (30/04/2026)
 ------------------
