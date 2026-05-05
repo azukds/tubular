@@ -83,6 +83,7 @@ class LowerCaseTransformer(BaseTransformer):
 
     FITS = False
 
+    @beartype
     def __init__(
         self,
         columns: str | ListOfStrs,
