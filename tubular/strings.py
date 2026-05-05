@@ -61,7 +61,7 @@ class LowerCaseTransformer(BaseTransformer):
     >>> json_dump = transformer.to_json()
     >>> pprint(json_dump)
     {'classname': 'LowerCaseTransformer',
-     'fit': {},
+     'fit': {'is_fitted_': False},
      'init': {'columns': ['a'],
               'copy': False,
               'return_native': True,
@@ -196,7 +196,7 @@ class RemoveCharactersTransformer(BaseTransformer):
     >>> json_dump = transformer.to_json()
     >>> pprint(json_dump)
     {'classname': 'RemoveCharactersTransformer',
-     'fit': {},
+     'fit': {'is_fitted_': False},
      'init': {'characters': ['\\d'],
               'columns': ['a'],
               'copy': False,
@@ -263,7 +263,7 @@ class RemoveCharactersTransformer(BaseTransformer):
 
         >>> pprint(transformer.to_json())
         {'classname': 'RemoveCharactersTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': False},
          'init': {'characters': ['a'],
                   'columns': ['a', 'b'],
                   'copy': False,
