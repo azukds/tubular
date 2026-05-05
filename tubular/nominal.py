@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Literal
 import narwhals as nw
 import numpy as np
 from beartype import beartype
-from narwhals._utils import no_default  # noqa: PLC2701, need private import
 from narwhals.dtypes import DType  # noqa: F401
 from typing_extensions import deprecated
 
@@ -1403,7 +1402,7 @@ class MeanResponseTransformer(
                 self.mappings[encoded_col],
                 default=self.unseen_levels_encoding_dict[encoded_col]
                 if self.unseen_level_handling
-                else no_default,
+                else None,
             )
             .cast(getattr(nw, self.return_dtypes[encoded_col]))
             for col in self.columns
