@@ -27,12 +27,12 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.4.0 (30/04/2026)
+3.4.0 (placeholder)
 ------------------
 
 Changed
 ^^^^^^^
-- placeholder
+- removed narwhals private import from nominal module `#725 <https://github.com/azukds/tubular/issues/725>_`
 
 3.3.0 (30/04/2026)
 ------------------
