@@ -279,7 +279,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
+        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'is_fitted_': True, 'bins': [3, 4]}}
 
         """
         self.check_is_fitted(["bins"])
@@ -471,6 +471,7 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             .ravel()
             .tolist()
         )
+        self.is_fitted_ = True
         return self
 
     @nw.narwhalify
@@ -613,6 +614,7 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         # Set new_column_name or generate a default one
         self.new_column_name = f"{columns[0]}_minus_{columns[1]}"
+        self.is_fitted_ = True  # Does not fit
 
     @beartype
     def transform(
@@ -742,7 +744,7 @@ class RatioTransformer(BaseNumericTransformer):
         ```pycon
         >>> ratio_transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
         >>> ratio_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -775,6 +777,7 @@ class RatioTransformer(BaseNumericTransformer):
         super().__init__(columns=columns, **kwargs)
 
         self.return_dtype = return_dtype
+        self.is_fitted_ = True  # Does not fit
 
     @beartype
     def transform(

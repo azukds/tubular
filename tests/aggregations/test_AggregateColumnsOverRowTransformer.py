@@ -7,7 +7,11 @@ from tests.aggregations.test_BaseAggregationTransformer import (
     TestBaseAggregationTransformerInit,
     TestBaseAggregationTransformerTransform,
 )
-from tests.base_tests import EmptyColumnsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
+)
 from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
@@ -206,7 +210,9 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for AggregateColumnsOverRowTransformer outside the three standard methods.

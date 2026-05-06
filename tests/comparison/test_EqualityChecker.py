@@ -9,6 +9,7 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
     TwoColumnListInitTests,
 )
 from tubular.comparison import EqualityChecker
@@ -93,7 +94,7 @@ class TestTransform(GenericTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

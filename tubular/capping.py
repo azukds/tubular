@@ -340,7 +340,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
                 f"{self.classname()}: quantiles not set so no fitting done in CappingTransformer",
                 stacklevel=2,
             )
-
         return self
 
     @block_from_json
@@ -520,7 +519,7 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         return_native = self._process_return_native(return_native_override)
 
@@ -689,7 +688,7 @@ class CappingTransformer(BaseCappingTransformer):
 
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'CappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'CappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {'is_fitted_': False}}
 
     >>> CappingTransformer.from_json(json_dump)
     CappingTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
@@ -789,7 +788,7 @@ class CappingTransformer(BaseCappingTransformer):
         X = _convert_dataframe_to_narwhals(X)
 
         super().fit(X, y)
-
+        self.is_fitted_ = True
         return self
 
 
@@ -869,7 +868,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'OutOfRangeNullTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'OutOfRangeNullTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'capping_values': {'a': [10, 20], 'b': [1, 3]}, 'quantiles': None, 'weights_column': None}, 'fit': {'is_fitted_': False}}
 
     >>> OutOfRangeNullTransformer.from_json(json_dump)
     OutOfRangeNullTransformer(capping_values={'a': [10, 20], 'b': [1, 3]})
@@ -1017,7 +1016,6 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         X = _convert_dataframe_to_narwhals(X)
 
         super().fit(X=X, y=y)
-
         if self.quantiles:
             BaseCappingTransformer.fit(self, X=X, y=y)
             self._replacement_values = OutOfRangeNullTransformer.set_replacement_values(
@@ -1029,5 +1027,5 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 f"{self.classname()}: quantiles not set so no fitting done in OutOfRangeNullTransformer",
                 stacklevel=2,
             )
-
+        self.is_fitted_ = True
         return self

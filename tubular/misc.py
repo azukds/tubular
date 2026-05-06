@@ -89,6 +89,7 @@ class SetValueTransformer(BaseTransformer):
         self.value = value
 
         super().__init__(columns=columns, **kwargs)
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -105,7 +106,7 @@ class SetValueTransformer(BaseTransformer):
         ```pycon
         >>> transformer = SetValueTransformer(columns="a", value=1)
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -206,7 +207,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
     >>> json_dump = transformer.to_json()
     >>> pprint(json_dump, sort_dicts=True)
     {'classname': 'RenameColumnsTransformer',
-     'fit': {},
+     'fit': {'is_fitted_': True},
      'init': {'columns': ['a'],
               'copy': False,
               'drop_original': True,
@@ -269,6 +270,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         self.new_column_names = new_column_names
         self.drop_original = drop_original
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -313,7 +315,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         ... )  # noqa: E501
         >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'RenameColumnsTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a'],
                   'copy': False,
                   'drop_original': True,
@@ -486,6 +488,7 @@ class ColumnDtypeSetter(BaseTransformer):
         super().__init__(columns, **kwargs)
 
         self.dtype = dtype
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -504,7 +507,7 @@ class ColumnDtypeSetter(BaseTransformer):
         >>> transformer = ColumnDtypeSetter(columns="a", dtype="Float32")
         >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'ColumnDtypeSetter',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a'],
                   'copy': False,
                   'dtype': 'Float32',
