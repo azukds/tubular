@@ -511,32 +511,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
         X : DataFrame
             Transformed input X with min and max capping applied to the specified columns.
 
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-
-        >>> transformer = BaseCappingTransformer(
-        ...     capping_values={"a": [10, 20], "b": [1, 3]},
-        ... )
-
-        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
-
-        >>> transformer.transform(test_df)
-        shape: (4, 3)
-        ┌─────┬─────┬─────┐
-        │ a   ┆ b   ┆ c   │
-        │ --- ┆ --- ┆ --- │
-        │ i64 ┆ i64 ┆ i64 │
-        ╞═════╪═════╪═════╡
-        │ 10  ┆ 3   ┆ 1   │
-        │ 15  ┆ 2   ┆ 2   │
-        │ 18  ┆ 3   ┆ 3   │
-        │ 20  ┆ 1   ┆ 4   │
-        └─────┴─────┴─────┘
-
-        ```
-
         """
         self.check_is_fitted(["_replacement_values"])
         if self.quantiles:

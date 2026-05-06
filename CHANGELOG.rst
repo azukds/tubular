@@ -36,6 +36,7 @@ Changed
 - added functions module for stateless transforms
 - updated pytest version on dependabot recommendation
 - added ExtractStringComponentsTransformer for e.g. pulling out email domains
+- added get_transform_exprs method for transformers in aggregations/capping/comparison modules
 
 3.2.0 (14/04/2026)
 ------------------

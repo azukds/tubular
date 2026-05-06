@@ -3,7 +3,11 @@ import polars as pl
 import pytest
 
 import tests.test_data as d
-from tests.base_tests import EmptyCappingsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyCappingsFitTransformPassTests,
+    GenericTransformTests,
+    OtherBaseBehaviourTests,
+)
 from tests.capping.test_BaseCappingTransformer import (
     GenericCappingFitTests,
     GenericCappingInitTests,
@@ -90,7 +94,7 @@ class TestFit(GenericCappingFitTests):
         )
 
 
-class TestTransform(GenericCappingTransformTests):
+class TestTransform(GenericCappingTransformTests, GenericTransformTests):
     """Tests for OutOfRangeNullTransformer.transform()."""
 
     @classmethod

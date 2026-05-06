@@ -1,3 +1,5 @@
+"""Contains stateless transforms for capping."""
+
 from typing import Annotated
 
 import narwhals as nw
@@ -21,12 +23,28 @@ CappingValues = Annotated[
 ]
 
 
-def cap_columns(columns: list[str], capping_values_for_transform):
+def cap_columns(
+    columns: list[str], column_capping_ranges: dict[str, CappingValues]
+) -> list[nw.Expr]:
+    """Get expression for capping columns within provided ranges.
 
+    Parameters
+    ----------
+    columns:
+        columns to cap
+
+    column_capping_ranges:
+        dict containing per column capping ranges
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
     return [
         nw.col(col).clip(
-            lower_bound=capping_values_for_transform[col][0],
-            upper_bound=capping_values_for_transform[col][1],
+            lower_bound=column_capping_ranges[col][0],
+            upper_bound=column_capping_ranges[col][1],
         )
         for col in columns
     ]
