@@ -13,6 +13,7 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsDates,
     ReturnNativeTests,
     TwoColumnListInitTests,
 )
@@ -489,7 +490,7 @@ class TestTransform(
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsDates):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

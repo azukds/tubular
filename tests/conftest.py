@@ -133,9 +133,6 @@ def minimal_attribute_dict():
         "BaseMappingTransformMixin": {
             "columns": ["a"],
         },
-        "BaseNominalTransformer": {
-            "columns": ["b"],
-        },
         "BaseNumericTransformer": {
             "columns": ["a", "b"],
         },

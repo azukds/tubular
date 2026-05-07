@@ -133,6 +133,7 @@ class BaseGenericDateTransformer(
 
         self.drop_original = drop_original
         self.new_column_name = new_column_name
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -150,7 +151,7 @@ class BaseGenericDateTransformer(
         >>> transformer = BaseGenericDateTransformer(columns=["a", "b"], new_column_name="bla")
 
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -262,7 +263,7 @@ class BaseGenericDateTransformer(
             allowed_types = [*allowed_types, date_type]
             type_msg += ["Date"]
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         for col in self.columns:
             is_datetime = False
@@ -442,6 +443,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
             drop_original=drop_original,
             **kwargs,
         )
+        self.is_fitted_ = True  # Does not fit
 
     @beartype
     def transform(
@@ -545,7 +547,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False, 'units': 'common_year', 'custom_days_divider': None}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'drop_original': False, 'units': 'common_year', 'custom_days_divider': None}, 'fit': {'is_fitted_': True}}
 
     >>> DateDifferenceTransformer.from_json(json_dump)
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
@@ -610,6 +612,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         # Here only as a fix to allow string representation of transformer.
         self.column_lower = columns[0]
         self.column_upper = columns[1]
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -628,7 +631,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'drop_original': False, 'units': 'D', 'custom_days_divider': None}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'drop_original': False, 'units': 'D', 'custom_days_divider': None}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -766,7 +769,7 @@ class ToDatetimeTransformer(BaseTransformer):
     >>> # version will vary for local vs CI, so use ... as generic match
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {'is_fitted_': True}}
 
     ```
 
@@ -813,6 +816,7 @@ class ToDatetimeTransformer(BaseTransformer):
             columns=columns,
             **kwargs,
         )
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -831,7 +835,7 @@ class ToDatetimeTransformer(BaseTransformer):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -1034,6 +1038,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[2]
         self.column_between = columns[2]
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -1055,7 +1060,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         ...     upper_inclusive=False,
         ... )
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'drop_original': False, 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -1212,7 +1217,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                           include=['timeofday'])
 
     >>> transformer.to_json()
-    {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday'], 'datetime_mappings': {}}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday'], 'datetime_mappings': {}}, 'fit': {'is_fitted_': True}}
 
     ```
 
@@ -1306,6 +1311,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         if self.datetime_mappings is None:
             self.datetime_mappings = {}
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -1322,7 +1328,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         >>> transformer=DatetimeInfoExtractor(columns='a')
 
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'], 'datetime_mappings': {}}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'], 'datetime_mappings': {}}, 'fit': {'is_fitted_': True}}
 
         """
         json_dict = super().to_json()
@@ -1526,7 +1532,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {'is_fitted_': True}}
 
     >>> DatetimeComponentExtractor.from_json(json_dump)
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
@@ -1586,6 +1592,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         )
 
         self.include = include
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -1633,7 +1640,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         ... )
 
         >>> transformer.to_json()
-        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {}}
+        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'include': ['hour', 'day']}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -1863,6 +1870,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             else self.period[column]
             for column in self.columns
         }
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -1912,7 +1920,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         ...     units="month",
         ... )
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'drop_original': False, 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {'is_fitted_': True}}
 
         ```
 

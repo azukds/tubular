@@ -9,6 +9,7 @@ from tests.base_tests import (
     GenericInitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsString,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -195,7 +196,7 @@ class TestTransform(BaseMappingTransformerTransformTests):
             )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsString):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 
