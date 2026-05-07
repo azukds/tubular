@@ -147,6 +147,10 @@ def minimal_attribute_dict():
             "columns": ["b"],
             "impute_value": True,
         },
+        "_CategoricalImputer": {
+            "columns": ["b"],
+            "impute_value": "bla",
+        },
         "CappingTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
         },
