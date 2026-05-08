@@ -24,6 +24,7 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.functions.nominal import numerically_encode_columns, one_hot_encode_columns
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import DropOriginalMixin, WeightColumnMixin
 from tubular.types import (
@@ -1314,6 +1315,25 @@ class MeanResponseTransformer(
                     c: unseen_level_results[c].item(0) for c in self.encoded_columns
                 }
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return numerically_encode_columns(
+            columns=self.columns,
+            mappings=self.mappings,
+            unseen_levels_encodings=self.unseen_levels_encoding_dict
+            if self.unseen_level_handling
+            else None,
+            return_dtypes=self.return_dtypes,
+            column_to_encoded_columns=self.column_to_encoded_columns,
+            unseen_level_handling=self.unseen_level_handling,
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Apply mean response encoding stored in the mappings attribute to columns.
@@ -1395,25 +1415,13 @@ class MeanResponseTransformer(
             return_native_override=False,
         )
 
-        transform_expressions = {
-            encoded_col: nw.col(col)
-            .alias(encoded_col)
-            .replace_strict(
-                self.mappings[encoded_col],
-                default=self.unseen_levels_encoding_dict[encoded_col]
-                if self.unseen_level_handling
-                else None,
-            )
-            .cast(getattr(nw, self.return_dtypes[encoded_col]))
-            for col in self.columns
-            for encoded_col in self.column_to_encoded_columns[col]
-        }
+        transform_exprs = self.get_transform_exprs()
 
         X = (
             X.with_columns(
-                **transform_expressions,
+                *transform_exprs,
             )
-            if transform_expressions
+            if transform_exprs
             else X
         )
 
@@ -1780,6 +1788,20 @@ class OneHotEncodingTransformer(
             column + self.separator + str(level) for level in self.categories_[column]
         ]
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return one_hot_encode_columns(
+            columns=self.columns,
+            categories=self.categories_,
+            separator=self.separator,
+        )
+
     @beartype
     def transform(
         self,
@@ -1842,22 +1864,9 @@ class OneHotEncodingTransformer(
         X = _convert_dataframe_to_narwhals(X)
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
-        transform_expressions = {}
-        for c in self.columns:
-            for level in self.categories_[c]:
-                if c + self.separator + str(level) in self.new_feature_names_[c]:
-                    transform_expressions[c + self.separator + str(level)] = (
-                        nw.col(c) == level
-                    )
+        transform_exprs = self.get_transform_exprs()
 
-        # make column order consistent
-        sorted_keys = sorted(transform_expressions.keys())
-
-        X = (
-            X.with_columns(**{key: transform_expressions[key] for key in sorted_keys})
-            if transform_expressions
-            else X
-        )
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         # Drop original columns if self.drop_original is True
         X = DropOriginalMixin.drop_original_column(

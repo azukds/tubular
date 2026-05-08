@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import operator
-from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 
 import narwhals as nw
 
@@ -19,29 +17,18 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer
+from tubular.functions.comparison import (
+    ConditionEnumStr,
+    apply_when_then_otherwise,
+    compare_two_columns,
+)
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
-    Is,
     ListOfStrs,
     ListOfTwoStrs,
     NumericTypes,
 )
-
-
-class ConditionEnum(Enum):
-    """Enumeration of comparison conditions."""
-
-    GREATER_THAN = ">"
-    LESS_THAN = "<"
-    EQUAL_TO = "=="
-    NOT_EQUAL_TO = "!="
-
-
-ConditionEnumStr = Annotated[
-    str,
-    Is[lambda s: s in ConditionEnum._value2member_map_],
-]
 
 
 class WhenThenOtherwiseTransformer(BaseTransformer):
@@ -177,6 +164,20 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         return json_dict
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return apply_when_then_otherwise(
+            columns=self.columns,
+            when_column=self.when_column,
+            then_column=self.then_column,
+        )
+
     @beartype
     def transform(
         self,
@@ -249,14 +250,9 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
             )
             raise TypeError(message)
 
-        exprs_dict = {
-            col: nw.when(nw.col(self.when_column))
-            .then(nw.col(self.then_column))
-            .otherwise(nw.col(col))
-            for col in self.columns
-        }
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(**exprs_dict) if exprs_dict else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -313,14 +309,6 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     jsonable = True
     lazyframe_compatible = True
 
-    # Map the enum to the operator functions
-    ops_map: ClassVar[dict[ConditionEnum, Any]] = {
-        ConditionEnum.GREATER_THAN: operator.gt,
-        ConditionEnum.LESS_THAN: operator.lt,
-        ConditionEnum.EQUAL_TO: operator.eq,
-        ConditionEnum.NOT_EQUAL_TO: operator.ne,
-    }
-
     @beartype
     def __init__(
         self,
@@ -357,6 +345,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         Examples
         --------
         ```pycon
+        >>> from tubular.functions.comparison import ConditionEnum
         >>> transformer = CompareTwoColumnsTransformer(
         ...     columns=["a", "b"],
         ...     condition=ConditionEnum.GREATER_THAN.value,
@@ -381,6 +370,19 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         json_dict["init"]["condition"] = self.condition
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return compare_two_columns(
+            columns=self.columns,
+            condition=self.condition,
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -439,33 +441,9 @@ class CompareTwoColumnsTransformer(BaseTransformer):
             )
             raise TypeError(message)
 
-        null_filter_expr = (
-            nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
-        )
+        transform_expr = self.get_transform_exprs()
 
-        expr = (
-            nw.when(~null_filter_expr)
-            .then(
-                self.ops_map[ConditionEnum(self.condition)](
-                    nw.col(self.columns[0]), nw.col(self.columns[1])
-                )
-            )
-            .otherwise(None)
-        )
-
-        backend = nw.get_native_namespace(X).__name__
-
-        if backend == "polars":
-            expr = expr.cast(nw.Boolean)
-
-        outcome_column_name = f"{self.columns[0]}{self.condition}{self.columns[1]}"
-
-        X = X.with_columns(expr.alias(outcome_column_name))
-
-        if backend == "pandas":
-            X = X.with_columns(
-                nw.maybe_convert_dtypes(X[outcome_column_name]).cast(nw.Boolean)
-            )
+        X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

@@ -17,7 +17,7 @@ from tests.test_data import (
     create_when_then_otherwise_test_df,
 )
 from tubular import base
-from tubular.comparison import ConditionEnum
+from tubular.functions.comparison import ConditionEnum
 
 if TYPE_CHECKING:
     import pandas as pd
