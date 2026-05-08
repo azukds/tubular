@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Annotated
 
 import narwhals as nw
 import numpy as np
 from beartype import beartype
-from beartype.vale import Is
 
 from tubular._stats import _weighted_quantile_expr
 from tubular._utils import (
@@ -19,24 +17,14 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
 )
 from tubular.base import block_from_json, register
+from tubular.functions.capping import (
+    CappingValues,
+    cap_columns,
+    set_out_of_range_to_none,
+)
 from tubular.mixins import WeightColumnMixin
 from tubular.numeric import BaseNumericTransformer
-from tubular.types import DataFrame, LazyFrame, Number, Series
-
-CappingValues = Annotated[
-    list[Number | None],
-    Is[
-        lambda list_arg: (
-            (len(list_arg) == 2)  # noqa: PLR2004
-            & (
-                all(
-                    (isinstance(value, (int, float)) or value is None)
-                    for value in list_arg
-                )
-            )
-        )
-    ],
-]
+from tubular.types import DataFrame, FloatTypeAnnotated, LazyFrame, Number, Series
 
 
 @register
@@ -463,127 +451,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             float(value) if value is not None else value for value in interp_quantiles
         ]
 
-    @beartype
-    def transform(
-        self,
-        X: DataFrame,
-        return_native_override: bool | None = None,
-    ) -> DataFrame:
-        """Apply capping to columns in X.
-
-        If cap_value_max is set, any values above cap_value_max will be set to cap_value_max. If cap_value_min
-        is set any values below cap_value_min will be set to cap_value_min. Only works or numeric columns.
-
-        Parameters
-        ----------
-        X : DataFrame
-            Data to apply capping to.
-
-        return_native_override: Optional[bool]
-            Option to override return_native attr in transformer, useful when calling parent
-            methods
-
-        Returns
-        -------
-        X : DataFrame
-            Transformed input X with min and max capping applied to the specified columns.
-
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-
-        >>> transformer = BaseCappingTransformer(
-        ...     capping_values={"a": [10, 20], "b": [1, 3]},
-        ... )
-
-        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
-
-        >>> transformer.transform(test_df)
-        shape: (4, 3)
-        ┌─────┬─────┬─────┐
-        │ a   ┆ b   ┆ c   │
-        │ --- ┆ --- ┆ --- │
-        │ i64 ┆ i64 ┆ i64 │
-        ╞═════╪═════╪═════╡
-        │ 10  ┆ 3   ┆ 1   │
-        │ 15  ┆ 2   ┆ 2   │
-        │ 18  ┆ 3   ┆ 3   │
-        │ 20  ┆ 1   ┆ 4   │
-        └─────┴─────┴─────┘
-
-        ```
-
-        """
-        self.check_is_fitted(["_replacement_values"])
-
-        X = _convert_dataframe_to_narwhals(X)
-
-        schema = X.collect_schema()
-
-        return_native = self._process_return_native(return_native_override)
-
-        X = super().transform(X, return_native_override=False)
-
-        dict_attrs = ["_replacement_values"]
-
-        if self.quantiles:
-            self.check_is_fitted(["quantile_capping_values"])
-
-            capping_values_for_transform = self.quantile_capping_values
-
-            dict_attrs = [*dict_attrs, "quantile_capping_values"]
-
-        else:
-            capping_values_for_transform = self.capping_values
-
-            dict_attrs = [*dict_attrs, "capping_values"]
-
-        exprs = {}
-        for col in self.columns:
-            cap_value_min = capping_values_for_transform[col][0]
-            cap_value_max = capping_values_for_transform[col][1]
-
-            replacement_min = self._replacement_values[col][0]
-            replacement_max = self._replacement_values[col][1]
-
-            if cap_value_min is not None and cap_value_max is not None:
-                col_expr = (
-                    nw.when(nw.col(col) < cap_value_min)
-                    .then(replacement_min)
-                    .otherwise(
-                        nw.when(nw.col(col) > cap_value_max)
-                        .then(replacement_max)
-                        .otherwise(nw.col(col)),
-                    )
-                )
-            elif cap_value_min is not None:
-                col_expr = (
-                    nw.when(nw.col(col) < cap_value_min)
-                    .then(replacement_min)
-                    .otherwise(nw.col(col))
-                )
-            elif cap_value_max is not None:
-                col_expr = (
-                    nw.when(nw.col(col) > cap_value_max)
-                    .then(replacement_max)
-                    .otherwise(nw.col(col))
-                )
-            else:
-                col_expr = nw.col(col)
-
-            # make sure type is preserved for single row,
-            # e.g. mapping single row to int could convert
-            # from float to int
-            # TODO - look into better ways to achieve this
-            exprs[col] = col_expr.cast(
-                schema[col],
-            ).alias(col)
-
-        X = X.with_columns(**exprs) if exprs else X
-
-        return _return_narwhals_or_native_dataframe(X, return_native)
-
     def to_json(self) -> dict:
         """Return a JSON-serializable representation of the transformer.
 
@@ -617,6 +484,48 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
             )
 
         return data
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: bool | None = None,
+    ) -> DataFrame:
+        """Apply capping to columns in X.
+
+        If cap_value_max is set, any values above cap_value_max will be set to cap_value_max. If cap_value_min
+        is set any values below cap_value_min will be set to cap_value_min. Only works or numeric columns.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data to apply capping to.
+
+        return_native_override: Optional[bool]
+            Option to override return_native attr in transformer, useful when calling parent
+            methods
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with min and max capping applied to the specified columns.
+
+        """
+        self.check_is_fitted(["_replacement_values"])
+        if self.quantiles:
+            self.check_is_fitted(["quantile_capping_values"])
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        return_native = self._process_return_native(return_native_override)
+
+        X = super().transform(X, return_native_override=False)
+
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
 
 
 @register
@@ -791,6 +700,18 @@ class CappingTransformer(BaseCappingTransformer):
         self.is_fitted_ = True
         return self
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return cap_columns(
+            columns=self.columns, column_capping_ranges=self._replacement_values
+        )
+
 
 @register
 class OutOfRangeNullTransformer(BaseCappingTransformer):
@@ -856,12 +777,12 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     ┌──────┬──────┬─────┐
     │ a    ┆ b    ┆ c   │
     │ ---  ┆ ---  ┆ --- │
-    │ i64  ┆ i64  ┆ i64 │
+    │ f64  ┆ f64  ┆ i64 │
     ╞══════╪══════╪═════╡
     │ null ┆ null ┆ 1   │
-    │ 15   ┆ 2    ┆ 2   │
-    │ 18   ┆ null ┆ 3   │
-    │ null ┆ 1    ┆ 4   │
+    │ 15.0 ┆ 2.0  ┆ 2   │
+    │ 18.0 ┆ null ┆ 3   │
+    │ null ┆ 1.0  ┆ 4   │
     └──────┴──────┴─────┘
 
     >>> # transformer can also be dumped to json and reinitialised
@@ -891,6 +812,7 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
         capping_values: dict[str, CappingValues] | None = None,
         quantiles: dict[str, CappingValues] | None = None,
         weights_column: str | None = None,
+        dtype: FloatTypeAnnotated = "Float64",
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -918,6 +840,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             Optional weights column argument that can be used in combination with quantiles. Not used
             if capping_values is supplied. Allows weighted quantiles to be calculated.
 
+        dtype: "Float64" or "Float32"
+            control dtype to return.
+
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -933,6 +858,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             self._replacement_values = OutOfRangeNullTransformer.set_replacement_values(
                 self.capping_values,
             )
+
+        self.dtype = dtype
 
     @beartype
     @staticmethod
@@ -1029,3 +956,21 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
             )
         self.is_fitted_ = True
         return self
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        capping_values_for_transform = (
+            self.quantile_capping_values if self.quantiles else self.capping_values
+        )
+
+        return set_out_of_range_to_none(
+            columns=self.columns,
+            column_capping_ranges=capping_values_for_transform,
+            dtype=self.dtype,
+        )
