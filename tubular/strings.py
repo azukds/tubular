@@ -200,7 +200,7 @@ class ExtractStringComponentsTransformer(BaseTransformer):
     >>> json_dump = transformer.to_json()
     >>> pprint(json_dump)
     {'classname': 'ExtractStringComponentsTransformer',
-     'fit': {},
+     'fit': {'is_fitted_': False},
      'init': {'by': '@',
               'columns': ['a'],
               'copy': False,
@@ -301,7 +301,7 @@ class ExtractStringComponentsTransformer(BaseTransformer):
 
         >>> pprint(transformer.to_json())
         {'classname': 'ExtractStringComponentsTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': False},
          'init': {'by': '@',
                   'columns': ['a'],
                   'copy': False,
