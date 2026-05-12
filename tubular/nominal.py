@@ -1999,7 +1999,7 @@ class OrdinalEncoderTransformer(
             Data to with catgeorical variable columns to transform and response_column column
             specified when object was initialised.
 
-        y : Series
+        y : Series or LazyFrame
             Response column or target.
 
         Returns
