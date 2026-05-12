@@ -3,6 +3,7 @@ from itertools import product
 
 import narwhals as nw
 import numpy as np
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from sklearn.exceptions import NotFittedError
@@ -1480,3 +1481,51 @@ class TestOtherBaseBehaviour(
         # Now transform should raise NotFittedError
         with pytest.raises(NotFittedError):
             pipeline.transform(df)
+
+
+class TestLazyYSupport:
+    """Tests for lazy y support in MeanResponseTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that MeanResponseTransformer accepts LazyFrame for y parameter."""
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "b": ["x", "y", "x", "y", "x", "y"],
+        }
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"target": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]})
+
+        transformer = MeanResponseTransformer(columns="b")
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        assert transformer.is_fitted_
+        assert transformer.mappings is not None
+        assert "b" in transformer.mappings
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_consistent_with_eager_y(self, library):
+        """Test that LazyFrame y produces same results as eager Series y."""
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "b": ["x", "y", "x", "y", "x", "y"],
+        }
+        df = dataframe_init_dispatch(df_dict, library)
+        y_series = df["a"]
+
+        transformer_lazy = MeanResponseTransformer(columns="b")
+        transformer_eager = MeanResponseTransformer(columns="b")
+
+        y_lazy = pl.LazyFrame({"target": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]})
+
+        # Fit with lazy y
+        transformer_lazy.fit(df, y_lazy)
+
+        # Fit with eager y
+        transformer_eager.fit(df, y_series)
+
+        # Mappings should be identical
+        assert transformer_lazy.mappings == transformer_eager.mappings
