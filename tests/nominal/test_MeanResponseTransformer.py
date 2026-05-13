@@ -1529,3 +1529,25 @@ class TestLazyYSupport:
 
         # Mappings should be identical
         assert transformer_lazy.mappings == transformer_eager.mappings
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_x_and_y_consistent_with_eager(self, library):
+        """Test that LazyFrame X and lazy y produce same results as eager inputs."""
+        df_dict = {
+            "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "b": ["x", "y", "x", "y", "x", "y"],
+        }
+        df = dataframe_init_dispatch(df_dict, library)
+        df_lazy = df.lazy()
+        y_lazy = df[["a"]].lazy()
+
+        transformer_lazy = MeanResponseTransformer(columns="b")
+        transformer_eager = MeanResponseTransformer(columns="b")
+
+        # Fit with lazy X and lazy y
+        transformer_lazy.fit(df_lazy, y_lazy)
+
+        # Fit with eager X and eager y
+        transformer_eager.fit(df, df["a"])
+
+        assert transformer_lazy.mappings == transformer_eager.mappings
