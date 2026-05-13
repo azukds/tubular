@@ -17,6 +17,7 @@ from tubular._stats import (
 )
 from tubular._utils import (
     _collect_frame,
+    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _is_null,
@@ -1004,7 +1005,7 @@ class MeanResponseTransformer(
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
+    def fit(self, X: DataFrame, y: Series | LazyFrame) -> MeanResponseTransformer:  # noqa:PLR0914, will simplify in future issue
         """Identify mapping of categorical levels to mean response values.
 
         If the user specified the weights_column arg in when initialising the transformer
@@ -1051,6 +1052,8 @@ class MeanResponseTransformer(
         """
         X = _convert_dataframe_to_narwhals(X)
         y = _convert_series_to_narwhals(y)
+        # Collect lazy y to enable operations like .unique().to_list()
+        y = _collect_series(y)
 
         BaseTransformer.fit(self, X, y)
 
