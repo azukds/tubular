@@ -27,6 +27,13 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
+3.6.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- placeholder
+
 3.5.0 (21/05/2026)
 ------------------
 
