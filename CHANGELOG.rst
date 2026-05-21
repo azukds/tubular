@@ -27,12 +27,12 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.5.0 (unreleased)
+3.5.0 (21/05/2026)
 ------------------
 
 Changed
 ^^^^^^^
-- placeholder
+- bugfix: updated pipeline step name handling in pipeline json dumping/loading to pass when step_name!=transformer_name
 
 3.4.0 (13/05/2026)
 ------------------
