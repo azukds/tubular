@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- chore: updated polars pins, MappingTransformer broken for <1.21.0
 
 3.5.0 (21/05/2026)
 ------------------
