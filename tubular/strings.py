@@ -448,7 +448,7 @@ class StringContainsTransformer(BaseTransformer):
         Examples
         --------
         ```pycon
-        >>> transformer = transformer = StringContainsTransformer(columns=["a", "b"], reference="c")
+        >>> transformer = StringContainsTransformer(columns=["a", "b"], reference="c")
 
         >>> transformer.get_feature_names_out()
         ['a_contains_c', 'b_contains_c']
