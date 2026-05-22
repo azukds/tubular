@@ -19,11 +19,14 @@ from tubular.dates import (
     ToDatetimeTransformer,
 )
 from tubular.imputers import (
-    ArbitraryImputer,
+    BooleanImputer,
+    CategoricalImputer,
     MeanImputer,
     MedianImputer,
     ModeImputer,
     NullIndicator,
+    NumberImputer,
+    StringImputer,
 )
 from tubular.mapping import MappingTransformer
 from tubular.misc import (
@@ -46,9 +49,10 @@ from tubular.strings import LowerCaseTransformer, RemoveCharactersTransformer
 __all__ = [
     "AggregateColumnsOverRowTransformer",
     "AggregateRowsOverColumnTransformer",
-    "ArbitraryImputer",
     "BetweenDatesTransformer",
+    "BooleanImputer",
     "CappingTransformer",
+    "CategoricalImputer",
     "ColumnDtypeSetter",
     "CompareTwoColumnsTransformer",
     "DateDifferenceTransformer",
@@ -64,6 +68,7 @@ __all__ = [
     "MedianImputer",
     "ModeImputer",
     "NullIndicator",
+    "NumberImputer",
     "OneDKmeansTransformer",
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
@@ -71,6 +76,7 @@ __all__ = [
     "RemoveCharactersTransformer",
     "RenameColumnsTransformer",
     "SetValueTransformer",
+    "StringImputer",
     "ToDatetimeTransformer",
     "WhenThenOtherwiseTransformer",
 ]

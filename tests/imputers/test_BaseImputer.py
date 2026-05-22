@@ -89,7 +89,7 @@ class GenericImputerTransformTests:
         library = request.param
         df4_dict = {
             "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, None],
-            "b": ["a", "b", "c", "d", "e", "f", "z"],
+            "b": ["a", "b", "c", "d", "e", "f", None],
             "c": ["a", "b", "c", "d", "e", "f", "z"],
         }
 

@@ -33,6 +33,8 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - chore: updated polars pins, MappingTransformer broken for <1.21.0
+- feat: added get_transform_exprs method to classes in imputers file
+- feat: split ArbitraryImputer into type specific child classes, deprecated ArbitraryImputer
 
 3.5.0 (21/05/2026)
 ------------------
