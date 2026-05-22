@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - chore: updated polars pins, MappingTransformer broken for <1.21.0
+- added StringContainsTransformer to flag if columns contain reference values
 
 3.5.0 (21/05/2026)
 ------------------
