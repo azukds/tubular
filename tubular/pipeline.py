@@ -36,12 +36,12 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     >>> median_imputer = MedianImputer(columns=["b"])
     >>> mean_imputer = MeanImputer(columns=["b"])
     >>> original_pipeline = Pipeline(
-    ...     [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+    ...     [("median_imputer", median_imputer), ("mean_imputer", mean_imputer)]
     ... )
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
     >>> pipeline_json  # doctest: +NORMALIZE_WHITESPACE
-    {'MedianImputer': {'tubular_version':...,
+    {'median_imputer': {'tubular_version':...,
     'classname': 'MedianImputer',
     'init': {'columns': ['b'],
     'copy': False,
@@ -49,7 +49,7 @@ def dump_pipeline_to_json(pipeline: Pipeline) -> dict[str, dict[str, Any]]:
     'return_native': True,
     'weights_column': None},
     'fit': {'is_fitted_': True, 'impute_values_': {'b': 15.0}}},
-    'MeanImputer': {'tubular_version':...,
+    'mean_imputer': {'tubular_version':...,
     'classname': 'MeanImputer',
     'init': {'columns': ['b'],
     'copy': False,
@@ -92,21 +92,21 @@ def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipelin
     >>> median_imputer = MedianImputer(columns=["b"])
     >>> mean_imputer = MeanImputer(columns=["b"])
     >>> original_pipeline = Pipeline(
-    ...     [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+    ...     [("median_imputer", median_imputer), ("mean_imputer", mean_imputer)]
     ... )
 
     >>> original_pipeline = original_pipeline.fit(df, df["a"])
     >>> pipeline_json = dump_pipeline_to_json(original_pipeline)
     >>> pipeline = load_pipeline_from_json(pipeline_json)
     >>> pipeline
-    Pipeline(steps=[('MedianImputer', MedianImputer(columns=['b'])),
-                    ('MeanImputer', MeanImputer(columns=['b']))])
+    Pipeline(steps=[('median_imputer', MedianImputer(columns=['b'])),
+                    ('mean_imputer', MeanImputer(columns=['b']))])
 
     ```
 
     """
     steps = [
-        (step_name, CLASS_REGISTRY[step_name].from_json(json_dict))
+        (step_name, CLASS_REGISTRY[json_dict["classname"]].from_json(json_dict))
         for step_name, json_dict in pipeline_json.items()
     ]
 
