@@ -147,7 +147,7 @@ class TestStringContainsTransformerTransform(GenericTransformTests):
     def test_output_cases_as_value(
         self, lazy, library, from_json, input_values, reference_value, expected_output
     ):
-        "test output cases for transformer when reference_column is True"
+        "test output cases for transformer when reference_column is False"
 
         df_dict = {"a": input_values}
 
