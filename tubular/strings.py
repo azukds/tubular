@@ -343,8 +343,11 @@ class StringContainsTransformer(BaseTransformer):
     Attributes
     ----------
     reference: str
+        column or value to compare against, e.g.
+        look for values of reference='a' in columns ['b', 'c'].
 
     reference_as_column: bool
+        indicates whether reference represents a column (or value).
 
     characters_formatted: str
         characters attr formatted into regex string.
