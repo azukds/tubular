@@ -348,6 +348,7 @@ class StringContainsTransformer(BaseTransformer):
 
     reference_as_column: bool
         indicates whether reference represents a column (or value).
+        Note, reference_as_column=True is not supported for pandas backend.
 
     characters_formatted: str
         characters attr formatted into regex string.
