@@ -27,13 +27,21 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.6.0 (unreleased)
+3.7.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: updated pypi release action to pin version
+
+3.6.0 (26/05/2026)
 ------------------
 
 Changed
 ^^^^^^^
 - chore: updated polars pins, MappingTransformer broken for <1.21.0
 - added StringContainsTransformer to flag if columns contain reference values
+- feat: added ExtractStringComponentsTransformer for e.g. pulling out email domains
 
 3.5.0 (21/05/2026)
 ------------------
@@ -51,7 +59,6 @@ Changed
 - added functions module for stateless transforms
 - removed narwhals private import from nominal module `#725 <https://github.com/azukds/tubular/issues/725>_`
 - bug: fixed MeanResponseTransformer.fit to accept both lazy X and lazy y `#731 <https://github.com/azukds/tubular/pull/731>`_
-- feat: added ExtractStringComponentsTransformer for e.g. pulling out email domains
 
 3.3.0 (30/04/2026)
 ------------------
