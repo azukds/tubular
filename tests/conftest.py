@@ -299,6 +299,11 @@ def minimal_attribute_dict():
             "new_column_name": "c",
             "separator": "-",
         },
+        "StringContainsTransformer": {
+            "columns": ["b"],
+            "reference": "c",
+            "reference_as_column": False,
+        },
         "_StringImputer": {
             "columns": ["b"],
             "impute_value": "missing",

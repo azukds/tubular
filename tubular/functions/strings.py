@@ -3,7 +3,7 @@
 import narwhals as nw
 from beartype import beartype
 
-from tubular.types import StrictlyPositiveInt
+from tubular.types import PositiveInt
 
 
 @beartype
@@ -33,8 +33,40 @@ def remove_characters_from_string_columns(
 
 
 @beartype
+def indicate_if_string_columns_contain_reference(
+    columns: list[str], reference: str, reference_as_column: bool
+) -> list[nw.Expr]:
+    """Get expression for removing characters from string columns.
+
+    Parameters
+    ----------
+    columns: list[str]
+        list of columns to search
+
+    reference: str
+            reference value to search for
+
+    reference_as_column: bool
+        whether to treat reference as a column or a literal
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+    reference_for_expr = nw.col(reference) if reference_as_column else reference
+
+    return [
+        nw.col(col)
+        .str.contains(reference_for_expr)
+        .alias(f"{col}_contains_{reference}")
+        for col in columns
+    ]
+
+
+@beartype
 def extract_string_components(
-    columns: list[str], by: str, return_n_components: StrictlyPositiveInt
+    columns: list[str], by: str, return_n_components: PositiveInt
 ) -> list[nw.Expr]:
     """Get expression for extracting components from a str columns, split by provided character.
 
