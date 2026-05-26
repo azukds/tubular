@@ -1,8 +1,12 @@
 """Stateless string transforms."""
 
 import narwhals as nw
+from beartype import beartype
+
+from tubular.types import StrictlyPositiveInt
 
 
+@beartype
 def convert_string_columns_to_lowercase(columns: list[str]) -> list[nw.Expr]:
     """Get expression for converting columns to lowercase.
 
@@ -14,6 +18,7 @@ def convert_string_columns_to_lowercase(columns: list[str]) -> list[nw.Expr]:
     return [nw.col(col).str.to_lowercase() for col in columns]
 
 
+@beartype
 def remove_characters_from_string_columns(
     columns: list[str], characters_formatted: str
 ) -> list[nw.Expr]:
@@ -27,8 +32,9 @@ def remove_characters_from_string_columns(
     return [nw.col(col).str.replace_all(characters_formatted, "") for col in columns]
 
 
+@beartype
 def extract_string_components(
-    columns: list[str], by: str, return_n_components: int
+    columns: list[str], by: str, return_n_components: StrictlyPositiveInt
 ) -> list[nw.Expr]:
     """Get expression for extracting components from a str columns, split by provided character.
 

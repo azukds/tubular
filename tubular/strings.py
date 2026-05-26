@@ -21,7 +21,13 @@ from tubular.functions.strings import (
     extract_string_components,
     remove_characters_from_string_columns,
 )
-from tubular.types import DataFrame, GenericKwargs, ListOfOneStr, ListOfStrs
+from tubular.types import (
+    DataFrame,
+    GenericKwargs,
+    ListOfOneStr,
+    ListOfStrs,
+    StrictlyPositiveInt,
+)
 
 
 @register
@@ -229,7 +235,7 @@ class ExtractStringComponentsTransformer(BaseTransformer):
         self,
         columns: str | ListOfStrs,
         by: str,
-        return_n_components: int,
+        return_n_components: StrictlyPositiveInt,
         **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
@@ -340,7 +346,7 @@ class ExtractStringComponentsTransformer(BaseTransformer):
         Parameters
         ----------
         X : DataFrame
-            Data containing columns to strip.
+            Data containing columns to extract components from.
 
         Returns
         -------

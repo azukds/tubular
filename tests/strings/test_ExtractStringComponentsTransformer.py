@@ -38,7 +38,7 @@ class TestExtractStringComponentsTransformerInit(
         with pytest.raises(BeartypeCallHintParamViolation):
             uninitialized_transformers[self.transformer_name](**args)
 
-    @pytest.mark.parametrize("bad_return_n_components", [[1, 2], "a", {}])
+    @pytest.mark.parametrize("bad_return_n_components", [[1, 2], "a", {}, -1, 0])
     def test_invalid_return_n_components_error(
         self,
         minimal_attribute_dict,
