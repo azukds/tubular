@@ -51,6 +51,7 @@ Changed
 - added functions module for stateless transforms
 - removed narwhals private import from nominal module `#725 <https://github.com/azukds/tubular/issues/725>_`
 - bug: fixed MeanResponseTransformer.fit to accept both lazy X and lazy y `#731 <https://github.com/azukds/tubular/pull/731>`_
+- feat: added ExtractStringComponentsTransformer for e.g. pulling out email domains
 
 3.3.0 (30/04/2026)
 ------------------
