@@ -3,7 +3,7 @@
 import narwhals as nw
 from beartype import beartype
 
-from tubular.types import PositiveInt
+from tubular.types import StrictlyPositiveInt
 
 
 @beartype
@@ -66,7 +66,7 @@ def indicate_if_string_columns_contain_reference(
 
 @beartype
 def extract_string_components(
-    columns: list[str], by: str, return_n_components: PositiveInt
+    columns: list[str], by: str, return_n_components: StrictlyPositiveInt
 ) -> list[nw.Expr]:
     """Get expression for extracting components from a str columns, split by provided character.
 
