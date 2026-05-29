@@ -27,7 +27,21 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.6.0 (unreleased)
+3.8.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- placeholder
+
+3.7.0 (29/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- chore: added register decorator to transformers in comparison file
+
+3.6.0 (26/05/2026)
 ------------------
 
 Changed
