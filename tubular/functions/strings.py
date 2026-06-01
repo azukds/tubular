@@ -58,7 +58,7 @@ def indicate_if_string_columns_contain_reference(
 
     return [
         nw.col(col)
-        .str.contains(reference_for_expr)
+        .str.contains(reference_for_expr, literal=True)
         .alias(f"{col}_contains_{reference}")
         for col in columns
     ]

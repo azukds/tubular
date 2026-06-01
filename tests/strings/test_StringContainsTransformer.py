@@ -70,6 +70,8 @@ class TestStringContainsTransformerTransform(GenericTransformTests):
             ([None], [None], [None]),
             (["a"], ["b"], [False]),
             (["a", "b", None], ["b", "b", None], [False, True, None]),
+            # test a regex-like reference value
+            (["a"], ["? b"], [False]),
         ],
     )
     def test_output_cases_as_column(
@@ -142,6 +144,8 @@ class TestStringContainsTransformerTransform(GenericTransformTests):
             ([None], "a", [None]),
             (["a"], "b", [False]),
             (["a", "b", None], "b", [False, True, None]),
+            # test a regex-like reference value
+            ([["a"], "? b", [False]]),
         ],
     )
     def test_output_cases_as_value(

@@ -34,6 +34,13 @@ Changed
 ^^^^^^^
 - placeholder
 
+3.7.1 (02/06/2024)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fix for StringContainsTransformer with regex-like values
+
 3.7.0 (29/05/2026)
 ------------------
 
