@@ -145,7 +145,7 @@ class TestStringContainsTransformerTransform(GenericTransformTests):
             (["a"], "b", [False]),
             (["a", "b", None], "b", [False, True, None]),
             # test a regex-like reference value
-            ([["a"], "? b", [False]]),
+            (["a"], "? b", [False]),
         ],
     )
     def test_output_cases_as_value(
