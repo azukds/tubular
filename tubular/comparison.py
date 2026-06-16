@@ -16,7 +16,7 @@ from tubular._utils import (
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
+from tubular.base import BaseTransformer, register
 from tubular.functions.comparison import (
     ConditionEnumStr,
     apply_when_then_otherwise,
@@ -31,6 +31,7 @@ from tubular.types import (
 )
 
 
+@register
 class WhenThenOtherwiseTransformer(BaseTransformer):
     """Transformer to apply conditional logic across multiple columns.
 
@@ -257,6 +258,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class CompareTwoColumnsTransformer(BaseTransformer):
     """Transformer to compare two columns and generate outcomes based on conditions.
 

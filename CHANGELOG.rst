@@ -27,7 +27,43 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.4.0 (unreleased)
+3.8.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- placeholder
+
+3.7.1 (02/06/2024)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fix for StringContainsTransformer with regex-like values
+
+3.7.0 (29/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- chore: added register decorator to transformers in comparison file
+
+3.6.0 (26/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- chore: updated polars pins, MappingTransformer broken for <1.21.0
+- added StringContainsTransformer to flag if columns contain reference values
+
+3.5.0 (21/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: updated pipeline step name handling in pipeline json dumping/loading to pass when step_name!=transformer_name
+
+3.4.0 (13/05/2026)
 ------------------
 
 Changed
@@ -37,6 +73,7 @@ Changed
 - removed narwhals private import from nominal module `#725 <https://github.com/azukds/tubular/issues/725>_`
 - setup get_transform_exprs methods for aggregations/comparison/dates/misc/numeric, and OneHotEncoder/MeanResponseTransformer
 - bug: fixed MeanResponseTransformer.fit to accept both lazy X and lazy y `#731 <https://github.com/azukds/tubular/pull/731>`_
+- feat: added ExtractStringComponentsTransformer for e.g. pulling out email domains
 
 3.3.0 (30/04/2026)
 ------------------
