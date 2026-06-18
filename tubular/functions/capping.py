@@ -55,7 +55,7 @@ def cap_columns(
 @beartype
 def set_out_of_range_to_none(
     columns: list[str],
-    column_capping_ranges: dict[str, CappingValues] | None,
+    column_capping_ranges: dict[str, CappingValues],
     dtype: FloatTypeAnnotated,
 ) -> list[nw.Expr]:
     """Get expression for mapping column values outside of provided range to None.
@@ -101,6 +101,6 @@ def set_out_of_range_to_none(
         .cast(getattr(nw, dtype))
         .alias(col)
         if (column_capping_ranges[col][1] is not None)
-        else nw.col(col).cast(getattr(nw, dtype))
+        else nw.col(col).cast(getattr(nw, dtype)).alias(col)
         for col in columns
     ]
