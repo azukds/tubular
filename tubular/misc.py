@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Annotated, Any
+from typing import Any
 
 import narwhals as nw
 from beartype import beartype
-from beartype.vale import Is
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -15,6 +13,12 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.functions.misc import (
+    SimpleCastDtypesStr,
+    cast_columns,
+    rename_columns,
+    set_columns_to_value,
+)
 from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
@@ -117,6 +121,19 @@ class SetValueTransformer(BaseTransformer):
 
         return json_dict
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return set_columns_to_value(
+            columns=self.columns,
+            value=self.value,
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Set columns to value.
@@ -159,7 +176,9 @@ class SetValueTransformer(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -338,6 +357,19 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         return json_dict
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return rename_columns(
+            columns=self.columns,
+            new_column_names=self.new_column_names,
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Create column copies.
@@ -393,37 +425,13 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        X = X.with_columns(
-            [nw.col(c).alias(self.new_column_names[c]) for c in self.columns]
-        )
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         X = DropOriginalMixin.drop_original_column(X, self.drop_original, self.columns)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-class SimpleCastDtypes(str, Enum):
-    """Allowed dtypes for ColumnDtypeSetter."""
-
-    FLOAT64 = "Float64"
-    FLOAT32 = "Float32"
-    INT64 = "Int64"
-    INT32 = "Int32"
-    INT16 = "Int16"
-    INT8 = "Int8"
-    UINT64 = "UInt64"
-    UINT32 = "UInt32"
-    UINT16 = "UInt16"
-    UINT8 = "UInt8"
-    BOOLEAN = "Boolean"
-    STRING = "String"
-    CATEGORICAL = "Categorical"
-
-
-SimpleCastDtypesStr = Annotated[
-    str,
-    Is[lambda s: s in SimpleCastDtypes._value2member_map_],
-]
 
 
 @register
@@ -524,6 +532,19 @@ class ColumnDtypeSetter(BaseTransformer):
 
         return json_dict
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return cast_columns(
+            columns=self.columns,
+            dtype=self.dtype,
+        )
+
     def transform(self, X: DataFrame) -> DataFrame:
         """Transform data.
 
@@ -567,8 +588,8 @@ class ColumnDtypeSetter(BaseTransformer):
             )
 
         else:
-            X = X.with_columns(
-                [nw.col(col).cast(getattr(nw, self.dtype)) for col in self.columns]
-            )
+            transform_exprs = self.get_transform_exprs()
+
+            X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
