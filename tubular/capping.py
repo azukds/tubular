@@ -234,7 +234,6 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
     @block_from_json
     @beartype
-    @beartype
     def fit(
         self, X: DataFrame, y: Series | LazyFrame | None = None
     ) -> BaseCappingTransformer:
