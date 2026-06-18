@@ -36,7 +36,7 @@ def cap_columns(
         columns to cap
 
     column_capping_ranges:
-        dict containing per column capping ranges
+        dict containing per column capping ranges, in format {col: [upper_bound, lower_bound]}
 
     Returns
     -------
@@ -66,7 +66,7 @@ def set_out_of_range_to_none(
         columns to cap
 
     column_capping_ranges:
-        dict containing per column capping ranges
+        dict containing per column capping ranges, in format {col: [upper_bound, lower_bound]}
 
     dtype:
         column dtype to return
