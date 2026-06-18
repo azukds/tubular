@@ -24,6 +24,10 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, DataFrameMethodTransformer, register
+from tubular.functions.numeric import (
+    get_difference_of_two_columns,
+    get_ratio_of_two_columns,
+)
 from tubular.mixins import (
     CheckNumericMixin,
     DropOriginalMixin,
@@ -616,6 +620,16 @@ class DifferenceTransformer(BaseNumericTransformer):
         self.new_column_name = f"{columns[0]}_minus_{columns[1]}"
         self.is_fitted_ = True  # Does not fit
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return get_difference_of_two_columns(columns=self.columns)
+
     @beartype
     def transform(
         self,
@@ -659,10 +673,9 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        # Create the subtraction expression
-        expr = nw.col(self.columns[0]) - nw.col(self.columns[1])
+        transform_expr = self.get_transform_exprs()
 
-        X = X.with_columns(expr.alias(self.new_column_name))
+        X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -779,6 +792,19 @@ class RatioTransformer(BaseNumericTransformer):
         self.return_dtype = return_dtype
         self.is_fitted_ = True  # Does not fit
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return get_ratio_of_two_columns(
+            columns=self.columns,
+            return_dtype=self.return_dtype,
+        )
+
     @beartype
     def transform(
         self,
@@ -820,17 +846,9 @@ class RatioTransformer(BaseNumericTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        # Create the division expression
-        expr = (
-            nw.when(nw.col(self.columns[1]) != 0)
-            .then(nw.col(self.columns[0]) / nw.col(self.columns[1]))
-            .otherwise(None)
-            .cast(getattr(nw, self.return_dtype))
-        )
+        transform_expr = self.get_transform_exprs()
 
-        # Add the new column
-        new_column_name = f"{self.columns[0]}_divided_by_{self.columns[1]}"
-        X = X.with_columns(expr.alias(new_column_name))
+        X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

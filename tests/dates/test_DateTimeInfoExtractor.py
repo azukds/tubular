@@ -24,7 +24,8 @@ from tests.utils import (
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
-from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
+from tubular.dates import DatetimeInfoExtractor
+from tubular.functions.dates import DatetimeInfoOptions
 
 
 @pytest.fixture
