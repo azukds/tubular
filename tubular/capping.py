@@ -965,7 +965,9 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
 
         """
         capping_values_for_transform = (
-            self.quantile_capping_values if self.quantiles else self.capping_values
+            self.quantile_capping_values
+            if self.quantiles is not None
+            else self.capping_values
         )
 
         return set_out_of_range_to_none(
