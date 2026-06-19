@@ -1482,6 +1482,17 @@ class TestOtherBaseBehaviour(
         with pytest.raises(NotFittedError):
             pipeline.transform(df)
 
+    def test_to_json_works_with_nulls(self):
+        """Test that to_json does not error with null mapping values"""
+
+        x = MeanResponseTransformer(columns="a")
+        x.mappings = {"a": {"a": None, None: 1}}
+        x.return_dtypes = {"a": "String"}
+        x.column_to_encoded_columns = {"a": ["a"]}
+        x.encoded_columns = ["a"]
+
+        x.to_json()
+
 
 class TestLazyYSupport:
     """Tests for lazy y support in MeanResponseTransformer."""
