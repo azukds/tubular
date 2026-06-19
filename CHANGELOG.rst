@@ -34,6 +34,13 @@ Changed
 ^^^^^^^
 - placeholder
 
+3.8.2 (19/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: loosen typehint on MRE numerically_encode_columns function
+
 3.8.1 (19/06/2026)
 ------------------
 
