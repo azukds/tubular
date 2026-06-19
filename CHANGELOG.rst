@@ -46,7 +46,7 @@ Changed
 
 Changed
 ^^^^^^^
-- placeholder
+- added get_transform_exprs methods to capping, aggregations, comparison, dates, misc, numeric transformers and OneHotEncodingTransformer
 
 3.7.1 (02/06/2024)
 ------------------
