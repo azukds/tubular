@@ -748,7 +748,9 @@ class MeanResponseTransformer(
         # make sure mappings dict is sorted for consistent repr
         mappings = {
             key: {
-                value: self.mappings[key][value] for value in sorted(self.mappings[key])
+                # careful with sorted to avoid error for nulls
+                value: self.mappings[key][value]
+                for value in sorted(self.mappings[key], key=lambda x: (x is None, x))
             }
             for key in sorted(self.mappings)
         }

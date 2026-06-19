@@ -27,12 +27,26 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.8.0 (unreleased)
+3.9.0 (unreleased)
 ------------------
 
 Changed
 ^^^^^^^
 - placeholder
+
+3.8.1 (19/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fix to_json method for MeanResponseTransformer where there are null levels present
+
+3.8.0 (18/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- added get_transform_exprs methods to capping, aggregations, comparison, dates, misc, numeric transformers and OneHotEncodingTransformer
 
 3.7.1 (02/06/2024)
 ------------------
