@@ -152,6 +152,7 @@ class TestTransform(GenericTransformTests):
         ("a_values", "b_values", "expected_a_values", "expected_b_values"),
         [
             (["a", "b"], ["c", "d"], ["a", "b"], ["c", "d"]),
+            (["a", None], [None, "d"], ["a", None], [None, "d"]),
             ([None, None], [None, None], [None, None], [None, None]),
         ],
     )
