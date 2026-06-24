@@ -91,4 +91,13 @@ def cast_columns(columns: list[str], dtype: SimpleCastDtypesStr) -> list[nw.Expr
     list[nw.Expr]: transform expressions
 
     """
-    return [nw.col(col).cast(getattr(nw, dtype)) for col in columns]
+    return (
+        [
+            nw.when(~nw.col(col).is_null())
+            .then(nw.col(col).cast(getattr(nw, dtype)))
+            .otherwise(nw.col(col))
+            for col in columns
+        ]
+        if dtype == "String"
+        else [nw.col(col).cast(getattr(nw, dtype)) for col in columns]
+    )
