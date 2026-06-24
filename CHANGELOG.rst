@@ -34,6 +34,13 @@ Changed
 ^^^^^^^
 - placeholder
 
+3.8.3 (25/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: ColumnDtypeSetter error for casting strings with null values
+
 3.8.2 (19/06/2026)
 ------------------
 
