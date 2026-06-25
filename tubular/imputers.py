@@ -465,7 +465,7 @@ class _StringImputer(BaseImputer):
         nw.Expr: updated expression, with category type handling
 
         """
-        return expr.cast(nw.Enum({*categories, self.impute_value}))
+        return expr.cast(nw.Enum(sorted({*categories, self.impute_value})))
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -517,7 +517,9 @@ class _StringImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if schema[col] not in {nw.String, nw.Categorical, nw.Enum, nw.Unknown}
+            if not isinstance(
+                schema[col], (nw.String, nw.Categorical, nw.Enum, nw.Unknown)
+            )
         ]
 
         if bad_types:
@@ -538,11 +540,19 @@ class _StringImputer(BaseImputer):
                         nw.col(col),
                         categories=X.get_column(col).cat.get_categories().to_list(),
                     )
-                    if ((schema[col] == nw.Categorical) or (schema[col] == nw.Enum))
+                    if isinstance(schema[col], (nw.Categorical, nw.Enum))
                     else nw.col(col)
                 )
+
             else:
-                transform_expressions[col] = nw.col(col)
+                transform_expressions[col] = (
+                    self.cat_to_enum_expr(
+                        nw.col(col),
+                        categories=sorted(X.schema[col].categories),
+                    )
+                    if isinstance(schema[col], (nw.Enum))
+                    else nw.col(col)
+                )
 
             # next handle imputing
             transform_expressions[col] = self._generate_imputation_expressions(

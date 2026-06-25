@@ -34,6 +34,13 @@ Changed
 ^^^^^^^
 - placeholder
 
+3.8.4 (25/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fixed error for ArbitraryImputer with Enum dtypes
+
 3.8.3 (24/06/2026)
 ------------------
 
