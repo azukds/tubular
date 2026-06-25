@@ -556,10 +556,6 @@ class TestTransform(
         u.assert_frame_equal_dispatch(
             u._collect_frame(df_transformed, lazy),
             expected_df,
-            # this turns off checks for category metadata like ordering
-            # this transformer will convert an unordered pd categorical to ordered
-            # so this is needed
-            check_categorical=False,
         )
         df = nw.from_native(df)
         expected_df = nw.from_native(expected_df)
@@ -573,10 +569,6 @@ class TestTransform(
             u.assert_frame_equal_dispatch(
                 u._collect_frame(df_transformed_row, lazy),
                 df_expected_row,
-                # # this turns off checks for category metadata like ordering
-                # # this transformer will convert an unordered pd categorical to ordered
-                # # so this is needed
-                # check_categorical=False,
             )
 
     @pytest.mark.parametrize(
