@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 
 3.8.4 (25/06/2026)
 ------------------
@@ -136,7 +136,6 @@ Changed
 - chore: updated pre commit black version
 - chore: updated pygments version on dependabot recommendation
 - feat: turned on lazyframe_compatible for BetweenDatesTransformer, and setup lazy tests `#536 <https://github.com/azukds/tubular/issues/536>`_
-- chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 
 3.1.0 (20/03/2026)
 ------------------
