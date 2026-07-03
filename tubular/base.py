@@ -16,6 +16,7 @@ from sklearn.utils.validation import check_is_fitted
 from typing_extensions import deprecated
 
 from tubular._utils import (
+    _collect_series,
     _convert_dataframe_to_narwhals,
     _convert_series_to_narwhals,
     _get_version,
@@ -25,6 +26,7 @@ from tubular._utils import (
 from tubular.types import (
     DataFrame,
     GenericKwargs,
+    LazyFrame,
     ListOfStrs,
     NonEmptyListOfStrs,
     Series,
@@ -213,6 +215,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         self.return_native = return_native
 
         self.built_from_json = False
+        self.is_fitted_ = False
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -262,7 +265,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BaseTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True}, 'fit': {'is_fitted_': False}}
 
         ```
 
@@ -284,7 +287,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
                 "verbose": self.verbose,
                 "return_native": self.return_native,
             },
-            "fit": {},
+            "fit": {"is_fitted_": self.is_fitted_},
         }
 
     @classmethod
@@ -335,7 +338,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     @block_from_json
     @beartype
-    def fit(self, X: DataFrame, y: Series | None = None) -> BaseTransformer:
+    def fit(self, X: DataFrame, y: Series | LazyFrame | None = None) -> BaseTransformer:
         """Check data before fit.
 
         Fit calls the columns_check method which will check that the columns
@@ -346,7 +349,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : DataFrame
             Data to fit the transformer on.
 
-        y : None or Series, default = None
+        y : None or Series or LazyFrame, default = None
             Optional argument only required for the transformer to work with sklearn
             pipelines.
 
@@ -375,13 +378,12 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         y = _convert_series_to_narwhals(y)
 
         self.columns_check(X)
-
         return self
 
     @block_from_json
     @beartype
     def _combine_X_y(
-        self, X: DataFrame, y: Series, return_native_override: bool = True
+        self, X: DataFrame, y: Series | LazyFrame, return_native_override: bool = True
     ) -> DataFrame:
         """Combine X and y by adding a new column with the values of y to a copy of X.
 
@@ -395,7 +397,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         X : DataFrame
             Data containing explanatory variables.
 
-        y : Series
+        y : Series or LazyFrame
             Response variable.
 
         return_native_override: Optional[bool]
@@ -444,7 +446,27 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         return_native = self._process_return_native(return_native_override)
 
-        X = X.with_columns(_temporary_response=y)
+        # If both X and y are LazyFrames, use join to maintain lazy evaluation
+        if isinstance(X, nw.LazyFrame) and isinstance(y, nw.LazyFrame):
+            # Convert LazyFrame y to LazyFrame with row index for joining
+            y_named = y.with_row_index("__row_idx__")
+            X_indexed = X.with_row_index("__row_idx__")
+            y_col = y.columns[0]
+            X = (
+                X_indexed.join(
+                    y_named.select("__row_idx__", y_col), on="__row_idx__", how="inner"
+                )
+                .select("*")
+                .exclude("__row_idx__")
+                .rename({y_col: "_temporary_response"})
+            )
+        elif isinstance(y, nw.LazyFrame):
+            # If y is LazyFrame but X is not, collect y first
+            y = _collect_series(y)
+            X = X.with_columns(_temporary_response=y)
+        else:
+            # For eager frames or Series, use with_columns
+            X = X.with_columns(_temporary_response=y)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
@@ -528,6 +550,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         ```
 
         """
+        self.check_is_fitted("is_fitted_")
         return_native = self._process_return_native(return_native_override)
 
         X = _convert_dataframe_to_narwhals(X)
@@ -600,7 +623,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        missing_columns = set(self.columns).difference(X.columns)
+        missing_columns = set(self.columns).difference(X.collect_schema().names())
         if len(missing_columns) != 0:
             msg = f"{self.classname()}: variables {missing_columns} not in X"
             raise ValueError(

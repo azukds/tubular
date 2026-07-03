@@ -1,14 +1,23 @@
 import narwhals as nw
+import polars as pl
 import pytest
 
 import tests.test_data as d
-from tests.base_tests import EmptyCappingsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyCappingsFitTransformPassTests,
+    GenericTransformTests,
+    OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
+)
 from tests.capping.test_BaseCappingTransformer import (
     GenericCappingFitTests,
     GenericCappingInitTests,
     GenericCappingTransformTests,
 )
 from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
@@ -31,6 +40,7 @@ class TestFit(GenericCappingFitTests):
     def setup_class(cls):
         cls.transformer_name = "OutOfRangeNullTransformer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("values", "sample_weight", "quantiles"),
@@ -51,6 +61,7 @@ class TestFit(GenericCappingFitTests):
         minimal_attribute_dict,
         uninitialized_transformers,
         library,
+        lazy,
     ):
         """Test that weighted_quantile gives the expected outputs."""
 
@@ -71,7 +82,10 @@ class TestFit(GenericCappingFitTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        transformer.fit(df)
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        transformer.fit(_convert_to_lazy(df, lazy))
 
         lower_replacement = None if quantiles[0] else False
         upper_replacement = None if quantiles[1] else False
@@ -81,7 +95,7 @@ class TestFit(GenericCappingFitTests):
         )
 
 
-class TestTransform(GenericCappingTransformTests):
+class TestTransform(GenericCappingTransformTests, GenericTransformTests):
     """Tests for OutOfRangeNullTransformer.transform()."""
 
     @classmethod
@@ -99,6 +113,7 @@ class TestTransform(GenericCappingTransformTests):
 
         return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_expected_output_min_and_max_combinations(
@@ -107,6 +122,7 @@ class TestTransform(GenericCappingTransformTests):
         uninitialized_transformers,
         library,
         from_json,
+        lazy,
     ):
         """Test that capping is applied correctly in transform."""
 
@@ -118,27 +134,64 @@ class TestTransform(GenericCappingTransformTests):
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
         transformer = _handle_from_json(transformer, from_json=from_json)
 
-        df_transformed = transformer.transform(df)
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy))
 
-        assert_frame_equal_dispatch(df_transformed, expected)
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy), expected)
 
         # Check outcomes for single rows
         df = nw.from_native(df)
         expected = nw.from_native(expected)
         for i in range(len(df)):
-            df_transformed_row = transformer.transform(df[[i]].to_native())
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy)
+            )
             df_expected_row = expected[[i]].to_native()
 
             assert_frame_equal_dispatch(
-                df_transformed_row,
+                _collect_frame(df_transformed_row, lazy),
                 df_expected_row,
             )
 
 
+class TestLazyYSupport:
+    """Tests for lazy y support in OutOfRangeNullTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that OutOfRangeNullTransformer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": [1.0, 2.0, 3.0, 4.0, 5.0]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = OutOfRangeNullTransformer(
+            quantiles={"a": [0.1, 0.9], "b": [0.1, 0.9]}
+        )
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        expected = pl.DataFrame(
+            {
+                "a": [1.0, 2.0, 3.0, 4.0, None],
+                "b": [1.0, 2.0, 3.0, 4.0, None],
+            }
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
+
+
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyCappingsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyCappingsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

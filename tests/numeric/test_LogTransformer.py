@@ -10,6 +10,7 @@ import tests.test_data as d
 from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
 )
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
@@ -315,7 +316,9 @@ class TestTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for LogTransformer outside the three standard methods.

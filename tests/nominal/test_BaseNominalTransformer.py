@@ -1,3 +1,6 @@
+"""Note, BaseNominalTransformer itself has now been removed,
+but it is still useful to have these inheritable tests."""
+
 import copy
 
 import narwhals as nw
@@ -6,10 +9,7 @@ from sklearn.exceptions import NotFittedError
 
 import tests.test_data as d
 from tests.base_tests import (
-    ColumnStrListInitTests,
-    GenericFitTests,
     GenericTransformTests,
-    OtherBaseBehaviourTests,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -18,12 +18,9 @@ from tests.utils import (
 )
 
 
-# The first part of this file builds out the tests for BaseNominalTransformer so that they can be
-# imported into other test files (by not starting the class name with Test)
-# The second part actually calls these tests (along with all other require tests) for the BaseNominalTransformer
 class GenericNominalTransformTests(GenericTransformTests):
     """
-    Tests for BaseNominalTransformer.transform().
+    Tests for nominal module transform methods
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
@@ -39,37 +36,6 @@ class GenericNominalTransformTests(GenericTransformTests):
 
             with pytest.raises(NotFittedError):
                 initialized_transformers[self.transformer_name].transform(df)
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_non_mappable_rows_exception_raised(
-        self,
-        initialized_transformers,
-        library,
-        from_json,
-    ):
-        """Test an exception is raised if non-mappable rows are present in X."""
-        df = d.create_df_1(library=library)
-
-        transformer = initialized_transformers[self.transformer_name]
-
-        if _check_if_skip_test(transformer, df, lazy=False, from_json=from_json):
-            return
-
-        transformer.fit(df)
-
-        transformer.mappings = {
-            "a": {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7},
-            "b": {"a": 1, "c": 2, "d": 3, "e": 4, "f": 5},
-        }
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        with pytest.raises(
-            ValueError,
-            match=f"{self.transformer_name}: nulls would be introduced into columns b from levels not present in mapping",
-        ):
-            transformer.transform(df)
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
@@ -172,69 +138,3 @@ class GenericNominalTransformTests(GenericTransformTests):
         _ = x.transform(df)
 
         assert_frame_equal_dispatch(df, original_df)
-
-
-class TestInit(ColumnStrListInitTests):
-    """Generic tests for transformer.init()."""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "BaseNominalTransformer"
-
-
-class TestFit(GenericFitTests):
-    """Generic tests for transformer.fit()"""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "BaseNominalTransformer"
-
-
-class TestTransform(GenericNominalTransformTests):
-    """Tests for BaseImputer.transform."""
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "BaseNominalTransformer"
-
-
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
-    """
-    Class to run tests for BaseTransformerBehaviour outside the three standard methods.
-
-    May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
-    """
-
-    # overload test as class needs special  handling to run
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas", "polars"],
-    )
-    def test_get_feature_names_out_matches_new_features(
-        self,
-        library,
-        initialized_transformers,
-    ):
-        """Test that the expected newly created features (if any) are indeed contained
-        in the output df"""
-
-        df = d.create_df_1(library=library)
-
-        x = initialized_transformers[self.transformer_name]
-
-        x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
-
-        output = x.transform(df)
-
-        output_columns = set(output.columns)
-
-        expected_new_columns = set(x.get_feature_names_out())
-
-        # are expected columns in the data
-        assert expected_new_columns.intersection(output_columns), (
-            f"{x.classname()}: get_feature_names_out does not agree with output of .transform, expected {expected_new_columns} but got {output_columns}"
-        )
-
-    @classmethod
-    def setup_class(cls):
-        cls.transformer_name = "BaseNominalTransformer"

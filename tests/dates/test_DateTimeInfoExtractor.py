@@ -10,6 +10,7 @@ from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsDates,
 )
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
@@ -22,7 +23,8 @@ from tests.utils import (
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
-from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
+from tubular.dates import DatetimeInfoExtractor
+from tubular.functions.dates import DatetimeInfoOptions
 
 
 @pytest.fixture
@@ -819,7 +821,9 @@ class TestTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsDates,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

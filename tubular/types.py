@@ -14,6 +14,8 @@ NarwhalsFrame = nw.DataFrame | nw.LazyFrame
 
 Series = pd.Series | pl.Series | nw.Series
 
+LazyFrame = pl.LazyFrame | nw.LazyFrame
+
 NumericTypes = [
     nw.Int8,
     nw.Int16,

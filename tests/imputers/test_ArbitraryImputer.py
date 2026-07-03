@@ -13,6 +13,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
     ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import GenericImputerTransformTests
@@ -506,6 +507,70 @@ class TestTransform(
                 check_categorical=False,
             )
 
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize(
+        "library",
+        ["polars"],
+    )
+    def test_expected_output_on_enum(
+        self,
+        library,
+        lazy,
+        from_json,
+    ):
+        """Test that transform is giving the expected output when applied to enum column."""
+        df_dict = {"a": ["a", "b", None]}
+
+        expected_df_dict = {"a": ["a", "b", "c"]}
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(
+            nw.col("a").cast(nw.Enum(categories=["a", "b"]))
+        ).to_native()
+
+        expected_df = dataframe_init_dispatch(
+            dataframe_dict=expected_df_dict, library=library
+        )
+        expected_df = nw.from_native(expected_df)
+        expected_df = expected_df.with_columns(
+            nw.col("a").cast(nw.Enum(categories=["a", "b", "c"]))
+        ).to_native()
+
+        # Initialize the transformer
+        transformer = ArbitraryImputer(columns=["a"], impute_value="c")
+
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        # Transform the DataFrame
+        df_transformed = transformer.transform(u._convert_to_lazy(df, lazy))
+
+        # Check whole dataframes
+        u.assert_frame_equal_dispatch(
+            u._collect_frame(df_transformed, lazy),
+            expected_df,
+        )
+        df = nw.from_native(df)
+        expected_df = nw.from_native(expected_df)
+
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(
+                u._convert_to_lazy(df[[i]].to_native(), lazy),
+            )
+            df_expected_row = expected_df[[i]].to_native()
+
+            u.assert_frame_equal_dispatch(
+                u._collect_frame(df_transformed_row, lazy),
+                df_expected_row,
+            )
+
     @pytest.mark.parametrize(
         "lazy",
         [True, False],
@@ -558,7 +623,9 @@ class TestTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

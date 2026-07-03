@@ -6,6 +6,7 @@ import tests.utils as u
 from tests.base_tests import (
     EmptyColumnsFailTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
 )
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerFitTests,
@@ -251,7 +252,7 @@ class TestTransform(
         u.assert_frame_equal_dispatch(expected, df_transformed)
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
     """
     Class to run tests for OneDKmeansTransformer outside the three standard methods.
 

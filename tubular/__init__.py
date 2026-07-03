@@ -41,6 +41,7 @@ from tubular.numeric import (
     OneDKmeansTransformer,
     RatioTransformer,
 )
+from tubular.strings import LowerCaseTransformer, RemoveCharactersTransformer
 
 __all__ = [
     "AggregateColumnsOverRowTransformer",
@@ -56,6 +57,7 @@ __all__ = [
     "DatetimeSinusoidCalculator",
     "DifferenceTransformer",
     "GroupRareLevelsTransformer",
+    "LowerCaseTransformer",
     "MappingTransformer",
     "MeanImputer",
     "MeanResponseTransformer",
@@ -66,6 +68,7 @@ __all__ = [
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
     "RatioTransformer",
+    "RemoveCharactersTransformer",
     "RenameColumnsTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",

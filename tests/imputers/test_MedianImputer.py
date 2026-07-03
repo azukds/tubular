@@ -1,4 +1,5 @@
 import numpy as np
+import polars as pl
 import pytest
 
 import tests.test_data as d
@@ -10,6 +11,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
     ReturnNativeTests,
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
@@ -18,6 +20,7 @@ from tests.imputers.test_BaseImputer import (
     GenericImputerTransformTests,
     GenericImputerTransformTestsWeight,
 )
+from tests.utils import assert_frame_equal_dispatch, dataframe_init_dispatch
 from tubular.imputers import MedianImputer
 
 
@@ -36,14 +39,15 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
     def setup_class(cls):
         cls.transformer_name = "MedianImputer"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values(self, library):
+    def test_learnt_values(self, library, lazy):
         """Test that the impute values learnt during fit are expected."""
         df = d.create_df_3(library=library)
 
         transformer = MedianImputer(columns=["a", "b", "c"])
 
-        transformer.fit(df)
+        transformer.fit(u._convert_to_lazy(df, lazy))
 
         assert transformer.impute_values_ == {
             "a": df["a"].median(),
@@ -51,33 +55,19 @@ class TestFit(WeightColumnFitMixinTests, GenericFitTests, FailedFitWeightFilterT
             "c": df["c"].median(),
         }, "impute_values_ attribute"
 
+    @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_weighted(self, library):
+    def test_learnt_values_weighted(self, library, lazy):
         """Test that the impute values learnt during fit are expected - when using weights."""
         df = d.create_df_9_with_null_weight_row(library=library)
 
         transformer = MedianImputer(columns=["a"], weights_column="c")
 
-        transformer.fit(df)
+        transformer.fit(u._convert_to_lazy(df, lazy))
 
         assert transformer.impute_values_ == {
             "a": np.int64(4),
         }, "impute_values_ attribute"
-
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_fit_not_changing_data(self, library):
-        """Test fit does not change X."""
-        df = d.create_df_1(library=library)
-
-        transformer = MedianImputer(columns="a")
-
-        transformer.fit(df)
-
-        # Check whole dataframes
-        u.assert_frame_equal_dispatch(
-            d.create_df_1(library=library),
-            df,
-        )
 
 
 class TestTransform(
@@ -93,8 +83,36 @@ class TestTransform(
         cls.transformer_name = "MedianImputer"
 
 
+class TestLazyYSupport:
+    """Tests for lazy y support in MedianImputer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that MedianImputer accepts LazyFrame for y parameter."""
+        df_dict = {"a": [1, 2, 3, 4, 5], "b": [1.0, 2.0, None, 4.0, 5.0]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        y_lazy = pl.LazyFrame({"a": [1, 2, 3, 4, 5]})
+
+        transformer = MedianImputer(columns="b")
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        expected = dataframe_init_dispatch(
+            {"a": [1, 2, 3, 4, 5], "b": [1.0, 2.0, 3.0, 4.0, 5.0]},
+            library,
+        )
+
+        transformed = transformer.transform(df)
+
+        assert_frame_equal_dispatch(transformed, expected)
+
+
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour behaviour outside the three standard methods.

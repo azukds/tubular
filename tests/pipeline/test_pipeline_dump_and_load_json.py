@@ -20,7 +20,7 @@ class TestPipelineDumpAndLoadJson:
         mean_imputer = MeanImputer(columns=["b"])
 
         original_pipeline = Pipeline(
-            [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+            [("median_imputer", median_imputer), ("mean_imputer", mean_imputer)]
         )
 
         original_pipeline.fit(df, df["a"])
@@ -56,20 +56,23 @@ class TestPipelineDumpAndLoadJson:
         mean_imputer = MeanImputer(columns=["b"])
 
         original_pipeline = Pipeline(
-            [("MedianImputer", median_imputer), ("MeanImputer", mean_imputer)]
+            [("median_imputer", median_imputer), ("mean_imputer", mean_imputer)]
         )
 
         original_pipeline.fit(df, df["a"])
 
         actual_json = dump_pipeline_to_json(original_pipeline)
-        transformers = ["MedianImputer", "MeanImputer"]
+        transformers = ["median_imputer", "mean_imputer"]
         for transformer in transformers:
             # tubular version will differ locally vs in CI, so best to drop from test
             del actual_json[transformer]["tubular_version"]
         expected_json = {
-            "MeanImputer": {
+            "mean_imputer": {
                 "classname": "MeanImputer",
-                "fit": {"impute_values_": mean_imputer.impute_values_},
+                "fit": {
+                    "is_fitted_": True,
+                    "impute_values_": mean_imputer.impute_values_,
+                },
                 "init": {
                     "columns": mean_imputer.columns,
                     "copy": mean_imputer.copy,
@@ -78,9 +81,12 @@ class TestPipelineDumpAndLoadJson:
                     "weights_column": mean_imputer.weights_column,
                 },
             },
-            "MedianImputer": {
+            "median_imputer": {
                 "classname": "MedianImputer",
-                "fit": {"impute_values_": median_imputer.impute_values_},
+                "fit": {
+                    "is_fitted_": True,
+                    "impute_values_": median_imputer.impute_values_,
+                },
                 "init": {
                     "columns": median_imputer.columns,
                     "copy": median_imputer.copy,
@@ -90,7 +96,6 @@ class TestPipelineDumpAndLoadJson:
                 },
             },
         }
-        transformers = ["MedianImputer", "MeanImputer"]
 
         for i, transformer in enumerate(transformers):
             assert actual_json[transformer] == expected_json[transformer], (
@@ -102,7 +107,7 @@ class TestPipelineDumpAndLoadJson:
         bad_transformer = FakeTransformer()
 
         original_pipeline = Pipeline(
-            [("FakeTransformer", bad_transformer), ("MeanImputer", good_transformer)]
+            [("fake_transformer", bad_transformer), ("mean_imputer", good_transformer)]
         )
 
         with pytest.raises(

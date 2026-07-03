@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import copy
 import datetime
 import warnings
-from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import narwhals as nw
 import numpy as np
 import pandas as pd
 from beartype import beartype
-from beartype.vale import Is
 from typing_extensions import deprecated
 
 from tubular._utils import (
@@ -21,6 +18,25 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.functions.dates import (
+    INCLUDE_OPTIONS,
+    RANGE_TO_MAP,
+    DateDifferenceUnitsOptionsStr,
+    DatetimeComponentOptionList,
+    DatetimeComponentOptionStr,
+    DatetimeInfoOptionList,
+    DatetimeInfoOptionStr,
+    DatetimeSinusoidUnitsOptionStr,
+    MethodOptionList,
+    MethodOptionStr,
+    NumberNotBool,
+    check_if_three_date_columns_are_sequential,
+    convert_columns_to_datetime,
+    diff_two_dates,
+    extract_datetime_components,
+    extract_datetime_info,
+    extract_datetime_sinusoid_components,
+)
 from tubular.types import (
     DataFrame,
     GenericKwargs,
@@ -110,6 +126,7 @@ class BaseGenericDateTransformer(
         super().__init__(columns=columns, **kwargs)
 
         self.new_column_name = new_column_name
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -127,7 +144,7 @@ class BaseGenericDateTransformer(
         >>> transformer = BaseGenericDateTransformer(columns=["a", "b"], new_column_name="bla")
 
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla'}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BaseGenericDateTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla'}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -238,7 +255,7 @@ class BaseGenericDateTransformer(
             allowed_types = [*allowed_types, date_type]
             type_msg += ["Date"]
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         for col in self.columns:
             is_datetime = False
@@ -413,6 +430,7 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
             new_column_name=new_column_name,
             **kwargs,
         )
+        self.is_fitted_ = True  # Does not fit
 
     @beartype
     def transform(
@@ -478,28 +496,6 @@ class BaseDatetimeTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-class DateDifferenceUnitsOptions(str, Enum):
-    """Options for return units in DateDifferenceTransformer."""
-
-    __slots__ = ()
-
-    WEEK = "week"
-    FORTNIGHT = "fortnight"
-    LUNAR_MONTH = "lunar_month"
-    COMMON_YEAR = "common_year"
-    CUSTOM_DAYS = "custom_days"
-    DAYS = "D"
-    HOURS = "h"
-    MINUTES = "m"
-    SECONDS = "s"
-
-
-DateDifferenceUnitsOptionsStr = Annotated[
-    str,
-    Is[lambda s: s in DateDifferenceUnitsOptions._value2member_map_],
-]
-
-
 @register
 class DateDifferenceTransformer(BaseGenericDateTransformer):
     """Class to transform calculate the difference between 2 date fields in specified units.
@@ -538,7 +534,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'units': 'common_year', 'custom_days_divider': None}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'bla', 'units': 'common_year', 'custom_days_divider': None}, 'fit': {'is_fitted_': True}}
 
     >>> DateDifferenceTransformer.from_json(json_dump)
     DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla',
@@ -599,6 +595,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         # Here only as a fix to allow string representation of transformer.
         self.column_lower = columns[0]
         self.column_upper = columns[1]
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -617,7 +614,7 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'units': 'D', 'custom_days_divider': None}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'DateDifferenceTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'a_diff_b', 'units': 'D', 'custom_days_divider': None}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -633,6 +630,21 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         )
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return diff_two_dates(
+            columns=self.columns,
+            units=self.units,
+            new_column_name=self.new_column_name,
+            custom_days_divider=self.custom_days_divider,
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -685,48 +697,10 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        # mapping for units and corresponding timedelta arg values
-        UNITS_TO_TIMEDELTA_PARAMS = {
-            "week": (7, "D"),
-            "fortnight": (14, "D"),
-            "lunar_month": (
-                int(29.5 * 24),
-                "h",
-            ),  # timedelta values need to be whole numbers so (29.5, 'D') cannot be used
-            "common_year": (365, "D"),
-            "D": (1, "D"),
-            "h": (1, "h"),
-            "m": (1, "m"),
-            "s": (1, "s"),
-        }
-
-        # list of units that require time truncation
-        UNITS_TO_TRUNCATE_TIME_FOR = [
-            "week",
-            "fortnight",
-            "lunar_month",
-            "common_year",
-            "custom_days",
-            "D",
-        ]
-
-        start_date_col = nw.col(self.columns[0])
-        end_date_col = nw.col(self.columns[1])
-
-        # truncating time for specific units
-        if self.units in UNITS_TO_TRUNCATE_TIME_FOR:
-            start_date_col = start_date_col.dt.truncate("1d")
-            end_date_col = end_date_col.dt.truncate("1d")
-
-        if self.units == "custom_days":
-            timedelta_value, timedelta_format = self.custom_days_divider, "D"
-            denominator = np.timedelta64(timedelta_value, timedelta_format)
-        else:
-            timedelta_value, timedelta_format = UNITS_TO_TIMEDELTA_PARAMS[self.units]
-            denominator = np.timedelta64(timedelta_value, timedelta_format)
+        transform_expr = self.get_transform_exprs()
 
         X = X.with_columns(
-            ((end_date_col - start_date_col) / denominator).alias(self.new_column_name),
+            transform_expr,
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
@@ -769,7 +743,7 @@ class ToDatetimeTransformer(BaseTransformer):
     >>> # version will vary for local vs CI, so use ... as generic match
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {'is_fitted_': True}}
 
     ```
 
@@ -816,6 +790,7 @@ class ToDatetimeTransformer(BaseTransformer):
             columns=columns,
             **kwargs,
         )
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -834,7 +809,7 @@ class ToDatetimeTransformer(BaseTransformer):
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'ToDatetimeTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'time_format': '%d/%m/%Y'}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -846,6 +821,18 @@ class ToDatetimeTransformer(BaseTransformer):
             }
         )
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return convert_columns_to_datetime(
+            columns=self.columns, time_format=self.time_format
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -891,9 +878,9 @@ class ToDatetimeTransformer(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        X = X.with_columns(
-            nw.col(col).str.to_datetime(format=self.time_format) for col in self.columns
-        )
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs)
 
         return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
@@ -1017,6 +1004,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         self.column_lower = columns[0]
         self.column_upper = columns[2]
         self.column_between = columns[2]
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -1038,7 +1026,7 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         ...     upper_inclusive=False,
         ... )
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BetweenDatesTransformer', 'init': {'columns': ['a', 'b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'b_between_a_c', 'lower_inclusive': True, 'upper_inclusive': False}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -1053,6 +1041,21 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         )
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return check_if_three_date_columns_are_sequential(
+            columns=self.columns,
+            lower_inclusive=self.lower_inclusive,
+            upper_inclusive=self.upper_inclusive,
+            new_column_name=self.new_column_name,
+        )
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:
@@ -1122,50 +1125,11 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         """
         X = nw.from_native(super().transform(X))
 
-        lower_comparison = (
-            nw.col(self.columns[0]) <= nw.col(self.columns[1])
-            if self.lower_inclusive
-            else nw.col(self.columns[0]) < nw.col(self.columns[1])
-        )
+        transform_expr = self.get_transform_exprs()
 
-        upper_comparison = (
-            nw.col(self.columns[1]) <= nw.col(self.columns[2])
-            if self.upper_inclusive
-            else nw.col(self.columns[1]) < nw.col(self.columns[2])
-        )
+        X = X.with_columns(transform_expr)
 
-        return X.with_columns(
-            nw.when(nw.col(self.columns[0]) > nw.col(self.columns[2]))
-            .then(None)
-            .otherwise(lower_comparison & upper_comparison)
-            .cast(nw.Boolean)
-            .alias(self.new_column_name),
-        )
-
-
-class DatetimeInfoOptions(str, Enum):
-    """Options for what is returned by DatetimeInfoExtractor."""
-
-    __slots__ = ()
-
-    TIME_OF_DAY = "timeofday"
-    TIME_OF_MONTH = "timeofmonth"
-    TIME_OF_YEAR = "timeofyear"
-    DAY_OF_WEEK = "dayofweek"
-
-
-DatetimeInfoOptionStr = Annotated[
-    str,
-    Is[lambda s: s in DatetimeInfoOptions._value2member_map_],
-]
-DatetimeInfoOptionList = Annotated[
-    list,
-    Is[
-        lambda list_value: all(
-            entry in DatetimeInfoOptions._value2member_map_ for entry in list_value
-        )
-    ],
-]
+        return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
 @register
@@ -1211,7 +1175,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                           include=['timeofday'])
 
     >>> transformer.to_json()
-    {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['timeofday'], 'datetime_mappings': {}}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['timeofday'], 'datetime_mappings': {}}, 'fit': {'is_fitted_': True}}
 
     ```
 
@@ -1225,50 +1189,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
     jsonable = True
 
-    DEFAULT_MAPPINGS: ClassVar[dict[str, dict[int, str]]] = {
-        DatetimeInfoOptions.TIME_OF_DAY.value: {
-            **dict.fromkeys(range(6), "night"),  # Midnight - 6am
-            **dict.fromkeys(range(6, 12), "morning"),  # 6am - Noon
-            **dict.fromkeys(range(12, 18), "afternoon"),  # Noon - 6pm
-            **dict.fromkeys(range(18, 24), "evening"),  # 6pm - Midnight
-        },
-        DatetimeInfoOptions.TIME_OF_MONTH.value: {
-            **dict.fromkeys(range(1, 11), "start"),
-            **dict.fromkeys(range(11, 21), "middle"),
-            **dict.fromkeys(range(21, 32), "end"),
-        },
-        DatetimeInfoOptions.TIME_OF_YEAR.value: {
-            **dict.fromkeys(range(3, 6), "spring"),  # Mar, Apr, May
-            **dict.fromkeys(range(6, 9), "summer"),  # Jun, Jul, Aug
-            **dict.fromkeys(range(9, 12), "autumn"),  # Sep, Oct, Nov
-            **dict.fromkeys([12, 1, 2], "winter"),  # Dec, Jan, Feb
-        },
-        DatetimeInfoOptions.DAY_OF_WEEK.value: {
-            1: "monday",
-            2: "tuesday",
-            3: "wednesday",
-            4: "thursday",
-            5: "friday",
-            6: "saturday",
-            7: "sunday",
-        },
-    }
-
-    INCLUDE_OPTIONS: ClassVar[list[str]] = list(DEFAULT_MAPPINGS.keys())
-
-    RANGE_TO_MAP: ClassVar[dict[str, set[int]]] = {
-        DatetimeInfoOptions.TIME_OF_DAY.value: set(range(24)),
-        DatetimeInfoOptions.TIME_OF_MONTH.value: set(range(1, 32)),
-        DatetimeInfoOptions.TIME_OF_YEAR.value: set(range(1, 13)),
-        DatetimeInfoOptions.DAY_OF_WEEK.value: set(range(1, 8)),
-    }
-
-    DATETIME_ATTR: ClassVar[dict[str, str]] = {
-        DatetimeInfoOptions.TIME_OF_DAY.value: "hour",
-        DatetimeInfoOptions.TIME_OF_MONTH.value: "day",
-        DatetimeInfoOptions.TIME_OF_YEAR.value: "month",
-        DatetimeInfoOptions.DAY_OF_WEEK.value: "weekday",
-    }
+    INCLUDE_OPTIONS = INCLUDE_OPTIONS
+    RANGE_TO_MAP = RANGE_TO_MAP
 
     @beartype
     def __init__(
@@ -1307,7 +1229,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                 dayofweek: 1-7
 
             If an option is present in 'include' but no mappings are provided,
-            then default values from cls.DEFAULT_MAPPINGS will be used for this
+            then default values from DEFAULT_MAPPINGS will be used for this
             option.
 
         **kwargs
@@ -1342,6 +1264,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
 
         if self.datetime_mappings is None:
             self.datetime_mappings = {}
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -1358,7 +1281,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         >>> transformer=DatetimeInfoExtractor(columns='a')
 
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'], 'datetime_mappings': {}}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'DatetimeInfoExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['timeofday', 'timeofmonth', 'timeofyear', 'dayofweek'], 'datetime_mappings': {}}, 'fit': {'is_fitted_': True}}
 
         """
         json_dict = super().to_json()
@@ -1443,6 +1366,20 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
                     msg = f"{self.classname()}: {key} mapping dictionary should contain mapping for all values between {min(self.RANGE_TO_MAP[key])}-{max(self.RANGE_TO_MAP[key])}. {self.RANGE_TO_MAP[key] - set(datetime_mappings[key].keys())} are missing"
                     raise ValueError(msg)
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return extract_datetime_info(
+            columns=self.columns,
+            datetime_mappings=self.datetime_mappings,
+            include=self.include,
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Transform - Extracts new features from datetime variables.
@@ -1491,87 +1428,17 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         """
         X = super().transform(X, return_native_override=False)
 
-        # initialise mappings attr with defaults,
-        # and overwrite with user provided mappings
-        # where possible
-        final_datetime_mappings = copy.deepcopy(self.DEFAULT_MAPPINGS)
-        for key in self.datetime_mappings:
-            final_datetime_mappings[key] = copy.deepcopy(
-                self.datetime_mappings[key],
-            )
-
-        # this is a situation where we know the values our mappings allow,
-        # so enum type is more appropriate than categorical and we
-        # will cast to this at the end
-        enums = {
-            include_option: nw.Enum(
-                sorted(set(final_datetime_mappings[include_option].values())),
-            )
-            for include_option in self.include
-        }
-
-        mappings_dict = {
-            col + "_" + include_option: final_datetime_mappings[include_option]
-            for col in self.columns
-            for include_option in self.include
-        }
-
-        transform_dict = {
-            col + "_" + include_option: (
-                getattr(
-                    nw.col(col).dt,
-                    self.DATETIME_ATTR[include_option],
-                )().replace_strict(
-                    mappings_dict[col + "_" + include_option],
-                )
-            )
-            for col in self.columns
-            for include_option in self.include
-        }
-
-        # final casts
-        transform_dict = {
-            col + "_" + include_option: transform_dict[col + "_" + include_option].cast(
-                enums[include_option],
-            )
-            for col in self.columns
-            for include_option in self.include
-        }
+        transform_exprs = self.get_transform_exprs()
 
         X = (
             X.with_columns(
-                **transform_dict,
+                *transform_exprs,
             )
-            if transform_dict
+            if transform_exprs
             else X
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-class DatetimeComponentOptions(str, Enum):
-    """Contains options for DatetimeComponentExtractor."""
-
-    __slots__ = ()
-
-    HOUR = "hour"
-    DAY = "day"
-    MONTH = "month"
-    YEAR = "year"
-
-
-DatetimeComponentOptionStr = Annotated[
-    str,
-    Is[lambda s: s in DatetimeComponentOptions._value2member_map_],
-]
-DatetimeComponentOptionList = Annotated[
-    list,
-    Is[
-        lambda list_value: all(
-            entry in DatetimeComponentOptions._value2member_map_ for entry in list_value
-        )
-    ],
-]
 
 
 class DatetimeComponentExtractor(BaseDatetimeTransformer):
@@ -1610,7 +1477,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['hour', 'day']}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['hour', 'day']}, 'fit': {'is_fitted_': True}}
 
     >>> DatetimeComponentExtractor.from_json(json_dump)
     DatetimeComponentExtractor(columns=['a'], include=['hour', 'day'])
@@ -1670,6 +1537,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         )
 
         self.include = include
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -1717,7 +1585,7 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         ... )
 
         >>> transformer.to_json()
-        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['hour', 'day']}, 'fit': {}}
+        {'tubular_version': '...', 'classname': 'DatetimeComponentExtractor', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'include': ['hour', 'day']}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -1725,6 +1593,16 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         json_dict = super().to_json()
         json_dict["init"]["include"] = self.include
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return extract_datetime_components(columns=self.columns, include=self.include)
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -1781,78 +1659,17 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
         """
         X = super().transform(X, return_native_override=False)
 
-        transform_dict = {
-            col + "_" + include_option: (
-                getattr(
-                    nw.col(col).dt,
-                    include_option,
-                )().cast(nw.Float32)  # can't cast to int as may have nulls
-            )
-            for col in self.columns
-            for include_option in self.include
-        }
+        transform_exprs = self.get_transform_exprs()
 
         X = (
             X.with_columns(
-                **transform_dict,
+                *transform_exprs,
             )
-            if transform_dict
+            if transform_exprs
             else X
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-class DatetimeSinusoidUnitsOptions(str, Enum):
-    """Options for units argument of DatetimeSinusoidCalculator."""
-
-    __slots__ = ()
-
-    YEAR = "year"
-    MONTH = "month"
-    DAY = "day"
-    HOUR = "hour"
-    MINUTE = "minute"
-    SECOND = "second"
-    MICROSECOND = "microsecond"
-
-
-DatetimeSinusoidUnitsOptionStr = Annotated[
-    str,
-    Is[lambda s: s in DatetimeSinusoidUnitsOptions._value2member_map_],
-]
-
-
-class MethodOptions(str, Enum):
-    """Options for method arg of DatetimeSinusoidCalculator."""
-
-    __slots__ = ()
-
-    SIN = "sin"
-    COS = "cos"
-
-
-MethodOptionStr = Annotated[
-    str,
-    Is[lambda s: s in MethodOptions._value2member_map_],
-]
-
-MethodOptionList = Annotated[
-    list,
-    Is[
-        lambda list_value: all(
-            entry in MethodOptions._value2member_map_ for entry in list_value
-        )
-    ],
-]
-
-NumberNotBool = Annotated[
-    int | float,
-    Is[
-        # exclude bools which would pass isinstance(..., (float, int))
-        lambda value: type(value) in {int, float}
-    ],
-]
 
 
 @register
@@ -1993,6 +1810,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             else self.period[column]
             for column in self.columns
         }
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -2042,7 +1860,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         ...     units="month",
         ... )
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'DatetimeSinusoidCalculator', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'dummy', 'method': ['sin'], 'units': 'month', 'period': 6.283185307179586}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -2058,6 +1876,21 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         )
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return extract_datetime_sinusoid_components(
+            columns=self.columns,
+            period_dict=self.period_dict,
+            units_dict=self.units_dict,
+            method=self.method,
+        )
 
     @beartype
     def transform(
@@ -2121,28 +1954,9 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        # first convert to desired units
-        exprs = {
-            f"{method}_{self.period_dict[column]}_{self.units_dict[column]}_{column}": getattr(
-                nw.col(column).dt,
-                self.units_dict[column],
-            )()
-            * (2 * np.pi / self.period_dict[column])
-            for column in self.columns
-            for method in self.method
-        }
+        transform_exprs = self.get_transform_exprs()
 
-        # then take sin/cos
-        exprs = {
-            (
-                new_col_name
-                := f"{method}_{self.period_dict[column]}_{self.units_dict[column]}_{column}"
-            ): getattr(exprs[new_col_name], method)()
-            for column in self.columns
-            for method in self.method
-        }
-
-        X = X.with_columns(**exprs) if exprs else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

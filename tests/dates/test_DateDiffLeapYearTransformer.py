@@ -12,6 +12,7 @@ from tests.base_tests import (
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsDates,
     TwoColumnListInitTests,
 )
 from tests.dates.test_BaseGenericDateTransformer import (
@@ -237,7 +238,7 @@ class TestTransform(
         assert_frame_equal_dispatch(df_transformed[column_order], expected)
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsDates):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

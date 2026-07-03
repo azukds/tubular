@@ -8,6 +8,7 @@ from tests.base_tests import (
     EmptyColumnsFailTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
 )
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
@@ -126,9 +127,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests,
-):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
     """
     Class to run tests for CutTransformer outside the three standard methods.
 

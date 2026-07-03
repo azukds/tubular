@@ -1,6 +1,5 @@
 import copy
 
-import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -10,8 +9,9 @@ from tests.base_tests import (
     EmptyColumnsFailTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
 )
-from tubular.comparison import ConditionEnum
+from tubular.functions.comparison import ConditionEnum
 
 
 def create_compare_test_df(library="pandas"):
@@ -156,12 +156,6 @@ class TestCompareTwoColumnsTransformerTransform(GenericTransformTests):
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        expected_df = nw.from_native(expected_df)
-
-        expected_df = expected_df.with_columns(
-            nw.maybe_convert_dtypes(expected_df[f"a{condition.value}b"]),
-        ).to_native()
-
         u.assert_frame_equal_dispatch(
             u._collect_frame(transformed_df, lazy),
             expected_df,
@@ -216,19 +210,13 @@ class TestCompareTwoColumnsTransformerTransform(GenericTransformTests):
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
-        expected_df = nw.from_native(expected_df)
-
-        expected_df = expected_df.with_columns(
-            nw.maybe_convert_dtypes(expected_df[f"a{condition.value}b"]),
-        ).to_native()
-
         u.assert_frame_equal_dispatch(
             u._collect_frame(transformed_df, lazy),
             expected_df,
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
     """
     Class to run tests for CompareTwoColumnsTransformer outside the three standard methods.
 

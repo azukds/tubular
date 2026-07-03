@@ -1,4 +1,6 @@
 import narwhals as nw
+import pandas as pd
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -8,6 +10,7 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
+    OtherBaseBehaviourTestsNumeric,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -61,10 +64,8 @@ class TestTransform(GenericTransformTests):
             ([True, False], [None, True], "Float32", [1.0, 0.0], [None, 1.0]),
             ([True, False], [True, True], "Int32", [1, 0], [1, 1]),
             ([True, False], [True, True], "UInt64", [1, 0], [1, 1]),
-            (["a", "b"], ["c", "d"], "String", ["a", "b"], ["c", "d"]),
             (["a", "b"], ["c", "d"], "Categorical", ["a", "b"], ["c", "d"]),
             ([None, None], [None, None], "Float32", [None, None], [None, None]),
-            ([None, None], [None, None], "String", [None, None], [None, None]),
             ([None, None], [None, None], "Categorical", [None, None], [None, None]),
             ([None, None], [None, None], "Boolean", [None, None], [None, None]),
         ],
@@ -75,7 +76,7 @@ class TestTransform(GenericTransformTests):
         "lazy",
         [True, False],
     )
-    def test_expected_output(
+    def test_expected_output_non_str(
         self,
         a_values,
         b_values,
@@ -86,7 +87,7 @@ class TestTransform(GenericTransformTests):
         from_json,
         library,
     ):
-        """Test values are cast to correct dtype."""
+        """Test values are cast to correct dtype, for non string dtype."""
 
         transformer = ColumnDtypeSetter(columns=["a", "b"], dtype=dtype)
 
@@ -147,9 +148,91 @@ class TestTransform(GenericTransformTests):
                 df_expected_row.to_native(),
             )
 
+    @pytest.mark.parametrize(
+        ("a_values", "b_values", "expected_a_values", "expected_b_values"),
+        [
+            (["a", "b"], ["c", "d"], ["a", "b"], ["c", "d"]),
+            (["a", None], [None, "d"], ["a", None], [None, "d"]),
+            ([None, None], [None, None], [None, None], [None, None]),
+        ],
+    )
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    def test_expected_output_str(
+        self,
+        a_values,
+        b_values,
+        expected_a_values,
+        expected_b_values,
+        lazy,
+        from_json,
+        library,
+    ):
+        """Test values are cast to correct dtype, for string dtype."""
+
+        dtype = "String"
+
+        transformer = ColumnDtypeSetter(columns=["a", "b"], dtype=dtype)
+
+        df_dict = {"a": a_values, "b": b_values}
+
+        expected_df_dict = {"a": expected_a_values, "b": expected_b_values}
+
+        # manually set up dfs to be careful of types
+        if library == "pandas":
+            df = pd.DataFrame(df_dict, dtype="string")
+            expected_df = pd.DataFrame(expected_df_dict, dtype="string")
+
+        else:
+            df = pl.DataFrame(df_dict, schema={"a": pl.String, "b": pl.String})
+            expected_df = pl.DataFrame(
+                expected_df_dict, schema={"a": pl.String, "b": pl.String}
+            )
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=lazy), expected_df
+        )
+
+        # Test single row transformation
+        df = nw.from_native(df)
+        expected_df = nw.from_native(expected_df)
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy)
+            )
+            df_expected_row = expected_df[[i]]
+            # special handling for category type to account for single row/one category
+            if transformer.dtype == "Categorical":
+                df_expected_row = df_expected_row.with_columns(
+                    nw.new_series(
+                        name=col,
+                        values=[expected_df_dict[col][i]],
+                        backend=library,
+                    ).cast(nw.Categorical)
+                    for col in transformer.columns
+                )
+
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, lazy),
+                df_expected_row.to_native(),
+            )
+
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for ColumnDtypeSetter behaviour outside the three standard methods.

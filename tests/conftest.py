@@ -17,7 +17,7 @@ from tests.test_data import (
     create_when_then_otherwise_test_df,
 )
 from tubular import base
-from tubular.comparison import ConditionEnum
+from tubular.functions.comparison import ConditionEnum
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -133,9 +133,6 @@ def minimal_attribute_dict():
         "BaseMappingTransformMixin": {
             "columns": ["a"],
         },
-        "BaseNominalTransformer": {
-            "columns": ["b"],
-        },
         "BaseNumericTransformer": {
             "columns": ["a", "b"],
         },
@@ -201,6 +198,11 @@ def minimal_attribute_dict():
             "method": ["sin"],
             "units": "month",
         },
+        "ExtractStringComponentsTransformer": {
+            "columns": ["b"],
+            "by": "@",
+            "return_n_components": 1,
+        },
         "EqualityChecker": {
             "columns": ["a", "b"],
             "new_column_name": "c",
@@ -211,6 +213,7 @@ def minimal_attribute_dict():
         "InteractionTransformer": {
             "columns": ["a", "b"],
         },
+        "LowerCaseTransformer": {"columns": ["b"]},
         "LogTransformer": {
             "columns": ["a"],
         },
@@ -262,6 +265,10 @@ def minimal_attribute_dict():
         "PCATransformer": {
             "columns": ["a", "c"],
         },
+        "RemoveCharactersTransformer": {
+            "columns": ["b"],
+            "characters": [r"\s"],
+        },
         "RenameColumnsTransformer": {
             "columns": "a",
             "new_column_names": {"a": "new_a"},
@@ -288,6 +295,11 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "new_column_name": "c",
             "separator": "-",
+        },
+        "StringContainsTransformer": {
+            "columns": ["b"],
+            "reference": "c",
+            "reference_as_column": False,
         },
         "_StringImputer": {
             "columns": ["b"],
@@ -399,6 +411,14 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
+
+    pyarrow_transformers = ["ExtractStringComponentsTransformer"]
+
+    if library == "pandas":
+        for transformer in pyarrow_transformers:
+            min_df_dict[transformer] = min_df_dict[transformer].convert_dtypes(
+                dtype_backend="pyarrow"
+            )
 
     return min_df_dict
 
