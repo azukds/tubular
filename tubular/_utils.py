@@ -290,7 +290,8 @@ def _sort_dict(dictionary: dict) -> dict:
 
     Parameters
     ----------
-    dictionary: dictionary to sort
+    dictionary:
+        dictionary to sort
 
     Returns
     -------
@@ -305,7 +306,8 @@ def _sort_nested_dict(dictionary: dict) -> dict:
 
     Parameters
     ----------
-    dictionary: dictionary to sort
+    dictionary:
+        dictionary to sort
 
     Returns
     -------
