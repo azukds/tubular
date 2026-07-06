@@ -32,7 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- placeholder
+- bugfix: sort dict attributes to ensure consistent json expressions
 
 3.8.4 (25/06/2026)
 ------------------

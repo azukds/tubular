@@ -15,6 +15,7 @@ from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _is_null,
     _return_narwhals_or_native_dataframe,
+    _sort_dict,
 )
 from tubular.base import block_from_json, register
 from tubular.functions.capping import (
@@ -477,8 +478,8 @@ class BaseCappingTransformer(BaseNumericTransformer, WeightColumnMixin):
 
             data["fit"].update(
                 {
-                    "quantile_capping_values": self.quantile_capping_values,
-                    "_replacement_values": self._replacement_values,
+                    "quantile_capping_values": _sort_dict(self.quantile_capping_values),
+                    "_replacement_values": _sort_dict(self._replacement_values),
                 },
             )
 

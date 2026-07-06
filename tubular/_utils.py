@@ -283,3 +283,38 @@ def _is_null(value: Any) -> bool:  # noqa: ANN401
     return value is None or (
         math.isnan(value) if isinstance(value, numbers.Real) else False
     )
+
+
+def _sort_dict(dictionary: dict) -> dict:
+    """Sort dictionary by keys.
+
+    Parameters
+    ----------
+    dictionary: dictionary to sort
+
+    Returns
+    -------
+        dict: sorted dictionary
+
+    """
+    return {k: dictionary[k] for k in sorted(dictionary, key=lambda x: (x is None, x))}
+
+
+def _sort_nested_dict(dictionary: dict) -> dict:
+    """Sort nested dictionary by keys.
+
+    Parameters
+    ----------
+    dictionary: dictionary to sort
+
+    Returns
+    -------
+        dict: sorted dictionary
+
+    """
+    return {
+        key: _sort_nested_dict(dictionary[key])
+        if isinstance(dictionary[key], dict)
+        else dictionary[key]
+        for key in _sort_dict(dictionary)
+    }
