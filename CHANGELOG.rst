@@ -33,6 +33,10 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - bugfix: sort dict attributes to ensure consistent json expressions
+- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
+being mapped to string type.
+- chore: refactored MappingTransformer to pave way for splitting into type based classes with
+`get_transform_exprs` methods.
 
 3.8.4 (25/06/2026)
 ------------------
