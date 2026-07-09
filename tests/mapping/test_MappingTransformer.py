@@ -1,4 +1,5 @@
 import narwhals as nw
+import numpy as np
 import pytest
 
 import tests.test_data as d
@@ -89,6 +90,88 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         return_dtypes = {"a": "String", "b": "Int8"}
 
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy=lazy), expected)
+
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        # also check single rows
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, lazy=lazy),
+                df_expected_row,
+            )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_expected_output_null_type(self, library, from_json, lazy):
+        """Test that transform is giving the expected output when type of mappings is null."""
+
+        df_dict = {"a": [np.nan, None, 1]}
+        expected_df_dict = {"a": [None, None, 1]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_df_dict, library=library
+        )
+
+        mapping = {"a": {np.nan: None}}
+
+        transformer = MappingTransformer(mappings=mapping)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        assert_frame_equal_dispatch(_collect_frame(df_transformed, lazy=lazy), expected)
+
+        df = nw.from_native(df)
+        expected = nw.from_native(expected)
+
+        # also check single rows
+        for i in range(len(df)):
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df[[i]].to_native(), lazy=lazy)
+            )
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, lazy=lazy),
+                df_expected_row,
+            )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_null_handling_for_str_return_type(self, library, from_json, lazy):
+        """Test that transform is giving the expected output - for string type with nulls."""
+
+        df_dict = {"a": [np.nan, None, 1]}
+        expected_df_dict = {"a": [None, None, "b"]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_df_dict, library=library
+        )
+
+        mapping = {"a": {1: "b"}}
+
+        transformer = MappingTransformer(mappings=mapping)
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return

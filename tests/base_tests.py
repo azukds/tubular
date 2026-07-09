@@ -534,6 +534,7 @@ class EmptyMappingsFitTransformPassTests:
         df = minimal_dataframe_lookup[self.transformer_name]
         args = minimal_attribute_dict[self.transformer_name]
         args["mappings"] = {}
+        args["return_dtypes"] = {}
         x = uninitialized_transformers[self.transformer_name](**args)
 
         # skip polars test if not narwhalified
