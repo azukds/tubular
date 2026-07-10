@@ -1338,6 +1338,8 @@ class TestTransform(GenericTransformTests):
 
         column_order = nw.from_native(df_transformed).columns
 
+        # drop_original functionality has been deprecated,
+        # so reintroduce original columns to expected df
         df = nw.from_native(df)
         for col in columns:
             if col not in expected:
