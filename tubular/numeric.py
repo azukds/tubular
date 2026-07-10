@@ -1597,7 +1597,7 @@ class InteractionTransformer(BaseNumericTransformer):
                     include_bias=False,
                 )
             else:
-                raise err
+                raise
 
         interaction_combination_colname = [
             [self.columns[col_idx] for col_idx in interaction_combination]
