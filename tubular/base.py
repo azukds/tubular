@@ -187,7 +187,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         return_native: bool, default = True
             Controls whether transformer returns narwhals or native pandas/polars type
 
-        drop_original: Optional[bool], default = None
+        drop_original: bool or None, default=None
             deprecated argument, has no effect.
 
         """
