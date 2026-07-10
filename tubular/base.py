@@ -192,8 +192,9 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         """
         self.verbose = verbose
+        self.drop_original = drop_original
 
-        if drop_original:
+        if self.drop_original:
             warnings.warn(
                 f"{self.classname()}: drop_original argument has "
                 "been deprecated and will have no effect",
