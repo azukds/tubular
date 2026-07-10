@@ -126,6 +126,7 @@ select = [
     "T10",
     "TCH",
     "TID",
+    "TRY",
     "UP",
     "W", # pycodestyle warnings
     "YTT",

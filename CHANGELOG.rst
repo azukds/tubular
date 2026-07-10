@@ -37,6 +37,7 @@ Changed
 being mapped to string type.
 - chore: refactored MappingTransformer to pave way for splitting into type based classes with
 `get_transform_exprs` methods.
+- chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
 
 3.8.4 (25/06/2026)
 ------------------

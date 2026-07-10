@@ -2195,7 +2195,7 @@ class NominalToIntegerTransformer(BaseMappingTransformMixin):
 
         Raises
         ------
-        ValueError: if `start_encoding` is not int
+        TypeError: if `start_encoding` is not int
 
         """
         BaseTransformer.__init__(self, columns=columns, **kwargs)
@@ -2207,7 +2207,7 @@ class NominalToIntegerTransformer(BaseMappingTransformMixin):
 
         if not isinstance(start_encoding, int):
             msg = f"{self.classname()}: start_encoding should be an integer"
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         self.start_encoding = start_encoding
 
