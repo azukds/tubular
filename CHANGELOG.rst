@@ -33,6 +33,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - bugfix: sort dict attributes to ensure consistent json expressions
+- chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
 
 3.8.4 (25/06/2026)
 ------------------
