@@ -20,6 +20,7 @@ from tubular._utils import (
     _convert_series_to_narwhals,
     _is_null,
     _return_narwhals_or_native_dataframe,
+    _sort_dict,
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
@@ -138,7 +139,7 @@ class BaseImputer(BaseTransformer):
         elif isinstance(self, ArbitraryImputer):
             json_dict["init"]["impute_value"] = self.impute_value
 
-        json_dict["fit"]["impute_values_"] = self.impute_values_
+        json_dict["fit"]["impute_values_"] = _sort_dict(self.impute_values_)
 
         return json_dict
 
