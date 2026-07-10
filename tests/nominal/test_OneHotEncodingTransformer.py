@@ -538,8 +538,7 @@ class TestLazyYSupport:
         # Create a LazyFrame for y
         y_lazy = pl.LazyFrame({"b": [1, 2, 3]})
 
-        # Initialise the transformer with drop_original=True
-        transformer = OneHotEncodingTransformer(columns="a", drop_original=True)
+        transformer = OneHotEncodingTransformer(columns="a")
 
         # Fit should accept lazy y and not raise an error
         transformer.fit(df, y_lazy)
