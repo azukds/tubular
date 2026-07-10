@@ -192,17 +192,16 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
         """
         self.verbose = verbose
-        self.drop_original = drop_original
+
+        if drop_original:
+            warnings.warn(
+                f"{self.classname()}: drop_original argument has "
+                "been deprecated and will have no effect",
+                stacklevel=2,
+            )
 
         if self.verbose:
             print("BaseTransformer.__init__() called")
-
-            if self.drop_original:
-                warnings.warn(
-                    f"{self.classname()}: drop_original argument has "
-                    "been deprecated and will have no effect",
-                    stacklevel=2,
-                )
 
         # make sure columns is a single str or list of strs
         if isinstance(columns, str):
