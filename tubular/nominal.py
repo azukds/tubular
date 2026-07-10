@@ -22,6 +22,8 @@ from tubular._utils import (
     _convert_series_to_narwhals,
     _is_null,
     _return_narwhals_or_native_dataframe,
+    _sort_dict,
+    _sort_nested_dict,
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
@@ -221,13 +223,15 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 "unseen_levels_to_rare": self.unseen_levels_to_rare,
             },
         )
-        json_dict["fit"]["non_rare_levels"] = self.non_rare_levels
+        json_dict["fit"]["non_rare_levels"] = _sort_dict(self.non_rare_levels)
         if not self.unseen_levels_to_rare:
             self.check_is_fitted(["training_data_levels"])
-            json_dict["fit"]["training_data_levels"] = self.training_data_levels
+            json_dict["fit"]["training_data_levels"] = _sort_dict(
+                self.training_data_levels
+            )
         if self.record_rare_levels:
             self.check_is_fitted(["rare_levels_record"])
-            json_dict["fit"]["rare_levels_record"] = self.rare_levels_record
+            json_dict["fit"]["rare_levels_record"] = _sort_dict(self.rare_levels_record)
 
         return json_dict
 
@@ -739,27 +743,20 @@ class MeanResponseTransformer(
         )
 
         # make sure mappings dict is sorted for consistent repr
-        mappings = {
-            key: {
-                # careful with sorted to avoid error for nulls
-                value: self.mappings[key][value]
-                for value in sorted(self.mappings[key], key=lambda x: (x is None, x))
-            }
-            for key in sorted(self.mappings)
-        }
+        mappings = _sort_nested_dict(self.mappings)
 
         json_dict["fit"].update(
             {
                 "mappings": mappings,
-                "return_dtypes": self.return_dtypes,
-                "column_to_encoded_columns": self.column_to_encoded_columns,
+                "return_dtypes": _sort_dict(self.return_dtypes),
+                "column_to_encoded_columns": _sort_dict(self.column_to_encoded_columns),
                 "encoded_columns": self.encoded_columns,
             },
         )
 
         if self.unseen_level_handling:
             self.check_is_fitted(["unseen_levels_encoding_dict"])
-            json_dict["fit"]["unseen_levels_encoding_dict"] = (
+            json_dict["fit"]["unseen_levels_encoding_dict"] = _sort_dict(
                 self.unseen_levels_encoding_dict
             )
 
@@ -1574,8 +1571,8 @@ class OneHotEncodingTransformer(
         )
         json_dict["fit"].update(
             {
-                "categories_": self.categories_,
-                "new_feature_names_": self.new_feature_names_,
+                "categories_": _sort_dict(self.categories_),
+                "new_feature_names_": _sort_dict(self.new_feature_names_),
             },
         )
 
