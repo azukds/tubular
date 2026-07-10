@@ -81,6 +81,23 @@ class GenericInitTests:
                 **minimal_attribute_dict[self.transformer_name],
             )
 
+    def test_drop_original_warning(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test warning is raised if deprecated drop_original argument is passed."""
+
+        with pytest.warns(
+            UserWarning,
+            match=f"{self.transformer_name}: drop_original argument has "
+            "been deprecated and will have no effect",
+        ):
+            uninitialized_transformers[self.transformer_name](
+                drop_original=True,
+                **minimal_attribute_dict[self.transformer_name],
+            )
+
 
 class ColumnStrListInitTests(GenericInitTests):
     """
