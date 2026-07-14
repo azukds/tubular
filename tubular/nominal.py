@@ -241,12 +241,13 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        schema: nw.Schema
-            schema of input data
+        schema : nw.Schema
+            Schema of input data.
 
         Raises
         ------
-        TypeError: if columns are not str-like
+        TypeError
+            If columns are not str-like.
 
         Examples
         --------
@@ -281,17 +282,16 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         str_like_columns = [
             col
             for col in self.columns
-            if schema[col] in {nw.String, nw.Categorical, nw.Object}
+            if isinstance(schema[col], (nw.String, nw.Categorical, nw.Enum, nw.Object))
         ]
 
-        non_str_like_columns = set(self.columns).difference(
-            set(
-                str_like_columns,
-            ),
-        )
+        non_str_like_columns = set(self.columns).difference(set(str_like_columns))
 
         if len(non_str_like_columns) != 0:
-            msg = f"{self.classname()}: transformer must run on str-like columns, but got non str-like {non_str_like_columns}"
+            msg = (
+                f"{self.classname()}: transformer must run on str-like columns, but "
+                f"got non str-like {non_str_like_columns}"
+            )
             raise TypeError(msg)
 
     @block_from_json
@@ -488,7 +488,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 nw.col(col).cast(
                     nw.String,
                 )
-                if schema[col] in {nw.Categorical, nw.Enum}
+                if isinstance(schema[col], (nw.Categorical, nw.Enum))
                 else nw.col(col)
             )
 
@@ -502,7 +502,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 transform_expression.cast(
                     nw.Enum(self.non_rare_levels[col] + [self.rare_level_name]),
                 )
-                if (schema[col] in {nw.Categorical, nw.Enum})
+                if isinstance(schema[col], (nw.Categorical, nw.Enum))
                 else transform_expression
             )
 

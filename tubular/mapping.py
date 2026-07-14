@@ -357,7 +357,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         schema = X.collect_schema()
         mapping_exprs = {
             col: nw.col(col).cast(nw.String)
-            if schema[col] in {nw.Categorical, nw.Enum}
+            if isinstance(schema[col], (nw.Categorical, nw.Enum))
             else nw.col(col)
             for col in self.mappings
         }

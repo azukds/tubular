@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- bugfix: use isinstance for schema type membership checks and allow enum columns for GroupRareLevelsTransformer
 - bugfix: sort dict attributes to ensure consistent json expressions
 - chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
 
