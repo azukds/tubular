@@ -281,7 +281,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         str_like_columns = [
             col
             for col in self.columns
-            if schema[col] in {nw.String, nw.Categorical, nw.Object}
+            if isinstance(schema[col], (nw.String, nw.Categorical, nw.Object))
         ]
 
         non_str_like_columns = set(self.columns).difference(
@@ -488,7 +488,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 nw.col(col).cast(
                     nw.String,
                 )
-                if schema[col] in {nw.Categorical, nw.Enum}
+                if isinstance(schema[col], (nw.Categorical, nw.Enum))
                 else nw.col(col)
             )
 
@@ -502,7 +502,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 transform_expression.cast(
                     nw.Enum(self.non_rare_levels[col] + [self.rare_level_name]),
                 )
-                if (schema[col] in {nw.Categorical, nw.Enum})
+                if isinstance(schema[col], (nw.Categorical, nw.Enum))
                 else transform_expression
             )
 
