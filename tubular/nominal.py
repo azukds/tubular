@@ -241,12 +241,13 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Parameters
         ----------
-        schema: nw.Schema
-            schema of input data
+        schema : nw.Schema
+            Schema of input data.
 
         Raises
         ------
-        TypeError: if columns are not str-like
+        TypeError
+            If columns are not str-like.
 
         Examples
         --------
@@ -281,17 +282,16 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         str_like_columns = [
             col
             for col in self.columns
-            if isinstance(schema[col], (nw.String, nw.Categorical, nw.Object))
+            if isinstance(schema[col], (nw.String, nw.Categorical, nw.Enum, nw.Object))
         ]
 
-        non_str_like_columns = set(self.columns).difference(
-            set(
-                str_like_columns,
-            ),
-        )
+        non_str_like_columns = set(self.columns).difference(set(str_like_columns))
 
         if len(non_str_like_columns) != 0:
-            msg = f"{self.classname()}: transformer must run on str-like columns, but got non str-like {non_str_like_columns}"
+            msg = (
+                f"{self.classname()}: transformer must run on str-like columns, but "
+                f"got non str-like {non_str_like_columns}"
+            )
             raise TypeError(msg)
 
     @block_from_json
