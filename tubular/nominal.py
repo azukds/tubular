@@ -29,7 +29,7 @@ from tubular._utils import (
 from tubular.base import BaseTransformer, register
 from tubular.functions.nominal import numerically_encode_columns, one_hot_encode_columns
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
-from tubular.mixins import DropOriginalMixin, WeightColumnMixin
+from tubular.mixins import WeightColumnMixin
 from tubular.types import (
     DataFrame,
     FloatBetweenZeroOne,
@@ -517,7 +517,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 class MeanResponseTransformer(
     BaseTransformer,
     WeightColumnMixin,
-    DropOriginalMixin,
 ):
     """Convert categorical variables to numeric by mapping levels to the mean response for level.
 
@@ -611,7 +610,7 @@ class MeanResponseTransformer(
 
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 1, 'level': None, 'unseen_level_handling': 'mean', 'return_type': 'Float32', 'drop_original': True}, 'fit': {'is_fitted_': True, 'mappings': {'a': {'x': 0.25, 'y': 0.75}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a'], 'unseen_levels_encoding_dict': {'a': 0.5}}}
+    {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 1, 'level': None, 'unseen_level_handling': 'mean', 'return_type': 'Float32'}, 'fit': {'is_fitted_': True, 'mappings': {'a': {'x': 0.25, 'y': 0.75}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a'], 'unseen_levels_encoding_dict': {'a': 0.5}}}
     >>> MeanResponseTransformer.from_json(json_dump)
     MeanResponseTransformer(columns=['a'], prior=1, unseen_level_handling='mean')
 
@@ -639,7 +638,6 @@ class MeanResponseTransformer(
         | Literal["mean", "median", "min", "max"]
         | None = None,
         return_type: Literal["Float32", "Float64"] = "Float32",
-        drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -672,9 +670,6 @@ class MeanResponseTransformer(
         return_type: Literal['float32', 'float64']
             What type to cast return column as, consider exploring float32 to save memory. Defaults to float32.
 
-        drop_original: bool
-            controls whether original columns are dropped after encoded columns created.
-
         **kwargs
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
@@ -684,7 +679,6 @@ class MeanResponseTransformer(
         self.prior = prior
         self.unseen_level_handling = unseen_level_handling
         self.return_type = return_type
-        self.drop_original = drop_original
 
         self.MULTI_LEVEL = False
 
@@ -722,7 +716,7 @@ class MeanResponseTransformer(
         >>> _ = transformer.fit(test_df[["a"]], test_df["b"])
 
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 0, 'level': None, 'unseen_level_handling': None, 'return_type': 'Float32', 'drop_original': True}, 'fit': {'is_fitted_': True, 'mappings': {'a': {'x': 0.0, 'y': 1.0}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a']}}
+        {'tubular_version': ..., 'classname': 'MeanResponseTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'weights_column': None, 'prior': 0, 'level': None, 'unseen_level_handling': None, 'return_type': 'Float32'}, 'fit': {'is_fitted_': True, 'mappings': {'a': {'x': 0.0, 'y': 1.0}}, 'return_dtypes': {'a': 'Float32'}, 'column_to_encoded_columns': {'a': ['a']}, 'encoded_columns': ['a']}}
 
         ```
 
@@ -745,7 +739,6 @@ class MeanResponseTransformer(
                 "level": self.level,
                 "unseen_level_handling": self.unseen_level_handling,
                 "return_type": self.return_type,
-                "drop_original": self.drop_original,
             },
         )
 
@@ -1427,23 +1420,11 @@ class MeanResponseTransformer(
             else X
         )
 
-        columns_to_drop = [
-            col for col in self.columns if col not in self.encoded_columns
-        ]
-
-        X = DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            columns_to_drop,
-            return_native=False,
-        )
-
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 @register
 class OneHotEncodingTransformer(
-    DropOriginalMixin,
     BaseTransformer,
 ):
     """Transformer to convert categorical variables into dummy columns.
@@ -1452,9 +1433,6 @@ class OneHotEncodingTransformer(
     ----------
     separator : str
         Separator used in naming for dummy columns.
-
-    drop_original : bool
-        Should original columns be dropped after creating dummy fields?
 
     built_from_json: bool
         indicates if transformer was reconstructed from json, which limits it's supported
@@ -1490,7 +1468,7 @@ class OneHotEncodingTransformer(
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'is_fitted_': True, 'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+    {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_'}, 'fit': {'is_fitted_': True, 'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
 
     >>> OneHotEncodingTransformer.from_json(json_dump)
     OneHotEncodingTransformer(columns=['a'])
@@ -1515,7 +1493,6 @@ class OneHotEncodingTransformer(
         columns: str | ListOfStrs | None = None,
         wanted_values: dict[str, ListOfStrs] | None = None,
         separator: str = "_",
-        drop_original: bool = False,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -1532,9 +1509,6 @@ class OneHotEncodingTransformer(
         separator : str
             Used to create dummy column names, the name will take
             the format [categorical feature][separator][category level]
-
-        drop_original : bool, default = False
-            Should original columns be dropped after creating dummy fields?
 
         **kwargs
             Arbitrary keyword arguments passed onto sklearn OneHotEncoder.init method.
@@ -1555,7 +1529,6 @@ class OneHotEncodingTransformer(
             raise ValueError(msg)
 
         self.wanted_values = wanted_values
-        self.drop_original = drop_original
         self.separator = separator
 
     @block_from_json
@@ -1581,7 +1554,7 @@ class OneHotEncodingTransformer(
 
         >>> # version will vary for local vs CI, so use ... as generic match
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_', 'drop_original': False}, 'fit': {'is_fitted_': True, 'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
+        {'tubular_version': ..., 'classname': 'OneHotEncodingTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'wanted_values': None, 'separator': '_'}, 'fit': {'is_fitted_': True, 'categories_': {'a': ['x', 'y']}, 'new_feature_names_': {'a': ['a_x', 'a_y']}}}
 
         ```
 
@@ -1594,7 +1567,6 @@ class OneHotEncodingTransformer(
             {
                 "wanted_values": self.wanted_values,
                 "separator": self.separator,
-                "drop_original": self.drop_original,
             },
         )
         json_dict["fit"].update(
@@ -1827,9 +1799,7 @@ class OneHotEncodingTransformer(
         Returns
         -------
         X_transformed : DataFrame
-            Transformed input X with dummy columns derived from categorical columns added. If drop_original
-            = True then the original categorical columns that the dummies are created from will not be in
-            the output X.
+            Transformed input X with dummy columns derived from categorical columns added.
 
         Examples
         --------
@@ -1869,14 +1839,6 @@ class OneHotEncodingTransformer(
         transform_exprs = self.get_transform_exprs()
 
         X = X.with_columns(*transform_exprs) if transform_exprs else X
-
-        # Drop original columns if self.drop_original is True
-        X = DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-            return_native=False,
-        )
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

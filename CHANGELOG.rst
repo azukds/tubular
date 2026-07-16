@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
+- chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 - bugfix: sort dict attributes to ensure consistent json expressions
 - chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
 

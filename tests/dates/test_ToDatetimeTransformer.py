@@ -5,7 +5,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -25,7 +24,6 @@ from tubular.dates import ToDatetimeTransformer
 
 class TestInit(
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""

@@ -6,8 +6,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -22,7 +20,6 @@ from tubular.dates import SeriesDtMethodTransformer
 
 class TestInit(
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     NewColumnNameInitMixintests,
     EmptyColumnsFailTests,
 ):
@@ -88,7 +85,6 @@ class TestInit(
 
 class TestTransform(
     DatetimeMixinTransformTests,
-    DropOriginalTransformMixinTests,
     GenericTransformTests,
 ):
     """Tests for SeriesDtMethodTransformer.transform()."""

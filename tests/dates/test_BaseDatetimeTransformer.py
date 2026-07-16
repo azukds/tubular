@@ -7,7 +7,6 @@ import pytest
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     GenericFitTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -90,7 +89,6 @@ class DatetimeMixinTransformTests:
 
 class TestInit(
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""

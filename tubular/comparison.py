@@ -22,7 +22,6 @@ from tubular.functions.comparison import (
     apply_when_then_otherwise,
     compare_two_columns,
 )
-from tubular.mixins import DropOriginalMixin
 from tubular.types import (
     DataFrame,
     ListOfStrs,
@@ -457,7 +456,6 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     """,
 )
 class EqualityChecker(
-    DropOriginalMixin,
     BaseTransformer,
 ):
     """Transformer to check if two columns are equal.
@@ -501,7 +499,6 @@ class EqualityChecker(
         self,
         columns: ListOfTwoStrs,
         new_column_name: str,
-        drop_original: bool = False,
         **kwargs: bool | None,
     ) -> None:
         """Initialise class instance.
@@ -514,16 +511,12 @@ class EqualityChecker(
         new_column_name: string
             string containing the name of the new column.
 
-        drop_original: boolean = False
-            boolean representing dropping the input columns from X after checks.
-
         **kwargs:
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
 
         """
         super().__init__(columns=columns, **kwargs)
 
-        self.drop_original = drop_original
         self.new_column_name = new_column_name
 
     def get_feature_names_out(self) -> list[str]:
@@ -569,9 +562,4 @@ class EqualityChecker(
 
         X[self.new_column_name] = X[self.columns[0]] == X[self.columns[1]]
 
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-        )
+        return X

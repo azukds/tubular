@@ -81,6 +81,23 @@ class GenericInitTests:
                 **minimal_attribute_dict[self.transformer_name],
             )
 
+    def test_drop_original_warning(
+        self,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+    ):
+        """Test warning is raised if deprecated drop_original argument is passed."""
+
+        with pytest.warns(
+            UserWarning,
+            match=f"{self.transformer_name}: drop_original argument has "
+            "been deprecated and will have no effect",
+        ):
+            uninitialized_transformers[self.transformer_name](
+                drop_original=True,
+                **minimal_attribute_dict[self.transformer_name],
+            )
+
 
 class ColumnStrListInitTests(GenericInitTests):
     """
@@ -129,29 +146,6 @@ class ColumnStrListInitTests(GenericInitTests):
 
         args = minimal_attribute_dict[self.transformer_name].copy()
         args["columns"] = non_string_or_list
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](**args)
-
-
-class DropOriginalInitMixinTests:
-    """
-    Tests for BaseTransformer.init() behaviour specific to when a transformer accepts a "drop_original" column.
-    Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
-    """
-
-    @pytest.mark.parametrize("drop_original_column", [0, "a", ["a"], {"a": 10}, None])
-    def test_drop_column_arg_errors(
-        self,
-        uninitialized_transformers,
-        minimal_attribute_dict,
-        drop_original_column,
-    ):
-        """Test that appropriate errors are throwm for non boolean arg."""
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["drop_original"] = drop_original_column
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
@@ -1216,100 +1210,6 @@ class ReturnNativeTests:
         output2 = x.transform(df)
 
         assert_frame_equal_dispatch(output2, output.to_native())
-
-
-class DropOriginalTransformMixinTests:
-    """
-    Transform tests for transformers that take a "drop_original" argument
-    Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
-    """
-
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=["minimal_dataframe_lookup"],
-    )
-    def test_original_columns_dropped_when_specified(
-        self,
-        initialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test transformer drops original columns when specified."""
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-
-        x = initialized_transformers[self.transformer_name]
-
-        # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        x.drop_original = True
-
-        x.fit(df)
-
-        df_transformed = x.transform(df)
-        remaining_cols = df_transformed.columns
-        for col in x.columns:
-            assert col not in remaining_cols, "original columns not dropped"
-
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=["minimal_dataframe_lookup"],
-    )
-    def test_original_columns_kept_when_specified(
-        self,
-        initialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test transformer keeps original columns when specified."""
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-
-        x = initialized_transformers[self.transformer_name]
-
-        # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        x.drop_original = False
-
-        x.fit(df)
-
-        df_transformed = x.transform(df)
-        remaining_cols = df_transformed.columns
-        for col in x.columns:
-            assert col in remaining_cols, "original columns not kept"
-
-    @pytest.mark.parametrize(
-        "minimal_dataframe_lookup",
-        ["pandas", "polars"],
-        indirect=["minimal_dataframe_lookup"],
-    )
-    def test_other_columns_not_modified(
-        self,
-        initialized_transformers,
-        minimal_dataframe_lookup,
-    ):
-        """Test transformer does not modify unspecified columns."""
-
-        df = minimal_dataframe_lookup[self.transformer_name]
-
-        x = initialized_transformers[self.transformer_name]
-
-        # skip polars test if not narwhalified
-        if not x.polars_compatible and isinstance(df, pl.DataFrame):
-            return
-
-        other_columns = list(set(df.columns) - set(x.columns))
-        x.drop_original = True
-
-        x.fit(df)
-
-        df_transformed = x.transform(df)
-
-        assert_frame_equal_dispatch(df[other_columns], df_transformed[other_columns])
 
 
 class ColumnsCheckTests:
