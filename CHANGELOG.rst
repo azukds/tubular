@@ -27,7 +27,13 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.9.0 (unreleased)
+3.10.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- placeholder
+
+3.9.0 (17/07/2026)
 ------------------
 
 Changed
@@ -35,6 +41,7 @@ Changed
 - chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 - bugfix: sort dict attributes to ensure consistent json expressions
 - chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
+- bugfix: added register decorator to DatetimeComponentExtractor
 
 3.8.4 (25/06/2026)
 ------------------
