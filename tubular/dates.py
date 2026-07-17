@@ -1441,6 +1441,7 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class DatetimeComponentExtractor(BaseDatetimeTransformer):
     """Transformer to extract numeric datetime components.
 
