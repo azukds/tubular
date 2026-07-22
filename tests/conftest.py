@@ -143,9 +143,13 @@ def minimal_attribute_dict():
             "new_column_name": "e",
             "columns": ["a", "c", "b"],
         },
-        "_BooleanImputer": {
+        "BooleanImputer": {
             "columns": ["b"],
             "impute_value": True,
+        },
+        "CategoricalImputer": {
+            "columns": ["b"],
+            "impute_value": "bla",
         },
         "CappingTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
@@ -244,7 +248,7 @@ def minimal_attribute_dict():
         "NullIndicator": {
             "columns": ["a"],
         },
-        "_NumberImputer": {
+        "NumberImputer": {
             "columns": ["b"],
             "impute_value": 1,
         },
@@ -296,14 +300,14 @@ def minimal_attribute_dict():
             "new_column_name": "c",
             "separator": "-",
         },
+        "StringImputer": {
+            "columns": ["b"],
+            "impute_value": "missing",
+        },
         "StringContainsTransformer": {
             "columns": ["b"],
             "reference": "c",
             "reference_as_column": False,
-        },
-        "_StringImputer": {
-            "columns": ["b"],
-            "impute_value": "missing",
         },
         "ToDatetimeTransformer": {
             "columns": "a",

@@ -55,7 +55,7 @@ def create_expected_df_3(library="pandas"):
     "expected df for transform test."
     expected_df_dict = {
         "a": [1, 2, 3, 4, 5, 6, None],
-        "b": ["a", "b", "c", "d", "e", "f", "g"],
+        "b": ["a", "b", "c", "d", "e", "f", None],
         "c": ["a", "b", "c", "d", "e", "f", "g"],
     }
 
@@ -126,7 +126,7 @@ class TestTransform(
         if isinstance(impute_value, str):
             col_dtype = getattr(nw, col_type)
             msg = f"""
-                ArbitraryImputer: transformer can only handle String/Categorical/Enum/Unknown type columns
+                ArbitraryImputer: transformer can only handle String/Unknown type columns
                 but got columns with types {[col_dtype]}
                 """
 
@@ -205,12 +205,6 @@ class TestTransform(
         )
 
         expected_dtype = df_nw[column].dtype
-
-        native_namespace = nw.get_native_namespace(df_nw).__name__
-
-        # for pandas categorical are converted to enum
-        if col_type == "Categorical" and native_namespace == "pandas":
-            expected_dtype = nw.Enum
 
         actual_dtype = df_transformed_nw[column].dtype
 
@@ -394,7 +388,7 @@ class TestTransform(
         df2 = d.create_df_2(library=library)
 
         args = minimal_attribute_dict[self.transformer_name]
-        args["columns"] = ["b", "c"]
+        args["columns"] = ["c"]
         args["impute_value"] = "g"
 
         # Initialize the transformer
@@ -473,7 +467,7 @@ class TestTransform(
 
         transformer.impute_values_ = impute_values_dict
         transformer.impute_value = "z"
-        transformer.columns = ["b", "c"]
+        transformer.columns = ["c"]
 
         transformer = _handle_from_json(transformer, from_json)
 
