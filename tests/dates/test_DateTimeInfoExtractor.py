@@ -7,7 +7,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
@@ -24,7 +23,8 @@ from tests.utils import (
     assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
-from tubular.dates import DatetimeInfoExtractor, DatetimeInfoOptions
+from tubular.dates import DatetimeInfoExtractor
+from tubular.functions.dates import DatetimeInfoOptions
 
 
 @pytest.fixture
@@ -198,7 +198,6 @@ class TestInit(
 class TestTransform(
     GenericTransformTests,
     DatetimeMixinTransformTests,
-    DropOriginalTransformMixinTests,
 ):
     "tests for DatetimeInfoExtractor.transform"
 

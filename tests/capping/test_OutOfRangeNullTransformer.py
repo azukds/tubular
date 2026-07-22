@@ -5,6 +5,7 @@ import pytest
 import tests.test_data as d
 from tests.base_tests import (
     EmptyCappingsFitTransformPassTests,
+    GenericTransformTests,
     OtherBaseBehaviourTests,
     OtherBaseBehaviourTestsNumeric,
 )
@@ -94,7 +95,7 @@ class TestFit(GenericCappingFitTests):
         )
 
 
-class TestTransform(GenericCappingTransformTests):
+class TestTransform(GenericCappingTransformTests, GenericTransformTests):
     """Tests for OutOfRangeNullTransformer.transform()."""
 
     @classmethod
@@ -177,7 +178,7 @@ class TestLazyYSupport:
 
         expected = pl.DataFrame(
             {
-                "a": [1, 2, 3, 4, None],
+                "a": [1.0, 2.0, 3.0, 4.0, None],
                 "b": [1.0, 2.0, 3.0, 4.0, None],
             }
         )

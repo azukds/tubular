@@ -15,6 +15,8 @@ from typing_extensions import deprecated
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    _sort_dict,
+    _sort_nested_dict,
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
@@ -178,8 +180,14 @@ class BaseMappingTransformer(BaseTransformer):
 
         # replace columns arg with mappings arg
         del json_dict["init"]["columns"]
-        json_dict["init"]["mappings"] = self.mappings
-        json_dict["init"]["return_dtypes"] = self.return_dtypes
+
+        # make sure mappings dict is sorted for consistent repr
+        mappings = _sort_nested_dict(self.mappings)
+
+        return_dtypes = _sort_dict(self.return_dtypes)
+
+        json_dict["init"]["mappings"] = mappings
+        json_dict["init"]["return_dtypes"] = return_dtypes
 
         return json_dict
 
@@ -477,7 +485,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'N': 0, 'Y': 1}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
 
     >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},

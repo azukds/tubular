@@ -20,6 +20,7 @@ from tubular._utils import (
     _convert_series_to_narwhals,
     _is_null,
     _return_narwhals_or_native_dataframe,
+    _sort_dict,
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
@@ -144,7 +145,7 @@ class BaseImputer(BaseTransformer):
         elif isinstance(self, ArbitraryImputer):
             json_dict["init"]["impute_value"] = self.impute_value
 
-        json_dict["fit"]["impute_values_"] = self.impute_values_
+        json_dict["fit"]["impute_values_"] = _sort_dict(self.impute_values_)
 
         return json_dict
 
@@ -350,7 +351,7 @@ class NumberImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if schema[col] not in {*NumericTypes, nw.Unknown}
+            if not isinstance(schema[col], (*NumericTypes, nw.Unknown))
         ]
 
         if bad_types:
@@ -499,7 +500,7 @@ class CategoricalImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if schema[col] not in {nw.Categorical, nw.Enum, nw.Unknown}
+            if not isinstance(schema[col], (nw.Categorical, nw.Enum, nw.Unknown))
         ]
 
         if bad_types:
@@ -632,7 +633,7 @@ class StringImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if schema[col] not in {nw.String, nw.Unknown}
+            if not isinstance(schema[col], (nw.String, nw.Unknown))
         ]
 
         if bad_types:
@@ -780,7 +781,9 @@ class BooleanImputer(BaseImputer):
             allowed_types_str += "/Object"
 
         bad_types = [
-            schema[col] for col in self.columns if schema[col] not in allowed_types
+            schema[col]
+            for col in self.columns
+            if not isinstance(schema[col], allowed_types)
         ]
 
         if bad_types:
@@ -1724,7 +1727,11 @@ class ArbitraryImputer(BaseImputer):
         X : DataFrame
             Transformed input X with nulls imputed with the specified impute_value, for the specified columns.
 
-        Example:
+        Raises
+        ------
+            TypeError: if transform attempts to call on mixed type columns
+
+        Examples
         --------
         ```pycon
         >>> import polars as pl
@@ -1761,7 +1768,8 @@ class ArbitraryImputer(BaseImputer):
 
         elif isinstance(self.impute_value, str):
             if all(
-                schema[col] not in [nw.Categorical, nw.Enum] for col in self.columns
+                not isinstance(schema[col], (nw.Categorical, nw.Enum))
+                for col in self.columns
             ):
                 imp = StringImputer(
                     columns=self.columns,
@@ -1769,7 +1777,10 @@ class ArbitraryImputer(BaseImputer):
                     return_native=self.return_native,
                 )
 
-            elif all(schema[col] in [nw.Categorical, nw.Enum] for col in self.columns):
+            elif all(
+                isinstance(schema[col], (nw.Categorical, nw.Enum))
+                for col in self.columns
+            ):
                 imp = CategoricalImputer(
                     columns=self.columns,
                     impute_value=self.impute_value,
@@ -1777,11 +1788,10 @@ class ArbitraryImputer(BaseImputer):
                 )
 
             else:
-                raise TypeError(
-                    f"""{self.classname()}: transformer cannot be used on
+                msg = f"""{self.classname()}: transformer cannot be used on
                     mixed str/categorical type columns, setup individual
                     transformers for string and categoricals separately."""
-                )
+                raise msg
 
         else:
             imp = BooleanImputer(

@@ -17,7 +17,7 @@ from tests.test_data import (
     create_when_then_otherwise_test_df,
 )
 from tubular import base
-from tubular.comparison import ConditionEnum
+from tubular.functions.comparison import ConditionEnum
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -181,7 +181,6 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "new_column_names": "f",
             "pd_method_name": "sum",
-            "drop_original": True,
         },
         "DateDifferenceTransformer": {
             "columns": ["a", "b"],
@@ -203,10 +202,14 @@ def minimal_attribute_dict():
             "method": ["sin"],
             "units": "month",
         },
+        "ExtractStringComponentsTransformer": {
+            "columns": ["b"],
+            "by": "@",
+            "return_n_components": 1,
+        },
         "EqualityChecker": {
             "columns": ["a", "b"],
             "new_column_name": "c",
-            "drop_original": True,
         },
         "GroupRareLevelsTransformer": {
             "columns": ["b"],
@@ -255,7 +258,6 @@ def minimal_attribute_dict():
         },
         "OneHotEncodingTransformer": {
             "columns": ["a", "b"],
-            "drop_original": True,
             "separator": "-",
         },
         "OrdinalEncoderTransformer": {
@@ -302,6 +304,11 @@ def minimal_attribute_dict():
             "columns": ["b"],
             "impute_value": "missing",
         },
+        "StringContainsTransformer": {
+            "columns": ["b"],
+            "reference": "c",
+            "reference_as_column": False,
+        },
         "ToDatetimeTransformer": {
             "columns": "a",
             "time_format": "%d/%m/%Y",
@@ -314,18 +321,15 @@ def minimal_attribute_dict():
         "BaseAggregationTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
-            "drop_original": False,
         },
         "AggregateRowsOverColumnTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
             "key": "c",
-            "drop_original": False,
         },
         "AggregateColumnsOverRowTransformer": {
             "columns": ["a", "b"],
             "aggregations": ["min", "max"],
-            "drop_original": False,
         },
         "DifferenceTransformer": {
             "columns": ["a", "b"],
@@ -411,6 +415,14 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
+
+    pyarrow_transformers = ["ExtractStringComponentsTransformer"]
+
+    if library == "pandas":
+        for transformer in pyarrow_transformers:
+            min_df_dict[transformer] = min_df_dict[transformer].convert_dtypes(
+                dtype_backend="pyarrow"
+            )
 
     return min_df_dict
 

@@ -1250,18 +1250,21 @@ class TestTransform(GenericTransformTests):
             expected = expected.with_columns(
                 nw.col(col).cast(getattr(nw, x.return_type)),
             )
-        expected = nw.to_native(expected)
 
         column_order = nw.from_native(df_transformed).columns
 
+        df = nw.from_native(df)
+        for col in columns:
+            if col not in expected:
+                expected = expected.with_columns(df[col] for col in columns)
+
         assert_frame_equal_dispatch(
             df_transformed,
-            expected[column_order],
+            expected[column_order].to_native(),
         )
 
         # also test single row transform
         df = nw.from_native(df)
-        expected = nw.from_native(expected)
 
         for i in range(len(df)):
             df_transformed_row = x.transform(
@@ -1334,6 +1337,13 @@ class TestTransform(GenericTransformTests):
             )
 
         column_order = nw.from_native(df_transformed).columns
+
+        # drop_original functionality has been deprecated,
+        # so reintroduce original columns to expected df
+        df = nw.from_native(df)
+        for col in columns:
+            if col not in expected:
+                expected = expected.with_columns(df[col] for col in columns)
 
         assert_frame_equal_dispatch(
             df_transformed,
@@ -1446,6 +1456,28 @@ class TestTransform(GenericTransformTests):
             "Mean response values not changed in transform"
         )
 
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_works_for_integer_learnt_values(self, library, from_json, lazy):
+        """Test that type hints allow integer learnt values."""
+
+        df = create_MeanResponseTransformer_test_df(library=library)
+
+        x = MeanResponseTransformer(columns="b")
+
+        if _check_if_skip_test(x, df, lazy=lazy, from_json=from_json):
+            return
+
+        x.mappings = {"b": {"a": 1}}
+        x.return_dtypes = {"b": "Float64"}
+        x.column_to_encoded_columns = {"b": ["b"]}
+        x.encoded_columns = ["b"]
+        x.unseen_levels_encoding_dict = {"b": 1}
+        x.unseen_level_handling = "median"
+
+        x.transform(_convert_to_lazy(df, lazy=lazy))
+
 
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
@@ -1481,6 +1513,17 @@ class TestOtherBaseBehaviour(
         # Now transform should raise NotFittedError
         with pytest.raises(NotFittedError):
             pipeline.transform(df)
+
+    def test_to_json_works_with_nulls(self):
+        """Test that to_json does not error with null mapping values"""
+
+        x = MeanResponseTransformer(columns="a")
+        x.mappings = {"a": {"a": None, None: 1}}
+        x.return_dtypes = {"a": "String"}
+        x.column_to_encoded_columns = {"a": ["a"]}
+        x.encoded_columns = ["a"]
+
+        x.to_json()
 
 
 class TestLazyYSupport:
