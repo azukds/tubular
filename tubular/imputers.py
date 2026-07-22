@@ -24,6 +24,7 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.functions.imputers import indicate_nulls_for_columns
 from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, LazyFrame, ListOfStrs, NumericTypes, Series
 
@@ -1486,6 +1487,18 @@ class NullIndicator(BaseTransformer):
         super().__init__(columns=columns, **kwargs)
         self.is_fitted_ = True  # does not fit
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return indicate_nulls_for_columns(
+            columns=self.columns,
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Create new columns indicating the position of null values for each variable in self.columns.
@@ -1526,9 +1539,9 @@ class NullIndicator(BaseTransformer):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        X = X.with_columns(
-            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
-        )
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return X if not self.return_native else X.to_native()
 
