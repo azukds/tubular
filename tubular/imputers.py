@@ -24,7 +24,7 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.functions.imputers import indicate_nulls_for_columns
+from tubular.functions.imputers import impute_numeric_nulls, indicate_nulls_for_columns
 from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, LazyFrame, ListOfStrs, NumericTypes, Series
 
@@ -144,6 +144,7 @@ class BaseImputer(BaseTransformer):
 
         return json_dict
 
+    # TODO: Would be deleted once ArbitraryImputer has a get_transform_exprs method
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
         """Update input expressions to include imputation.
 
@@ -180,6 +181,18 @@ class BaseImputer(BaseTransformer):
         if failed_columns:
             msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
             raise ValueError(msg)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return impute_numeric_nulls(
+            columns=self.columns, impute_values=self.impute_values_
+        )
 
     @beartype
     def transform(
@@ -237,12 +250,9 @@ class BaseImputer(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        transform_expressions = {
-            col: self._generate_imputation_expressions(nw.col(col), col)
-            for col in self.columns
-        }
+        transform_expressions = self.get_transform_exprs()
 
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+        X = X.with_columns(*transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

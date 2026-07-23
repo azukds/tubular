@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - added get_transform_exprs methods to NullIndicator transformer `#750 <https://github.com/azukds/tubular/issues/750>_`
+- added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
 - placeholder
 
 3.9.0 (17/07/2026)
