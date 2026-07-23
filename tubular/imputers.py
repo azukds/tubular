@@ -144,6 +144,7 @@ class BaseImputer(BaseTransformer):
 
         return json_dict
 
+    # TODO: Would be deleted once ArbitraryImputer has a get_transform_exprs method
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
         """Update input expressions to include imputation.
 

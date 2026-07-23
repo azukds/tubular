@@ -31,8 +31,7 @@ def impute_numeric_nulls(
     columns: list
         Columns to impute.
     impute_values: dict
-        Mapping of column names to imputation values. If a value is None,
-        the original column expression is returned unchanged.
+        Mapping of column names to imputation values.
 
     Returns
     -------
