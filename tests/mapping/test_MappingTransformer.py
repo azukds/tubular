@@ -1,3 +1,5 @@
+import json
+
 import narwhals as nw
 import pytest
 
@@ -71,6 +73,18 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "MappingTransformer"
+
+    def test_json_round_trip_preserves_numeric_mapping_keys(self):
+        """Test numeric mapping keys survive a real JSON round trip."""
+        transformer = MappingTransformer(
+            mappings={"a": {-999: 0}},
+            return_dtypes={"a": "Int64"},
+        )
+
+        serialized = json.loads(json.dumps(transformer.to_json()))
+        restored = MappingTransformer.from_json(serialized)
+
+        assert restored.mappings == {"a": {-999: 0}}
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])

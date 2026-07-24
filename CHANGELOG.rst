@@ -31,6 +31,7 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
+- bugfix: preserve numeric mapping keys across JSON round trips `#757 <https://github.com/azukds/tubular/issues/757>`_
 - added get_transform_exprs methods to NullIndicator transformer `#750 <https://github.com/azukds/tubular/issues/750>_`
 - added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
 - placeholder

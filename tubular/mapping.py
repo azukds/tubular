@@ -171,7 +171,7 @@ class BaseMappingTransformer(BaseTransformer):
         >>> mapping_transformer = BaseMappingTransformer(mappings={"a": {"x": 1}})
 
         >>> mapping_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {'is_fitted_': True}}
+        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': [('x', 1)]}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -186,10 +186,41 @@ class BaseMappingTransformer(BaseTransformer):
 
         return_dtypes = _sort_dict(self.return_dtypes)
 
-        json_dict["init"]["mappings"] = mappings
+        json_dict["init"]["mappings"] = {
+            column: list(column_mappings.items())
+            for column, column_mappings in mappings.items()
+        }
         json_dict["init"]["return_dtypes"] = return_dtypes
 
         return json_dict
+
+    @classmethod
+    def from_json(
+        cls,  # pyright: ignore[reportGeneralTypeIssues]
+        json: dict[str, Any],
+    ) -> BaseTransformer:
+        """Rebuild a mapping transformer from its JSON-compatible dictionary.
+
+        Returns
+        -------
+        BaseTransformer
+            Reconstructed mapping transformer ready for transform.
+
+        """
+        serialized_mappings = json["init"]["mappings"]
+        if all(isinstance(items, list) for items in serialized_mappings.values()):
+            json = {
+                **json,
+                "init": {
+                    **json["init"],
+                    "mappings": {
+                        column: dict(items)
+                        for column, items in serialized_mappings.items()
+                    },
+                },
+            }
+
+        return super().from_json(json)
 
     @staticmethod
     def _infer_return_type(
@@ -485,7 +516,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'N': 0, 'Y': 1}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': [('N', 0), ('Y', 1)]}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
 
     >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
