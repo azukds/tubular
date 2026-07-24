@@ -42,6 +42,10 @@ Changed
 ^^^^^^^
 - chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 - bugfix: sort dict attributes to ensure consistent json expressions
+- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
+being mapped to string type.
+- chore: refactored MappingTransformer to pave way for splitting into type based classes with
+`get_transform_exprs` methods.
 - chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
 - bugfix: added register decorator to DatetimeComponentExtractor
 
