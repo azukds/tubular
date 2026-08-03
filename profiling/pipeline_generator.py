@@ -6,7 +6,6 @@ from tubular.imputers import (
     MeanImputer,
     MedianImputer,
     ModeImputer,
-    NearestMeanResponseImputer,
     NullIndicator,
 )
 from tubular.mapping import MappingTransformer
@@ -30,7 +29,6 @@ class TubularPipelineGenerator:
             "MedianImputer",
             "MeanImputer",
             "ModeImputer",
-            "NearestMeanResponseImputer",
             "NullIndicator",
             "MappingTransformer",
             "NominalToIntegerTransformer",
@@ -66,12 +64,6 @@ class TubularPipelineGenerator:
     @staticmethod
     def get_ModeImputer() -> ModeImputer:
         return ModeImputer(columns=["HouseAge_4", "AveOccup_4", "Population_4"])
-
-    @staticmethod
-    def get_NearestMeanResponseImputer() -> NearestMeanResponseImputer:
-        return NearestMeanResponseImputer(
-            columns=["HouseAge_5", "AveOccup_5", "Population_5"],
-        )
 
     @staticmethod
     def get_NullIndicator() -> NullIndicator:

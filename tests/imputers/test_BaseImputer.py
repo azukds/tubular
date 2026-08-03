@@ -4,6 +4,7 @@ import narwhals as nw
 import polars as pl
 import pytest
 from sklearn.exceptions import NotFittedError
+from sklearn.pipeline import Pipeline
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -591,3 +592,31 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseImputer"
+
+    def test_pipeline_raises_not_fitted_error_when_unfitted(
+        self, initialized_transformers, minimal_dataframe_lookup
+    ):
+        """Test that a sklearn Pipeline with tubular transformers works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
+
+        transformer = initialized_transformers[self.transformer_name]
+        transformer.impute_values_ = dict.fromkeys(transformer.columns, 1)
+        df = minimal_dataframe_lookup[self.transformer_name]
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=False):
+            return
+
+        pipeline = Pipeline([("base_transformer", transformer)])
+
+        # Fit the pipeline
+        pipeline.fit(df, y=df["c"])
+
+        # Transform should work
+        result = pipeline.transform(df)
+        assert result is not None
+
+        # Delete is_fitted_ from the transformer
+        del transformer.is_fitted_
+
+        # Now transform should raise NotFittedError
+        with pytest.raises(NotFittedError):
+            pipeline.transform(df)

@@ -10,9 +10,10 @@ import pytest
 
 from tests.test_data import (
     create_aggregate_over_rows_test_df,
+    create_bool_df,
+    create_categorical_df,
     create_is_between_dates_df_1,
     create_numeric_df_1,
-    create_numeric_df_2,
     create_object_df,
     create_when_then_otherwise_test_df,
 )
@@ -202,6 +203,10 @@ def minimal_attribute_dict():
             "method": ["sin"],
             "units": "month",
         },
+        "_EnumImputer": {
+            "columns": ["b"],
+            "impute_value": "value",
+        },
         "ExtractStringComponentsTransformer": {
             "columns": ["b"],
             "by": "@",
@@ -237,9 +242,6 @@ def minimal_attribute_dict():
             "columns": ["b"],
         },
         "ModeImputer": {
-            "columns": ["b"],
-        },
-        "NearestMeanResponseImputer": {
             "columns": ["b"],
         },
         "NominalToIntegerTransformer": {
@@ -368,12 +370,13 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     library = getattr(request, "param", "pandas")
 
     num_df = create_numeric_df_1(library=library)
-    nan_df = create_numeric_df_2(library=library)
     object_df = create_object_df(library=library)
     date_df = create_is_between_dates_df_1(library=library)
     agg_df = create_aggregate_over_rows_test_df(
         library=library,
     )
+    bool_df = create_bool_df(library=library)
+    categorical_df = create_categorical_df(library=library)
     when_then_df = create_when_then_otherwise_test_df(library=library)
 
     # generally most transformers will work with num_df
@@ -405,16 +408,12 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     for transformer in other_num_transformers:
         min_df_dict[transformer] = num_df
 
-    # Some transformers require missing values to work
-    other_nan_transformers = [
-        "NearestMeanResponseImputer",
-    ]
-    for transformer in other_nan_transformers:
-        min_df_dict[transformer] = nan_df
-
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
+    min_df_dict["StringImputer"] = object_df
+    min_df_dict["CategoricalImputer"] = categorical_df
+    min_df_dict["BooleanImputer"] = bool_df
 
     pyarrow_transformers = ["ExtractStringComponentsTransformer"]
 

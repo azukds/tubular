@@ -155,6 +155,8 @@ class LowerCaseTransformer(BaseTransformer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
+        X = super().transform(X, return_native_override=False)
+
         transform_exprs = self.get_transform_exprs()
 
         X = X.with_columns(*transform_exprs) if transform_exprs else X
@@ -377,6 +379,8 @@ class ExtractStringComponentsTransformer(BaseTransformer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
+        X = super().transform(X, return_native_override=False)
+
         transform_exprs = self.get_transform_exprs()
 
         X = X.with_columns(*transform_exprs) if transform_exprs else X
@@ -557,6 +561,8 @@ class RemoveCharactersTransformer(BaseTransformer):
 
         """
         X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
 
         transform_exprs = self.get_transform_exprs()
 
@@ -788,6 +794,8 @@ class StringContainsTransformer(BaseTransformer):
 
         """
         X = _convert_dataframe_to_narwhals(X)
+
+        X = super().transform(X, return_native_override=False)
 
         backend = nw.get_native_namespace(X).__name__
 

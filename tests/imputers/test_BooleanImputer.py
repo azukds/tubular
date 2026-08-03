@@ -12,26 +12,10 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
     ReturnNativeTests,
 )
-from tests.imputers.test_BaseImputer import GenericImputerTransformTests
-from tests.utils import _handle_from_json, dataframe_init_dispatch
+from tests.utils import _handle_from_json
 from tubular.imputers import BooleanImputer
-
-
-def impute_df_with_several_types(library="pandas"):
-    """
-    Fixture that returns a DataFrame with columns suitable for downcasting
-    for both pandas and polars.
-    """
-    data = {
-        "a": ["a", "b", "c", "d", None],
-        "b": [1.0, 2.0, 3.0, 4.0, None],
-        "c": [True, False, False, None, True],
-    }
-
-    return u.dataframe_init_dispatch(data, library)
 
 
 class TestInit(ColumnStrListInitTests):
@@ -53,26 +37,7 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "BooleanImputer"
 
 
-def create_expected_df_3(library="pandas"):
-    "expected df for transform test."
-    expected_df_dict = {
-        "a": [1, 2, 3, 4, 5, 6, None],
-        "b": ["a", "b", "c", "d", "e", "f", None],
-        "c": ["a", "b", "c", "d", "e", "f", "g"],
-    }
-
-    expected_df = dataframe_init_dispatch(
-        dataframe_dict=expected_df_dict, library=library
-    )
-
-    narwhals_df = nw.from_native(expected_df)
-    narwhals_df = narwhals_df.with_columns(nw.col("c").cast(nw.dtypes.Categorical))
-
-    return narwhals_df.to_native()
-
-
 class TestTransform(
-    GenericImputerTransformTests,
     GenericTransformTests,
     ReturnNativeTests,
 ):
@@ -89,259 +54,13 @@ class TestTransform(
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        ("column", "col_type"),
+        "input_values",
         [
-            ("a", "String"),
-            ("a", "Categorical"),
-            ("b", "Float32"),
+            ["a", "b"],
+            [1.0, 2.0],
         ],
     )
     def test_type_mismatch_errors(
-        self,
-        column,
-        col_type,
-        library,
-        lazy,
-        from_json,
-    ):
-        """Test that dtypes are preserved after imputation."""
-
-        df = impute_df_with_several_types(library=library)
-
-        df = nw.from_native(df)
-
-        df = df.with_columns(
-            nw.col(column).cast(getattr(nw, col_type)),
-        )
-
-        df = nw.to_native(df)
-
-        transformer = BooleanImputer(impute_value=True, columns=[column])
-
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
-            return
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        allowed_types_str = "Boolean/Unknown"
-        col_dtype = getattr(nw, col_type)
-        if library == "pandas":
-            allowed_types_str += "/Object"
-        msg = f"""
-            ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
-            but got columns with types {[col_dtype]}
-            """
-
-        with pytest.raises(
-            TypeError,
-            match=re.escape(msg),
-        ):
-            transformer.transform(u._convert_to_lazy(df, lazy))
-
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_impute_value_preserve_dtype(
-        self,
-        library,
-        lazy,
-        from_json,
-    ):
-        """Test that dtypes are preserved after imputation."""
-
-        column = "c"
-
-        df = impute_df_with_several_types(library=library)
-
-        df_nw = nw.from_native(df)
-
-        transformer = BooleanImputer(impute_value=False, columns=[column])
-
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
-            return
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
-        )
-
-        df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
-        )
-
-        expected_dtype = df_nw[column].dtype
-
-        actual_dtype = df_transformed_nw[column].dtype
-
-        assert actual_dtype == expected_dtype, (
-            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
-        )
-
-        # also check full df against expectation
-        expected = df_nw.clone()
-
-        expected_values = [True, False, False, False, True]
-
-        expected = expected.with_columns(
-            nw.new_series(name=column, values=expected_values, backend=library).cast(
-                nw.Boolean,
-            ),
-        )
-
-        u.assert_frame_equal_dispatch(
-            expected.to_native(),
-            df_transformed_nw.to_native(),
-        )
-
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize(
-        ("input_col", "expected_dtype", "impute_value", "expected_values"),
-        [
-            ([True, False, None], "Boolean", True, [True, False, True]),
-        ],
-    )
-    def test_edge_cases(
-        self,
-        input_col,
-        expected_dtype,
-        impute_value,
-        expected_values,
-        library,
-        lazy,
-        from_json,
-    ):
-        """Test handling for some edge cases:
-        - pandas object type
-        """
-
-        column = "a"
-        df_dict = {"a": input_col}
-
-        df = u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-        df_nw = nw.from_native(df)
-
-        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
-
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
-            return
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
-        )
-
-        df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
-        )
-
-        actual_dtype = str(df_transformed_nw[column].dtype)
-
-        assert actual_dtype == expected_dtype, (
-            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
-        )
-
-        # also check full df against expectation
-        expected = df_nw.clone()
-        expected = expected.with_columns(
-            nw.new_series(name=column, values=expected_values, backend=library).cast(
-                getattr(nw, expected_dtype),
-            ),
-        )
-
-        u.assert_frame_equal_dispatch(
-            expected.to_native(),
-            df_transformed_nw.to_native(),
-        )
-
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize(
-        ("impute_value", "impute_val_type"),
-        [
-            (True, "Boolean"),
-        ],
-    )
-    def test_polars_unknown_type_output(
-        self,
-        impute_value,
-        impute_val_type,
-        lazy,
-        from_json,
-    ):
-        """Test handling of polars Unknown type column (output type should be inferred from impute_value)"""
-
-        column = "a"
-        values = [None, None]
-        df_dict = {"a": values}
-
-        df = pl.DataFrame(df_dict)
-
-        df_nw = nw.from_native(df)
-
-        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
-
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
-            return
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
-        )
-
-        df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
-        )
-
-        actual_dtype = str(df_transformed_nw[column].dtype)
-
-        assert actual_dtype == impute_val_type, (
-            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {impute_val_type} but got {actual_dtype}"
-        )
-
-        # also check full df against expectation
-        expected = df_nw.clone()
-        expected = expected.with_columns(
-            nw.new_series(
-                name=column,
-                values=[impute_value, impute_value],
-                backend="polars",
-            ).cast(getattr(nw, impute_val_type)),
-        )
-
-        u.assert_frame_equal_dispatch(
-            expected.to_native(),
-            df_transformed_nw.to_native(),
-        )
-
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    @pytest.mark.parametrize(
-        "input_values",
-        [
-            [["a", "b"], ["c", "d"]],
-            [{"a": 1}, {"b": 4}],
-        ],
-    )
-    def test_weird_dtype_errors(
         self,
         input_values,
         library,
@@ -356,7 +75,7 @@ class TestTransform(
         # because of weird types, initialise manually
         df = pd.DataFrame(df_dict) if library == "pandas" else pl.DataFrame(df_dict)
 
-        transformer = BooleanImputer(impute_value=1, columns=[column])
+        transformer = BooleanImputer(impute_value=False, columns=[column])
 
         if u._check_if_skip_test(transformer, df, lazy, from_json):
             return
@@ -365,27 +84,162 @@ class TestTransform(
 
         bad_types = [nw.from_native(df).schema[column]]
 
-        msg = re.escape(
-            f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+        allowed_types_str = "Boolean/Unknown"
+        if library == "pandas":
+            allowed_types_str += "/Object"
+        msg = f"""
+                ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
                 but got columns with types {bad_types}
-                """,
-        )
+                """
 
         with pytest.raises(
             TypeError,
-            match=msg,
+            match=re.escape(msg),
         ):
             transformer.transform(u._convert_to_lazy(df, lazy))
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize(
+        ("input_col", "impute_value", "expected_values"),
+        [
+            ([True, False, None], True, [True, False, True]),
+            ([True, False, None], False, [True, False, False]),
+            ([None, None, None], True, [True, True, True]),
+            ([None, None, None], False, [False, False, False]),
+        ],
+    )
+    def test_output(
+        self,
+        input_col,
+        impute_value,
+        expected_values,
+        library,
+        lazy,
+        from_json,
+    ):
+        """Test outputs for expected cases."""
+
+        column = "a"
+
+        # tricky to get all null column to correct type, as casting to boolean
+        # maps None->False for pandas
+        if library == "polars":
+            df = pl.DataFrame({"a": input_col}, schema={"a": pl.Boolean})
+
+        else:
+            df = pd.DataFrame({"a": input_col}, dtype="boolean")
+
+        df_nw = nw.from_native(df)
+
+        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
+
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed_native = transformer.transform(
+            u._convert_to_lazy(df_nw.to_native(), lazy),
+        )
+
+        df_transformed_nw = nw.from_native(
+            u._collect_frame(df_transformed_native, lazy),
+        )
+
+        actual_dtype = str(df_transformed_nw[column].dtype)
+        expected_dtype = "Boolean"
+        assert actual_dtype == expected_dtype, (
+            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
+        )
+
+        # also check full df against expectation
+        expected = df_nw.clone()
+
+        expected = expected.with_columns(
+            nw.new_series(name=column, values=expected_values, backend=library)
+        )
+
+        if library == "pandas":
+            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["a"]))
+
+        u.assert_frame_equal_dispatch(
+            expected.to_native(),
+            df_transformed_nw.to_native(),
+        )
+
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    def test_polars_unknown_type_output(
+        self,
+        lazy,
+        from_json,
+    ):
+        """Test handling of polars Unknown type column (output type should be inferred from impute_value)
+
+        Test separately to pandas, as pandas does not have equivalent type.
+        """
+
+        column = "a"
+        values = [None, None]
+        df_dict = {"a": values}
+
+        df = pl.DataFrame(df_dict)
+
+        df_nw = nw.from_native(df)
+
+        impute_value = True
+        expected_dtype = "Boolean"
+        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
+
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed_native = transformer.transform(
+            u._convert_to_lazy(df_nw.to_native(), lazy),
+        )
+
+        df_transformed_nw = nw.from_native(
+            u._collect_frame(df_transformed_native, lazy),
+        )
+
+        actual_dtype = str(df_transformed_nw[column].dtype)
+
+        assert actual_dtype == expected_dtype, (
+            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
+        )
+
+        # also check full df against expectation
+        expected = df_nw.clone()
+        expected = expected.with_columns(
+            nw.new_series(
+                name=column,
+                values=[impute_value, impute_value],
+                backend="polars",
+            ).cast(getattr(nw, expected_dtype)),
+        )
+
+        u.assert_frame_equal_dispatch(
+            expected.to_native(),
+            df_transformed_nw.to_native(),
+        )
 
 
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
-    Class to run tests for BaseTransformerBehaviour outside the three standard methods.
+    Class to run tests for Transformer behaviour outside the three standard methods.
 
     May need to overwrite specific tests in this class if the tested transformer modifies this behaviour.
     """
