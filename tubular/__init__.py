@@ -24,6 +24,7 @@ from tubular.imputers import (
     MedianImputer,
     ModeImputer,
     NullIndicator,
+    NumberImputer,
 )
 from tubular.mapping import MappingTransformer
 from tubular.misc import (
@@ -64,6 +65,7 @@ __all__ = [
     "MedianImputer",
     "ModeImputer",
     "NullIndicator",
+    "NumberImputer",
     "OneDKmeansTransformer",
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",

@@ -5,7 +5,6 @@ import pandas as pd
 import polars as pl
 import pytest
 
-import tests.utils as u
 from tests.base_tests import (
     ColumnStrListInitTests,
     EmptyColumnsFitTransformPassTests,
@@ -14,7 +13,14 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
     ReturnNativeTests,
 )
-from tests.utils import _handle_from_json
+from tests.utils import (
+    _check_if_skip_test,
+    _collect_frame,
+    _convert_to_lazy,
+    _handle_from_json,
+    assert_frame_equal_dispatch,
+    dataframe_init_dispatch,
+)
 from tubular.imputers import NumberImputer
 
 
@@ -79,7 +85,7 @@ class TestTransform(
 
         transformer = NumberImputer(impute_value=1, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if _check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
@@ -95,7 +101,7 @@ class TestTransform(
             TypeError,
             match=re.escape(msg),
         ):
-            transformer.transform(u._convert_to_lazy(df, lazy))
+            transformer.transform(_convert_to_lazy(df, lazy))
 
     @pytest.mark.parametrize(
         "lazy",
@@ -116,19 +122,19 @@ class TestTransform(
         impute_value = 2
         df_dict = {"a": input_col}
 
-        df = u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
         df_nw = nw.from_native(df)
 
         transformer = NumberImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if _check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
 
         _ = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
+            _convert_to_lazy(df_nw.to_native(), lazy),
         )
 
         # check impute value not changed in transform
@@ -169,7 +175,7 @@ class TestTransform(
         df_dict = {"a": input_col}
         expected_dtype = "Float64"
 
-        df = u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
         df_nw = nw.from_native(df)
 
@@ -178,13 +184,13 @@ class TestTransform(
 
         transformer = NumberImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if _check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
 
         df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
+            _convert_to_lazy(df_nw.to_native(), lazy),
         )
 
         # check impute value not changed in transform
@@ -193,7 +199,7 @@ class TestTransform(
         )
 
         df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
+            _collect_frame(df_transformed_native, lazy),
         )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
@@ -207,10 +213,23 @@ class TestTransform(
             nw.new_series(name=column, values=expected_values, backend=library)
         )
 
-        u.assert_frame_equal_dispatch(
+        assert_frame_equal_dispatch(
             expected.to_native(),
             df_transformed_nw.to_native(),
         )
+
+        # Check outcomes for single rows
+        expected = nw.from_native(expected)
+        for i in range(len(df_nw)):
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df_nw[[i]].to_native(), lazy)
+            )
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, lazy),
+                df_expected_row,
+            )
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
@@ -239,17 +258,17 @@ class TestTransform(
         expected_type = "Int32"
         transformer = NumberImputer(impute_value=impute_value, columns=[column])
 
-        if u._check_if_skip_test(transformer, df, lazy, from_json):
+        if _check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
 
         df_transformed_native = transformer.transform(
-            u._convert_to_lazy(df_nw.to_native(), lazy),
+            _convert_to_lazy(df_nw.to_native(), lazy),
         )
 
         df_transformed_nw = nw.from_native(
-            u._collect_frame(df_transformed_native, lazy),
+            _collect_frame(df_transformed_native, lazy),
         )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
@@ -268,10 +287,23 @@ class TestTransform(
             ).cast(getattr(nw, expected_type)),
         )
 
-        u.assert_frame_equal_dispatch(
+        assert_frame_equal_dispatch(
             expected.to_native(),
             df_transformed_nw.to_native(),
         )
+
+        # Check outcomes for single rows
+        expected = nw.from_native(expected)
+        for i in range(len(df_nw)):
+            df_transformed_row = transformer.transform(
+                _convert_to_lazy(df_nw[[i]].to_native(), lazy)
+            )
+            df_expected_row = expected[[i]].to_native()
+
+            assert_frame_equal_dispatch(
+                _collect_frame(df_transformed_row, lazy),
+                df_expected_row,
+            )
 
 
 class TestOtherBaseBehaviour(
