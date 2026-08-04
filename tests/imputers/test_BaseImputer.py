@@ -589,6 +589,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
         )
 
     # overload this test, as does not make sense for test of independent base class
+    @pytest.mark.skip
     def test_pipeline_raises_not_fitted_error_when_unfitted(self):
         return
 
