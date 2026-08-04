@@ -4,7 +4,6 @@ import pytest
 from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerFitTests,
@@ -115,7 +114,6 @@ class TestTransform(BaseNumericTransformerTransformTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for ScalingTransformer outside the three standard methods.

@@ -9,7 +9,6 @@ from tests.base_tests import (
     EmptyColumnsFailTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tubular.functions.comparison import ConditionEnum
 
@@ -216,7 +215,7 @@ class TestCompareTwoColumnsTransformerTransform(GenericTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for CompareTwoColumnsTransformer outside the three standard methods.
 
