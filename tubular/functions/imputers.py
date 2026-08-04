@@ -1,5 +1,7 @@
 """Contains stateless transforms for imputing columns."""
 
+from typing import Any
+
 import narwhals as nw
 
 from tubular.types import ListOfStrs
@@ -41,6 +43,77 @@ def impute_numeric_or_string_nulls(
     """
     return [
         nw.col(col).fill_null(value=impute_values[col])
+        if (impute_values[col] is not None)
+        else nw.col(col)
+        for col in columns
+    ]
+
+
+def impute_categorical_columns(
+    columns: list[str], impute_values: dict[str, Any]
+) -> list[nw.Expr]:
+    """Impute categorical columns with provided values.
+
+    Parameters
+    ----------
+    columns:
+        columns to impute
+
+    impute_values:
+        values to impute columns with
+
+    Returns
+    -------
+    list[nw.Expr]: transform expressions
+
+    """
+    return [
+        nw.when(nw.col(col).is_null())
+        .then(None)
+        .otherwise(nw.col(col).cast(nw.String))
+        .fill_null(value=impute_values[col])
+        .cast(nw.Categorical)
+        .alias(col)
+        if (impute_values[col] is not None)
+        else nw.col(col)
+        for col in columns
+    ]
+
+
+def impute_enum_columns(
+    columns: list[str],
+    impute_values: dict[str, Any],
+    columns_to_categories: dict[str, list[Any]],
+) -> list[nw.Expr]:
+    """Impute enum columns with provided values.
+
+    Parameters
+    ----------
+    columns:
+        columns to impute
+
+    impute_values:
+        values to impute columns with
+
+    columns_to_categories:
+        dict mapping columns to the categories in their enum class
+
+    Returns
+    -------
+    list[nw.Expr]: transform expressions
+
+    """
+    return [
+        nw.when(nw.col(col).is_null())
+        .then(None)
+        .otherwise(nw.col(col).cast(nw.String))
+        .fill_null(value=impute_values[col])
+        .cast(
+            nw.Enum(
+                categories=sorted({*columns_to_categories[col], impute_values[col]})
+            )
+        )
+        .alias(col)
         if (impute_values[col] is not None)
         else nw.col(col)
         for col in columns

@@ -35,6 +35,9 @@ Changed
 - feat: added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
 - chore: refactored OtherBaseBehaviour test classes to make easier to maintain
 - feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added tests for StringImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added CategoricalImputer with tests and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added private class _EnumImputer, utilised by ArbitraryImputer `#752 <https://github.com/azukds/tubular/issues/752>_`
 
 3.9.0 (17/07/2026)
 ------------------
