@@ -20,11 +20,13 @@ from tubular.dates import (
 )
 from tubular.imputers import (
     ArbitraryImputer,
+    CategoricalImputer,
     MeanImputer,
     MedianImputer,
     ModeImputer,
     NullIndicator,
     NumberImputer,
+    StringImputer,
 )
 from tubular.mapping import MappingTransformer
 from tubular.misc import (
@@ -50,6 +52,7 @@ __all__ = [
     "ArbitraryImputer",
     "BetweenDatesTransformer",
     "CappingTransformer",
+    "CategoricalImputer",
     "ColumnDtypeSetter",
     "CompareTwoColumnsTransformer",
     "DateDifferenceTransformer",
@@ -73,6 +76,7 @@ __all__ = [
     "RemoveCharactersTransformer",
     "RenameColumnsTransformer",
     "SetValueTransformer",
+    "StringImputer",
     "ToDatetimeTransformer",
     "WhenThenOtherwiseTransformer",
 ]
