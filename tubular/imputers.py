@@ -24,7 +24,10 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.functions.imputers import impute_numeric_nulls, indicate_nulls_for_columns
+from tubular.functions.imputers import (
+    impute_numeric_or_string_nulls,
+    indicate_nulls_for_columns,
+)
 from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, LazyFrame, ListOfStrs, NumericTypes, Series
 
@@ -137,7 +140,7 @@ class BaseImputer(BaseTransformer):
             ),
         ):
             json_dict["init"]["weights_column"] = self.weights_column
-        elif isinstance(self, ArbitraryImputer):
+        elif isinstance(self, (ArbitraryImputer, NumberImputer)):
             json_dict["init"]["impute_value"] = self.impute_value
 
         json_dict["fit"]["impute_values_"] = _sort_dict(self.impute_values_)
@@ -190,7 +193,7 @@ class BaseImputer(BaseTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return impute_numeric_nulls(
+        return impute_numeric_or_string_nulls(
             columns=self.columns, impute_values=self.impute_values_
         )
 
@@ -257,7 +260,7 @@ class BaseImputer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-class _NumberImputer(BaseImputer):
+class NumberImputer(BaseImputer):
     """Private subclass to handle arbitrary number imputation.
 
     Attributes
@@ -345,7 +348,7 @@ class _NumberImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
-        >>> imputer = _NumberImputer(columns=["a", "b"], impute_value=5)
+        >>> imputer = NumberImputer(columns=["a", "b"], impute_value=5)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -368,7 +371,7 @@ class _NumberImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if schema[col] not in {*NumericTypes, nw.Unknown}
+            if not isinstance(schema[col], (*NumericTypes, nw.Unknown))
         ]
 
         if bad_types:
@@ -383,15 +386,9 @@ class _NumberImputer(BaseImputer):
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
         # next handle imputing
-        transform_expressions = {
-            col: self._generate_imputation_expressions(
-                nw.col(col),
-                col,
-            )
-            for col in self.columns
-        }
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -846,7 +843,7 @@ class ArbitraryImputer(BaseImputer):
         if isinstance(self.impute_value, (int, float)) and not isinstance(
             self.impute_value, bool
         ):
-            imp = _NumberImputer(
+            imp = NumberImputer(
                 columns=self.columns,
                 impute_value=self.impute_value,
                 return_native=self.return_native,
