@@ -10,6 +10,7 @@ import pytest
 
 from tests.test_data import (
     create_aggregate_over_rows_test_df,
+    create_bool_df,
     create_is_between_dates_df_1,
     create_numeric_df_1,
     create_numeric_df_2,
@@ -198,6 +199,10 @@ def minimal_attribute_dict():
             "method": ["sin"],
             "units": "month",
         },
+        "_EnumImputer": {
+            "columns": ["b"],
+            "impute_value": "value",
+        },
         "ExtractStringComponentsTransformer": {
             "columns": ["b"],
             "by": "@",
@@ -296,14 +301,14 @@ def minimal_attribute_dict():
             "new_column_name": "c",
             "separator": "-",
         },
+        "_StringImputer": {
+            "columns": ["b"],
+            "impute_value": "missing",
+        },
         "StringContainsTransformer": {
             "columns": ["b"],
             "reference": "c",
             "reference_as_column": False,
-        },
-        "_StringImputer": {
-            "columns": ["b"],
-            "impute_value": "missing",
         },
         "ToDatetimeTransformer": {
             "columns": "a",
@@ -370,6 +375,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     agg_df = create_aggregate_over_rows_test_df(
         library=library,
     )
+    bool_df = create_bool_df(library=library)
     when_then_df = create_when_then_otherwise_test_df(library=library)
 
     # generally most transformers will work with num_df
@@ -411,6 +417,8 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
+    min_df_dict["_StringImputer"] = object_df
+    min_df_dict["_BooleanImputer"] = bool_df
 
     pyarrow_transformers = ["ExtractStringComponentsTransformer"]
 
