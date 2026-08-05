@@ -367,6 +367,72 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
         """
         return [f"{col}_{agg}" for col in self.columns for agg in self.aggregations]
 
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ...     key="b",
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a_min': ['a'], 'a_max': ['a']}
+
+        ```
+
+        """
+        return {
+            col + "_" + agg: self.columns
+            for col in self.columns
+            for agg in self.aggregations
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = AggregateRowsOverColumnTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ...     key="b",
+        ... )
+        >>> transformer
+        AggregateRowsOverColumnTransformer(aggregations=['min', 'max'], columns=['a'],
+                                           key='b')
+
+        >>> transformer.select(["a_min"])
+        AggregateRowsOverColumnTransformer(aggregations=['min'], columns=['a'],
+                                           key='b')
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        selected_aggs = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+                for agg in self.aggregations:
+                    if feature.endswith(f"_{agg}"):
+                        selected_aggs = [*selected_aggs, agg]
+
+        self.columns = selected_columns
+        self.aggregations = selected_aggs
+
+        return self
+
     def get_transform_exprs(self) -> list[nw.Expr]:
         """Get transform expressions.
 
@@ -547,6 +613,78 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         """
         return ["_".join(self.columns) + "_" + agg for agg in self.aggregations]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = AggregateColumnsOverRowTransformer(
+        ...     columns=["a", "b"],
+        ...     aggregations=["min", "max"],
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a_b_min': ['a', 'b'], 'a_b_max': ['a', 'b']}
+
+        ```
+
+        """
+        return {
+            "_".join(self.columns) + "_" + agg: self.columns
+            for agg in self.aggregations
+        }
+
+    def select(self, features: list[str]):
+        """Edit transformer to just create selected features.
+
+        Parameters
+        ----------
+        features:
+            list of features to select down to
+
+        Returns
+        -------
+        self
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = AggregateColumnsOverRowTransformer(
+        ...     columns=["a", "b"],
+        ...     aggregations=["min", "max"],
+        ... )
+        >>> transformer
+        AggregateColumnsOverRowTransformer(aggregations=['min', 'max'],
+                                           columns=['a', 'b'])
+
+        >>> transformer.select(["a_b_max"])
+        AggregateColumnsOverRowTransformer(aggregations=['max'], columns=[['a', 'b']])
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        selected_aggs = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns.append(lineage[feature])
+                for agg in self.aggregations:
+                    if feature.endswith(f"_{agg}"):
+                        selected_aggs.append(agg)
+                        break
+
+        self.columns = selected_columns
+        self.aggregations = selected_aggs
+
+        return self
 
     def get_transform_exprs(self) -> list[nw.Expr]:
         """Get transform expressions.

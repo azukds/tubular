@@ -1,5 +1,6 @@
 """Module contains methods for serializing and deserializing pipelines."""
 
+from copy import copy
 from typing import Any
 
 from sklearn.pipeline import Pipeline
@@ -111,3 +112,83 @@ def load_pipeline_from_json(pipeline_json: dict[str, dict[str, Any]]) -> Pipelin
     ]
 
     return Pipeline(steps)
+
+
+def filter_pipeline_for_features(pipeline: Pipeline, features: list[str]) -> Pipeline:
+    """Filter down pipeline to just produce specified features.
+
+    Useful to slim down feature selection pipeline to production
+    pipeline, without having to rewrite.
+
+    Parameters
+    ----------
+    pipeline: Pipeline
+        pipeline to filter
+
+    features:
+        features to filter for
+
+    Returns
+    -------
+    Filtered pipeline
+
+    Examples
+    --------
+    ```pycon
+    >>> from sklearn.pipeline import Pipeline
+    >>> from tubular.numeric import DifferenceTransformer, RatioTransformer
+    >>> from tubular.imputers import MeanImputer
+    >>> import polars as pl
+    >>> difference_transformer = DifferenceTransformer(columns=["a", "b"])
+    >>> ratio_transformer = RatioTransformer(columns=["a", "b"])
+    >>> imputer = MeanImputer(columns=["a_minus_b", "a_divided_by_b"])
+    >>> pipeline = Pipeline(
+    ...     [
+    ...         ("difference", difference_transformer),
+    ...         ("ratio", ratio_transformer),
+    ...         ("imputer", imputer),
+    ...     ]
+    ... )
+    >>> df = pl.DataFrame({"a": [1, 2, None], "b": [4, 5, 6]})
+    >>> pipeline.fit(df)
+    Pipeline(steps=[('difference', DifferenceTransformer(columns=['a', 'b'])),
+                    ('ratio', RatioTransformer(columns=['a', 'b'])),
+                    ('imputer',
+                     MeanImputer(columns=['a_minus_b', 'a_divided_by_b']))])
+    >>> filter_pipeline_for_features(pipeline, ["a", "a_minus_b"])
+    Pipeline(steps=[DifferenceTransformer(columns=[['a', 'b']]),
+                    RatioTransformer(columns=['a', 'b']),
+                    MeanImputer(columns=['a_minus_b'])])
+
+    ```
+
+    """
+    reversed_pipeline = pipeline.steps[::-1]
+    needed_steps = []
+    needed_columns = copy(features)
+
+    for _, step in reversed_pipeline:
+        step_outputs = step.get_feature_names_out()
+        step_lineage = step.get_features_out_lineage()
+
+        # find outputs which overlap with needed columns
+        needed_columns_overlap = set(step_outputs).intersection(needed_columns)
+
+        if needed_columns_overlap:
+            # find inputs needed for these outputs
+            needed_inputs = []
+            for output_column in needed_columns_overlap:
+                needed_inputs = [*needed_inputs, *step_lineage[output_column]]
+
+            # filter step to just produce needed inputs
+            step.select(sorted(needed_columns_overlap))
+
+        # add in new needed columns for next round
+        needed_columns.append(set(needed_inputs))
+        needed_columns = sorted(set(needed_columns))
+
+        needed_steps.append(step)
+
+    needed_steps.reverse()
+
+    return Pipeline(needed_steps)

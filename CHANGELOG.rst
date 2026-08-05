@@ -34,6 +34,8 @@ Changed
 - feat: added get_transform_exprs methods to NullIndicator transformer `#750 <https://github.com/azukds/tubular/issues/750>_`
 - feat: added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
 - chore: refactored OtherBaseBehaviour test classes to make easier to maintain
+- feat: added function to filter pipelines in pipeline.py `#575 <https://github.com/azukds/tubular/issues/575>`_
+- feat: added .select and .get_features_out_lineage methods to aid in filtering pipelines `#574 <https://github.com/azukds/tubular/issues/574>_`
 
 3.9.0 (17/07/2026)
 ------------------

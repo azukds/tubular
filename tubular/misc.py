@@ -308,6 +308,72 @@ class RenameColumnsTransformer(BaseTransformer):
         """
         return list(self.new_column_names.values())
 
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = RenameColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_names={"a": "new_a", "b": "new_b"},
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'new_a': ['a'], 'new_b': ['b']}
+
+        ```
+
+        """
+        return {value: [key] for key, value in self.new_column_names.items()}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = RenameColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_names={"a": "new_a", "b": "new_b"},
+        ... )
+        >>> transformer
+        RenameColumnsTransformer(columns=['a', 'b'],
+                                 new_column_names={'a': 'new_a', 'b': 'new_b'})
+
+        >>> transformer.select(["new_a"])
+        RenameColumnsTransformer(columns=['a'], new_column_names={'a': 'new_a'})
+
+        ```
+
+        """
+        selected_columns = []
+        selected_new_column_names = {}
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        selected_new_column_names = {
+            key: self.new_column_names[key]
+            for key in self.new_column_names
+            if key in selected_columns
+        }
+
+        self.columns = selected_columns
+        self.new_column_names = selected_new_column_names
+
+        return self
+
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Dump transformer to json dict.

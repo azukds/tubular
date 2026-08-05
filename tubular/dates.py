@@ -163,19 +163,14 @@ class BaseGenericDateTransformer(
         list[str]:
             list of features modified/created by the transformer
 
+        Raises
+        ------
+        TypeError:
+            if called for base classes
+
         Examples
         --------
         ```pycon
-        >>> # base classes just return inputs
-        >>> transformer = BaseGenericDateTransformer(
-        ...     columns=["a", "b"],
-        ...     new_column_name="bla",
-        ... )
-
-        >>> transformer.get_feature_names_out()
-        ['a', 'b']
-
-        >>> # other classes return new columns
         >>> transformer = DateDifferenceTransformer(
         ...     columns=["a", "b"],
         ...     new_column_name="bla",
@@ -187,16 +182,104 @@ class BaseGenericDateTransformer(
         ```
 
         """
-        # base classes just return columns, so need special handling
-        return (
-            [*self.columns]
-            if type(self)
-            in {
-                BaseGenericDateTransformer,
-                BaseDatetimeTransformer,
-            }
-            else [self.new_column_name]
-        )
+        # doesn't make sense to call this for base classes themselves, so skip
+        if type(self) in {
+            BaseGenericDateTransformer,
+            BaseDatetimeTransformer,
+        }:
+            msg = f"{self.classname()}: get_feature_names_out method can only be called for child classes"
+            raise TypeError(msg)
+
+        return [self.new_column_name]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Raises
+        ------
+        TypeError:
+            if called for base classes
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DateDifferenceTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'bla': ['a', 'b']}
+
+        ```
+
+        """
+        # doesn't make sense to call this for base classes themselves, so skip
+        if type(self) in {
+            BaseGenericDateTransformer,
+            BaseDatetimeTransformer,
+        }:
+            msg = f"{self.classname()}: get_feature_names_out method can only be called for child classes"
+            raise TypeError(msg)
+
+        return {self.new_column_name: self.columns}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Parameters
+        ----------
+        features:
+            list of features to select down to
+
+        Raises
+        ------
+        TypeError:
+            if called for base classes
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DateDifferenceTransformer(
+        ...     columns=["a", "b"],
+        ...     new_column_name="bla",
+        ... )
+        >>> transformer
+        DateDifferenceTransformer(columns=['a', 'b'], new_column_name='bla')
+
+        >>> transformer.select([])
+        DateDifferenceTransformer(columns=[], new_column_name='bla')
+
+        ```
+
+        """
+        # doesn't make sense to call this for base classes themselves, so skip
+        if type(self) in {
+            BaseGenericDateTransformer,
+            BaseDatetimeTransformer,
+        }:
+            msg = f"{self.classname()}: get_feature_names_out method can only be called for child classes"
+            raise TypeError(msg)
+
+        selected_columns = None
+        for feature in features:
+            if feature == self.new_column_name:
+                selected_columns = self.columns
+                break
+
+        if selected_columns is None:
+            self.columns = []
+
+        return self
 
     @beartype
     def check_columns_are_date_or_datetime(
@@ -880,7 +963,7 @@ class ToDatetimeTransformer(BaseTransformer):
 
         transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(*transform_exprs)
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
@@ -1323,6 +1406,75 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
             for include_option in self.include
         ]
 
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DatetimeInfoExtractor(
+        ...     columns=["a", "b"],
+        ...     include=["timeofday", "timeofmonth"],
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a_timeofday': ['a'], 'a_timeofmonth': ['a'], 'b_timeofday': ['b'], 'b_timeofmonth': ['b']}
+
+        ```
+
+        """
+        return {
+            col + "_" + include_option: [col]
+            for col in self.columns
+            for include_option in self.include
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DatetimeInfoExtractor(
+        ...     columns=["a", "b"],
+        ...     include=["timeofday", "timeofmonth"],
+        ... )
+        >>> transformer
+        DatetimeInfoExtractor(columns=['a', 'b'], datetime_mappings={},
+                              include=['timeofday', 'timeofmonth'])
+
+        >>> transformer.select(["a_timeofday"])
+        DatetimeInfoExtractor(columns=[['a']], datetime_mappings={},
+                              include=['timeofday'])
+
+        ```
+
+        """
+        selected_columns = []
+        selected_include = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns.append(lineage[feature])
+                for include_option in self.include:
+                    if feature.endswith(f"_{include_option}"):
+                        selected_include.append(include_option)
+                        break
+
+        self.columns = selected_columns
+        self.include = selected_include
+
+        return self
+
     def _check_provided_mappings(
         self,
         datetime_mappings: dict[DatetimeInfoOptionStr, dict[int, str]] | None,
@@ -1568,6 +1720,73 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
             for col in self.columns
             for include_option in self.include
         ]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DatetimeComponentExtractor(
+        ...     columns=["a", "b"],
+        ...     include=["hour", "day"],
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a_hour': ['a'], 'a_day': ['a'], 'b_hour': ['b'], 'b_day': ['b']}
+
+        ```
+
+        """
+        return {
+            col + "_" + include_option: [col]
+            for col in self.columns
+            for include_option in self.include
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DatetimeComponentExtractor(
+        ...     columns=["a", "b"],
+        ...     include=["hour", "day"],
+        ... )
+        >>> transformer
+        DatetimeComponentExtractor(columns=['a', 'b'], include=['hour', 'day'])
+
+        >>> transformer.select(["a_hour"])
+        DatetimeComponentExtractor(columns=[['a']], include=['hour'])
+
+        ```
+
+        """
+        selected_columns = []
+        selected_include = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns.append(lineage[feature])
+                for include_option in self.include:
+                    if feature.endswith(f"_{include_option}"):
+                        selected_include.append(include_option)
+                        break
+
+        self.columns = selected_columns
+        self.include = selected_include
+
+        return self
 
     def to_json(self) -> dict[str, Any]:
         """Convert transformer to JSON format.
@@ -1841,6 +2060,77 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
             for column in self.columns
             for method in self.method
         ]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DatetimeSinusoidCalculator(
+        ...     columns="a",
+        ...     method="sin",
+        ...     units="month",
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'sin_6.283185307179586_month_a': ['a']}
+
+        ```
+
+        """
+        return {
+            f"{method}_{self.period if not isinstance(self.period, dict) else self.period[column]}_{self.units if not isinstance(self.units, dict) else self.units[column]}_{column}": [
+                column
+            ]
+            for column in self.columns
+            for method in self.method
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DatetimeSinusoidCalculator(
+        ...     columns="a",
+        ...     method="sin",
+        ...     units="month",
+        ... )
+        >>> transformer
+        DatetimeSinusoidCalculator(columns=['a'], method=['sin'], units='month')
+
+        >>> transformer.select([])
+        DatetimeSinusoidCalculator(columns=[], method=[], units='month')
+
+        ```
+
+        """
+        selected_columns = []
+        selected_methods = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns.append(lineage[feature])
+                for method in self.method:
+                    if feature.startswith(f"{method}_"):
+                        selected_methods.append(method)
+                        break
+
+        self.columns = selected_columns
+        self.method = selected_methods
+
+        return self
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:

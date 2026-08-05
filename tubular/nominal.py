@@ -1310,6 +1310,60 @@ class MeanResponseTransformer(
                     c: unseen_level_results[c].item(0) for c in self.encoded_columns
                 }
 
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> transformer = MeanResponseTransformer(
+        ...     columns=["a", "b"],
+        ...     prior=1,
+        ...     unseen_level_handling="mean",
+        ... )
+        >>> df = pl.DataFrame({"a": ["cat", "dog"], "b": ["hi", "hello"], "c": [1, 0]})
+        >>> transformer.fit(df, df["c"])
+        MeanResponseTransformer(columns=['a', 'b'], prior=1,
+                                unseen_level_handling='mean')
+
+        >>> transformer.select(["a"])
+        MeanResponseTransformer(columns=['a'], prior=1, unseen_level_handling='mean')
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+        self.mappings = {
+            col: value
+            for col, value in self.mappings.items()
+            if col in selected_columns
+        }
+        if self.unseen_level_handling:
+            self.unseen_levels_encoding_dict = {
+                col: value
+                for col, value in self.unseen_levels_encoding_dict.items()
+                if col in selected_columns
+            }
+        self.return_dtypes = {
+            col: value
+            for col, value in self.return_dtypes.items()
+            if col in selected_columns
+        }
+        self.column_to_encoded_columns = {
+            col: value
+            for col, value in self.column_to_encoded_columns.items()
+            if col in selected_columns
+        }
+
+        return self
+
     def get_transform_exprs(self) -> list[nw.Expr]:
         """Get transform expressions.
 
@@ -1634,6 +1688,78 @@ class OneHotEncodingTransformer(
             for column in self.columns
             for level in self.wanted_values[column]
         ]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = OneHotEncodingTransformer(
+        ...     columns="a",
+        ...     wanted_values={"a": ["cat", "dog"]},
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a_cat': ['a'], 'a_dog': ['a']}
+
+        ```
+
+        """
+        return {
+            column + self.separator + str(level): [column]
+            for column in self.columns
+            for level in self.wanted_values[column]
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = OneHotEncodingTransformer(
+        ...     columns="a",
+        ...     wanted_values={"a": ["cat", "dog"]},
+        ... )
+        >>> transformer
+        OneHotEncodingTransformer(columns=['a'], wanted_values={'a': ['cat', 'dog']})
+
+        >>> transformer.select(["a_cat"])
+        OneHotEncodingTransformer(columns=['a'], wanted_values={'a': ['cat']})
+
+        ```
+
+        """
+        selected_columns = []
+        selected_levels = {col: [] for col in self.columns}
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                original_column = lineage[feature][0]
+                selected_columns.append(original_column)
+                for level in self.wanted_values[original_column]:
+                    if feature.endswith(f"_{level}"):
+                        selected_levels[original_column].append(level)
+                        break
+
+        selected_levels = {
+            key: value for key, value in selected_levels.items() if len(value) > 0
+        }
+
+        self.columns = selected_columns
+        self.wanted_values = selected_levels
+
+        return self
 
     @block_from_json
     @beartype

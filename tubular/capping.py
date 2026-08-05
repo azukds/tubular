@@ -700,6 +700,58 @@ class CappingTransformer(BaseCappingTransformer):
         self.is_fitted_ = True
         return self
 
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+
+        >>> transformer = CappingTransformer(
+        ...     quantiles={"a": [0.01, 0.99], "b": [0.05, 0.95]},
+        ... )
+
+        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
+
+        >>> transformer.fit(test_df)
+        CappingTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+
+        >>> transformer.select(["a"])
+        CappingTransformer(quantiles={'a': [0.01, 0.99]})
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+        if self.capping_values is not None:
+            self.capping_values = {
+                col: value
+                for col, value in self.capping_values.items()
+                if col in selected_columns
+            }
+
+        else:
+            self.quantiles = {
+                col: value
+                for col, value in self.quantiles.items()
+                if col in selected_columns
+            }
+
+        self._replacement_values = {
+            col: value
+            for col, value in self._replacement_values.items()
+            if col in selected_columns
+        }
+
+        return self
+
     def get_transform_exprs(self) -> list[nw.Expr]:
         """Get transform expressions.
 
@@ -955,6 +1007,58 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
                 stacklevel=2,
             )
         self.is_fitted_ = True
+        return self
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+
+        >>> transformer = OutOfRangeNullTransformer(
+        ...     quantiles={"a": [0.01, 0.99], "b": [0.05, 0.95]},
+        ... )
+
+        >>> test_df = pl.DataFrame({"a": [1, 15, 18, 25], "b": [6, 2, 7, 1], "c": [1, 2, 3, 4]})
+
+        >>> transformer.fit(test_df)
+        OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99], 'b': [0.05, 0.95]})
+
+        >>> transformer.select(["a"])
+        OutOfRangeNullTransformer(quantiles={'a': [0.01, 0.99]})
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+
+        if self.capping_values is not None:
+            self.capping_values = {
+                col: value
+                for col, value in self.capping_values.items()
+                if col in selected_columns
+            }
+
+        else:
+            self.quantiles = {
+                col: value
+                for col, value in self.quantiles.items()
+                if col in selected_columns
+            }
+            self.quantile_capping_values = {
+                col: value
+                for col, value in self.quantile_capping_values.items()
+                if col in selected_columns
+            }
+
         return self
 
     def get_transform_exprs(self) -> list[nw.Expr]:

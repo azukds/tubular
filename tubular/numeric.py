@@ -669,8 +669,69 @@ class DifferenceTransformer(BaseNumericTransformer):
         list[str]
             List containing the name of the new column created by the transformation.
 
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DifferenceTransformer(columns=["a", "b"])
+
+        >>> transformer.get_feature_names_out()
+        ['a_minus_b']
+
+        ```
+
         """
         return [f"{self.columns[0]}_minus_{self.columns[1]}"]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DifferenceTransformer(columns=["a", "b"])
+
+        >>> transformer.get_features_out_lineage()
+        {'a_minus_b': ['a', 'b']}
+
+        ```
+
+        """
+        return {f"{self.columns[0]}_minus_{self.columns[1]}": self.columns}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = DifferenceTransformer(columns=["a", "b"])
+        >>> transformer
+        DifferenceTransformer(columns=['a', 'b'])
+
+        >>> transformer.select([])
+        DifferenceTransformer(columns=[])
+
+        ```
+
+        """
+        selected_columns = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+
+        return self
 
 
 @register
@@ -842,8 +903,70 @@ class RatioTransformer(BaseNumericTransformer):
         list[str]
             List containing the name of the new column created by the transformation.
 
+        Examples
+        --------
+        ```pycon
+        >>> transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
+
+        >>> transformer.get_feature_names_out()
+        ['a_divided_by_b']
+
+        ```
+
         """
         return [f"{self.columns[0]}_divided_by_{self.columns[1]}"]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
+
+        >>> transformer.get_features_out_lineage()
+        {'a_divided_by_b': ['a', 'b']}
+
+        ```
+
+        """
+        return {f"{self.columns[0]}_divided_by_{self.columns[1]}": self.columns}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
+        >>> transformer
+        RatioTransformer(columns=['a', 'b'])
+
+        >>> transformer.select([])
+        RatioTransformer(columns=[])
+
+        ```
+
+        """
+        selected_columns = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+                break
+
+        self.columns = selected_columns
+
+        return self
 
 
 # DEPRECATED TRANSFORMERS

@@ -166,6 +166,43 @@ class BaseImputer(BaseTransformer):
             else expr
         )
 
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+        >>> median_imputer = MedianImputer(
+        ...     columns=["a", "b"],
+        ... )
+
+        >>> df = pl.DataFrame({"a": [1, 2, None], "b": [3, None, 4]})
+        >>> median_imputer.fit(df)
+        MedianImputer(columns=['a', 'b'])
+
+        >>> median_imputer.select(["a"])
+        MedianImputer(columns=['a'])
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+
+        self.impute_values_ = {
+            col: value
+            for col, value in self.impute_values_.items()
+            if col in selected_columns
+        }
+
+        return self
+
     def _check_for_failed_fit(self) -> None:
         """Check if fit failed to find needed attrs (if impute_values_ are None).
 
@@ -1496,6 +1533,78 @@ class NullIndicator(BaseTransformer):
         """
         super().__init__(columns=columns, **kwargs)
         self.is_fitted_ = True  # does not fit
+
+    def get_feature_names_out(self) -> list[str]:
+        """List features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+        ```pycon
+        >>> imputer = NullIndicator(columns=["a", "b"])
+
+        >>> imputer.get_feature_names_out()
+        ['a_nulls', 'b_nulls']
+
+        ```
+
+        """
+        return [f"{col}_nulls" for col in self.columns]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> imputer = NullIndicator(columns=["a", "b"])
+
+        >>> imputer.get_features_out_lineage()
+        {'a_nulls': ['a'], 'b_nulls': ['b']}
+
+        ```
+
+        """
+        return {f"{column}_nulls": [column] for column in self.columns}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> imputer = NullIndicator(columns=["a", "b"])
+        >>> imputer
+        NullIndicator(columns=['a', 'b'])
+
+        >>> imputer.select(["a_nulls"])
+        NullIndicator(columns=['a'])
+
+        ```
+
+        """
+        selected_columns = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+
+        return self
 
     def get_transform_exprs(self) -> list[nw.Expr]:
         """Get transform expressions.

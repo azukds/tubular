@@ -121,6 +121,21 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         self.then_column = then_column
         self.is_fitted_ = True  # Set is_fitted to True as no fitting is required
 
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```
+
+        """
+        return {col: [col, self.when_column, self.then_column] for col in self.columns}
+
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Serialize the transformer to a JSON-compatible dictionary.
@@ -384,6 +399,88 @@ class CompareTwoColumnsTransformer(BaseTransformer):
             columns=self.columns,
             condition=self.condition,
         )
+
+    def get_feature_names_out(self) -> list[str]:
+        """Get list of features modified/created by the transformer.
+
+        Returns
+        -------
+        list[str]:
+            list of features modified/created by the transformer
+
+        Examples
+        --------
+        ```pycon
+        >>> # base classes just return inputs
+        >>> transformer = CompareTwoColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     condition=">",
+        ... )
+
+        >>> transformer.get_feature_names_out()
+        ['a>b']
+
+        ```
+
+        """
+        return [f"{self.columns[0]}{self.condition}{self.columns[1]}"]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> # base classes just return inputs
+        >>> transformer = CompareTwoColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     condition=">",
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a>b': ['a', 'b']}
+
+        ```
+
+        """
+        return {f"{self.columns[0]}{self.condition}{self.columns[1]}": self.columns}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> # base classes just return inputs
+        >>> transformer = CompareTwoColumnsTransformer(
+        ...     columns=["a", "b"],
+        ...     condition=">",
+        ... )
+        >>> transformer
+        CompareTwoColumnsTransformer(columns=['a', 'b'], condition='>')
+
+        >>> transformer.select([])
+        CompareTwoColumnsTransformer(columns=[], condition='>')
+
+        ```
+
+        """
+        output_feature = self.get_feature_names_out()
+        selected_columns = None
+        for feature in features:
+            if feature == output_feature:
+                selected_columns = self.columns
+                break
+
+        if selected_columns is None:
+            self.columns = []
+
+        return self
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:

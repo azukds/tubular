@@ -307,3 +307,8 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseGenericDateTransformer"
+
+    # method does not make sense for base class, so skip test
+    @pytest.mark.skip
+    def test_get_feature_names_out_matches_new_features(self):
+        return

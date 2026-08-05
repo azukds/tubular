@@ -293,6 +293,18 @@ def create_weighted_imputers_test_df(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library=library)
 
 
+def create_date_string_df(library="pandas"):
+    "create test df of string dates"
+
+    df_dict = {
+        "a": ["01/02/2020", "02/03/1990", "10/12/1950"],
+        "b": ["08/09/2008", "21/12/2015", "05/04/2002"],
+        "c": [1, 0, 1],
+    }
+
+    return u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+
 def create_date_test_df(library="pandas"):
     """Create DataFrame for DateDiffLeapYearTransformer tests."""
 

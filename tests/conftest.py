@@ -11,6 +11,7 @@ import pytest
 from tests.test_data import (
     create_aggregate_over_rows_test_df,
     create_bool_df,
+    create_date_string_df,
     create_is_between_dates_df_1,
     create_numeric_df_1,
     create_numeric_df_2,
@@ -372,6 +373,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     nan_df = create_numeric_df_2(library=library)
     object_df = create_object_df(library=library)
     date_df = create_is_between_dates_df_1(library=library)
+    date_string_df = create_date_string_df(library=library)
     agg_df = create_aggregate_over_rows_test_df(
         library=library,
     )
@@ -419,6 +421,8 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
     min_df_dict["_StringImputer"] = object_df
     min_df_dict["_BooleanImputer"] = bool_df
+
+    min_df_dict["ToDatetimeTransformer"] = date_string_df
 
     pyarrow_transformers = ["ExtractStringComponentsTransformer"]
 

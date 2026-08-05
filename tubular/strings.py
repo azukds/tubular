@@ -289,6 +289,67 @@ class ExtractStringComponentsTransformer(BaseTransformer):
             for i in range(self.return_n_components)
         ]
 
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = ExtractStringComponentsTransformer(
+        ...     columns=["a"], by="@", return_n_components=2
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a_split_by_@_entry_0': ['a'], 'a_split_by_@_entry_1': ['a']}
+
+        ```
+
+        """
+        return {
+            f"{column}_split_by_{self.by}_entry_{i}": [column]
+            for column in self.columns
+            for i in range(self.return_n_components)
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = ExtractStringComponentsTransformer(
+        ...     columns=["a", "b"], by="@", return_n_components=2
+        ... )
+        >>> transformer
+        ExtractStringComponentsTransformer(by='@', columns=['a', 'b'],
+                                           return_n_components=2)
+
+        >>> transformer.select(["a_split_by_@_entry_0"])
+        ExtractStringComponentsTransformer(by='@', columns=['a'], return_n_components=2)
+
+        ```
+
+        """
+        selected_columns = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                original_column = lineage[feature][0]
+                selected_columns.append(original_column)
+
+        self.columns = selected_columns
+
+        return self
+
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Dump transformer to json dict.
@@ -696,6 +757,61 @@ class StringContainsTransformer(BaseTransformer):
 
         """
         return [f"{col}_contains_{self.reference}" for col in self.columns]
+
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = StringContainsTransformer(columns=["a", "b"], reference="c")
+
+        >>> transformer.get_features_out_lineage()
+        {'a_contains_c': ['a', 'c'], 'b_contains_c': ['b', 'c']}
+
+        ```
+
+        """
+        return {
+            f"{column}_contains_{self.reference}": [column, self.reference]
+            for column in self.columns
+        }
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = StringContainsTransformer(columns=["a", "b"], reference="c")
+        >>> transformer
+        StringContainsTransformer(columns=['a', 'b'], reference='c')
+
+        >>> transformer.select(["a_contains_c"])
+        StringContainsTransformer(columns=['a'], reference='c')
+
+        ```
+
+        """
+        selected_columns = []
+        lineage = self.get_features_out_lineage()
+        for feature in features:
+            if feature in lineage:
+                original_column = lineage[feature][0]
+                selected_columns.append(original_column)
+
+        self.columns = selected_columns
+
+        return self
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:

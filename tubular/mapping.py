@@ -527,15 +527,15 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
 
         Examples
         --------
-        ``pycon
+        ```pycon
         >>> import polars as pl
 
         >>> transformer = MappingTransformer(
-        ...   mappings={'a': {'Y': 1, 'N': 0}},
-        ...   return_dtypes={"a":"Int8"},
-        ...    )
+        ...     mappings={"a": {"Y": 1, "N": 0}},
+        ...     return_dtypes={"a": "Int8"},
+        ... )
 
-        >>> test_df=pl.DataFrame({'a': ["Y", "N"], 'b': [3,4]})
+        >>> test_df = pl.DataFrame({"a": ["Y", "N"], "b": [3, 4]})
 
         >>> transformer.transform(test_df)
         shape: (2, 2)
@@ -563,6 +563,47 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = MappingTransformer(
+        ...     mappings={"a": {"Y": 1, "N": 0}, "b": {"yes": 1, "no": 0}},
+        ...     return_dtypes={"a": "Int8", "b": "Int8"},
+        ... )
+        >>> transformer
+        MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}, 'b': {'no': 0, 'yes': 1}},
+                           return_dtypes={'a': 'Int8', 'b': 'Int8'})
+
+        >>> transformer.select("a")
+        MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                           return_dtypes={'a': 'Int8'})
+
+        ```
+
+        """
+        lineage = self.get_features_out_lineage()
+        selected_columns = []
+        for feature in features:
+            if feature in lineage:
+                selected_columns = [*selected_columns, *lineage[feature]]
+
+        self.columns = selected_columns
+        self.mappings = {
+            col: value
+            for col, value in self.mappings.items()
+            if col in selected_columns
+        }
+        self.return_dtypes = {
+            col: value
+            for col, value in self.return_dtypes.items()
+            if col in selected_columns
+        }
+
+        return self
 
 
 # DEPRECATED TRANSFORMERS

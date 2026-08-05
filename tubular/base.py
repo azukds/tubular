@@ -243,6 +243,57 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
         """
         return self.columns
 
+    def get_features_out_lineage(self) -> dict[str, list[str]]:
+        """Map output features to inputs which they depend on.
+
+        This covers the base case where output columns match input
+        columns exactly, transformers which break this pattern will
+        need to overload this method.
+
+        Returns
+        -------
+        dict[str, list[str]]:
+            dict mapping output features to input features which they depend on
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = BaseTransformer(
+        ...     columns="a",
+        ... )
+
+        >>> transformer.get_features_out_lineage()
+        {'a': ['a']}
+
+        ```
+
+        """
+        return {col: [col] for col in self.columns}
+
+    def select(self, features: list[str]) -> None:
+        """Edit transformer to just create selected features.
+
+        Examples
+        --------
+        ```pycon
+        >>> transformer = BaseTransformer(
+        ...     columns=["a", "b"],
+        ... )
+        >>> transformer
+        BaseTransformer(columns=['a', 'b'])
+
+        >>> transformer.select(["a"])
+        BaseTransformer(columns=['a'])
+
+        ```
+
+        """
+        selected_columns = [feature for feature in features if feature in self.columns]
+
+        self.columns = selected_columns
+
+        return self
+
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Dump transformer to json dict.
