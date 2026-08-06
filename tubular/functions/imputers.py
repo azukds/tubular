@@ -21,10 +21,10 @@ def indicate_nulls_for_columns(columns: ListOfStrs | str) -> list[nw.Expr]:
     return [(nw.col(c).is_null()).alias(f"{c}_nulls") for c in columns]
 
 
-def impute_numeric_nulls(
+def impute_numeric_or_string_nulls(
     columns: ListOfStrs | list, impute_values: dict
 ) -> list[nw.Expr]:
-    """Return expressions to impute null values for numeric columns.
+    """Return expressions to impute null values for numeric or string columns.
 
     Parameters
     ----------
