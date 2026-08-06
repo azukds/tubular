@@ -223,6 +223,7 @@ class BaseGenericDateTransformer(
         --------
         ```pycon
         >>> import polars as pl
+        >>> import datetime
 
         >>> transformer = BaseGenericDateTransformer(
         ...     columns=["a", "b"],
