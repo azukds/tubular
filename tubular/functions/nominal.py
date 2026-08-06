@@ -100,7 +100,7 @@ def _get_rare_grouping_expr(
 
 
 @beartype
-def group_rare_cat_enum(
+def rare_encode_categorical_or_enum_columns(
     cols: list[str],
     non_rare_levels: dict[str, ListOfStrs],
     unseen_levels_to_rare: bool,
@@ -151,7 +151,7 @@ def group_rare_cat_enum(
     return grouped_expressions
 
 
-def group_str_cat(
+def rare_encode_str_columns(
     cols: list[str],
     non_rare_levels: dict,
     unseen_levels_to_rare: bool,

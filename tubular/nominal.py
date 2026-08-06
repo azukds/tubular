@@ -28,10 +28,10 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.functions.nominal import (
-    group_rare_cat_enum,
-    group_str_cat,
     numerically_encode_columns,
     one_hot_encode_columns,
+    rare_encode_categorical_or_enum_columns,
+    rare_encode_str_columns,
 )
 from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
 from tubular.mixins import WeightColumnMixin
@@ -484,7 +484,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         ]
         cat_enum_cols = [col for col in self.columns if col not in str_cols]
 
-        group_str_cols_expr = group_str_cat(
+        group_str_cols_expr = rare_encode_str_columns(
             cols=str_cols,
             non_rare_levels=self.non_rare_levels,
             unseen_levels_to_rare=self.unseen_levels_to_rare,
@@ -492,7 +492,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             rare_level_name=self.rare_level_name,
         )
 
-        group_cat_enum_cols_expr = group_rare_cat_enum(
+        group_cat_enum_cols_expr = rare_encode_categorical_or_enum_columns(
             cols=cat_enum_cols,
             non_rare_levels=self.non_rare_levels,
             unseen_levels_to_rare=self.unseen_levels_to_rare,
