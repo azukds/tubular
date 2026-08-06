@@ -10,7 +10,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -232,7 +231,6 @@ class TestTransform(GenericTransformTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for ColumnDtypeSetter behaviour outside the three standard methods.

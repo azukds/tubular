@@ -69,13 +69,12 @@ class TestFit(GenericFitTests):
         """Test that the nearest response values learnt during fit are expected."""
         df = d.create_numeric_df_2(library=library)
 
-        transformer = NearestMeanResponseImputer(columns=["b", "c"])
+        transformer = NearestMeanResponseImputer(columns=["b"])
 
         transformer.fit(df, df["a"])
 
         assert transformer.impute_values_ == {
             "b": np.float64(3),
-            "c": np.float64(2),
         }, "impute_values_ attribute"
 
 

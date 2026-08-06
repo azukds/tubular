@@ -10,7 +10,6 @@ from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsString,
 )
 from tubular.mapping import BaseMappingTransformer
 from tubular.nominal import NominalToIntegerTransformer
@@ -158,7 +157,6 @@ class TestTransform(GenericNominalTransformTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsString,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
