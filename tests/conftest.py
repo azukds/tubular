@@ -249,7 +249,7 @@ def minimal_attribute_dict():
         "NullIndicator": {
             "columns": ["a"],
         },
-        "_NumberImputer": {
+        "NumberImputer": {
             "columns": ["b"],
             "impute_value": 1,
         },

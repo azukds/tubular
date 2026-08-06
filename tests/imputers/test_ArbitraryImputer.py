@@ -142,7 +142,7 @@ class TestTransform(
         else:
             col_dtype = getattr(nw, col_type)
             msg = f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {[col_dtype]}
                 """
 
@@ -609,7 +609,7 @@ class TestTransform(
 
         msg = re.escape(
             f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """,
         )
