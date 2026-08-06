@@ -421,6 +421,33 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_error_for_bad_type(self, library, from_json, lazy):
+        """Test expected error is raised for unexpected type."""
+        df_dict = {"a": ["01/02/2020", "20/03/1990"]}
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("a").str.to_datetime(format="%d/%m/%Y")).to_native()
+
+        mapping = {"a": {"a": "aaa"}}
+        return_dtypes = {"a": "Categorical"}
+
+        transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        msg = r"MappingTransformer: The following columns have types which are not covered by the existing mapping logic \['a'\]"
+        with pytest.raises(
+            RuntimeError,
+            match=msg,
+        ):
+            transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
 
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,

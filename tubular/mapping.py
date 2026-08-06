@@ -23,8 +23,8 @@ from tubular._utils import (
 from tubular.base import BaseTransformer, register
 from tubular.functions.mapping import (
     RETURN_DTYPES,
+    map_categorical_to_generic,
     map_generic_to_bool,
-    map_generic_to_categorical,
     map_generic_to_number,
     map_generic_to_str,
     map_number_to_string,
@@ -334,6 +334,11 @@ class BaseMappingTransformMixin(BaseTransformer):
         X : DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
+        Raises
+        ------
+        RuntimeError:
+            If columns to be mapped in X have unsupported type.
+
         #  not currently including doctest for this, as is not intended to be used
         #  independently (should be inherited as a mixin)
 
@@ -352,19 +357,18 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         schema = X.collect_schema()
 
-        cols_mapped_from_or_to_categorical = [
+        remaining_cols = self.columns
+
+        cols_mapped_from_categorical = [
             col
             for col in self.return_dtypes
-            if (
-                (self.return_dtypes[col] == "Categorical")
-                or (isinstance(schema[col], (nw.Categorical, nw.Enum)))
-            )
+            if (isinstance(schema[col], (nw.Categorical, nw.Enum)))
         ]
-        remaining_cols = [
-            col
-            for col in self.return_dtypes
-            if col not in cols_mapped_from_or_to_categorical
-        ]
+
+        remaining_cols = list(
+            set(remaining_cols).difference(set(cols_mapped_from_categorical))
+        )
+
         cols_mapped_num_to_str = [
             col
             for col in remaining_cols
@@ -373,17 +377,27 @@ class BaseMappingTransformMixin(BaseTransformer):
                 and isinstance(schema[col], tuple(NumericTypes))
             )
         ]
+
+        remaining_cols = list(
+            set(remaining_cols).difference(set(cols_mapped_num_to_str))
+        )
+
         cols_mapped_generic_to_str = [
-            col
-            for col in remaining_cols
-            if (
-                self.return_dtypes[col] == "String"
-                and (col not in cols_mapped_num_to_str)
-            )
+            col for col in remaining_cols if (self.return_dtypes[col] == "String")
         ]
+
+        remaining_cols = list(
+            set(remaining_cols).difference(set(cols_mapped_generic_to_str))
+        )
+
         cols_mapped_generic_to_bool = [
             col for col in remaining_cols if self.return_dtypes[col] == "Boolean"
         ]
+
+        remaining_cols = list(
+            set(remaining_cols).difference(set(cols_mapped_generic_to_bool))
+        )
+
         cols_mapped_generic_to_number = [
             col
             for col in remaining_cols
@@ -397,6 +411,14 @@ class BaseMappingTransformMixin(BaseTransformer):
                 "Float64",
             }
         ]
+
+        remaining_cols = list(
+            set(remaining_cols).difference(set(cols_mapped_generic_to_number))
+        )
+
+        if len(remaining_cols) != 0:
+            msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {remaining_cols}"
+            raise (RuntimeError(msg))
 
         num_to_str_mapping_exprs = map_number_to_string(
             cols=cols_mapped_num_to_str,
@@ -412,13 +434,17 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         generic_to_number_mapping_exprs = map_generic_to_number(
             cols=cols_mapped_generic_to_number,
-            return_dtypes=self.return_dtypes,
+            return_dtypes={
+                key: value
+                for key, value in self.return_dtypes.items()
+                if key in cols_mapped_generic_to_number
+            },
             mappings=self.mappings,
             mappings_from_null=self.mappings_from_null,
         )
 
-        categorical_mapping_exprs = map_generic_to_categorical(
-            cols=cols_mapped_from_or_to_categorical,
+        categorical_mapping_exprs = map_categorical_to_generic(
+            cols=cols_mapped_from_categorical,
             return_dtypes=self.return_dtypes,
             mappings=self.mappings,
             mappings_from_null=self.mappings_from_null,

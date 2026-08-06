@@ -17,6 +17,19 @@ RETURN_DTYPES = Literal[
     "Float64",
 ]
 
+NUMERIC_TYPES = Literal[
+    "UInt8",
+    "UInt16",
+    "UInt32",
+    "UInt64",
+    "Int8",
+    "Int16",
+    "Int32",
+    "Int64",
+    "Float32",
+    "Float64",
+]
+
 
 @beartype
 def _get_mapping_expr(
@@ -192,7 +205,7 @@ def map_generic_to_str(
 @beartype
 def map_generic_to_number(
     cols: list[str],
-    return_dtypes: dict[str, RETURN_DTYPES],
+    return_dtypes: dict[str, NUMERIC_TYPES],
     mappings: dict[str, dict[Any, Any]],
     mappings_from_null: dict[str, Any],
 ) -> list[nw.Expr]:
@@ -230,7 +243,7 @@ def map_generic_to_number(
 
 
 @beartype
-def map_generic_to_categorical(
+def map_categorical_to_generic(
     cols: list[str],
     return_dtypes: dict[str, RETURN_DTYPES],
     mappings: dict[str, dict[Any, Any]],

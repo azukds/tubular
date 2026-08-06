@@ -242,6 +242,7 @@ class TestTransform(GenericTransformTests):
         transformer.mappings = base_mapping_transformer.mappings
         transformer.return_dtypes = base_mapping_transformer.return_dtypes
         transformer.mappings_from_null = base_mapping_transformer.mappings_from_null
+        transformer.columns = base_mapping_transformer.columns
 
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
@@ -520,6 +521,7 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
         x.mappings = {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}}
         x.return_dtypes = {"b": "Int8"}
         x.mappings_from_null = {"b": 1}
+        x.columns = ["b"]
 
         output = x.transform(df)
 
