@@ -93,7 +93,7 @@ class TestTransform(
         bad_types = [nw.from_native(df).schema[column]]
 
         msg = f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """
 

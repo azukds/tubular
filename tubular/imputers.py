@@ -261,7 +261,7 @@ class BaseImputer(BaseTransformer):
 
 
 class NumberImputer(BaseImputer):
-    """Private subclass to handle arbitrary number imputation.
+    """Class to handle arbitrary number imputation.
 
     Attributes
     ----------
@@ -376,7 +376,7 @@ class NumberImputer(BaseImputer):
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                {self.classname()}: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(
