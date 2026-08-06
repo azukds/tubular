@@ -30,10 +30,24 @@ def create_object_df(library="pandas"):
     df_dict = {
         "a": [1, 2, 3, 4, 5],
         "b": ["f", "g", "h", "i", "j"],
-        "c": ["a", "b", "c", "d", "e"],
+        "c": [1, 0, 1, 0, 1],
     }
 
     return u.dataframe_init_dispatch(df_dict, library)
+
+
+def create_categorical_df(library="pandas"):
+    """Example with object columns - c is numeric target"""
+
+    df_dict = {"a": ["f", "g", None], "b": ["a", "b", None], "c": [1, 0, 1]}
+
+    df = u.dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+
+    df = df.with_columns(nw.col(col).cast(nw.Categorical) for col in ["a", "b"])
+
+    return df.to_native()
 
 
 def create_df_1(library="pandas"):

@@ -25,7 +25,12 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.functions.nominal import numerically_encode_columns, one_hot_encode_columns
+from tubular.functions.nominal import (
+    numerically_encode_columns,
+    one_hot_encode_columns,
+    rare_encode_categorical_or_enum_columns,
+    rare_encode_str_columns,
+)
 from tubular.mapping import BaseMappingTransformer
 from tubular.mixins import WeightColumnMixin
 from tubular.types import (
@@ -224,6 +229,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             json_dict["fit"]["training_data_levels"] = _sort_dict(
                 self.training_data_levels
             )
+        else:
+            json_dict["fit"]["training_data_levels"] = None
         if self.record_rare_levels:
             self.check_is_fitted(["rare_levels_record"])
             json_dict["fit"]["rare_levels_record"] = _sort_dict(self.rare_levels_record)
@@ -370,6 +377,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         if not self.unseen_levels_to_rare:
             self.training_data_levels = {}
+        else:
+            self.training_data_levels = None
 
         for c in self.columns:
             group = X.group_by(c).agg(nw.col(weights_column).sum())
@@ -463,47 +472,41 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.check_is_fitted(["non_rare_levels"])
 
-        transform_expressions = []
+        str_cols = [col for col in self.columns if isinstance(schema[col], nw.String)]
+        cat_enum_cols = [
+            col
+            for col in self.columns
+            if isinstance(schema[col], (nw.Categorical, nw.Enum))
+        ]
 
-        for col in self.columns:
-            non_rare_condition_expression = (
-                nw.col(col).is_in(self.non_rare_levels[col])
-                if self.unseen_levels_to_rare
-                # if unseen levels are mapped to rare,
-                # the condition becomes either in
-                # non rare levels OR not in training data
-                # levels (unseen)
-                else (
-                    nw.col(col).is_in(self.non_rare_levels[col])
-                    | ~nw.col(col).is_in(self.training_data_levels[col])
-                )
+        group_str_cols_expr = rare_encode_str_columns(
+            cols=str_cols,
+            non_rare_levels=self.non_rare_levels,
+            unseen_levels_to_rare=self.unseen_levels_to_rare,
+            training_data_levels=self.training_data_levels,
+            rare_level_name=self.rare_level_name,
+        )
+
+        group_cat_enum_cols_expr = rare_encode_categorical_or_enum_columns(
+            cols=cat_enum_cols,
+            non_rare_levels=self.non_rare_levels,
+            unseen_levels_to_rare=self.unseen_levels_to_rare,
+            training_data_levels=self.training_data_levels,
+            rare_level_name=self.rare_level_name,
+        )
+
+        group_exprs = [
+            *group_cat_enum_cols_expr,
+            *group_str_cols_expr,
+        ]
+
+        X = (
+            X.with_columns(
+                *group_exprs,
             )
-
-            transform_expression = (
-                nw.col(col).cast(
-                    nw.String,
-                )
-                if schema[col] in {nw.Categorical, nw.Enum}
-                else nw.col(col)
-            )
-
-            transform_expression = (
-                nw.when(non_rare_condition_expression | nw.col(col).is_null())
-                .then(transform_expression)
-                .otherwise(nw.lit(self.rare_level_name))
-            )
-
-            transform_expression = (
-                transform_expression.cast(
-                    nw.Enum(self.non_rare_levels[col] + [self.rare_level_name]),
-                )
-                if (schema[col] in {nw.Categorical, nw.Enum})
-                else transform_expression
-            )
-
-            transform_expressions.append(transform_expression)
-
-        X = X.with_columns(*transform_expressions) if transform_expressions else X
+            if group_exprs
+            else X
+        )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

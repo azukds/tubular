@@ -588,6 +588,11 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
             f"{x.classname()}: get_feature_names_out does not agree with output of .transform, expected {expected_new_columns} but got {output_columns}"
         )
 
+    # overload this test, as does not make sense for test of independent base class
+    @pytest.mark.skip
+    def test_pipeline_raises_not_fitted_error_when_unfitted(self):
+        return
+
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "BaseImputer"
