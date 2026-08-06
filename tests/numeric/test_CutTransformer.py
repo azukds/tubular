@@ -126,9 +126,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests,
-):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for CutTransformer outside the three standard methods.
 

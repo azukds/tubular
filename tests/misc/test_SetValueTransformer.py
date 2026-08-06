@@ -102,7 +102,8 @@ class TestTransform(GenericTransformTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
 ):
     """
     Class to run tests for SetValueTransformer behaviour outside the three standard methods.
@@ -137,7 +138,7 @@ class TestOtherBaseBehaviour(
                 "return_native": True,
                 "value": value,
             },
-            "fit": {},
+            "fit": {"is_fitted_": True},
         }
 
         assert actual == expected, "to_json does not return the expected dictionary"

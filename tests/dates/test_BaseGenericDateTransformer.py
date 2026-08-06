@@ -8,7 +8,6 @@ from dateutil.tz import gettz
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     GenericFitTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
@@ -269,7 +268,6 @@ class GenericDatesMixinTransformTests:
 
 class TestInit(
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""

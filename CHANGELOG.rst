@@ -27,11 +27,110 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.3.0 (unreleased)
+3.10.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: added get_transform_exprs methods to NullIndicator transformer `#750 <https://github.com/azukds/tubular/issues/750>_`
+- feat: added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
+- chore: refactored OtherBaseBehaviour test classes to make easier to maintain
+- chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+
+3.9.0 (17/07/2026)
 ------------------
 
 Changed
 ^^^^^^^
+- chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
+- bugfix: sort dict attributes to ensure consistent json expressions
+- chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
+- bugfix: added register decorator to DatetimeComponentExtractor
+
+3.8.4 (25/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fixed error for ArbitraryImputer with Enum dtypes
+
+3.8.3 (24/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: ColumnDtypeSetter error for casting strings with null values
+
+3.8.2 (19/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: loosen typehint on MRE numerically_encode_columns function
+
+3.8.1 (19/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fix to_json method for MeanResponseTransformer where there are null levels present
+
+3.8.0 (18/06/2026)
+------------------
+
+Changed
+^^^^^^^
+- added get_transform_exprs methods to capping, aggregations, comparison, dates, misc, numeric transformers and OneHotEncodingTransformer
+
+3.7.1 (02/06/2024)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: fix for StringContainsTransformer with regex-like values
+
+3.7.0 (29/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- chore: added register decorator to transformers in comparison file
+
+3.6.0 (26/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- chore: updated polars pins, MappingTransformer broken for <1.21.0
+- added StringContainsTransformer to flag if columns contain reference values
+
+3.5.0 (21/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- bugfix: updated pipeline step name handling in pipeline json dumping/loading to pass when step_name!=transformer_name
+
+3.4.0 (13/05/2026)
+------------------
+
+Changed
+^^^^^^^
+- added LowerCaseTransformer and RemoveCharactersTransformer to string module
+- added functions module for stateless transforms
+- removed narwhals private import from nominal module `#725 <https://github.com/azukds/tubular/issues/725>_`
+- added get_transform_exprs methods to capping transformers
+- setup get_transform_exprs methods for aggregations/comparison/dates/misc/numeric, and OneHotEncoder/MeanResponseTransformer
+- bug: fixed MeanResponseTransformer.fit to accept both lazy X and lazy y `#731 <https://github.com/azukds/tubular/pull/731>`_
+- feat: added ExtractStringComponentsTransformer for e.g. pulling out email domains
+
+3.3.0 (30/04/2026)
+------------------
+
+Changed
+^^^^^^^
+- feat: added `check_is_fitted` to all transformers `#494 <https://github.com/azukds/tubular/issues/494>`_
+- chore: added python 3.14 on automated testing `#494 <https://github.com/azukds/tubular/issues/494>`_
+- converted MeanResponseTransformer to work with lazyframes `#533 <https://github.com/azukds/tubular/issues/533>_`
 - updated pytest version on dependabot recommendation
 - deprecated OneDKmeansTransformer
 

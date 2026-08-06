@@ -5,7 +5,10 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
 from tests import utils as u
-from tests.base_tests import EmptyColumnsFailTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFailTests,
+    OtherBaseBehaviourTests,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,

@@ -24,9 +24,12 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, DataFrameMethodTransformer, register
+from tubular.functions.numeric import (
+    get_difference_of_two_columns,
+    get_ratio_of_two_columns,
+)
 from tubular.mixins import (
     CheckNumericMixin,
-    DropOriginalMixin,
 )
 from tubular.types import (
     DataFrame,
@@ -274,6 +277,17 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         # Set new_column_name or generate a default one
         self.new_column_name = f"{columns[0]}_minus_{columns[1]}"
+        self.is_fitted_ = True  # Does not fit
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return get_difference_of_two_columns(columns=self.columns)
 
     @beartype
     def transform(
@@ -318,10 +332,9 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        # Create the subtraction expression
-        expr = nw.col(self.columns[0]) - nw.col(self.columns[1])
+        transform_expr = self.get_transform_exprs()
 
-        X = X.with_columns(expr.alias(self.new_column_name))
+        X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -403,7 +416,7 @@ class RatioTransformer(BaseNumericTransformer):
         ```pycon
         >>> ratio_transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
         >>> ratio_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -436,6 +449,20 @@ class RatioTransformer(BaseNumericTransformer):
         super().__init__(columns=columns, **kwargs)
 
         self.return_dtype = return_dtype
+        self.is_fitted_ = True  # Does not fit
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return get_ratio_of_two_columns(
+            columns=self.columns,
+            return_dtype=self.return_dtype,
+        )
 
     @beartype
     def transform(
@@ -478,17 +505,9 @@ class RatioTransformer(BaseNumericTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        # Create the division expression
-        expr = (
-            nw.when(nw.col(self.columns[1]) != 0)
-            .then(nw.col(self.columns[0]) / nw.col(self.columns[1]))
-            .otherwise(None)
-            .cast(getattr(nw, self.return_dtype))
-        )
+        transform_expr = self.get_transform_exprs()
 
-        # Add the new column
-        new_column_name = f"{self.columns[0]}_divided_by_{self.columns[1]}"
-        X = X.with_columns(expr.alias(new_column_name))
+        X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -511,20 +530,16 @@ class RatioTransformer(BaseNumericTransformer):
     for it to be modernised
     """,
 )
-class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
+class LogTransformer(BaseNumericTransformer):
     """Transformer to apply log transformation.
 
-    Transformer has the option to add 1 to the columns to log and drop the
-    original columns.
+    Transformer has the option to add 1 to the columns to log.
 
     Attributes
     ----------
     add_1 : bool
         The name of the column or columns to be assigned to the output of running the
         pandas method in transform.
-
-    drop_original : bool
-        The name of the pandas.DataFrame method to call.
 
     suffix : str
         The suffix to add onto the end of column names for new columns.
@@ -566,7 +581,6 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         columns: str | list[str] | None,
         base: PositiveNumber | None = None,
         add_1: bool = False,
-        drop_original: bool = True,
         suffix: str = "log",
         **kwargs: bool,
     ) -> None:
@@ -584,10 +598,6 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
             Should a constant of 1 be added to the columns to be transformed prior to
             applying the log transform?
 
-        drop_original : bool
-            Should the original columns to be transformed be dropped after applying the
-            log transform?
-
         suffix : str, default = '_log'
             The suffix to add onto the end of column names for new columns.
 
@@ -597,7 +607,6 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         """
         super().__init__(columns=columns, **kwargs)
 
-        self.drop_original = drop_original
         self.base = base
         self.add_1 = add_1
         self.suffix = suffix
@@ -616,8 +625,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the log transform to the specified columns.
 
-        If the drop attribute is True then the original columns are dropped. If
-        the add_1 attribute is True then the original columns + 1 are logged.
+        If the add_1 attribute is True then the original columns + 1 are logged.
 
         Parameters
         ----------
@@ -627,8 +635,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
         Returns
         -------
         X : pd.DataFrame
-            The dataframe with the specified columns logged, optionally dropping the original
-            columns if self.drop is True.
+            The dataframe with the specified columns logged.
 
         Raises
         ------
@@ -662,11 +669,7 @@ class LogTransformer(BaseNumericTransformer, DropOriginalMixin):
             else:
                 X[new_column_names] = np.log(X[self.columns]) / np.log(self.base)
 
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-        )
+        return X
 
 
 @deprecated(
@@ -1271,7 +1274,7 @@ class InteractionTransformer(BaseNumericTransformer):
                     include_bias=False,
                 )
             else:
-                raise err
+                raise
 
         interaction_combination_colname = [
             [self.columns[col_idx] for col_idx in interaction_combination]
@@ -1539,7 +1542,7 @@ class PCATransformer(BaseNumericTransformer):
     "If you prefer this transformer to DateDifferenceTransformer, "
     "let us know through a github issue",
 )
-class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
+class OneDKmeansTransformer(BaseNumericTransformer):
     """Generates a new column based on kmeans algorithm.
 
     Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
@@ -1868,15 +1871,10 @@ class OneDKmeansTransformer(BaseNumericTransformer, DropOriginalMixin):
             right=True,
         )
 
-        X = X.with_columns(
+        return X.with_columns(
             nw.new_series(
                 name=self.new_column_name,
                 values=groups,
                 backend=native_backend,
             ),
-        )
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns[0],
         )

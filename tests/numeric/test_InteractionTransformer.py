@@ -5,7 +5,10 @@ import test_aide as ta
 from beartype.roar import BeartypeCallHintParamViolation
 
 import tests.test_data as d
-from tests.base_tests import EmptyColumnsFailTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFailTests,
+    OtherBaseBehaviourTests,
+)
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
     BaseNumericTransformerTransformTests,

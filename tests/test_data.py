@@ -30,10 +30,27 @@ def create_numeric_df_2(library="pandas"):
     df_dict = {
         "a": [2, 3, 2, 1, 4, 1],
         "b": [None, None, 1, 3, 3, 4],
-        "c": [1, 1, 2, 3, 3, None],
+        "c": [1, 1, 2, 3, 3, 3],
     }
 
     return u.dataframe_init_dispatch(df_dict, library)
+
+
+def create_bool_df(library="pandas"):
+    """Example with boolean dataframe that includes missing values."""
+
+    df_dict = {
+        "a": [True, False, None],
+        "b": [True, None, False],
+        "c": [1, 1, 0],
+    }
+
+    df = u.dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+    df = nw.maybe_convert_dtypes(df)
+
+    return df.to_native()
 
 
 def create_object_df(library="pandas"):
@@ -42,10 +59,24 @@ def create_object_df(library="pandas"):
     df_dict = {
         "a": [1, 2, 3, 4, 5],
         "b": ["f", "g", "h", "i", "j"],
-        "c": ["a", "b", "c", "d", "e"],
+        "c": [1, 0, 1, 0, 1],
     }
 
     return u.dataframe_init_dispatch(df_dict, library)
+
+
+def create_categorical_df(library="pandas"):
+    """Example with object columns - c is numeric target"""
+
+    df_dict = {"a": ["f", "g", None], "b": ["a", "b", None], "c": [1, 0, 1]}
+
+    df = u.dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+
+    df = df.with_columns(nw.col(col).cast(nw.Categorical) for col in ["a", "b"])
+
+    return df.to_native()
 
 
 def create_df_1(library="pandas"):
@@ -646,25 +677,6 @@ def create_date_diff_different_dtypes_and_nans(library="pandas"):
             datetime.datetime(2015, 11, 10, tzinfo=datetime.timezone.utc),
             datetime.datetime(2015, 11, 10, tzinfo=datetime.timezone.utc),
             datetime.datetime(2015, 7, 23, tzinfo=datetime.timezone.utc),
-        ],
-    }
-
-    return u.dataframe_init_dispatch(df_dict, library=library)
-
-
-def expected_date_diff_df_2(library="pandas"):
-    """Expected output for test_expected_output_drop_cols_true."""
-
-    df_dict = {
-        "c": [
-            None,
-            19,
-            0,
-            0,
-            0,
-            -2,
-            -3,
-            30,
         ],
     }
 

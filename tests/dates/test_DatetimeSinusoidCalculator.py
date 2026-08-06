@@ -6,7 +6,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
@@ -30,7 +29,6 @@ def example_transformer():
 
 class TestInit(
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
 ):
     """Tests for DatetimeSinusoidCalculator.init()."""
 
@@ -519,7 +517,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

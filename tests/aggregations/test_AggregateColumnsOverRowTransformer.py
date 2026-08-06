@@ -7,7 +7,10 @@ from tests.aggregations.test_BaseAggregationTransformer import (
     TestBaseAggregationTransformerInit,
     TestBaseAggregationTransformerTransform,
 )
-from tests.base_tests import EmptyColumnsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTests,
+)
 from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
@@ -78,7 +81,6 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        # transformer = transformer_setup(columns, aggregations, key, drop_original)
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
         if _check_if_skip_test(transformer, df, lazy):
@@ -206,7 +208,8 @@ class TestAggregateColumnsOverRowTransformerTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
 ):
     """
     Class to run tests for AggregateColumnsOverRowTransformer outside the three standard methods.

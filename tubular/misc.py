@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Annotated, Any
+from typing import Any
 
 import narwhals as nw
 from beartype import beartype
-from beartype.vale import Is
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -15,7 +13,12 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.mixins import DropOriginalMixin
+from tubular.functions.misc import (
+    SimpleCastDtypesStr,
+    cast_columns,
+    rename_columns,
+    set_columns_to_value,
+)
 from tubular.types import (
     DataFrame,
     ListOfStrs,
@@ -89,6 +92,7 @@ class SetValueTransformer(BaseTransformer):
         self.value = value
 
         super().__init__(columns=columns, **kwargs)
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -105,7 +109,7 @@ class SetValueTransformer(BaseTransformer):
         ```pycon
         >>> transformer = SetValueTransformer(columns="a", value=1)
         >>> transformer.to_json()
-        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'SetValueTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'value': 1}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -115,6 +119,19 @@ class SetValueTransformer(BaseTransformer):
         json_dict["init"]["value"] = self.value
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return set_columns_to_value(
+            columns=self.columns,
+            value=self.value,
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -158,13 +175,15 @@ class SetValueTransformer(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        X = X.with_columns([nw.lit(self.value).alias(c) for c in self.columns])
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
 @register
-class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
+class RenameColumnsTransformer(BaseTransformer):
     """Transformer to rename a given set of columns.
 
     This can be useful for personalising the auto-output names from
@@ -206,10 +225,9 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
     >>> json_dump = transformer.to_json()
     >>> pprint(json_dump, sort_dicts=True)
     {'classname': 'RenameColumnsTransformer',
-     'fit': {},
+     'fit': {'is_fitted_': True},
      'init': {'columns': ['a'],
               'copy': False,
-              'drop_original': True,
               'new_column_names': {'a': 'new_a'},
               'return_native': True,
               'verbose': False},
@@ -235,7 +253,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         self,
         columns: ListOfStrs | str,
         new_column_names: dict[str, str],
-        drop_original: bool = True,
         **kwargs: bool,
     ) -> None:
         """Initialise class instance.
@@ -247,9 +264,6 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         new_column_names: dict[str, str]
             dictionary mapping provided columns to updated names
-
-        drop_original: bool
-            indicates whether to drop original columns.
 
         **kwargs: bool
             Arbitrary keyword arguments passed onto BaseTransformer.init method.
@@ -268,7 +282,7 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
                 raise ValueError(msg)
 
         self.new_column_names = new_column_names
-        self.drop_original = drop_original
+        self.is_fitted_ = True  # Does not fit
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -313,10 +327,9 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         ... )  # noqa: E501
         >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'RenameColumnsTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a'],
                   'copy': False,
-                  'drop_original': True,
                   'new_column_names': {'a': 'new_a'},
                   'return_native': True,
                   'verbose': False},
@@ -330,11 +343,23 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         json_dict["init"].update(
             {
                 "new_column_names": self.new_column_names,
-                "drop_original": self.drop_original,
             }
         )
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return rename_columns(
+            columns=self.columns,
+            new_column_names=self.new_column_names,
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -366,16 +391,16 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
         >>> test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
         >>> transformer.transform(test_df)
-        shape: (3, 2)
-        ┌─────┬───────┐
-        │ b   ┆ new_a │
-        │ --- ┆ ---   │
-        │ i64 ┆ i64   │
-        ╞═════╪═══════╡
-        │ 4   ┆ 1     │
-        │ 5   ┆ 2     │
-        │ 6   ┆ 3     │
-        └─────┴───────┘
+        shape: (3, 3)
+        ┌─────┬─────┬───────┐
+        │ a   ┆ b   ┆ new_a │
+        │ --- ┆ --- ┆ ---   │
+        │ i64 ┆ i64 ┆ i64   │
+        ╞═════╪═════╪═══════╡
+        │ 1   ┆ 4   ┆ 1     │
+        │ 2   ┆ 5   ┆ 2     │
+        │ 3   ┆ 6   ┆ 3     │
+        └─────┴─────┴───────┘
 
         ```
 
@@ -391,37 +416,11 @@ class RenameColumnsTransformer(BaseTransformer, DropOriginalMixin):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        X = X.with_columns(
-            [nw.col(c).alias(self.new_column_names[c]) for c in self.columns]
-        )
+        transform_exprs = self.get_transform_exprs()
 
-        X = DropOriginalMixin.drop_original_column(X, self.drop_original, self.columns)
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-class SimpleCastDtypes(str, Enum):
-    """Allowed dtypes for ColumnDtypeSetter."""
-
-    FLOAT64 = "Float64"
-    FLOAT32 = "Float32"
-    INT64 = "Int64"
-    INT32 = "Int32"
-    INT16 = "Int16"
-    INT8 = "Int8"
-    UINT64 = "UInt64"
-    UINT32 = "UInt32"
-    UINT16 = "UInt16"
-    UINT8 = "UInt8"
-    BOOLEAN = "Boolean"
-    STRING = "String"
-    CATEGORICAL = "Categorical"
-
-
-SimpleCastDtypesStr = Annotated[
-    str,
-    Is[lambda s: s in SimpleCastDtypes._value2member_map_],
-]
 
 
 @register
@@ -486,6 +485,7 @@ class ColumnDtypeSetter(BaseTransformer):
         super().__init__(columns, **kwargs)
 
         self.dtype = dtype
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -504,7 +504,7 @@ class ColumnDtypeSetter(BaseTransformer):
         >>> transformer = ColumnDtypeSetter(columns="a", dtype="Float32")
         >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'ColumnDtypeSetter',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a'],
                   'copy': False,
                   'dtype': 'Float32',
@@ -520,6 +520,19 @@ class ColumnDtypeSetter(BaseTransformer):
         json_dict["init"]["dtype"] = self.dtype
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return cast_columns(
+            columns=self.columns,
+            dtype=self.dtype,
+        )
 
     def transform(self, X: DataFrame) -> DataFrame:
         """Transform data.
@@ -564,8 +577,8 @@ class ColumnDtypeSetter(BaseTransformer):
             )
 
         else:
-            X = X.with_columns(
-                [nw.col(col).cast(getattr(nw, self.dtype)) for col in self.columns]
-            )
+            transform_exprs = self.get_transform_exprs()
+
+            X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)

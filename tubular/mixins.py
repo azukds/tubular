@@ -57,7 +57,7 @@ class CheckNumericMixin:
 
         """
         X = _convert_dataframe_to_narwhals(X)
-        schema = X.schema
+        schema = X.collect_schema()
 
         non_numeric_columns = [
             col for col in self.columns if schema[col] not in NumericTypes
@@ -70,62 +70,6 @@ class CheckNumericMixin:
             raise TypeError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native)
-
-
-class DropOriginalMixin:
-    """Mixin class to validate and apply 'drop_original' argument used by various transformers.
-
-    Transformer deletes transformer input columns depending on boolean argument.
-
-    """
-
-    def classname(self) -> str:
-        """Get name of the current class when called.
-
-        Returns
-        -------
-            str:
-                name of class
-
-        """
-        return type(self).__name__
-
-    @staticmethod
-    @beartype
-    def drop_original_column(
-        X: DataFrame,
-        drop_original: bool,
-        columns: list[str] | str | None,
-        return_native: bool = True,
-    ) -> DataFrame:
-        """Drop input columns from X if drop_original set to True.
-
-        Parameters
-        ----------
-        X : DataFrame
-            Data with columns to drop.
-
-        drop_original : bool
-            boolean dictating dropping the input columns from X after checks.
-
-        columns: list[str] | str |  None
-            Object containing columns to drop
-
-        return_native: bool
-            controls whether mixin returns native or narwhals type
-
-        Returns
-        -------
-        X : DataFrame
-            Transformed input X with columns dropped.
-
-        """
-        X = _convert_dataframe_to_narwhals(X)
-
-        if drop_original:
-            X = X.drop(columns)
-
-        return X.to_native() if return_native else X
 
 
 class WeightColumnMixin:
@@ -186,7 +130,7 @@ class WeightColumnMixin:
 
         unit_weights_column = "unit_weights_column"
 
-        if unit_weights_column in X.columns:
+        if unit_weights_column in X.collect_schema().names():
             if X.schema[unit_weights_column] not in NumericTypes:
                 error_msg = f"{unit_weights_column} is present in X and non-numeric, transformer logic requires this to be an all 1 value column."
                 raise TypeError(
@@ -229,12 +173,12 @@ class WeightColumnMixin:
         X = _convert_dataframe_to_narwhals(X)
 
         # check if given weight is in columns
-        if weights_column not in X.columns:
+        if weights_column not in X.collect_schema().names():
             msg = f"{self.classname()}: weight col ({weights_column}) is not present in columns of data"
             raise ValueError(msg)
 
         # check weight is numeric
-        schema = X.schema
+        schema = X.collect_schema()
         if schema[weights_column] not in NumericTypes:
             msg = f"{self.classname()}: weight column must be numeric."
             raise ValueError(msg)
