@@ -477,12 +477,12 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         self.check_is_fitted(["non_rare_levels"])
 
-        str_cols = [
+        str_cols = [col for col in self.columns if isinstance(schema[col], nw.String)]
+        cat_enum_cols = [
             col
             for col in self.columns
-            if ((schema[col] == "String") or (isinstance(schema[col], nw.String)))
+            if isinstance(schema[col], (nw.Categorical, nw.Enum))
         ]
-        cat_enum_cols = [col for col in self.columns if col not in str_cols]
 
         group_str_cols_expr = rare_encode_str_columns(
             cols=str_cols,
