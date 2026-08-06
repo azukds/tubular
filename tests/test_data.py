@@ -24,6 +24,23 @@ def create_numeric_df_1(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
+def create_bool_df(library="pandas"):
+    """Example with boolean dataframe that includes missing values."""
+
+    df_dict = {
+        "a": [True, False, None],
+        "b": [True, None, False],
+        "c": [1, 1, 0],
+    }
+
+    df = u.dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+    df = nw.maybe_convert_dtypes(df)
+
+    return df.to_native()
+
+
 def create_object_df(library="pandas"):
     """Example with object columns - c is numeric target"""
 
