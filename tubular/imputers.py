@@ -261,7 +261,7 @@ class BaseImputer(BaseTransformer):
 
 
 class NumberImputer(BaseImputer):
-    """Private subclass to handle arbitrary number imputation.
+    """Class to handle arbitrary number imputation.
 
     Attributes
     ----------
