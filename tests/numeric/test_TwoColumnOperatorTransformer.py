@@ -6,7 +6,6 @@ from tests.base_tests import (
     EmptyColumnsFailTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
     TwoColumnListInitTests,
 )
 from tests.numeric.test_BaseNumericTransformer import (
@@ -80,7 +79,7 @@ class TestTransform(BaseNumericTransformerTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

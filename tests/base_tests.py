@@ -13,7 +13,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 
-import tests.test_data as d
 from tests.utils import (
     _check_if_skip_test,
     _collect_frame,
@@ -1485,110 +1484,25 @@ class OtherBaseBehaviourTests(
         # serialise without raising error
         joblib.dump(initialized_transformers[self.transformer_name], path)
 
-
-class OtherBaseBehaviourTestsNumeric:
-    """
-    Class to test numeric transformer with sklearn Pipelines.
-    """
-
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
     def test_pipeline_raises_not_fitted_error_when_unfitted(
-        self, initialized_transformers
+        self, initialized_transformers, minimal_dataframe_lookup
     ):
-        """Test that a sklearn Pipeline with Numeric transformer works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
+        """Test that a sklearn Pipeline with tubular transformers works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
         transformer = initialized_transformers[self.transformer_name]
-        df = d.create_numeric_df_1(library="pandas")
+        df = minimal_dataframe_lookup[self.transformer_name]
+
+        if _check_if_skip_test(transformer, df, lazy=False, from_json=False):
+            return
 
         pipeline = Pipeline([("base_transformer", transformer)])
 
         # Fit the pipeline
-        pipeline.fit(df)
-
-        # Transform should work
-        result = pipeline.transform(df)
-        assert result is not None
-
-        # Delete is_fitted_ from the transformer
-        del transformer.is_fitted_
-
-        # Now transform should raise NotFittedError
-        with pytest.raises(NotFittedError):
-            pipeline.transform(df)
-
-
-class OtherBaseBehaviourTestsString:
-    """
-    Class to test string transformer with sklearn Pipelines.
-    """
-
-    def test_pipeline_raises_not_fitted_error_when_unfitted(
-        self, initialized_transformers
-    ):
-        """Test that a sklearn Pipeline with String transformer works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
-        transformer = initialized_transformers[self.transformer_name]
-        df = d.create_df_8(library="pandas")
-
-        pipeline = Pipeline([("base_transformer", transformer)])
-
-        # Fit the pipeline
-        pipeline.fit(df)
-
-        # Transform should work
-        result = pipeline.transform(df)
-        assert result is not None
-
-        # Delete is_fitted_ from the transformer
-        del transformer.is_fitted_
-
-        # Now transform should raise NotFittedError
-        with pytest.raises(NotFittedError):
-            pipeline.transform(df)
-
-
-class OtherBaseBehaviourTestsDatetime:
-    """
-    Class to test datetime transformer with sklearn Pipelines.
-    """
-
-    def test_pipeline_raises_not_fitted_error_when_unfitted(
-        self, initialized_transformers
-    ):
-        """Test that a sklearn Pipeline with datetime transformer works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
-        transformer = initialized_transformers[self.transformer_name]
-        df = d.create_datediff_test_df(library="pandas")
-
-        pipeline = Pipeline([("base_transformer", transformer)])
-
-        # Fit the pipeline
-        pipeline.fit(df)
-
-        # Transform should work
-        result = pipeline.transform(df)
-        assert result is not None
-
-        # Delete is_fitted_ from the transformer
-        del transformer.is_fitted_
-
-        # Now transform should raise NotFittedError
-        with pytest.raises(NotFittedError):
-            pipeline.transform(df)
-
-
-class OtherBaseBehaviourTestsDates:
-    """
-    Class to test date transformer with sklearn Pipelines.
-    """
-
-    def test_pipeline_raises_not_fitted_error_when_unfitted(
-        self, initialized_transformers
-    ):
-        """Test that a sklearn Pipeline with date transformer works when fitted, but raises NotFittedError when is_fitted_ is deleted."""
-        transformer = initialized_transformers[self.transformer_name]
-        df = d.create_is_between_dates_df_1(library="pandas")
-
-        pipeline = Pipeline([("base_transformer", transformer)])
-
-        # Fit the pipeline
-        pipeline.fit(df)
+        pipeline.fit(df, y=df["c"])
 
         # Transform should work
         result = pipeline.transform(df)
