@@ -56,8 +56,7 @@ def _get_rare_grouping_expr(
     col: str,
     rare_level_name: str | ListOfStrs,
     non_rare_condition_expression: nw.Expr,
-    non_rare_levels: dict,
-    str_col: bool,
+    pre_grouping_expr: nw.Expr,
 ) -> nw.Expr:
     """Get expression for mapping column.
 
@@ -72,31 +71,19 @@ def _get_rare_grouping_expr(
     non_rare_condition_expression
         expression for non rare condition
 
-    non_rare_levels:
-        dict of non rare levels per column
-
-    str_col:
-        whether the column is a string column
+    pre_grouping_expr:
+        expression to apply before rare grouping
 
     Returns
     -------
     list[nw.Expr]: expressions for transformation
 
     """
-    pre_grouping_expr = nw.col(col) if str_col else nw.col(col).cast(nw.String)
-
-    transform_expression = (
+    return (
         nw.when(non_rare_condition_expression | nw.col(col).is_null())
         .then(pre_grouping_expr)
         .otherwise(nw.lit(rare_level_name))
     )
-
-    if not str_col:
-        transform_expression = transform_expression.cast(
-            nw.Enum(non_rare_levels[col] + [rare_level_name]),
-        )
-
-    return transform_expression
 
 
 @beartype
@@ -139,13 +126,15 @@ def rare_encode_categorical_or_enum_columns(
             unseen_levels_to_rare=unseen_levels_to_rare,
             training_data_levels=training_data_levels,
         )
+        grouped_expression = _get_rare_grouping_expr(
+            col,
+            rare_level_name=rare_level_name,
+            non_rare_condition_expression=non_rare_condition_expression,
+            pre_grouping_expr=nw.col(col).cast(nw.String),
+        )
         grouped_expressions.append(
-            _get_rare_grouping_expr(
-                col,
-                rare_level_name=rare_level_name,
-                non_rare_condition_expression=non_rare_condition_expression,
-                non_rare_levels=non_rare_levels,
-                str_col=False,
+            grouped_expression.cast(
+                nw.Enum(non_rare_levels[col] + [rare_level_name]),
             )
         )
     return grouped_expressions
@@ -195,8 +184,7 @@ def rare_encode_str_columns(
                 col,
                 rare_level_name=rare_level_name,
                 non_rare_condition_expression=non_rare_condition_expression,
-                non_rare_levels=non_rare_levels,
-                str_col=True,
+                pre_grouping_expr=nw.col(col),
             )
         )
     return grouped_expressions
