@@ -36,6 +36,7 @@ Changed
 - chore: refactored OtherBaseBehaviour test classes to make easier to maintain
 - feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+- chore: deprecated OneDKmeansTransformer
 
 3.9.0 (17/07/2026)
 ------------------
@@ -133,7 +134,6 @@ Changed
 - chore: added python 3.14 on automated testing `#494 <https://github.com/azukds/tubular/issues/494>`_
 - converted MeanResponseTransformer to work with lazyframes `#533 <https://github.com/azukds/tubular/issues/533>_`
 - updated pytest version on dependabot recommendation
-- deprecated OneDKmeansTransformer
 
 3.2.0 (14/04/2026)
 ------------------

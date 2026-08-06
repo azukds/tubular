@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 @register
 class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
-    """Extends BaseTransformer for datetime scenarios.
+    """Extends BaseTransformer for numeric scenarios.
 
     Attributes
     ----------
@@ -1538,9 +1538,9 @@ class PCATransformer(BaseNumericTransformer):
 
 
 @deprecated(
-    "This Transformer is deprecated, use DateDifferenceTransformer instead. "
-    "If you prefer this transformer to DateDifferenceTransformer, "
-    "let us know through a github issue",
+    """This transformer has been deprecated and will not be further developed.
+    If this transformer is useful to you, then please raise an issue on our board.
+    """,
 )
 class OneDKmeansTransformer(BaseNumericTransformer):
     """Generates a new column based on kmeans algorithm.
@@ -1612,7 +1612,6 @@ class OneDKmeansTransformer(BaseNumericTransformer):
         ... columns='a',
         ... n_clusters=2,
         ... new_column_name="new",
-        ... drop_original=False,
         ... kmeans_kwargs={"random_state": 42},
         ...    )
         >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
@@ -1620,7 +1619,7 @@ class OneDKmeansTransformer(BaseNumericTransformer):
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
         >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'drop_original': False, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'bins': [3, 4]}}
+        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'is_fitted_': False, 'bins': [3, 4]}}
 
         """
         self.check_is_fitted(["bins"])
@@ -1631,7 +1630,6 @@ class OneDKmeansTransformer(BaseNumericTransformer):
                 "new_column_name": self.new_column_name,
                 "n_init": self.n_init,
                 "n_clusters": self.n_clusters,
-                "drop_original": self.drop_original,
                 "kmeans_kwargs": self.kmeans_kwargs,
             },
         )
@@ -1640,13 +1638,12 @@ class OneDKmeansTransformer(BaseNumericTransformer):
         return json_dict
 
     @beartype
-    def __init__(  # noqa: PLR0917, PLR0913
+    def __init__(
         self,
         columns: str | ListOfOneStr,
         new_column_name: str,
         n_init: str | int = "auto",
         n_clusters: int = 8,
-        drop_original: bool = False,
         kmeans_kwargs: dict[str, object] | None = None,
         **kwargs: bool,
     ) -> None:
@@ -1671,10 +1668,6 @@ class OneDKmeansTransformer(BaseNumericTransformer):
             When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
             1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
 
-        drop_original : bool, default=False
-            Should the original columns to be transformed be dropped after applying the
-            OneDKmeanstransformer?
-
         kmeans_kwargs : dict, default = {}
             A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
 
@@ -1689,7 +1682,6 @@ class OneDKmeansTransformer(BaseNumericTransformer):
         self.new_column_name = new_column_name
         self.n_init = n_init
         self.kmeans_kwargs = kmeans_kwargs
-        self.drop_original = drop_original
 
         if isinstance(columns, str):
             self.columns = [columns]
