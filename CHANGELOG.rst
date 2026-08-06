@@ -36,6 +36,7 @@ Changed
 - chore: refactored OtherBaseBehaviour test classes to make easier to maintain
 - feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
 
 3.9.0 (17/07/2026)
 ------------------
