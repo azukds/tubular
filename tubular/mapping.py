@@ -28,6 +28,7 @@ from tubular.functions.mapping import (
     map_generic_to_number,
     map_generic_to_str,
     map_number_to_string,
+    map_string_or_categorical_to_boolean,
 )
 from tubular.types import DataFrame, NumericTypes
 
@@ -359,9 +360,22 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         remaining_cols = self.columns
 
-        cols_mapped_from_categorical = [
+        cols_mapped_from_str_or_cat_to_bool = [
             col
             for col in self.return_dtypes
+            if (
+                (isinstance(schema[col], (nw.Categorical, nw.Enum, nw.String)))
+                and self.return_dtypes[col] == "Boolean"
+            )
+        ]
+
+        remaining_cols = list(
+            set(remaining_cols).difference(set(cols_mapped_from_str_or_cat_to_bool))
+        )
+
+        cols_mapped_from_categorical = [
+            col
+            for col in remaining_cols
             if (isinstance(schema[col], (nw.Categorical, nw.Enum)))
         ]
 
@@ -420,6 +434,12 @@ class BaseMappingTransformMixin(BaseTransformer):
             msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {remaining_cols}"
             raise (RuntimeError(msg))
 
+        str_or_cat_to_bool_mapping_exprs = map_string_or_categorical_to_boolean(
+            cols=cols_mapped_from_str_or_cat_to_bool,
+            mappings=self.mappings,
+            mappings_from_null=self.mappings_from_null,
+        )
+
         num_to_str_mapping_exprs = map_number_to_string(
             cols=cols_mapped_num_to_str,
             mappings=self.mappings,
@@ -463,6 +483,7 @@ class BaseMappingTransformMixin(BaseTransformer):
             *generic_to_str_mapping_exprs,
             *categorical_mapping_exprs,
             *generic_to_number_mapping_exprs,
+            *str_or_cat_to_bool_mapping_exprs,
         ]
 
         X = (

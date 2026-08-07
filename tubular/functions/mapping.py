@@ -32,13 +32,55 @@ NUMERIC_TYPES = Literal[
 
 
 @beartype
-def _get_mapping_expr(
+def _get_full_mapping_expr(
     col: str,
     mappings: dict[str, dict[Any, Any]],
     mappings_from_null: dict[str, Any],
     pre_mapping_expr: nw.Expr | None = None,
 ) -> nw.Expr:
-    """Get expression for mapping column.
+    """Get expression for column which will be fully mapped.
+
+    Parameters
+    ----------
+    col:
+        column to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    pre_mapping_expr:
+        expression containing any transforms necessary prior to mapping logic.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+    if pre_mapping_expr is None:
+        pre_mapping_expr = nw.col(col)
+
+    mapping_expr = pre_mapping_expr.replace_strict(mappings[col], default=None)
+
+    return (
+        mapping_expr.fill_null(mappings_from_null[col])
+        if mappings_from_null[col] is not None
+        else mapping_expr
+    )
+
+
+@beartype
+def _get_partial_mapping_expr(
+    col: str,
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+    pre_mapping_expr: nw.Expr | None = None,
+) -> nw.Expr:
+    """Get expression for column which may be partially mapped.
 
     Parameters
     ----------
@@ -81,6 +123,709 @@ def _get_mapping_expr(
         if mappings_from_null[col] is not None
         else mapping_expr
     )
+
+
+def map_int_to_int(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_int_to_str(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_int_to_float(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_int_to_boolean(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_int_to_categorical(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_float_to_int(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_float_to_float(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_float_to_boolean(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_float_to_str(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_float_to_categorical(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_string_to_int(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_string_to_string(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_string_to_float(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_string_to_boolean(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_string_to_categorical(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_categorical_to_int(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_categorical_to_categorical(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_categorical_to_float(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_categorical_to_string(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_categorical_to_boolean(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_boolean_to_int(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_boolean_to_boolean(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_boolean_to_float(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_boolean_to_string(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+def map_boolean_to_categorical(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+    mappings_from_null: dict[str, Any],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+
+
+@beartype
+def map_string_or_categorical_to_boolean(
+    cols: list[str],
+    mappings: dict[str, dict[Any, Any]],
+) -> list[nw.Expr]:
+    """Get expression for mapping string or categorical columns into boolean type columns.
+
+    Parameters
+    ----------
+    cols:
+        columns to map
+
+    mappings :
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+    init is set to the mappings attribute.
+
+    mappings_from_null:
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+    but this functionality is useful for inverting pipelines.
+
+    Returns
+    -------
+    list[nw.Expr]: expressions for transformation
+
+    """
+    return [nw.col(col).cast(nw.String).replace_strict(mappings[col]) for col in cols]
 
 
 @beartype

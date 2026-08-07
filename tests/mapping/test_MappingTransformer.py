@@ -252,6 +252,19 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
                 {"a": "Boolean"},
             ),
             (
+                {
+                    "b": {
+                        "a": True,
+                        "b": True,
+                        "c": True,
+                        "d": False,
+                        "e": False,
+                        "f": False,
+                    }
+                },
+                {"b": "Boolean"},
+            ),
+            (
                 {"b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}},
                 {"b": "Int32"},
             ),
@@ -315,6 +328,72 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         assert nw.from_native(output).get_column("b").dtype == nw.Categorical, (
             "Categorical dtype not preserved for column b"
+        )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize(
+        ("mapping", "return_dtype", "expected_values"),
+        [
+            # ({"a": {"a": 1.0, "b": 2.0}}, "Float64", [1.0, 2.0]),
+            # ({"a": {"a": 1, "b": 2}}, "Int64", [1.0, 2.0]),
+            ({"a": {"a": True, "b": False}}, "Boolean", [True, False]),
+            # ({"a": {"a": "x", "b": "y"}}, "String", ["x", "y"]),
+            # ({"a": {"a": "x", "b": "y"}}, "Categorical", ["x", "y"]),
+        ],
+    )
+    def test_expected_output_for_categorical_input(
+        self,
+        library,
+        from_json,
+        lazy,
+        mapping,
+        return_dtype,
+        expected_values,
+    ):
+        """Test that categorical columns can be mapped successfully."""
+
+        df_dict = {"a": ["a", "b"]}
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = nw.from_native(df)
+        df = df.with_columns(nw.col("a").cast(nw.Categorical)).to_native()
+
+        expected_dict = {
+            "a": expected_values,
+        }
+
+        expected_df = dataframe_init_dispatch(
+            dataframe_dict=expected_dict,
+            library=library,
+        )
+
+        expected_df = nw.from_native(expected_df)
+        expected_df = expected_df.with_columns(
+            nw.col("a").cast(getattr(nw, return_dtype))
+        ).to_native()
+
+        # convert bool type to pyarrow
+        if library == "pandas" and return_dtype == "Boolean":
+            expected_df = nw.from_native(expected_df)
+            expected_df = expected_df.with_columns(
+                nw.maybe_convert_dtypes(expected_df["a"])
+            )
+            expected_df = expected_df.to_native()
+
+        return_dtypes = {"a": return_dtype}
+        transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+        assert_frame_equal_dispatch(
+            expected_df, _collect_frame(df_transformed, lazy=lazy)
         )
 
     @pytest.mark.parametrize("lazy", [True, False])
