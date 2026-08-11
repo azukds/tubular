@@ -1,3 +1,5 @@
+import re
+
 import narwhals as nw
 import numpy as np
 import pytest
@@ -282,6 +284,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         from_json,
         lazy,
     ):
+        # skip test for pandas/boolean, which is blocked by validation
+        if library == "pandas" and "Boolean" in return_dtypes.values():
+            return
+
         df = d.create_df_1(library=library)
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
@@ -336,11 +342,11 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     @pytest.mark.parametrize(
         ("mapping", "return_dtype", "expected_values"),
         [
-            # ({"a": {"a": 1.0, "b": 2.0}}, "Float64", [1.0, 2.0]),
-            # ({"a": {"a": 1, "b": 2}}, "Int64", [1.0, 2.0]),
+            ({"a": {"a": 1.0, "b": 2.0}}, "Float64", [1.0, 2.0]),
+            ({"a": {"a": 1, "b": 2}}, "Int64", [1.0, 2.0]),
             ({"a": {"a": True, "b": False}}, "Boolean", [True, False]),
-            # ({"a": {"a": "x", "b": "y"}}, "String", ["x", "y"]),
-            # ({"a": {"a": "x", "b": "y"}}, "Categorical", ["x", "y"]),
+            ({"a": {"a": "x", "b": "y"}}, "String", ["x", "y"]),
+            ({"a": {"a": "x", "b": "y"}}, "Categorical", ["x", "y"]),
         ],
     )
     def test_expected_output_for_categorical_input(
@@ -353,6 +359,10 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         expected_values,
     ):
         """Test that categorical columns can be mapped successfully."""
+
+        # skip test for pandas/boolean, which is blocked by validation
+        if library == "pandas" and return_dtype == "Boolean":
+            return
 
         df_dict = {"a": ["a", "b"]}
 
@@ -456,6 +466,11 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
+        if library == "pandas":
+            df = df.convert_dtypes()
+            # df["b"]=df["b"].convert_dtypes()
+            # df["d"]=df["d"].convert_dtypes()
+
         mapping = {
             "a": {0: False, 1: True},
             "b": {False: 0, True: 1},
@@ -472,7 +487,7 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         expected_dict = {
             "a": [None, False, True, None, False],
-            "b": [1, 0, None, 1, 0],
+            "b": [1.0, 0.0, None, 1.0, 0.0],
             "c": [False, False, False, False, True],
             "d": [0, 1, 1, 0, 1],
         }
@@ -484,10 +499,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         # convert bool type to pyarrow
         if library == "pandas":
-            expected = nw.from_native(expected)
-            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["c"]))
-            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["a"]))
-            expected = expected.to_native()
+            expected = expected.convert_dtypes()
+            expected["b"] = expected["b"].astype("Float64")
 
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
@@ -503,12 +516,30 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_error_for_bad_type(self, library, from_json, lazy):
+    @pytest.mark.parametrize(
+        ("input_values", "input_type"),
+        [
+            (["01/02/2020", "20/03/1990"], "Datetime"),
+            # test these just for pandas, should error for old non nullable bool types
+            ([True, None], "Object"),
+            ([True, False], "bool"),
+        ],
+    )
+    def test_error_for_bad_type(
+        self, library, from_json, lazy, input_values, input_type
+    ):
         """Test expected error is raised for unexpected type."""
-        df_dict = {"a": ["01/02/2020", "20/03/1990"]}
+
+        if library == "polars" and input_type in {"bool", "Object"}:
+            return
+
+        df_dict = {"a": input_values}
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
         df = nw.from_native(df)
-        df = df.with_columns(nw.col("a").str.to_datetime(format="%d/%m/%Y")).to_native()
+        if input_type == "Datetime":
+            df = df.with_columns(nw.col("a").str.to_datetime(format="%d/%m/%Y"))
+        schema = df.schema
+        df = df.to_native()
 
         mapping = {"a": {"a": "aaa"}}
         return_dtypes = {"a": "Categorical"}
@@ -520,10 +551,17 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         transformer = _handle_from_json(transformer, from_json)
 
-        msg = r"MappingTransformer: The following columns have types which are not covered by the existing mapping logic \['a'\]"
+        if input_type == "bool":
+            bad_bool_type_cols = ["a"]
+            msg = f"MappingTransformer: Older pandas boolean dtypes (bool, object) are no longer supported, please us pd.DataFrame.convert_dtypes to convert to nullable boolean type of columns {bad_bool_type_cols}."
+
+        else:
+            bad_types = {"a": schema["a"]}
+            msg = rf"MappingTransformer: The following columns have types which are not covered by the existing mapping logic {bad_types}"
+
         with pytest.raises(
-            RuntimeError,
-            match=msg,
+            TypeError,
+            match=re.escape(msg),
         ):
             transformer.transform(_convert_to_lazy(df, lazy=lazy))
 

@@ -15,6 +15,7 @@ from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
+    _filter_column_dict,
     _return_narwhals_or_native_dataframe,
     _sort_dict,
     _sort_nested_dict,
@@ -23,14 +24,13 @@ from tubular._utils import (
 from tubular.base import BaseTransformer, register
 from tubular.functions.mapping import (
     RETURN_DTYPES,
-    map_categorical_to_generic,
-    map_generic_to_bool,
-    map_generic_to_number,
-    map_generic_to_str,
-    map_number_to_string,
-    map_string_or_categorical_to_boolean,
+    map_boolean_columns,
+    map_categorical_columns,
+    map_float_columns,
+    map_integer_columns,
+    map_string_columns,
 )
-from tubular.types import DataFrame, NumericTypes
+from tubular.types import PANDAS_NULLABLE_TYPES, DataFrame
 
 
 @register
@@ -314,7 +314,7 @@ class BaseMappingTransformMixin(BaseTransformer):
     jsonable = False
 
     @beartype
-    def transform(  # noqa: PLR0914, will fix in future refactor
+    def transform(
         self,
         X: DataFrame,
         return_native_override: bool | None = None,
@@ -337,7 +337,7 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         Raises
         ------
-        RuntimeError:
+        TypeError:
             If columns to be mapped in X have unsupported type.
 
         #  not currently including doctest for this, as is not intended to be used
@@ -358,133 +358,91 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         schema = X.collect_schema()
 
+        if backend == "pandas" and "Boolean" in self.return_dtypes.values():
+            X = X.to_native()
+            print(X.dtypes)
+            non_nullable_type_cols = [
+                col
+                for col in self.columns
+                if not isinstance(X[col].dtype, (*PANDAS_NULLABLE_TYPES,))
+            ]
+            if non_nullable_type_cols:
+                msg = f"{self.classname()}: For pandas, casting to boolean from non-nullable dtypes is unsafe, please use df.convert_dtypes to convert types of bad cols {non_nullable_type_cols}."
+                raise TypeError(msg)
+            X = nw.from_native(X)
+
+        mapping_exprs = []
+
         remaining_cols = self.columns
 
-        cols_mapped_from_str_or_cat_to_bool = [
-            col
-            for col in self.return_dtypes
-            if (
-                (isinstance(schema[col], (nw.Categorical, nw.Enum, nw.String)))
-                and self.return_dtypes[col] == "Boolean"
-            )
-        ]
+        for column_type, mapping_function in zip(
+            [
+                [nw.Boolean],
+                [nw.Float64, nw.Float32],
+                [
+                    nw.Int8,
+                    nw.Int16,
+                    nw.Int32,
+                    nw.Int64,
+                    nw.UInt8,
+                    nw.UInt16,
+                    nw.UInt32,
+                    nw.UInt64,
+                ],
+                [nw.String],
+                [nw.Categorical],
+            ],
+            [
+                map_boolean_columns,
+                map_float_columns,
+                map_integer_columns,
+                map_string_columns,
+                map_categorical_columns,
+            ],
+            strict=True,
+        ):
+            selected_cols = [
+                col
+                for col in remaining_cols
+                if isinstance(schema[col], (*column_type,))
+            ]
+            if selected_cols:
+                if backend == "pandas" and column_type[0] == nw.Boolean:
+                    X = X.to_native()
+                    bad_bool_type_cols = [
+                        col
+                        for col in selected_cols
+                        if not isinstance(X[col].dtype, pd.BooleanDtype)
+                    ]
+                    if bad_bool_type_cols:
+                        msg = f"{self.classname()}: Older pandas boolean dtypes (bool, object) are no longer supported, please us pd.DataFrame.convert_dtypes to convert to nullable boolean type of columns {bad_bool_type_cols}."
+                        raise TypeError(msg)
+                    X = nw.from_native(X)
 
-        remaining_cols = list(
-            set(remaining_cols).difference(set(cols_mapped_from_str_or_cat_to_bool))
-        )
+                selected_mapping_exprs = mapping_function(
+                    cols=selected_cols,
+                    mappings=_filter_column_dict(self.mappings, selected_cols),
+                    mappings_from_null=_filter_column_dict(
+                        self.mappings_from_null, selected_cols
+                    ),
+                    return_dtypes=_filter_column_dict(
+                        self.return_dtypes, selected_cols
+                    ),
+                    # warnings are not needed, as class guards against bad types
+                    verbose=False,
+                )
 
-        cols_mapped_from_categorical = [
-            col
-            for col in remaining_cols
-            if (isinstance(schema[col], (nw.Categorical, nw.Enum)))
-        ]
+                mapping_exprs = [*mapping_exprs, *selected_mapping_exprs]
 
-        remaining_cols = list(
-            set(remaining_cols).difference(set(cols_mapped_from_categorical))
-        )
-
-        cols_mapped_num_to_str = [
-            col
-            for col in remaining_cols
-            if (
-                self.return_dtypes[col] == "String"
-                and isinstance(schema[col], tuple(NumericTypes))
-            )
-        ]
-
-        remaining_cols = list(
-            set(remaining_cols).difference(set(cols_mapped_num_to_str))
-        )
-
-        cols_mapped_generic_to_str = [
-            col for col in remaining_cols if (self.return_dtypes[col] == "String")
-        ]
-
-        remaining_cols = list(
-            set(remaining_cols).difference(set(cols_mapped_generic_to_str))
-        )
-
-        cols_mapped_generic_to_bool = [
-            col for col in remaining_cols if self.return_dtypes[col] == "Boolean"
-        ]
-
-        remaining_cols = list(
-            set(remaining_cols).difference(set(cols_mapped_generic_to_bool))
-        )
-
-        cols_mapped_generic_to_number = [
-            col
-            for col in remaining_cols
-            if self.return_dtypes[col]
-            in {
-                "Int8",
-                "Int16",
-                "Int32",
-                "Int64",
-                "Float32",
-                "Float64",
-            }
-        ]
-
-        remaining_cols = list(
-            set(remaining_cols).difference(set(cols_mapped_generic_to_number))
-        )
+                remaining_cols = list(
+                    set(remaining_cols).difference(set(selected_cols))
+                )
 
         if len(remaining_cols) != 0:
-            msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {remaining_cols}"
-            raise (RuntimeError(msg))
+            bad_types = {col: schema[col] for col in remaining_cols}
+            msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {bad_types}"
 
-        str_or_cat_to_bool_mapping_exprs = map_string_or_categorical_to_boolean(
-            cols=cols_mapped_from_str_or_cat_to_bool,
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-        )
-
-        num_to_str_mapping_exprs = map_number_to_string(
-            cols=cols_mapped_num_to_str,
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-        )
-
-        generic_to_str_mapping_exprs = map_generic_to_str(
-            cols_mapped_generic_to_str,
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-        )
-
-        generic_to_number_mapping_exprs = map_generic_to_number(
-            cols=cols_mapped_generic_to_number,
-            return_dtypes={
-                key: value
-                for key, value in self.return_dtypes.items()
-                if key in cols_mapped_generic_to_number
-            },
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-        )
-
-        categorical_mapping_exprs = map_categorical_to_generic(
-            cols=cols_mapped_from_categorical,
-            return_dtypes=self.return_dtypes,
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-        )
-
-        generic_to_bool_mapping_exprs = map_generic_to_bool(
-            cols=cols_mapped_generic_to_bool,
-            library=backend,
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-        )
-
-        mapping_exprs = [
-            *num_to_str_mapping_exprs,
-            *generic_to_bool_mapping_exprs,
-            *generic_to_str_mapping_exprs,
-            *categorical_mapping_exprs,
-            *generic_to_number_mapping_exprs,
-            *str_or_cat_to_bool_mapping_exprs,
-        ]
+            raise (TypeError(msg))
 
         X = (
             X.with_columns(
@@ -493,20 +451,6 @@ class BaseMappingTransformMixin(BaseTransformer):
             if mapping_exprs
             else X
         )
-
-        # this last section is needed to ensure pandas bool columns
-        # are returned in sensible (non object) types
-        # maybe_convert_dtypes will not run on an expression,
-        # so do need a second with_columns call
-        if "Boolean" in self.return_dtypes.values() and backend == "pandas":
-            X = X.with_columns(
-                nw.maybe_convert_dtypes(X[col]).cast(
-                    getattr(nw, self.return_dtypes[col]),
-                )
-                if self.return_dtypes[col] == "Boolean"
-                else nw.col(col)
-                for col in self.mappings
-            )
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

@@ -203,6 +203,10 @@ class TestTransform(GenericTransformTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
+        # convert pandas to nullable types
+        if library == "pandas":
+            df = df.convert_dtypes()
+
         mapping = {
             "a": {0: False, 1: True},
             "b": {False: 0, True: 1},
@@ -219,7 +223,7 @@ class TestTransform(GenericTransformTests):
 
         expected_dict = {
             "a": [None, False, True, None, False],
-            "b": [1, 0, None, 1, 0],
+            "b": [1.0, 0.0, None, 1.0, 0.0],
             "c": [False, False, False, False, True],
             "d": [0, 1, 1, 0, 1],
         }
@@ -228,6 +232,7 @@ class TestTransform(GenericTransformTests):
             dataframe_dict=expected_dict,
             library=library,
         )
+        print(expected)
 
         base_mapping_transformer = BaseMappingTransformer(
             mappings=mapping,
@@ -246,12 +251,14 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        # convert bool type to pyarrow
+        # convert pandas to nullable types
         if library == "pandas":
+            expected = expected.convert_dtypes()
+            # above step converts float cols to
+            # int where possible, but for this
+            # test we want to convert back
             expected = nw.from_native(expected)
-            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["c"]))
-            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["a"]))
-            expected = expected.to_native()
+            expected = expected.with_columns(nw.col("b").cast(nw.Float64)).to_native()
 
         assert_frame_equal_dispatch(expected, _collect_frame(df_transformed, lazy=lazy))
 

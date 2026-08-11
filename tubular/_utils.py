@@ -320,3 +320,44 @@ def _sort_nested_dict(dictionary: dict) -> dict:
         else dictionary[key]
         for key in _sort_dict(dictionary)
     }
+
+
+def _filter_column_dict(
+    dictionary: dict[str, Any], columns: list[str]
+) -> dict[str, Any]:
+    """Filter column keyed dictionary with list of provided columns.
+
+    Parameters
+    ----------
+    dictionary:
+        dictionary to filter
+
+    columns:
+        list of columns to filter for.
+
+    Returns
+    -------
+    dict: filtered dictionary
+
+    """
+    return {key: dictionary[key] for key in dictionary if key in columns}
+
+
+def _null_safe_string_cast(input_expr: nw.Expr) -> nw.Expr:
+    """Cast column to string without corrupting null values.
+
+    Parameters
+    ----------
+    input_expr:
+        expression to cast
+
+    Returns
+    -------
+    nw.Expr: expression for safely casting to string
+
+    """
+    return (
+        nw.when(~(input_expr.is_null() | input_expr.is_nan()))
+        .then(input_expr.cast(nw.String))
+        .otherwise(None)
+    )

@@ -109,3 +109,18 @@ FloatTypeAnnotated = Annotated[
     str,
     Is[lambda dtype: dtype in FloatTypeOptions._value2member_map_],
 ]
+
+PANDAS_NULLABLE_TYPES = [
+    pd.Int8Dtype,
+    pd.Int16Dtype,
+    pd.Int32Dtype,
+    pd.Int64Dtype,
+    pd.UInt8Dtype,
+    pd.UInt16Dtype,
+    pd.UInt32Dtype,
+    pd.UInt64Dtype,
+    pd.Float32Dtype,
+    pd.Float64Dtype,
+    pd.BooleanDtype,
+    pd.StringDtype,
+]
