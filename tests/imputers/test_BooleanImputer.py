@@ -212,6 +212,7 @@ class TestTransform(
         # tricky to get all null column to correct type, as casting to boolean
         # maps None->False for pandas
         df = pd.DataFrame({"a": input_col})
+        df = df.convert_dtypes()
 
         transformer = BooleanImputer(impute_value=impute_value, columns=[column])
 
@@ -220,11 +221,23 @@ class TestTransform(
         df_transformed = transformer.transform(df)
 
         expected = pd.DataFrame({"a": expected_values})
+        expected = expected.convert_dtypes()
 
         assert_frame_equal_dispatch(
             expected,
             df_transformed,
         )
+
+        # Check outcomes for single rows
+        for i in range(len(df)):
+            df_row = df.iloc[[i]]
+            df_transformed_row = transformer.transform(df_row)
+            df_expected_row = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
+                df_expected_row,
+            )
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
