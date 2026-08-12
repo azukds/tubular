@@ -267,7 +267,7 @@ def map_float_columns(
             mappings_from_null=mappings_from_null,
             fix_nans=True,
         ).cast(getattr(nw, return_dtypes[col]))
-        if (return_dtypes[col] in set(*INT_TYPE_NAMES, "Categorical"))
+        if (return_dtypes[col] in {*INT_TYPE_NAMES, "Categorical"})
         else _null_safe_string_cast(
             _get_partial_mapping_expr(
                 col,
@@ -275,7 +275,7 @@ def map_float_columns(
                 mappings=mappings,
                 mappings_from_null=mappings_from_null,
                 fix_nans=True,
-            )
+            ),
         )
         if return_dtypes[col] == "String"
         else _get_partial_mapping_expr(

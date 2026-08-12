@@ -259,9 +259,6 @@ def minimal_attribute_dict():
             "drop_original": True,
             "separator": "-",
         },
-        "OrdinalEncoderTransformer": {
-            "columns": ["b"],
-        },
         "OutOfRangeNullTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
         },

@@ -14,14 +14,15 @@ from tubular._utils import _null_safe_string_cast
 @pytest.mark.parametrize("library", ["pandas", "polars"])
 @pytest.mark.parametrize("lazy", [True, False])
 @pytest.mark.parametrize(
-    ("input_column", "expected"),
+    ("input_column", "expected", "handle_nans"),
     [
-        ([1.0, None, 2.0], ["1.0", None, "2.0"]),
-        ([1.0, 2.0, 3.0], ["1.0", "2.0", "3.0"]),
-        ([1.0, None, np.nan], ["1.0", None, None]),
+        ([1.0, None, 2.0], ["1.0", None, "2.0"], True),
+        ([1.0, 2.0, 3.0], ["1.0", "2.0", "3.0"], True),
+        ([1.0, None, np.nan], ["1.0", None, None], True),
+        ([1, 2, 3], ["1", "2", "3"], False),
     ],
 )
-def test_output(input_column, expected, library, lazy):
+def test_output(input_column, expected, library, lazy, handle_nans):
     "test basic output cases."
 
     df_dict = {"a": input_column}
@@ -33,7 +34,7 @@ def test_output(input_column, expected, library, lazy):
     df = dataframe_init_dispatch(df_dict, library)
     expected_df = dataframe_init_dispatch(expected_df_dict, library)
 
-    expr = _null_safe_string_cast(nw.col("a"))
+    expr = _null_safe_string_cast(nw.col("a"), handle_nans=handle_nans)
 
     df = _convert_to_lazy(df, lazy)
     df = nw.from_native(df)
