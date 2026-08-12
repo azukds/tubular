@@ -7,12 +7,10 @@ import pytest
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     GenericFitTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsDatetime,
     ReturnNativeTests,
 )
 from tests.utils import _check_if_skip_test, _convert_to_lazy
@@ -90,7 +88,6 @@ class DatetimeMixinTransformTests:
 
 class TestInit(
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""
@@ -120,7 +117,7 @@ class TestTransform(
         cls.transformer_name = "BaseDatetimeTransformer"
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsDatetime):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

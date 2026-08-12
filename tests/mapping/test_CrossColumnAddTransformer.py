@@ -7,7 +7,6 @@ import tests.test_data as d
 from tests.base_tests import (
     EmptyMappingsFitTransformPassTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.mapping.test_BaseCrossColumnNumericTransformer import (
     BaseCrossColumnNumericTransformerInitTests,
@@ -110,7 +109,6 @@ class TestTransform(BaseCrossColumnNumericTransformerTransformTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyMappingsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

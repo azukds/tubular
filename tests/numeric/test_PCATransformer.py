@@ -11,7 +11,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tubular.numeric import PCATransformer
 
@@ -343,7 +342,7 @@ class TestTransform(GenericTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for PCATransformer outside the three standard methods.
 

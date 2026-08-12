@@ -72,62 +72,6 @@ class CheckNumericMixin:
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-class DropOriginalMixin:
-    """Mixin class to validate and apply 'drop_original' argument used by various transformers.
-
-    Transformer deletes transformer input columns depending on boolean argument.
-
-    """
-
-    def classname(self) -> str:
-        """Get name of the current class when called.
-
-        Returns
-        -------
-            str:
-                name of class
-
-        """
-        return type(self).__name__
-
-    @staticmethod
-    @beartype
-    def drop_original_column(
-        X: DataFrame,
-        drop_original: bool,
-        columns: list[str] | str | None,
-        return_native: bool = True,
-    ) -> DataFrame:
-        """Drop input columns from X if drop_original set to True.
-
-        Parameters
-        ----------
-        X : DataFrame
-            Data with columns to drop.
-
-        drop_original : bool
-            boolean dictating dropping the input columns from X after checks.
-
-        columns: list[str] | str |  None
-            Object containing columns to drop
-
-        return_native: bool
-            controls whether mixin returns native or narwhals type
-
-        Returns
-        -------
-        X : DataFrame
-            Transformed input X with columns dropped.
-
-        """
-        X = _convert_dataframe_to_narwhals(X)
-
-        if drop_original:
-            X = X.drop(columns)
-
-        return X.to_native() if return_native else X
-
-
 class WeightColumnMixin:
     """Mixin class with weights functionality."""
 

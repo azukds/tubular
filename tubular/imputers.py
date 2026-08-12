@@ -24,6 +24,10 @@ from tubular._utils import (
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
+from tubular.functions.imputers import (
+    impute_numeric_or_string_nulls,
+    indicate_nulls_for_columns,
+)
 from tubular.mixins import WeightColumnMixin
 from tubular.types import DataFrame, LazyFrame, ListOfStrs, NumericTypes, Series
 
@@ -136,13 +140,14 @@ class BaseImputer(BaseTransformer):
             ),
         ):
             json_dict["init"]["weights_column"] = self.weights_column
-        elif isinstance(self, ArbitraryImputer):
+        elif isinstance(self, (ArbitraryImputer, NumberImputer)):
             json_dict["init"]["impute_value"] = self.impute_value
 
         json_dict["fit"]["impute_values_"] = _sort_dict(self.impute_values_)
 
         return json_dict
 
+    # TODO: Would be deleted once ArbitraryImputer has a get_transform_exprs method
     def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
         """Update input expressions to include imputation.
 
@@ -179,6 +184,18 @@ class BaseImputer(BaseTransformer):
         if failed_columns:
             msg = f"fit has failed for columns {failed_columns}, it is possible that all rows are invalid - check for null/negative weights, all null columns, or other invalid conditions listed in the docstring"
             raise ValueError(msg)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return impute_numeric_or_string_nulls(
+            columns=self.columns, impute_values=self.impute_values_
+        )
 
     @beartype
     def transform(
@@ -236,18 +253,15 @@ class BaseImputer(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        transform_expressions = {
-            col: self._generate_imputation_expressions(nw.col(col), col)
-            for col in self.columns
-        }
+        transform_expressions = self.get_transform_exprs()
 
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+        X = X.with_columns(*transform_expressions) if transform_expressions else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
-class _NumberImputer(BaseImputer):
-    """Private subclass to handle arbitrary number imputation.
+class NumberImputer(BaseImputer):
+    """Class to handle arbitrary number imputation.
 
     Attributes
     ----------
@@ -334,7 +348,7 @@ class _NumberImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": [1, None, 2], "b": [3, None, 4]})
-        >>> imputer = _NumberImputer(columns=["a", "b"], impute_value=5)
+        >>> imputer = NumberImputer(columns=["a", "b"], impute_value=5)
         >>> imputer.transform(test_df)
         shape: (3, 2)
         ┌─────┬─────┐
@@ -357,12 +371,12 @@ class _NumberImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if schema[col] not in {*NumericTypes, nw.Unknown}
+            if not isinstance(schema[col], (*NumericTypes, nw.Unknown))
         ]
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                {self.classname()}: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(
@@ -372,15 +386,9 @@ class _NumberImputer(BaseImputer):
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
         # next handle imputing
-        transform_expressions = {
-            col: self._generate_imputation_expressions(
-                nw.col(col),
-                col,
-            )
-            for col in self.columns
-        }
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -835,7 +843,7 @@ class ArbitraryImputer(BaseImputer):
         if isinstance(self.impute_value, (int, float)) and not isinstance(
             self.impute_value, bool
         ):
-            imp = _NumberImputer(
+            imp = NumberImputer(
                 columns=self.columns,
                 impute_value=self.impute_value,
                 return_native=self.return_native,
@@ -1486,6 +1494,18 @@ class NullIndicator(BaseTransformer):
         super().__init__(columns=columns, **kwargs)
         self.is_fitted_ = True  # does not fit
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return indicate_nulls_for_columns(
+            columns=self.columns,
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Create new columns indicating the position of null values for each variable in self.columns.
@@ -1526,9 +1546,9 @@ class NullIndicator(BaseTransformer):
 
         X = _convert_dataframe_to_narwhals(X)
 
-        X = X.with_columns(
-            (nw.col(c).is_null()).alias(f"{c}_nulls") for c in self.columns
-        )
+        transform_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return X if not self.return_native else X.to_native()
 

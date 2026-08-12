@@ -3,10 +3,8 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -17,7 +15,6 @@ from tests.utils import (
 
 
 class TestBaseAggregationTransformerInit(
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Tests for BaseAggregationTransformer initialization."""
@@ -36,21 +33,6 @@ class TestBaseAggregationTransformerInit(
         args = minimal_attribute_dict[self.transformer_name]
         args["aggregations"] = ["invalid", "max"]
         with pytest.raises(BeartypeCallHintParamViolation):
-            uninitialized_transformers[self.transformer_name](**args)
-
-    # NOTE - can delete this test once DropOriginalMixin is converted to beartype
-    @pytest.mark.parametrize("drop_original_column", [0, "a", ["a"], {"a": 10}, None])
-    def test_drop_column_arg_errors(
-        self,
-        drop_original_column,
-        minimal_attribute_dict,
-        uninitialized_transformers,
-    ):
-        args = minimal_attribute_dict[self.transformer_name].copy()
-        args["drop_original"] = drop_original_column
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):  # Adjust to expect BeartypeCallHintParamViolation
             uninitialized_transformers[self.transformer_name](**args)
 
 
@@ -103,7 +85,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
             transformer.transform(_convert_to_lazy(test_df, lazy))
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseAggregationTransformer outside the three standard methods.
 

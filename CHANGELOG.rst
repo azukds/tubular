@@ -27,17 +27,29 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.9.0 (unreleased)
+3.10.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: added get_transform_exprs methods to NullIndicator transformer `#750 <https://github.com/azukds/tubular/issues/750>_`
+- feat: added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
+- chore: refactored OtherBaseBehaviour test classes to make easier to maintain
+- feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+
+3.9.0 (17/07/2026)
 ------------------
 
 Changed
 ^^^^^^^
+- chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 - bugfix: sort dict attributes to ensure consistent json expressions
 - bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
 being mapped to string type.
 - chore: refactored MappingTransformer to pave way for splitting into type based classes with
 `get_transform_exprs` methods.
 - chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
+- bugfix: added register decorator to DatetimeComponentExtractor
 
 3.8.4 (25/06/2026)
 ------------------

@@ -11,7 +11,6 @@ from tests.mapping.test_BaseMappingTransformer import (
     BaseMappingTransformerTransformTests,
     GenericFitTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsString,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -612,7 +611,6 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyMappingsFitTransformPassTests,
-    OtherBaseBehaviourTestsString,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

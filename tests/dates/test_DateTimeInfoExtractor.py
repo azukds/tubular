@@ -7,11 +7,9 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsDates,
 )
 from tests.dates.test_BaseDatetimeTransformer import (
     DatetimeMixinTransformTests,
@@ -199,7 +197,6 @@ class TestInit(
 class TestTransform(
     GenericTransformTests,
     DatetimeMixinTransformTests,
-    DropOriginalTransformMixinTests,
 ):
     "tests for DatetimeInfoExtractor.transform"
 
@@ -825,7 +822,6 @@ class TestTransform(
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsDates,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

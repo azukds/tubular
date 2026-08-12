@@ -13,7 +13,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
     ReturnNativeTests,
 )
 from tests.imputers.test_BaseImputer import GenericImputerTransformTests
@@ -143,7 +142,7 @@ class TestTransform(
         else:
             col_dtype = getattr(nw, col_type)
             msg = f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {[col_dtype]}
                 """
 
@@ -610,7 +609,7 @@ class TestTransform(
 
         msg = re.escape(
             f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """,
         )
@@ -625,7 +624,6 @@ class TestTransform(
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

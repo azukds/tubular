@@ -7,8 +7,6 @@ from beartype.roar import BeartypeCallHintParamViolation
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFailTests,
     GenericFitTests,
     GenericTransformTests,
@@ -81,7 +79,7 @@ class DataFrameMethodTransformerInitTests(
             )
 
 
-class TestInit(DropOriginalInitMixinTests, DataFrameMethodTransformerInitTests):
+class TestInit(DataFrameMethodTransformerInitTests):
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "DataFrameMethodTransformer"
@@ -95,7 +93,7 @@ class TestFit(GenericFitTests):
         cls.transformer_name = "DataFrameMethodTransformer"
 
 
-class TestTransform(DropOriginalTransformMixinTests, GenericTransformTests):
+class TestTransform(GenericTransformTests):
     """Tests for DataFrameMethodTransformer.transform()."""
 
     @classmethod

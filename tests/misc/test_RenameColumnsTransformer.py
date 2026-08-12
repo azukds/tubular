@@ -7,7 +7,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -50,10 +49,6 @@ class TestTransform(GenericTransformTests):
         cls.transformer_name = "RenameColumnsTransformer"
 
     @pytest.mark.parametrize(
-        "drop_original",
-        [True, False],
-    )
-    @pytest.mark.parametrize(
         "lazy",
         [True, False],
     )
@@ -74,7 +69,6 @@ class TestTransform(GenericTransformTests):
         library,
         from_json,
         lazy,
-        drop_original,
         empty,
     ):
         "test outputs for RenameColumnsTransformer.transform"
@@ -82,7 +76,6 @@ class TestTransform(GenericTransformTests):
         transformer = RenameColumnsTransformer(
             columns=["a", "b"],
             new_column_names={"a": "new_a", "b": "return B!"},
-            drop_original=drop_original,
         )
 
         df_dict = {
@@ -95,8 +88,7 @@ class TestTransform(GenericTransformTests):
             "return B!": df_dict["b"],
         }
 
-        if not drop_original:
-            expected_df_dict.update(df_dict)
+        expected_df_dict.update(df_dict)
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
@@ -170,7 +162,6 @@ class TestTransform(GenericTransformTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for RenameColumnsTransformer behaviour outside the three standard methods.
