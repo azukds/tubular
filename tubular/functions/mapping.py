@@ -189,8 +189,11 @@ def map_integer_columns(
     """
     if verbose and "Boolean" in return_dtypes.values():
         warnings.warn(
-            "map_string_columns: Note if working in pandas and casting to Boolean, expressions output by this function are only intended for use on nullable type columns, as non-nullable types will result in use of the non-nullable 'bool' type which may corrupt null values."
-            "This warning can be silenced by setting verbose=False.",
+            """map_integer_columns: Note if working in pandas and casting to Boolean,
+            expressions output by this function are only intended for use on nullable
+            type columns, as non-nullable types will result in use of the non-nullable
+            'bool' type which may corrupt null values.
+            This warning can be silenced by setting verbose=False.""",
             stacklevel=2,
         )
 
@@ -254,8 +257,11 @@ def map_float_columns(
     """
     if verbose and "Boolean" in return_dtypes.values():
         warnings.warn(
-            "map_float_columns: Note if working in pandas and casting to Boolean, expressions output by this function are only intended for use on nullable type columns, as non-nullable types will result in use of the non-nullable 'bool' type which may corrupt null values."
-            "This warning can be silenced by setting verbose=False.",
+            """map_float_columns: Note if working in pandas and casting to Boolean,
+            expressions output by this function are only intended for use on nullable
+            type columns, as non-nullable types will result in use of the non-nullable
+            'bool' type which may corrupt null values.
+            This warning can be silenced by setting verbose=False.""",
             stacklevel=2,
         )
 
@@ -331,8 +337,11 @@ def map_string_columns(
     """
     if verbose and "Boolean" in return_dtypes.values():
         warnings.warn(
-            "map_string_columns: Note if working in pandas and casting to Boolean, expressions output by this function are only intended for use on nullable type columns, as non-nullable types will result in use of the non-nullable 'bool' type which may corrupt null values."
-            "This warning can be silenced by setting verbose=False.",
+            """map_string_columns: Note if working in pandas and casting to Boolean,
+            expressions output by this function are only intended for use on nullable
+            type columns, as non-nullable types will result in use of the non-nullable
+            'bool' type which may corrupt null values.
+            This warning can be silenced by setting verbose=False.""",
             stacklevel=2,
         )
 
@@ -396,8 +405,10 @@ def map_categorical_columns(
     """
     if verbose and "Boolean" in return_dtypes.values():
         warnings.warn(
-            "map_categorical_columns: Note if working in pandas, it is not recommended to use this function to cast to Boolean, as result will be 'bool' type and may corrupt null values."
-            "This warning can be silenced by setting verbose=False.",
+            """map_categorical_columns: Note if working in pandas, it is
+            not recommended to use this function to cast to Boolean, as
+            result will be 'bool' type and may corrupt null values.
+            This warning can be silenced by setting verbose=False.""",
             stacklevel=2,
         )
 
@@ -462,10 +473,13 @@ def map_boolean_columns(
     list[nw.Expr]: expressions for transformation
 
     """
-    if verbose and "Boolean" in return_dtypes.values():
+    if verbose:
         warnings.warn(
-            "map_boolean_columns: Note if working in pandas, expressions output by this function are only intended for use on nullable 'boolean' type columns."
-            "This warning can be silenced by setting verbose=False.",
+            """map_boolean_columns: Note if working in pandas and casting to/from Boolean,
+            expressions output by this function are only intended for use on nullable
+            type columns, as non-nullable types will result in use of the non-nullable
+            'bool' type which may corrupt null values.
+            This warning can be silenced by setting verbose=False.""",
             stacklevel=2,
         )
 

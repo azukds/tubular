@@ -358,18 +358,23 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         schema = X.collect_schema()
 
-        if backend == "pandas" and "Boolean" in self.return_dtypes.values():
-            X = X.to_native()
-            print(X.dtypes)
-            non_nullable_type_cols = [
-                col
-                for col in self.columns
-                if not isinstance(X[col].dtype, (*PANDAS_NULLABLE_TYPES,))
-            ]
-            if non_nullable_type_cols:
-                msg = f"{self.classname()}: For pandas, casting to boolean from non-nullable dtypes is unsafe, please use df.convert_dtypes to convert types of bad cols {non_nullable_type_cols}."
-                raise TypeError(msg)
-            X = nw.from_native(X)
+        if backend == "pandas":
+            bool_input = any(
+                isinstance(schema[col], nw.Boolean) for col in self.mappings
+            )
+            bool_output = "Boolean" in self.return_dtypes.values()
+            if bool_input or bool_output:
+                X = X.to_native()
+                non_nullable_type_cols = [
+                    col
+                    for col in self.columns
+                    if not isinstance(X[col].dtype, (*PANDAS_NULLABLE_TYPES,))
+                ]
+                if non_nullable_type_cols:
+                    bad_types = {col: X[col].dtype for col in non_nullable_type_cols}
+                    msg = f"{self.classname()}: For pandas, casting to boolean from non-nullable dtypes is unsafe, please use df.convert_dtypes to convert types of bad cols {bad_types}."
+                    raise TypeError(msg)
+                X = nw.from_native(X)
 
         mapping_exprs = []
 
@@ -406,37 +411,21 @@ class BaseMappingTransformMixin(BaseTransformer):
                 for col in remaining_cols
                 if isinstance(schema[col], (*column_type,))
             ]
-            if selected_cols:
-                if backend == "pandas" and column_type[0] == nw.Boolean:
-                    X = X.to_native()
-                    bad_bool_type_cols = [
-                        col
-                        for col in selected_cols
-                        if not isinstance(X[col].dtype, pd.BooleanDtype)
-                    ]
-                    if bad_bool_type_cols:
-                        msg = f"{self.classname()}: Older pandas boolean dtypes (bool, object) are no longer supported, please us pd.DataFrame.convert_dtypes to convert to nullable boolean type of columns {bad_bool_type_cols}."
-                        raise TypeError(msg)
-                    X = nw.from_native(X)
 
-                selected_mapping_exprs = mapping_function(
-                    cols=selected_cols,
-                    mappings=_filter_column_dict(self.mappings, selected_cols),
-                    mappings_from_null=_filter_column_dict(
-                        self.mappings_from_null, selected_cols
-                    ),
-                    return_dtypes=_filter_column_dict(
-                        self.return_dtypes, selected_cols
-                    ),
-                    # warnings are not needed, as class guards against bad types
-                    verbose=False,
-                )
+            selected_mapping_exprs = mapping_function(
+                cols=selected_cols,
+                mappings=_filter_column_dict(self.mappings, selected_cols),
+                mappings_from_null=_filter_column_dict(
+                    self.mappings_from_null, selected_cols
+                ),
+                return_dtypes=_filter_column_dict(self.return_dtypes, selected_cols),
+                # warnings are not needed, as class guards against bad types
+                verbose=False,
+            )
 
-                mapping_exprs = [*mapping_exprs, *selected_mapping_exprs]
+            mapping_exprs = [*mapping_exprs, *selected_mapping_exprs]
 
-                remaining_cols = list(
-                    set(remaining_cols).difference(set(selected_cols))
-                )
+            remaining_cols = list(set(remaining_cols).difference(set(selected_cols)))
 
         if len(remaining_cols) != 0:
             bad_types = {col: schema[col] for col in remaining_cols}

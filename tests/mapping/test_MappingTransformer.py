@@ -468,8 +468,6 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         if library == "pandas":
             df = df.convert_dtypes()
-            # df["b"]=df["b"].convert_dtypes()
-            # df["d"]=df["d"].convert_dtypes()
 
         mapping = {
             "a": {0: False, 1: True},
@@ -515,23 +513,71 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
-        ("input_values", "input_type"),
+        (
+            "input_values",
+            "input_type",
+            "return_dtypes",
+            "mapping",
+            "library",
+            "error_type",
+        ),
         [
-            (["01/02/2020", "20/03/1990"], "Datetime"),
+            (
+                ["01/02/2020", "20/03/1990"],
+                "Datetime",
+                {"a": "Categorical"},
+                {"a": {"a": "aaa"}},
+                "pandas",
+                "unsupported_type",
+            ),
+            (
+                ["01/02/2020", "20/03/1990"],
+                "Datetime",
+                {"a": "Categorical"},
+                {"a": {"a": "aaa"}},
+                "polars",
+                "unsupported_type",
+            ),
             # test these just for pandas, should error for old non nullable bool types
-            ([True, None], "Object"),
-            ([True, False], "bool"),
+            (
+                [True, None],
+                "Object",
+                {"a": "Categorical"},
+                {"a": {True: "aaa"}},
+                "pandas",
+                "unsupported_type",
+            ),
+            (
+                [True, False],
+                "bool",
+                {"a": "Categorical"},
+                {"a": {True: False}},
+                "pandas",
+                "non-nullable",
+            ),
+            (
+                [1, 0],
+                "int",
+                {"a": "Boolean"},
+                {"a": {1: True}},
+                "pandas",
+                "non-nullable",
+            ),
         ],
     )
-    def test_error_for_bad_type(
-        self, library, from_json, lazy, input_values, input_type
+    def test_error_for_bad_types(
+        self,
+        library,
+        from_json,
+        lazy,
+        input_values,
+        input_type,
+        error_type,
+        return_dtypes,
+        mapping,
     ):
         """Test expected error is raised for unexpected type."""
-
-        if library == "polars" and input_type in {"bool", "Object"}:
-            return
 
         df_dict = {"a": input_values}
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
@@ -541,9 +587,6 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
         schema = df.schema
         df = df.to_native()
 
-        mapping = {"a": {"a": "aaa"}}
-        return_dtypes = {"a": "Categorical"}
-
         transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
@@ -551,9 +594,9 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
         transformer = _handle_from_json(transformer, from_json)
 
-        if input_type == "bool":
-            bad_bool_type_cols = ["a"]
-            msg = f"MappingTransformer: Older pandas boolean dtypes (bool, object) are no longer supported, please us pd.DataFrame.convert_dtypes to convert to nullable boolean type of columns {bad_bool_type_cols}."
+        if error_type == "non-nullable":
+            bad_cols = {"a": df["a"].dtype}
+            msg = f"MappingTransformer: For pandas, casting to boolean from non-nullable dtypes is unsafe, please use df.convert_dtypes to convert types of bad cols {bad_cols}."
 
         else:
             bad_types = {"a": schema["a"]}
