@@ -140,7 +140,7 @@ class BaseImputer(BaseTransformer):
             ),
         ):
             json_dict["init"]["weights_column"] = self.weights_column
-        elif isinstance(self, (ArbitraryImputer, NumberImputer)):
+        elif isinstance(self, (ArbitraryImputer, NumberImputer, BooleanImputer)):
             json_dict["init"]["impute_value"] = self.impute_value
 
         json_dict["fit"]["impute_values_"] = _sort_dict(self.impute_values_)
@@ -574,8 +574,8 @@ class _StringImputer(BaseImputer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
-class _BooleanImputer(BaseImputer):
-    """Private subclass to handle arbitrary boolean imputation.
+class BooleanImputer(BaseImputer):
+    """Class to handle arbitrary boolean imputation.
 
     Attributes
     ----------
@@ -663,7 +663,7 @@ class _BooleanImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": [True, None, False]})
-        >>> imputer = _BooleanImputer(columns=["a"], impute_value=True)
+        >>> imputer = BooleanImputer(columns=["a"], impute_value=True)
         >>> imputer.transform(test_df)
         shape: (3, 1)
         ┌───────┐
@@ -857,7 +857,7 @@ class ArbitraryImputer(BaseImputer):
             )
 
         else:
-            imp = _BooleanImputer(
+            imp = BooleanImputer(
                 columns=self.columns,
                 impute_value=self.impute_value,
                 return_native=self.return_native,
