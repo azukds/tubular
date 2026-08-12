@@ -23,20 +23,6 @@ from tests.utils import (
 from tubular.mapping import MappingTransformer
 
 
-def expected_df_1(library="pandas"):
-    """Expected output for test_expected_output."""
-
-    df_dict = {"a": ["a", "b", "c", "d", "e", "f"], "b": [1, 2, 3, 4, 5, 6]}
-
-    df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-    df = nw.from_native(df)
-
-    df = df.with_columns(nw.col("b").cast(nw.Int8))
-
-    return df.to_native()
-
-
 def expected_df_2(library="pandas"):
     """Expected output for test_non_specified_values_unchanged."""
 
@@ -77,20 +63,76 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output(self, library, from_json, lazy):
-        """Test that transform is giving the expected output."""
+    @pytest.mark.parametrize(
+        (
+            "input_values",
+            "mappings",
+            "return_dtypes",
+            "expected_values",
+            "pandas_nullable",
+        ),
+        [
+            (
+                {
+                    "a": [1, 2, 3, 4, 5, 6],
+                    "b": ["a", "b", "c", "d", "e", "f"],
+                },
+                {
+                    "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},
+                    "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
+                },
+                {"a": "String", "b": "Int8"},
+                {
+                    "a": ["a", "b", "c", "d", "e", "f"],
+                    "b": [1, 2, 3, 4, 5, 6],
+                },
+                False,
+            ),
+            (
+                {
+                    "a": [1.0, None, np.nan, 2.0],
+                },
+                {
+                    "a": {1.0: 10, 2.0: 20},
+                },
+                {"a": "UInt16"},
+                {
+                    "a": [10, None, None, 20],
+                },
+                # test for pandas nullable int type,
+                # which should handle leftover nulls
+                True,
+            ),
+        ],
+    )
+    def test_expected_output(
+        self,
+        library,
+        from_json,
+        lazy,
+        input_values,
+        mappings,
+        return_dtypes,
+        expected_values,
+        pandas_nullable,
+    ):
+        """Test that transform is giving the expected output for examples cases."""
 
-        df = d.create_df_1(library=library)
-        expected = expected_df_1(library=library)
+        df = dataframe_init_dispatch(dataframe_dict=input_values, library=library)
+        expected = dataframe_init_dispatch(
+            dataframe_dict=expected_values, library=library
+        )
 
-        mapping = {
-            "a": {1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f"},
-            "b": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6},
-        }
+        if pandas_nullable and library == "pandas":
+            df = df.convert_dtypes()
+            expected = expected.convert_dtypes()
 
-        return_dtypes = {"a": "String", "b": "Int8"}
+        expected = nw.from_native(expected)
+        expected = expected.with_columns(
+            nw.col(col).cast(getattr(nw, return_dtypes[col])) for col in return_dtypes
+        ).to_native()
 
-        transformer = MappingTransformer(mappings=mapping, return_dtypes=return_dtypes)
+        transformer = MappingTransformer(mappings=mappings, return_dtypes=return_dtypes)
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=False):
             return
