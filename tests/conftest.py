@@ -145,7 +145,7 @@ def minimal_attribute_dict():
             "new_column_name": "e",
             "columns": ["a", "c", "b"],
         },
-        "_BooleanImputer": {
+        "BooleanImputer": {
             "columns": ["b"],
             "impute_value": True,
         },
@@ -250,7 +250,7 @@ def minimal_attribute_dict():
         "NullIndicator": {
             "columns": ["a"],
         },
-        "_NumberImputer": {
+        "NumberImputer": {
             "columns": ["b"],
             "impute_value": 1,
         },
@@ -420,7 +420,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
     min_df_dict["_StringImputer"] = object_df
-    min_df_dict["_BooleanImputer"] = bool_df
+    min_df_dict["BooleanImputer"] = bool_df
 
     min_df_dict["ToDatetimeTransformer"] = date_string_df
 
