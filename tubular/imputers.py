@@ -547,7 +547,7 @@ class StringImputer(BaseImputer):
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle String/Unknown type columns
+                {self.classname()}: transformer can only handle String/Unknown type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(
@@ -695,7 +695,7 @@ class BooleanImputer(BaseImputer):
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
+                {self.classname()}: transformer can only handle {allowed_types_str} type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(
@@ -844,7 +844,7 @@ class CategoricalImputer(BaseImputer):
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle Categorical/Unknown type columns
+                {self.classname()}: transformer can only handle Categorical/Unknown type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(
@@ -973,8 +973,8 @@ class _EnumImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": ["cat", None, "dog"]})
-        >>> test_df = test_df.with_columns(pl.col("a").cast(pl.Categorical))
-        >>> imputer = CategoricalImputer(columns=["a"], impute_value="missing")
+        >>> test_df = test_df.with_columns(pl.col("a").cast(pl.Enum(categories=["cat", "dog"])))
+        >>> imputer = _EnumImputer(columns=["a"], impute_value="missing")
         >>> imputer.transform(test_df)
         shape: (3, 1)
         ┌─────────┐
@@ -1004,7 +1004,7 @@ class _EnumImputer(BaseImputer):
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle Enum/Unknown type columns
+                {self.classname()}: transformer can only handle Enum/Unknown type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(

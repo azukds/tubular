@@ -126,7 +126,7 @@ class TestTransform(
             if library == "pandas":
                 allowed_types_str += "/Object"
             msg = f"""
-                ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
+                BooleanImputer: transformer can only handle {allowed_types_str} type columns
                 but got columns with types {[col_dtype]}
                 """
 
