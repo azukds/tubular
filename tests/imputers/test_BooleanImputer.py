@@ -19,9 +19,8 @@ from tests.utils import (
     _convert_to_lazy,
     _handle_from_json,
     assert_frame_equal_dispatch,
-    dataframe_init_dispatch,
 )
-from tubular.imputers import NumberImputer
+from tubular.imputers import BooleanImputer
 
 
 class TestInit(ColumnStrListInitTests):
@@ -29,7 +28,7 @@ class TestInit(ColumnStrListInitTests):
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "NumberImputer"
+        cls.transformer_name = "BooleanImputer"
 
     def test_bad_impute_value_error(self):
         pass
@@ -40,7 +39,7 @@ class TestFit(GenericFitTests):
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "NumberImputer"
+        cls.transformer_name = "BooleanImputer"
 
 
 class TestTransform(
@@ -51,7 +50,7 @@ class TestTransform(
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "NumberImputer"
+        cls.transformer_name = "BooleanImputer"
 
     @pytest.mark.parametrize(
         "lazy",
@@ -62,10 +61,8 @@ class TestTransform(
     @pytest.mark.parametrize(
         "input_values",
         [
-            [["a", "b"], ["c", "d"]],
-            [{"a": 1}, {"b": 4}],
             ["a", "b"],
-            [True, False],
+            [1.0, 2.0],
         ],
     )
     def test_type_mismatch_errors(
@@ -83,7 +80,7 @@ class TestTransform(
         # because of weird types, initialise manually
         df = pd.DataFrame(df_dict) if library == "pandas" else pl.DataFrame(df_dict)
 
-        transformer = NumberImputer(impute_value=1, columns=[column])
+        transformer = BooleanImputer(impute_value=False, columns=[column])
 
         if _check_if_skip_test(transformer, df, lazy, from_json):
             return
@@ -92,8 +89,11 @@ class TestTransform(
 
         bad_types = [nw.from_native(df).schema[column]]
 
+        allowed_types_str = "Boolean/Unknown"
+        if library == "pandas":
+            allowed_types_str += "/Object"
         msg = f"""
-                NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
                 but got columns with types {bad_types}
                 """
 
@@ -109,55 +109,13 @@ class TestTransform(
     )
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_impute_value_not_changed_by_transform(
-        self,
-        library,
-        lazy,
-        from_json,
-    ):
-        """Test outputs for expected cases."""
-
-        column = "a"
-        input_col = [1.0, None]
-        impute_value = 2
-        df_dict = {"a": input_col}
-
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-        df_nw = nw.from_native(df)
-
-        transformer = NumberImputer(impute_value=impute_value, columns=[column])
-
-        if _check_if_skip_test(transformer, df, lazy, from_json):
-            return
-
-        transformer = _handle_from_json(transformer, from_json)
-
-        _ = transformer.transform(
-            _convert_to_lazy(df_nw.to_native(), lazy),
-        )
-
-        # check impute value not changed in transform
-        assert transformer.impute_value == impute_value, (
-            "impute_values_ changed in transform"
-        )
-
-    @pytest.mark.parametrize(
-        "lazy",
-        [True, False],
-    )
-    @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
     @pytest.mark.parametrize(
         ("input_col", "impute_value", "expected_values"),
         [
-            ([1.0, None, 3.0], 2, [1.0, 2.0, 3.0]),
-            ([None, None, None], 2, [2.0, 2.0, 2.0]),
-            ([1, None, 3], 2, [1.0, 2.0, 3.0]),
-            # test with decimal numbers
-            ([1.3, 2.2, None], 1.1, [1.3, 2.2, 1.1]),
-            # test imputing with falsey value
-            ([1, None, 3], 0, [1.0, 0.0, 3.0]),
+            ([True, False, None], True, [True, False, True]),
+            ([True, False, None], False, [True, False, False]),
+            ([None, None, None], True, [True, True, True]),
+            ([None, None, None], False, [False, False, False]),
         ],
     )
     def test_output(
@@ -172,17 +130,18 @@ class TestTransform(
         """Test outputs for expected cases."""
 
         column = "a"
-        df_dict = {"a": input_col}
-        expected_dtype = "Float64"
 
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        # tricky to get all null column to correct type, as casting to boolean
+        # maps None->False for pandas
+        if library == "polars":
+            df = pl.DataFrame({"a": input_col}, schema={"a": pl.Boolean})
+
+        else:
+            df = pd.DataFrame({"a": input_col}, dtype="boolean")
 
         df_nw = nw.from_native(df)
 
-        if all(val is None for val in input_col):
-            df_nw = df_nw.with_columns(nw.col("a").cast(getattr(nw, expected_dtype)))
-
-        transformer = NumberImputer(impute_value=impute_value, columns=[column])
+        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
 
         if _check_if_skip_test(transformer, df, lazy, from_json):
             return
@@ -193,25 +152,25 @@ class TestTransform(
             _convert_to_lazy(df_nw.to_native(), lazy),
         )
 
-        # check impute value not changed in transform
-        assert transformer.impute_value == impute_value, (
-            "impute_values_ changed in transform"
-        )
-
         df_transformed_nw = nw.from_native(
             _collect_frame(df_transformed_native, lazy),
         )
 
         actual_dtype = str(df_transformed_nw[column].dtype)
+        expected_dtype = "Boolean"
         assert actual_dtype == expected_dtype, (
             f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
         )
 
         # also check full df against expectation
         expected = df_nw.clone()
+
         expected = expected.with_columns(
             nw.new_series(name=column, values=expected_values, backend=library)
         )
+
+        if library == "pandas":
+            expected = expected.with_columns(nw.maybe_convert_dtypes(expected["a"]))
 
         assert_frame_equal_dispatch(
             expected.to_native(),
@@ -228,6 +187,55 @@ class TestTransform(
 
             assert_frame_equal_dispatch(
                 _collect_frame(df_transformed_row, lazy),
+                df_expected_row,
+            )
+
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        ("input_col", "impute_value", "expected_values"),
+        [
+            ([True, False, None], True, [True, False, True]),
+            ([True, False, None], False, [True, False, False]),
+        ],
+    )
+    def test_output_for_pandas_object_type(
+        self,
+        input_col,
+        impute_value,
+        expected_values,
+        from_json,
+    ):
+        """Test outputs for pandas object type columns."""
+
+        column = "a"
+
+        # tricky to get all null column to correct type, as casting to boolean
+        # maps None->False for pandas
+        df = pd.DataFrame({"a": input_col})
+        df = df.convert_dtypes()
+
+        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(df)
+
+        expected = pd.DataFrame({"a": expected_values})
+        expected = expected.convert_dtypes()
+
+        assert_frame_equal_dispatch(
+            expected,
+            df_transformed,
+        )
+
+        # Check outcomes for single rows
+        for i in range(len(df)):
+            df_row = df.iloc[[i]]
+            df_transformed_row = transformer.transform(df_row)
+            df_expected_row = expected.iloc[[i]]
+
+            assert_frame_equal_dispatch(
+                df_transformed_row,
                 df_expected_row,
             )
 
@@ -254,9 +262,9 @@ class TestTransform(
 
         df_nw = nw.from_native(df)
 
-        impute_value = 1
-        expected_type = "Int32"
-        transformer = NumberImputer(impute_value=impute_value, columns=[column])
+        impute_value = True
+        expected_dtype = "Boolean"
+        transformer = BooleanImputer(impute_value=impute_value, columns=[column])
 
         if _check_if_skip_test(transformer, df, lazy, from_json):
             return
@@ -273,8 +281,8 @@ class TestTransform(
 
         actual_dtype = str(df_transformed_nw[column].dtype)
 
-        assert actual_dtype == expected_type, (
-            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_type} but got {actual_dtype}"
+        assert actual_dtype == expected_dtype, (
+            f"{self.transformer_name}: dtype changed unexpectedly in transform, expected {expected_dtype} but got {actual_dtype}"
         )
 
         # also check full df against expectation
@@ -284,7 +292,7 @@ class TestTransform(
                 name=column,
                 values=[impute_value, impute_value],
                 backend="polars",
-            ).cast(getattr(nw, expected_type)),
+            ).cast(getattr(nw, expected_dtype)),
         )
 
         assert_frame_equal_dispatch(
@@ -318,4 +326,4 @@ class TestOtherBaseBehaviour(
 
     @classmethod
     def setup_class(cls):
-        cls.transformer_name = "NumberImputer"
+        cls.transformer_name = "BooleanImputer"

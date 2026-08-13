@@ -39,6 +39,8 @@ Changed
 - feat: added CategoricalImputer with tests and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - feat: added private class _EnumImputer, utilised by ArbitraryImputer `#752 <https://github.com/azukds/tubular/issues/752>_`
 - chore: deprecated ArbitraryImputer
+- feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
 
 3.9.0 (17/07/2026)
 ------------------

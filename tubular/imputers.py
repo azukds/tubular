@@ -143,7 +143,14 @@ class BaseImputer(BaseTransformer):
         ):
             json_dict["init"]["weights_column"] = self.weights_column
         elif isinstance(
-            self, (ArbitraryImputer, NumberImputer, StringImputer, CategoricalImputer)
+            self,
+            (
+                ArbitraryImputer,
+                NumberImputer,
+                StringImputer,
+                CategoricalImputer,
+                BooleanImputer,
+            ),
         ):
             json_dict["init"]["impute_value"] = self.impute_value
 
@@ -265,7 +272,7 @@ class BaseImputer(BaseTransformer):
 
 
 class NumberImputer(BaseImputer):
-    """Private subclass to handle arbitrary number imputation.
+    """Class to handle arbitrary number imputation.
 
     Attributes
     ----------
@@ -380,7 +387,7 @@ class NumberImputer(BaseImputer):
 
         if bad_types:
             msg = f"""
-                ArbitraryImputer: transformer can only handle Float/Int/UInt/Unknown type columns
+                {self.classname()}: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {bad_types}
                 """
             raise TypeError(
@@ -578,8 +585,8 @@ class StringImputer(BaseImputer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
-class _BooleanImputer(BaseImputer):
-    """Private subclass to handle arbitrary boolean imputation.
+class BooleanImputer(BaseImputer):
+    """Class to handle arbitrary boolean imputation.
 
     Attributes
     ----------
@@ -667,7 +674,7 @@ class _BooleanImputer(BaseImputer):
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame({"a": [True, None, False]})
-        >>> imputer = _BooleanImputer(columns=["a"], impute_value=True)
+        >>> imputer = BooleanImputer(columns=["a"], impute_value=True)
         >>> imputer.transform(test_df)
         shape: (3, 1)
         ┌───────┐
@@ -2030,7 +2037,7 @@ class ArbitraryImputer(BaseImputer):
                 raise TypeError(msg)
 
         else:
-            imp = _BooleanImputer(
+            imp = BooleanImputer(
                 columns=self.columns,
                 impute_value=self.impute_value,
                 return_native=self.return_native,
