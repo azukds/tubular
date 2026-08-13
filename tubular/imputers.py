@@ -25,6 +25,7 @@ from tubular._utils import (
 )
 from tubular.base import BaseTransformer, register
 from tubular.functions.imputers import (
+    impute_boolean_columns,
     impute_categorical_columns,
     impute_enum_columns,
     impute_numeric_or_string_nulls,
@@ -336,6 +337,18 @@ class NumberImputer(BaseImputer):
             self.impute_values_[c] = self.impute_value
         self.is_fitted_ = True  # Does not fit
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return impute_numeric_or_string_nulls(
+            columns=self.columns, impute_values=self.impute_values_
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Impute missing values with the supplied impute_value.
@@ -396,7 +409,6 @@ class NumberImputer(BaseImputer):
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
-        # next handle imputing
         transform_exprs = self.get_transform_exprs()
 
         X = X.with_columns(*transform_exprs) if transform_exprs else X
@@ -470,22 +482,17 @@ class StringImputer(BaseImputer):
 
         self.is_fitted_ = True  # Does not fit
 
-    def cat_to_enum_expr(self, expr: nw.Expr, categories: list[str]) -> nw.Expr:
-        """Update expression to include handling of category types.
-
-        Parameters
-        ----------
-        expr : nw.Expr
-            initial expression
-        categories: list[str]
-            list of categories in field initially
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
 
         Returns
         -------
-        nw.Expr: updated expression, with category type handling
+        list[nw.Expr]: transform expressions for class
 
         """
-        return expr.cast(nw.Enum(sorted({*categories, self.impute_value})))
+        return impute_numeric_or_string_nulls(
+            columns=self.columns, impute_values=self.impute_values_
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -528,8 +535,6 @@ class StringImputer(BaseImputer):
         """
         X = _convert_dataframe_to_narwhals(X)
 
-        native_namespace = nw.get_native_namespace(X).__name__
-
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
         schema = X.collect_schema()
@@ -537,9 +542,7 @@ class StringImputer(BaseImputer):
         bad_types = [
             schema[col]
             for col in self.columns
-            if not isinstance(
-                schema[col], (nw.String, nw.Categorical, nw.Enum, nw.Unknown)
-            )
+            if not isinstance(schema[col], (nw.String, nw.Unknown))
         ]
 
         if bad_types:
@@ -551,36 +554,9 @@ class StringImputer(BaseImputer):
                 msg,
             )
 
-        transform_expressions = {}
-        for col in self.columns:
-            # have to handle categorical vars for pandas upfront
-            if native_namespace == "pandas":
-                transform_expressions[col] = (
-                    self.cat_to_enum_expr(
-                        nw.col(col),
-                        categories=X.get_column(col).cat.get_categories().to_list(),
-                    )
-                    if isinstance(schema[col], (nw.Categorical, nw.Enum))
-                    else nw.col(col)
-                )
+        transform_exprs = self.get_transform_exprs()
 
-            else:
-                transform_expressions[col] = (
-                    self.cat_to_enum_expr(
-                        nw.col(col),
-                        categories=sorted(X.schema[col].categories),
-                    )
-                    if isinstance(schema[col], (nw.Enum))
-                    else nw.col(col)
-                )
-
-            # next handle imputing
-            transform_expressions[col] = self._generate_imputation_expressions(
-                transform_expressions[col],
-                col,
-            )
-
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -651,6 +627,18 @@ class BooleanImputer(BaseImputer):
 
         self.is_fitted_ = True  # Does not fit
 
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return impute_boolean_columns(
+            columns=self.columns, impute_values=self.impute_values_
+        )
+
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Impute missing values with the supplied impute_value.
@@ -716,16 +704,9 @@ class BooleanImputer(BaseImputer):
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
 
-        # next handle imputing
-        transform_expressions = {
-            col: self._generate_imputation_expressions(
-                nw.col(col),
-                col,
-            ).cast(nw.Boolean)
-            for col in self.columns
-        }
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(**transform_expressions) if transform_expressions else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
