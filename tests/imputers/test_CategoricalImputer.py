@@ -114,6 +114,7 @@ class TestTransform(
         [
             (["a", None, "c"], "b", ["a", "b", "c"]),
             ([None, None, None], "missing", ["missing", "missing", "missing"]),
+            (["cat", "dog", None], "cat", ["cat", "dog", "cat"]),
         ],
     )
     def test_output(
