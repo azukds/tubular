@@ -13,7 +13,6 @@ from tests.test_data import (
     create_bool_df,
     create_is_between_dates_df_1,
     create_numeric_df_1,
-    create_numeric_df_2,
     create_object_df,
     create_when_then_otherwise_test_df,
 )
@@ -106,14 +105,6 @@ def minimal_attribute_dict():
         "BaseCappingTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
         },
-        "BaseCrossColumnMappingTransformer": {
-            "mappings": {"a": {1: 2, 3: 4}},
-            "adjust_column": "b",
-        },
-        "BaseCrossColumnNumericTransformer": {
-            "mappings": {"a": {1: 2, 3: 4}},
-            "adjust_column": "b",
-        },
         "BaseGenericDateTransformer": {
             "columns": ["a"],
             "new_column_name": "bla",
@@ -155,35 +146,7 @@ def minimal_attribute_dict():
             "columns": ["a"],
             "dtype": "String",
         },
-        "CrossColumnAddTransformer": {
-            "mappings": {"a": {1: 2, 3: 4}},
-            "adjust_column": "b",
-        },
-        "CrossColumnMappingTransformer": {
-            "mappings": {"a": {1: 2, 3: 4}},
-            "adjust_column": "b",
-        },
-        "CrossColumnMultiplyTransformer": {
-            "mappings": {"a": {1: 2, 3: 4}},
-            "adjust_column": "b",
-        },
-        "CutTransformer": {
-            "new_column_name": "b",
-            "column": "a",
-            "cut_kwargs": {
-                "bins": 3,
-            },
-        },
-        "DataFrameMethodTransformer": {
-            "columns": ["a", "b"],
-            "new_column_names": "f",
-            "pd_method_name": "sum",
-        },
         "DateDifferenceTransformer": {
-            "columns": ["a", "b"],
-            "new_column_name": "new_column",
-        },
-        "DateDiffLeapYearTransformer": {
             "columns": ["a", "b"],
             "new_column_name": "new_column",
         },
@@ -208,20 +171,10 @@ def minimal_attribute_dict():
             "by": "@",
             "return_n_components": 1,
         },
-        "EqualityChecker": {
-            "columns": ["a", "b"],
-            "new_column_name": "c",
-        },
         "GroupRareLevelsTransformer": {
             "columns": ["b"],
         },
-        "InteractionTransformer": {
-            "columns": ["a", "b"],
-        },
         "LowerCaseTransformer": {"columns": ["b"]},
-        "LogTransformer": {
-            "columns": ["a"],
-        },
         "MappingTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
             # this arg is dependent on inputs, so
@@ -240,12 +193,6 @@ def minimal_attribute_dict():
         "ModeImputer": {
             "columns": ["b"],
         },
-        "NearestMeanResponseImputer": {
-            "columns": ["b"],
-        },
-        "NominalToIntegerTransformer": {
-            "columns": ["b"],
-        },
         "NullIndicator": {
             "columns": ["a"],
         },
@@ -261,14 +208,8 @@ def minimal_attribute_dict():
             "columns": ["a", "b"],
             "separator": "-",
         },
-        "OrdinalEncoderTransformer": {
-            "columns": ["b"],
-        },
         "OutOfRangeNullTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
-        },
-        "PCATransformer": {
-            "columns": ["a", "c"],
         },
         "RemoveCharactersTransformer": {
             "columns": ["b"],
@@ -278,28 +219,9 @@ def minimal_attribute_dict():
             "columns": "a",
             "new_column_names": {"a": "new_a"},
         },
-        "ScalingTransformer": {
-            "scaler_type": "standard",
-            "columns": ["a", "b"],
-        },
-        "SeriesDtMethodTransformer": {
-            "new_column_name": "new_column",
-            "pd_method_name": "month",
-            "columns": "b",
-        },
-        "SeriesStrMethodTransformer": {
-            "columns": ["b"],
-            "new_column_name": "a",
-            "pd_method_name": "split",
-        },
         "SetValueTransformer": {
             "value": 1,
             "columns": ["a"],
-        },
-        "StringConcatenator": {
-            "columns": ["a", "b"],
-            "new_column_name": "c",
-            "separator": "-",
         },
         "_StringImputer": {
             "columns": ["b"],
@@ -313,11 +235,6 @@ def minimal_attribute_dict():
         "ToDatetimeTransformer": {
             "columns": "a",
             "time_format": "%d/%m/%Y",
-        },
-        "TwoColumnOperatorTransformer": {
-            "columns": ["a", "b"],
-            "new_column_name": "c",
-            "pd_method_name": "add",
         },
         "BaseAggregationTransformer": {
             "columns": ["a", "b"],
@@ -369,7 +286,6 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     library = getattr(request, "param", "pandas")
 
     num_df = create_numeric_df_1(library=library)
-    nan_df = create_numeric_df_2(library=library)
     object_df = create_object_df(library=library)
     date_df = create_is_between_dates_df_1(library=library)
     agg_df = create_aggregate_over_rows_test_df(
@@ -397,22 +313,12 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
 
     # Some may require further manual overwrites
     other_num_transformers = [
-        "CrossColumnMultiplyTransformer",
-        "CrossColumnAddTransformer",
-        "BaseCrossColumnNumericTransformer",
         # prevent below two from being imported from import in nominal file
         "MedianImputer",
         "MeanImputer",
     ]
     for transformer in other_num_transformers:
         min_df_dict[transformer] = num_df
-
-    # Some transformers require missing values to work
-    other_nan_transformers = [
-        "NearestMeanResponseImputer",
-    ]
-    for transformer in other_nan_transformers:
-        min_df_dict[transformer] = nan_df
 
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df

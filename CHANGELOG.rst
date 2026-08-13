@@ -27,7 +27,7 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.10.0 (unreleased)
+4.0.0 (unreleased)
 -------------------
 Changed
 ^^^^^^^
@@ -37,6 +37,7 @@ Changed
 - feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+- chore: deleted long term deprecated classes
 
 3.9.0 (17/07/2026)
 ------------------
