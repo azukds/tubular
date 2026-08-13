@@ -980,7 +980,7 @@ class _EnumImputer(BaseImputer):
         ┌─────────┐
         │ a       │
         │ ---     │
-        │ cat     │
+        │ enum    │
         ╞═════════╡
         │ cat     │
         │ missing │
