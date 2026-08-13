@@ -860,7 +860,11 @@ class CategoricalImputer(BaseImputer):
 
 @register
 class _EnumImputer(BaseImputer):
-    """Class to handle arbitrary imputation into enum columns.
+    """Private class to handle arbitrary imputation into enum columns.
+
+    Currently keeping this private, as it's not easy to make a stateless
+    get_transform_exprs method for this one, as knowledge of the enum
+    categories for each column are required for the transform.
 
     Attributes
     ----------
