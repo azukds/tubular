@@ -159,28 +159,6 @@ class BaseImputer(BaseTransformer):
 
         return json_dict
 
-    # TODO: Would be deleted once ArbitraryImputer has a get_transform_exprs method
-    def _generate_imputation_expressions(self, expr: nw.Expr, col: str) -> nw.Expr:
-        """Update input expressions to include imputation.
-
-        Parameters
-        ----------
-        expr : nw.Expr
-            initial expression
-        col: str
-            column being imputed
-
-        Returns
-        -------
-        nw.Expr: updated expression, with imputation
-
-        """
-        return (
-            expr.fill_null(value=self.impute_values_[col])
-            if (self.impute_values_[col] is not None)
-            else expr
-        )
-
     def _check_for_failed_fit(self) -> None:
         """Check if fit failed to find needed attrs (if impute_values_ are None).
 
@@ -337,18 +315,6 @@ class NumberImputer(BaseImputer):
             self.impute_values_[c] = self.impute_value
         self.is_fitted_ = True  # Does not fit
 
-    def get_transform_exprs(self) -> list[nw.Expr]:
-        """Get transform expressions.
-
-        Returns
-        -------
-        list[nw.Expr]: transform expressions for class
-
-        """
-        return impute_numeric_or_string_nulls(
-            columns=self.columns, impute_values=self.impute_values_
-        )
-
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
         """Impute missing values with the supplied impute_value.
@@ -481,18 +447,6 @@ class StringImputer(BaseImputer):
             self.impute_values_[c] = self.impute_value
 
         self.is_fitted_ = True  # Does not fit
-
-    def get_transform_exprs(self) -> list[nw.Expr]:
-        """Get transform expressions.
-
-        Returns
-        -------
-        list[nw.Expr]: transform expressions for class
-
-        """
-        return impute_numeric_or_string_nulls(
-            columns=self.columns, impute_values=self.impute_values_
-        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
