@@ -423,6 +423,21 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize(
+        ("input_values", "input_type", "expected_output_values"),
+        [
+            (
+                ["a", "b", "c", "d", "e", "f", None],
+                "String",
+                ["a", "b", "c", "d", "e", "f", "g"],
+            ),
+            (
+                ["a", "b", "c", "d", "e", "f", None],
+                "Categorical",
+                ["a", "b", "c", "d", "e", "f", "g"],
+            ),
+        ],
+    )
     def test_expected_output_with_object_and_categorical_columns(
         self,
         library,
@@ -430,45 +445,62 @@ class TestTransform(
         uninitialized_transformers,
         lazy,
         from_json,
+        input_values,
+        input_type,
+        expected_output_values,
     ):
         """Test that transform is giving the expected output when applied to object and categorical columns."""
         # Create the DataFrame using the library parameter
-        df2 = d.create_df_2(library=library)
+        col = "a"
+        df_dict = {
+            col: input_values,
+        }
+        expected_df_dict = {
+            col: expected_output_values,
+        }
+
+        df = dataframe_init_dispatch(df_dict, library)
+        expected_df = dataframe_init_dispatch(expected_df_dict, library)
+        if input_type == "Categorical":
+            df = nw.from_native(df)
+            df = df.with_columns(nw.col(col).cast(getattr(nw, input_type))).to_native()
+            expected_df = nw.from_native(expected_df)
+            expected_df = expected_df.with_columns(
+                nw.col(col).cast(getattr(nw, input_type))
+            ).to_native()
 
         args = minimal_attribute_dict[self.transformer_name]
-        args["columns"] = ["c"]
+        args["columns"] = [col]
         args["impute_value"] = "g"
 
         # Initialize the transformer
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        expected_df_3 = create_expected_df_3(library)
-
-        if u._check_if_skip_test(transformer, df2, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy))
+        df_transformed = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
             u._collect_frame(df_transformed, lazy),
-            expected_df_3,
+            expected_df,
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
             # so this is needed
             check_categorical=False,
         )
-        df2 = nw.from_native(df2)
-        expected_df_3 = nw.from_native(expected_df_3)
+        df = nw.from_native(df)
+        expected_df = nw.from_native(expected_df)
 
-        for i in range(len(df2)):
+        for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                u._convert_to_lazy(df2[[i]].to_native(), lazy),
+                u._convert_to_lazy(df[[i]].to_native(), lazy),
             )
-            df_expected_row = expected_df_3[[i]].to_native()
+            df_expected_row = expected_df[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
                 u._collect_frame(df_transformed_row, lazy),
