@@ -11,6 +11,7 @@ import pytest
 from tests.test_data import (
     create_aggregate_over_rows_test_df,
     create_bool_df,
+    create_categorical_df,
     create_is_between_dates_df_1,
     create_numeric_df_1,
     create_object_df,
@@ -139,6 +140,10 @@ def minimal_attribute_dict():
             "columns": ["b"],
             "impute_value": True,
         },
+        "CategoricalImputer": {
+            "columns": ["b"],
+            "impute_value": "bla",
+        },
         "CappingTransformer": {
             "capping_values": {"a": [0.1, 0.2]},
         },
@@ -223,7 +228,7 @@ def minimal_attribute_dict():
             "value": 1,
             "columns": ["a"],
         },
-        "_StringImputer": {
+        "StringImputer": {
             "columns": ["b"],
             "impute_value": "missing",
         },
@@ -287,6 +292,7 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
 
     num_df = create_numeric_df_1(library=library)
     object_df = create_object_df(library=library)
+    categorical_df = create_categorical_df(library=library)
     date_df = create_is_between_dates_df_1(library=library)
     agg_df = create_aggregate_over_rows_test_df(
         library=library,
@@ -323,7 +329,8 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["BaseAggregationTransformer"] = agg_df
     min_df_dict["AggregateRowsOverColumnTransformer"] = agg_df
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
-    min_df_dict["_StringImputer"] = object_df
+    min_df_dict["StringImputer"] = object_df
+    min_df_dict["CategoricalImputer"] = categorical_df
     min_df_dict["BooleanImputer"] = bool_df
 
     pyarrow_transformers = ["ExtractStringComponentsTransformer"]
