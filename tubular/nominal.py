@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import narwhals as nw
-import numpy as np
 from beartype import beartype
 from narwhals.dtypes import DType  # noqa: F401
-from typing_extensions import deprecated
 
 from tubular._stats import (
     _get_mean_calculation_expressions,
@@ -33,7 +31,7 @@ from tubular.functions.nominal import (
     rare_encode_categorical_or_enum_columns,
     rare_encode_str_columns,
 )
-from tubular.mapping import BaseMappingTransformer, BaseMappingTransformMixin
+from tubular.mapping import BaseMappingTransformer
 from tubular.mixins import WeightColumnMixin
 from tubular.types import (
     DataFrame,
@@ -43,9 +41,6 @@ from tubular.types import (
     PositiveInt,
     Series,
 )
-
-if TYPE_CHECKING:
-    import pandas as pd
 
 
 @register
@@ -1844,167 +1839,3 @@ class OneHotEncodingTransformer(
         X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
-
-
-# DEPRECATED TRANSFORMERS
-
-
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
-class NominalToIntegerTransformer(BaseMappingTransformMixin):
-    """Transformer to convert columns containing nominal values into integer values.
-
-    The nominal levels that are mapped to integers are not ordered in any way.
-
-    Attributes
-    ----------
-    start_encoding : int
-        Value to start the encoding / mapping of nominal to integer from.
-
-    mappings : dict
-        Created in fit. A dict of key (column names) value (mappings between levels and integers for given
-        column) pairs.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    jsonable = False
-
-    FITS = True
-
-    deprecated = True
-
-    def __init__(
-        self,
-        columns: str | list[str] | None = None,
-        start_encoding: int = 0,
-        **kwargs: dict[str, bool],
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        columns : None or str or list, default = None
-            Columns to transform, if the default of None is supplied all object and category
-            columns in X are used.
-
-        start_encoding : int, default = 0
-            Value to start the encoding from e.g. if start_encoding = 0 then the encoding would be
-            {'A': 0, 'B': 1, 'C': 3} etc.. or if start_encoding = 5 then the same encoding would be
-            {'A': 5, 'B': 6, 'C': 7}. Can be positive or negative.
-
-        **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        Raises
-        ------
-        TypeError: if `start_encoding` is not int
-
-        """
-        BaseTransformer.__init__(self, columns=columns, **kwargs)
-
-        # this transformer shouldn't really be used with huge numbers of levels
-        # so setup to use int8 type
-        # if there are more levels than this, will get a type error
-        self.return_dtypes = dict.fromkeys(self.columns, "Int8")
-
-        if not isinstance(start_encoding, int):
-            msg = f"{self.classname()}: start_encoding should be an integer"
-            raise TypeError(msg)
-
-        self.start_encoding = start_encoding
-
-    def fit(self, X: pd.DataFrame, y: pd.Series | None = None) -> pd.DataFrame:
-        """Create mapping between nominal levels and integer values for categorical variables.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to fit the transformer on, this sets the nominal levels that can be mapped.
-
-        y : None or pd.DataFrame or pd.Series, default = None
-            Optional argument only required for the transformer to work with sklearn pipelines.
-
-        Returns
-        -------
-            NominalToIntegerTransformer: fitted class instance
-
-        Raises
-        ------
-        ValueError: if column has more levels than can be encoded as int8
-
-        """
-        BaseTransformer.fit(self, X, y)
-
-        self.mappings = {}
-
-        for c in self.columns:
-            col_values = X[c].unique()
-
-            self.mappings[c] = {
-                k: i for i, k in enumerate(col_values, self.start_encoding)
-            }
-
-            # if more levels than int8 type can handle, then error
-            if len(self.mappings[c]) > np.iinfo(np.int8).max:
-                msg = f"{self.classname()}: column {c} has too many levels to encode"
-                raise ValueError(
-                    msg,
-                )
-
-        # use BaseMappingTransformer init to process args
-        # extract null_mappings from mappings etc
-        base_mapping_transformer = BaseMappingTransformer(
-            mappings=self.mappings,
-            return_dtypes=self.return_dtypes,
-        )
-
-        self.mappings = base_mapping_transformer.mappings
-        self.mappings_from_null = base_mapping_transformer.mappings_from_null
-        self.return_dtypes = base_mapping_transformer.return_dtypes
-
-        return self
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Apply integer encoding stored in the mappings attribute to columns.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data with nominal columns to transform.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed input X with levels mapped according to mappings dict.
-
-        """
-        X = BaseTransformer.transform(self, X)
-
-        return BaseMappingTransformMixin.transform(self, X)
