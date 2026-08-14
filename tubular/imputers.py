@@ -250,6 +250,7 @@ class BaseImputer(BaseTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native)
 
 
+@register
 class NumberImputer(BaseImputer):
     """Class to handle arbitrary number imputation.
 
@@ -382,6 +383,7 @@ class NumberImputer(BaseImputer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class StringImputer(BaseImputer):
     """Class to handle arbitrary string imputation.
 
@@ -515,6 +517,7 @@ class StringImputer(BaseImputer):
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class BooleanImputer(BaseImputer):
     """Class to handle arbitrary boolean imputation.
 
