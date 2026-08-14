@@ -41,6 +41,10 @@ Changed
 - chore: deprecated ArbitraryImputer
 - feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
+being mapped to string type.
+- chore: refactored MappingTransformer to pave way for splitting into type based classes with
+`get_transform_exprs` methods.
 - chore: deleted long term deprecated classes
 
 3.9.0 (17/07/2026)
