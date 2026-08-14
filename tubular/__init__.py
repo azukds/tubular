@@ -24,6 +24,7 @@ from tubular.imputers import (
     MedianImputer,
     ModeImputer,
     NullIndicator,
+    NumberImputer,
 )
 from tubular.mapping import MappingTransformer
 from tubular.misc import (
@@ -41,6 +42,7 @@ from tubular.numeric import (
     OneDKmeansTransformer,
     RatioTransformer,
 )
+from tubular.strings import LowerCaseTransformer, RemoveCharactersTransformer
 
 __all__ = [
     "AggregateColumnsOverRowTransformer",
@@ -56,16 +58,19 @@ __all__ = [
     "DatetimeSinusoidCalculator",
     "DifferenceTransformer",
     "GroupRareLevelsTransformer",
+    "LowerCaseTransformer",
     "MappingTransformer",
     "MeanImputer",
     "MeanResponseTransformer",
     "MedianImputer",
     "ModeImputer",
     "NullIndicator",
+    "NumberImputer",
     "OneDKmeansTransformer",
     "OneHotEncodingTransformer",
     "OutOfRangeNullTransformer",
     "RatioTransformer",
+    "RemoveCharactersTransformer",
     "RenameColumnsTransformer",
     "SetValueTransformer",
     "ToDatetimeTransformer",

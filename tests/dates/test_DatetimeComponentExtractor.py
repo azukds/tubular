@@ -405,7 +405,8 @@ class TestTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

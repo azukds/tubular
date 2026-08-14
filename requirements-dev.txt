@@ -24,7 +24,7 @@ joblib==1.5.3
     # via scikit-learn
 mypy-extensions==1.1.0
     # via black
-narwhals==2.18.0
+narwhals==2.21.2
     # via tubular (pyproject.toml)
 numpy==2.2.6
     # via
@@ -55,7 +55,7 @@ pygments==2.20.0
     # via
     #   tubular (pyproject.toml)
     #   pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   tubular (pyproject.toml)
     #   pytest-cov

@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from collections import OrderedDict
 from typing import Any, Literal
 
 import narwhals as nw
-import numpy as np
 import pandas as pd
 import polars as pl
 from beartype import beartype
-from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
+    _sort_dict,
+    _sort_nested_dict,
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
@@ -151,6 +150,7 @@ class BaseMappingTransformer(BaseTransformer):
         self.return_dtypes = return_dtypes
 
         super().__init__(columns=columns, **kwargs)
+        self.is_fitted_ = True  # Does not fit
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -168,7 +168,7 @@ class BaseMappingTransformer(BaseTransformer):
         >>> mapping_transformer = BaseMappingTransformer(mappings={"a": {"x": 1}})
 
         >>> mapping_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {}}
+        {'tubular_version': ..., 'classname': 'BaseMappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'x': 1}}, 'return_dtypes': {'a': 'Int64'}}, 'fit': {'is_fitted_': True}}
 
         ```
 
@@ -177,8 +177,14 @@ class BaseMappingTransformer(BaseTransformer):
 
         # replace columns arg with mappings arg
         del json_dict["init"]["columns"]
-        json_dict["init"]["mappings"] = self.mappings
-        json_dict["init"]["return_dtypes"] = self.return_dtypes
+
+        # make sure mappings dict is sorted for consistent repr
+        mappings = _sort_nested_dict(self.mappings)
+
+        return_dtypes = _sort_dict(self.return_dtypes)
+
+        json_dict["init"]["mappings"] = mappings
+        json_dict["init"]["return_dtypes"] = return_dtypes
 
         return json_dict
 
@@ -257,7 +263,7 @@ class BaseMappingTransformer(BaseTransformer):
 
         return_native = self._process_return_native(return_native_override)
 
-        self.check_is_fitted(["mappings", "return_dtypes"])
+        self.check_is_fitted(["mappings", "return_dtypes", "is_fitted_"])
 
         X = super().transform(X, return_native_override=False)
 
@@ -325,7 +331,9 @@ class BaseMappingTransformMixin(BaseTransformer):
         #  independently (should be inherited as a mixin)
 
         """
-        self.check_is_fitted(["mappings", "return_dtypes", "mappings_from_null"])
+        self.check_is_fitted(
+            ["mappings", "return_dtypes", "mappings_from_null", "is_fitted_"]
+        )
 
         X = _convert_dataframe_to_narwhals(X)
 
@@ -343,7 +351,7 @@ class BaseMappingTransformMixin(BaseTransformer):
         # during the when/then logic, so we need to tell polars to use string
         # as a common type.
         # types are then corrected before returning at the end
-        schema = X.schema
+        schema = X.collect_schema()
         mapping_exprs = {
             col: nw.col(col).cast(nw.String)
             if schema[col] in {nw.Categorical, nw.Enum}
@@ -474,7 +482,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     >>> # transformer can also be dumped to json and reinitialised
     >>> json_dump = transformer.to_json()
     >>> json_dump
-    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'Y': 1, 'N': 0}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {}}
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'N': 0, 'Y': 1}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
 
     >>> MappingTransformer.from_json(json_dump)
     MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
@@ -540,6 +548,7 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         ```
 
         """
+        self.check_is_fitted("is_fitted_")
         X = _convert_dataframe_to_narwhals(X)
 
         X = BaseTransformer.transform(self, X, return_native_override=False)
@@ -551,545 +560,3 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-# DEPRECATED TRANSFORMERS
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
-class BaseCrossColumnMappingTransformer(BaseMappingTransformer):
-    """BaseMappingTransformer Extension for cross column mapping transformers.
-
-    Attributes
-    ----------
-    adjust_column : str
-        Column containing the values to be adjusted.
-
-    mappings : dict
-        Dictionary of mappings for each column individually to be applied to the adjust_column.
-        The dict passed to mappings in init is set to the mappings attribute.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    FITS = False
-
-    jsonable = False
-
-    deprecated = True
-
-    def __init__(
-        self,
-        adjust_column: str,
-        mappings: dict[str, dict],
-        **kwargs: dict[str, bool],
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        adjust_column : str
-            The column to be adjusted.
-
-        mappings : dict or OrderedDict
-            Dictionary containing adjustments. Exact structure will vary by child class.
-
-        **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        Raises
-        ------
-        TypeError:
-            if adjust_column is not string type.
-
-        """
-        super().__init__(mappings=mappings, **kwargs)
-
-        if not isinstance(adjust_column, str):
-            msg = f"{self.classname()}: adjust_column should be a string"
-            raise TypeError(msg)
-
-        self.adjust_column = adjust_column
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Check X is valid for transform and calls parent transform.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply adjustments to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed data X with adjustments applied to specified columns.
-
-        Raises
-        ------
-        ValueError:
-            if provided adjust_column is not in DataFrame.
-
-        """
-        X = super().transform(X)
-
-        if self.adjust_column not in X.columns.to_numpy():
-            msg = f"{self.classname()}: variable {self.adjust_column} is not in X"
-            raise ValueError(msg)
-
-        return X
-
-
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
-class CrossColumnMappingTransformer(BaseCrossColumnMappingTransformer):
-    """Transformer to adjust values in one column based on the values of another column.
-
-    Attributes
-    ----------
-    adjust_column : str
-        Column containing the values to be adjusted.
-
-    mappings : dict
-        Dictionary of mappings for each column individually to be applied to the adjust_column.
-        The dict passed to mappings in init is set to the mappings attribute.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    jsonable = False
-
-    FITS = False
-
-    deprecated = True
-
-    def __init__(
-        self,
-        adjust_column: str,
-        mappings: dict[str, dict],
-        **kwargs: dict[str, bool],
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        adjust_column : str
-            The column to be adjusted.
-
-        mappings : dict or OrderedDict
-            Dictionary containing adjustments. Each value in adjustments should be a dictionary
-            of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
-            example the following dict {'a': {1: 'a', 3: 'b'}, 'b': {'a': 1, 'b': 2}}
-            would replace the values in the adjustment column based off the values in column a using the mapping
-            1->'a', 3->'b' and also replace based off the values in column b using a mapping 'a'->1, 'b'->2.
-            If more than one column is defined for this mapping, then this object must be an OrderedDict
-            to ensure reproducibility.
-
-        **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        Raises
-        ------
-        TypeError:
-            if mappings is not ordered dict, or only contains one key.
-
-        """
-        super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
-
-        if len(mappings) > 1 and not isinstance(mappings, OrderedDict):
-            msg = f"{self.classname()}: mappings should be an ordered dict for 'replace' mappings using multiple columns"
-            raise TypeError(msg)
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform values in given column using the values provided in the adjustments dictionary.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply adjustments to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed data X with adjustments applied to specified columns.
-
-        """
-        X = super().transform(X)
-
-        for i in self.columns:
-            for j in self.mappings[i]:
-                X[self.adjust_column] = np.where(
-                    (X[i] == j),
-                    self.mappings[i][j],
-                    X[self.adjust_column],
-                )
-
-        return X
-
-
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
-class BaseCrossColumnNumericTransformer(BaseCrossColumnMappingTransformer):
-    """BaseCrossColumnNumericTransformer Extension for cross column numerical mapping transformers.
-
-    Attributes
-    ----------
-    adjust_column : str
-        Column containing the values to be adjusted.
-
-    mappings : dict
-        Dictionary of mappings for each column individually to be applied to the adjust_column.
-        The dict passed to mappings in init is set to the mappings attribute.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    FITS = False
-
-    jsonable = False
-
-    deprecated = True
-
-    def __init__(
-        self,
-        adjust_column: str,
-        mappings: dict[str, dict],
-        **kwargs: dict[str, bool],
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        adjust_column : str
-            The column to be adjusted.
-
-        mappings : dict
-            Dictionary containing adjustments. Exact structure will vary by child class.
-
-        **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        Raises
-        ------
-        TypeError:
-            if provided columns are non-numeric.
-
-        """
-        super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
-
-        for j in mappings.values():
-            for k in j.values():
-                if type(k) not in {int, float}:
-                    msg = f"{self.classname()}: mapping values must be numeric"
-                    raise TypeError(msg)
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Check X is valid for transform and calls parent transform.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply adjustments to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed data X with adjustments applied to specified columns.
-
-        Raises
-        ------
-        TypeError:
-            if provided columns are non-numeric
-
-        """
-        X = super().transform(X)
-
-        if not pd.api.types.is_numeric_dtype(X[self.adjust_column]):
-            msg = f"{self.classname()}: variable {self.adjust_column} must have numeric dtype."
-            raise TypeError(msg)
-
-        return X
-
-
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
-class CrossColumnMultiplyTransformer(BaseCrossColumnNumericTransformer):
-    """Transformer to apply a multiplicative adjustment to values in one column based on the values of another column.
-
-    Attributes
-    ----------
-    adjust_column : str
-        Column containing the values to be adjusted.
-
-    mappings : dict
-        Dictionary of multiplicative adjustments for each column individually to be applied to the adjust_column.
-        The dict passed to mappings in init is set to the mappings attribute.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    FITS = False
-
-    jsonable = False
-
-    deprecated = True
-
-    def __init__(
-        self,
-        adjust_column: str,
-        mappings: dict[str, dict],
-        **kwargs: dict[str, bool],
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        adjust_column : str
-            The column to be adjusted.  The data type of this column must be int or float.
-
-        mappings : dict
-            Dictionary containing adjustments. Each value in adjustments should be a dictionary
-            of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
-            example the following dict {'a': {1: 2, 3: 5}, 'b': {'a': 0.5, 'b': 1.1}}
-            would multiply the values in the adjustment column based off the values in column a using the mapping
-            1->2*value, 3->5*value and also multiply based off the values in column b using a mapping
-            'a'->0.5*value, 'b'->1.1*value.
-            The values within the dicts defining the multipliers must have type int or float.
-
-        **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        """
-        super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform values in given column using the values provided in the adjustments dictionary.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply adjustments to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed data X with adjustments applied to specified columns.
-
-        """
-        X = super().transform(X)
-
-        for i in self.columns:
-            for j in self.mappings[i]:
-                X[self.adjust_column] = np.where(
-                    (X[i] == j),
-                    X[self.adjust_column] * self.mappings[i][j],
-                    X[self.adjust_column],
-                )
-
-        return X
-
-
-@deprecated(
-    """This transformer has not been selected for conversion to polars/narwhals,
-    and so has been deprecated. If it is useful to you, please raise an issue
-    for it to be modernised
-    """,
-)
-class CrossColumnAddTransformer(BaseCrossColumnNumericTransformer):
-    """Transformer to apply an additive adjustment to values in one column based on the values of another column.
-
-    Attributes
-    ----------
-    adjust_column : str
-        Column containing the values to be adjusted.
-
-    mappings : dict
-        Dictionary of additive adjustments for each column individually to be applied to the adjust_column.
-        The dict passed to mappings in init is set to the mappings attribute.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    FITS = False
-
-    jsonable = False
-
-    deprecated = True
-
-    def __init__(
-        self,
-        adjust_column: str,
-        mappings: dict[str, dict],
-        **kwargs: dict[str, bool],
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        adjust_column : str
-            The column to be adjusted.  The data type of this column must be int or float.
-
-        mappings : dict
-            Dictionary containing adjustments. Each value in adjustments should be a dictionary
-            of key (column to apply adjustment based on) value (adjustment dict for given columns) pairs. For
-            example the following dict {'a': {1: 2, 3: 5}, 'b': {'a': 1, 'b': -5}}
-            would provide an additive adjustment to the values in the adjustment column based off the values
-            in column a using the mapping 1->2+value, 3->5+value and also an additive adjustment based off the
-            values in column b using a mapping 'a'->1+value, 'b'->(-5)+value.
-            The values within the dicts defining the values to be added must have type int or float.
-
-        **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        """
-        super().__init__(mappings=mappings, adjust_column=adjust_column, **kwargs)
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Transform values in given column using the values provided in the adjustments dictionary.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply adjustments to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed data X with adjustments applied to specified columns.
-
-        """
-        X = super().transform(X)
-
-        for i in self.columns:
-            for j in self.mappings[i]:
-                X[self.adjust_column] = np.where(
-                    (X[i] == j),
-                    X[self.adjust_column] + self.mappings[i][j],
-                    X[self.adjust_column],
-                )
-
-        return X

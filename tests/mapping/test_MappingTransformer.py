@@ -339,7 +339,8 @@ class TestTransform(BaseMappingTransformerTransformTests, ReturnNativeTests):
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyMappingsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyMappingsFitTransformPassTests,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

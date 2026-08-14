@@ -9,7 +9,10 @@ from tests.aggregations.test_BaseAggregationTransformer import (
     TestBaseAggregationTransformerInit,
     TestBaseAggregationTransformerTransform,
 )
-from tests.base_tests import EmptyColumnsFitTransformPassTests, OtherBaseBehaviourTests
+from tests.base_tests import (
+    EmptyColumnsFitTransformPassTests,
+    OtherBaseBehaviourTests,
+)
 from tests.test_data import create_aggregate_over_rows_test_df
 
 
@@ -314,7 +317,8 @@ class TestAggregateRowsOverColumnTransformerTransform(
 
 
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
 ):
     """
     Class to run tests for AggregateRowsOverColumnTransformer outside the three standard methods.

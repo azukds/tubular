@@ -2,48 +2,31 @@
 
 from __future__ import annotations
 
-import operator
-from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import Any
 
 import narwhals as nw
-
-if TYPE_CHECKING:
-    import pandas as pd
 from beartype import beartype
-from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
     _return_narwhals_or_native_dataframe,
     block_from_json,
 )
-from tubular.base import BaseTransformer
-from tubular.mixins import DropOriginalMixin
+from tubular.base import BaseTransformer, register
+from tubular.functions.comparison import (
+    ConditionEnumStr,
+    apply_when_then_otherwise,
+    compare_two_columns,
+)
 from tubular.types import (
     DataFrame,
-    Is,
     ListOfStrs,
     ListOfTwoStrs,
     NumericTypes,
 )
 
 
-class ConditionEnum(Enum):
-    """Enumeration of comparison conditions."""
-
-    GREATER_THAN = ">"
-    LESS_THAN = "<"
-    EQUAL_TO = "=="
-    NOT_EQUAL_TO = "!="
-
-
-ConditionEnumStr = Annotated[
-    str,
-    Is[lambda s: s in ConditionEnum._value2member_map_],
-]
-
-
+@register
 class WhenThenOtherwiseTransformer(BaseTransformer):
     """Transformer to apply conditional logic across multiple columns.
 
@@ -132,6 +115,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
 
         self.when_column = when_column
         self.then_column = then_column
+        self.is_fitted_ = True  # Set is_fitted to True as no fitting is required
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -153,7 +137,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         ... )
         >>> pprint(transformer.to_json(), sort_dicts=True)
         {'classname': 'WhenThenOtherwiseTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a', 'b'],
                   'copy': False,
                   'return_native': True,
@@ -175,6 +159,20 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         )
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return apply_when_then_otherwise(
+            columns=self.columns,
+            when_column=self.when_column,
+            then_column=self.then_column,
+        )
 
     @beartype
     def transform(
@@ -235,7 +233,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        schema = X.schema
+        schema = X.collect_schema()
         if schema[self.when_column] != nw.Boolean:
             message = f"The column '{self.when_column}' must be of type Boolean."
             raise TypeError(message)
@@ -248,18 +246,14 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
             )
             raise TypeError(message)
 
-        exprs_dict = {
-            col: nw.when(nw.col(self.when_column))
-            .then(nw.col(self.then_column))
-            .otherwise(nw.col(col))
-            for col in self.columns
-        }
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(**exprs_dict) if exprs_dict else X
+        X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
 
+@register
 class CompareTwoColumnsTransformer(BaseTransformer):
     """Transformer to compare two columns and generate outcomes based on conditions.
 
@@ -312,14 +306,6 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     jsonable = True
     lazyframe_compatible = True
 
-    # Map the enum to the operator functions
-    ops_map: ClassVar[dict[ConditionEnum, Any]] = {
-        ConditionEnum.GREATER_THAN: operator.gt,
-        ConditionEnum.LESS_THAN: operator.lt,
-        ConditionEnum.EQUAL_TO: operator.eq,
-        ConditionEnum.NOT_EQUAL_TO: operator.ne,
-    }
-
     @beartype
     def __init__(
         self,
@@ -343,6 +329,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         """
         super().__init__(columns=columns, **kwargs)
         self.condition = condition
+        self.is_fitted_ = True  # Set is_fitted to True as no fitting is required
 
     def to_json(self) -> dict[str, dict[str, Any]]:
         """Serialize the transformer to a JSON-compatible dictionary.
@@ -355,6 +342,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         Examples
         --------
         ```pycon
+        >>> from tubular.functions.comparison import ConditionEnum
         >>> transformer = CompareTwoColumnsTransformer(
         ...     columns=["a", "b"],
         ...     condition=ConditionEnum.GREATER_THAN.value,
@@ -363,7 +351,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         >>> from pprint import pprint
         >>> pprint(json_dict, sort_dicts=True)
         {'classname': 'CompareTwoColumnsTransformer',
-         'fit': {},
+         'fit': {'is_fitted_': True},
          'init': {'columns': ['a', 'b'],
                   'condition': '>',
                   'copy': False,
@@ -379,6 +367,19 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         json_dict["init"]["condition"] = self.condition
 
         return json_dict
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return compare_two_columns(
+            columns=self.columns,
+            condition=self.condition,
+        )
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -427,7 +428,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        schema = X.schema
+        schema = X.collect_schema()
 
         bad_cols = [col for col in self.columns if schema[col] not in NumericTypes]
         if bad_cols:
@@ -437,159 +438,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
             )
             raise TypeError(message)
 
-        null_filter_expr = (
-            nw.col(self.columns[0]).is_null() | nw.col(self.columns[1]).is_null()
-        )
+        transform_expr = self.get_transform_exprs()
 
-        expr = (
-            nw.when(~null_filter_expr)
-            .then(
-                self.ops_map[ConditionEnum(self.condition)](
-                    nw.col(self.columns[0]), nw.col(self.columns[1])
-                )
-            )
-            .otherwise(None)
-        )
-
-        backend = nw.get_native_namespace(X).__name__
-
-        if backend == "polars":
-            expr = expr.cast(nw.Boolean)
-
-        outcome_column_name = f"{self.columns[0]}{self.condition}{self.columns[1]}"
-
-        X = X.with_columns(expr.alias(outcome_column_name))
-
-        if backend == "pandas":
-            X = X.with_columns(
-                nw.maybe_convert_dtypes(X[outcome_column_name]).cast(nw.Boolean)
-            )
+        X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-# DEPRECATED TRANSFORMERS
-@deprecated(
-    """This transformer has been superseded by CompareTwoColumnsTransformer
-    and so has been deprecated, and will be removed in a future major release.
-    """,
-)
-class EqualityChecker(
-    DropOriginalMixin,
-    BaseTransformer,
-):
-    """Transformer to check if two columns are equal.
-
-    Attributes
-    ----------
-    built_from_json: bool
-        indicates if transformer was reconstructed from json,
-        which limits it's supported functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to
-        polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    FITS = False
-
-    jsonable = False
-
-    deprecated = True
-
-    @beartype
-    def __init__(
-        self,
-        columns: ListOfTwoStrs,
-        new_column_name: str,
-        drop_original: bool = False,
-        **kwargs: bool | None,
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        columns: list
-            List containing names of the two columns to check.
-
-        new_column_name: string
-            string containing the name of the new column.
-
-        drop_original: boolean = False
-            boolean representing dropping the input columns from X after checks.
-
-        **kwargs:
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        """
-        super().__init__(columns=columns, **kwargs)
-
-        self.drop_original = drop_original
-        self.new_column_name = new_column_name
-
-    def get_feature_names_out(self) -> list[str]:
-        """Get list of features modified/created by the transformer.
-
-        Returns
-        -------
-        list[str]:
-            list of features modified/created by the transformer
-
-        Examples
-        --------
-        ```pycon
-        >>> # base classes just return inputs
-        >>> transformer = EqualityChecker(
-        ...     columns=["a", "b"],
-        ...     new_column_name="bla",
-        ... )
-
-        >>> transformer.get_feature_names_out()
-        ['bla']
-
-        ```
-
-        """
-        return [self.new_column_name]
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Create a column which indicated equality between given columns.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply mappings to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed input X with additional boolean column.
-
-        """
-        X = super().transform(X)
-
-        X[self.new_column_name] = X[self.columns[0]] == X[self.columns[1]]
-
-        # Drop original columns if self.drop_original is True
-        return DropOriginalMixin.drop_original_column(
-            X,
-            self.drop_original,
-            self.columns,
-        )

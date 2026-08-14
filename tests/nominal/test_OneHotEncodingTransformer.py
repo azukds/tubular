@@ -1,5 +1,6 @@
 import narwhals as nw
 import numpy as np
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import GenericNominalTransformTests
@@ -7,8 +8,6 @@ from test_BaseNominalTransformer import GenericNominalTransformTests
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericFitTests,
     GenericTransformTests,
@@ -28,7 +27,6 @@ from tubular.nominal import OneHotEncodingTransformer
 
 class TestInit(
     SeparatorInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""
@@ -218,7 +216,6 @@ class TestFit(GenericFitTests):
 
 
 class TestTransform(
-    DropOriginalTransformMixinTests,
     GenericNominalTransformTests,
     GenericTransformTests,
 ):
@@ -394,7 +391,6 @@ class TestTransform(
         transformer = OneHotEncodingTransformer(
             columns=["b", "c"],
             separator="|",
-            drop_original=True,
         )
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
@@ -406,7 +402,7 @@ class TestTransform(
 
         df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-        expected_columns = ["b|x", "b|y", "b|z", "c|a", "c|b", "c|c"]
+        expected_columns = ["b", "c", "b|x", "b|y", "b|z", "c|a", "c|b", "c|c"]
 
         df_transformed = nw.from_native(df_transformed)
         actual_columns = df_transformed.columns
@@ -528,8 +524,45 @@ class TestTransform(
         )
 
 
+class TestLazyYSupport:
+    """Tests for lazy y support in OneHotEncodingTransformer."""
+
+    @pytest.mark.parametrize("library", ["polars"])
+    def test_lazy_y_accepted(self, library):
+        """Test that OneHotEncodingTransformer accepts LazyFrame for y parameter."""
+        # Create a sample DataFrame
+        df_dict = {"a": ["x", "y", "z"], "b": [1, 2, 3]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        # Create a LazyFrame for y
+        y_lazy = pl.LazyFrame({"b": [1, 2, 3]})
+
+        transformer = OneHotEncodingTransformer(columns="a")
+
+        # Fit should accept lazy y and not raise an error
+        transformer.fit(df, y_lazy)
+
+        # Create the expected DataFrame
+        expected = pl.DataFrame(
+            {
+                "a": ["x", "y", "z"],
+                "b": [1, 2, 3],
+                "a_x": [True, False, False],
+                "a_y": [False, True, False],
+                "a_z": [False, False, True],
+            }
+        )
+
+        # Transform the input DataFrame
+        transformed = transformer.transform(df)
+
+        # Assert that the transformed DataFrame matches the expected DataFrame
+        assert_frame_equal_dispatch(transformed, expected)
+
+
 class TestOtherBaseBehaviour(
-    OtherBaseBehaviourTests, EmptyColumnsFitTransformPassTests
+    OtherBaseBehaviourTests,
+    EmptyColumnsFitTransformPassTests,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
