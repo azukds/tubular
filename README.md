@@ -55,7 +55,7 @@ transformer.transform(test_df)
 # │ 20  ┆ 1   ┆ 4   │
 # └─────┴─────┴─────┘
 ```
-For live contexts, the recommended approach for low latency scoring is to extract the narwhals expressions from the transformers and directly transform with these:
+For live contexts, the recommended approach for low latency scoring is to extract the narwhals expressions from the transformers and then directly transform with the expressions:
 ```python
 import polars as pl
 from tubular.imputers import MeanImputer
