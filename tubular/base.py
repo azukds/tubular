@@ -120,6 +120,8 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
 
     FITS = True
 
+    extractable_exprs = False
+
     _version = _get_version()
 
     def __init_subclass__(cls: BaseTransformer) -> None:
