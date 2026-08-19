@@ -569,6 +569,10 @@ class CappingTransformer(BaseCappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -613,6 +617,8 @@ class CappingTransformer(BaseCappingTransformer):
     FITS = True
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -756,6 +762,10 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -805,6 +815,8 @@ class OutOfRangeNullTransformer(BaseCappingTransformer):
     FITS = True
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(

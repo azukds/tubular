@@ -219,6 +219,10 @@ class OneDKmeansTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -242,6 +246,8 @@ class OneDKmeansTransformer(BaseNumericTransformer):
     jsonable = True
 
     FITS = True
+
+    extractable_exprs = False
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
@@ -545,6 +551,10 @@ class DifferenceTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -563,6 +573,8 @@ class DifferenceTransformer(BaseNumericTransformer):
     jsonable = True
 
     lazyframe_compatible = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -690,6 +702,10 @@ class RatioTransformer(BaseNumericTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -710,6 +726,8 @@ class RatioTransformer(BaseNumericTransformer):
     jsonable = True
 
     lazyframe_compatible = True
+
+    extractable_exprs = True
 
     @block_from_json
     def to_json(self) -> dict[str, dict[str, Any]]:
