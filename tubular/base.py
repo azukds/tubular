@@ -144,6 +144,7 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
             "pandas_compatible": True,
             "jsonable": cls.jsonable,
             "lazyframe_compatible": cls.lazyframe_compatible,
+            "extractable_exprs": cls.extractable_exprs,
         }
 
     def classname(self) -> str:

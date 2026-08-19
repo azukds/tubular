@@ -496,6 +496,10 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -527,6 +531,8 @@ class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = False
 
     @beartype
     def transform(

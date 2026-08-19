@@ -31,7 +31,7 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
-- placeholder
+- feat: added `extractable_exprs` attr to track progress with adding `get_transform_exprs` methods.
 
 4.0.1 (14/08/2026)
 -------------------
