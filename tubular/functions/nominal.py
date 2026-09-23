@@ -223,7 +223,10 @@ def one_hot_encode_columns(
 def numerically_encode_columns(  # noqa: PLR0917, PLR0913
     columns: list[str],
     mappings: dict[str, dict[str, float | int]],
-    unseen_levels_encodings: dict[str, float | np.float32 | np.float64 | int] | None,
+    unseen_levels_encodings: dict[
+        str, float | np.float32 | np.float64 | int | np.int8 | np.int32 | np.int64
+    ]
+    | None,
     unseen_level_handling: bool | str | int | float | None,
     return_dtypes: dict[str, Literal["Float64", "Float32"]],
     column_to_encoded_columns: dict[str, list[str]],
