@@ -33,6 +33,12 @@ Changed
 ^^^^^^^
 - placeholder
 
+4.0.2 (23/09/2026)
+-------------------
+Changed
+^^^^^^^
+- bugfix: allow np ints in mean response encoder
+
 4.0.1 (14/08/2026)
 -------------------
 Changed
