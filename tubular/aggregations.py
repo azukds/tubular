@@ -249,6 +249,10 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -271,6 +275,8 @@ class AggregateRowsOverColumnTransformer(BaseAggregationTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -474,6 +480,10 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -495,6 +505,8 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(

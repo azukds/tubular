@@ -50,6 +50,10 @@ class SetValueTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -67,6 +71,8 @@ class SetValueTransformer(BaseTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -210,6 +216,10 @@ class RenameColumnsTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -247,6 +257,8 @@ class RenameColumnsTransformer(BaseTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -449,6 +461,10 @@ class ColumnDtypeSetter(BaseTransformer):
     deprecated: bool
         indicates if class has been deprecated
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     """
 
     polars_compatible = True
@@ -460,6 +476,8 @@ class ColumnDtypeSetter(BaseTransformer):
     jsonable = True
 
     deprecated = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(

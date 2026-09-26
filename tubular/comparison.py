@@ -48,6 +48,10 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
     lazyframe_compatible : bool
         Indicates whether transformer works with lazyframes.
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -84,6 +88,7 @@ class WhenThenOtherwiseTransformer(BaseTransformer):
     FITS = False
     jsonable = True
     lazyframe_compatible = True
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -275,6 +280,10 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     lazyframe_compatible : bool
         Indicates whether transformer works with lazyframes.
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -305,6 +314,7 @@ class CompareTwoColumnsTransformer(BaseTransformer):
     FITS = False
     jsonable = True
     lazyframe_compatible = True
+    extractable_exprs = True
 
     @beartype
     def __init__(
