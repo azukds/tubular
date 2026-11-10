@@ -31,7 +31,7 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
-- placeholder
+- chore: updated black on dependabot recommendation
 
 4.0.2 (23/09/2026)
 -------------------
