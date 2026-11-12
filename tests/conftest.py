@@ -12,6 +12,7 @@ from tests.test_data import (
     create_aggregate_over_rows_test_df,
     create_bool_df,
     create_categorical_df,
+    create_categorical_df_no_nulls,
     create_is_between_dates_df_1,
     create_numeric_df_1,
     create_object_df,
@@ -176,7 +177,16 @@ def minimal_attribute_dict():
             "by": "@",
             "return_n_components": 1,
         },
+        "BaseGroupRareLevelsTransformer": {
+            "columns": ["b"],
+        },
+        "GroupRareCategoricalLevelsTransformer": {
+            "columns": ["b"],
+        },
         "GroupRareLevelsTransformer": {
+            "columns": ["b"],
+        },
+        "GroupRareStringLevelsTransformer": {
             "columns": ["b"],
         },
         "LowerCaseTransformer": {"columns": ["b"]},
@@ -331,6 +341,10 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["WhenThenOtherwiseTransformer"] = when_then_df
     min_df_dict["StringImputer"] = object_df
     min_df_dict["CategoricalImputer"] = categorical_df
+    # rare level grouping does not support nulls
+    min_df_dict["GroupRareCategoricalLevelsTransformer"] = (
+        create_categorical_df_no_nulls(library=library)
+    )
     min_df_dict["BooleanImputer"] = bool_df
 
     pyarrow_transformers = ["ExtractStringComponentsTransformer"]
