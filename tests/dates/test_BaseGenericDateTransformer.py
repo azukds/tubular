@@ -8,12 +8,10 @@ from dateutil.tz import gettz
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     GenericFitTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsDatetime,
     ReturnNativeTests,
 )
 from tests.test_data import create_date_diff_different_dtypes, create_date_test_df
@@ -270,7 +268,6 @@ class GenericDatesMixinTransformTests:
 
 class TestInit(
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""
@@ -300,7 +297,7 @@ class TestTransform(
         cls.transformer_name = "BaseGenericDateTransformer"
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsDatetime):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

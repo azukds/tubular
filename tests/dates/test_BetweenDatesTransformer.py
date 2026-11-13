@@ -10,13 +10,10 @@ from dateutil.tz import gettz
 import tests.test_data as d
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
-    DropOriginalTransformMixinTests,
     EmptyColumnsFailTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsDates,
 )
 from tests.dates.test_BaseGenericDateTransformer import (
     GenericDatesMixinTransformTests,
@@ -36,7 +33,6 @@ from tubular.dates import TIME_UNITS, BetweenDatesTransformer
 class TestInit(
     ColumnStrListInitTests,
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     EmptyColumnsFailTests,
 ):
     "tests for BetweenDatesTransformer.__init__."
@@ -172,7 +168,6 @@ def expected_df_5(library="pandas"):
 class TestTransform(
     GenericTransformTests,
     GenericDatesMixinTransformTests,
-    DropOriginalTransformMixinTests,
 ):
     """Tests for BetweenDatesTransformer.transform."""
 
@@ -639,7 +634,7 @@ class TestTransform(
         transformer.transform(df)
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsDates):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
 

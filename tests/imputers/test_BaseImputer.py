@@ -89,7 +89,7 @@ class GenericImputerTransformTests:
         library = request.param
         df4_dict = {
             "a": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, None],
-            "b": ["a", "b", "c", "d", "e", "f", "z"],
+            "b": ["a", "b", "c", "d", "e", "f", None],
             "c": ["a", "b", "c", "d", "e", "f", "z"],
         }
 
@@ -587,6 +587,11 @@ class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
         assert expected_new_columns.intersection(output_columns), (
             f"{x.classname()}: get_feature_names_out does not agree with output of .transform, expected {expected_new_columns} but got {output_columns}"
         )
+
+    # overload this test, as does not make sense for test of independent base class
+    @pytest.mark.skip
+    def test_pipeline_raises_not_fitted_error_when_unfitted(self):
+        return
 
     @classmethod
     def setup_class(cls):

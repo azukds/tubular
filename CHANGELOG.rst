@@ -27,14 +27,55 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-3.9.0 (unreleased)
+4.1.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- bugfix: use isinstance for schema type membership checks and allow enum columns for GroupRareLevelsTransformer
+- chore: updated black on dependabot recommendation
+- bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
+
+4.0.2 (23/09/2026)
+-------------------
+Changed
+^^^^^^^
+- bugfix: allow np ints in mean response encoder
+
+4.0.1 (14/08/2026)
+-------------------
+Changed
+^^^^^^^
+- bugfix: registered new imputer classes
+
+4.0.0 (14/08/2026)
+-------------------
+Changed
+^^^^^^^
+- feat: added get_transform_exprs methods to NullIndicator transformer `#750 <https://github.com/azukds/tubular/issues/750>_`
+- feat: added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
+- chore: refactored OtherBaseBehaviour test classes to make easier to maintain
+- feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added tests for StringImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added CategoricalImputer with tests and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added private class _EnumImputer, utilised by ArbitraryImputer `#752 <https://github.com/azukds/tubular/issues/752>_`
+- chore: deprecated ArbitraryImputer
+- feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
+being mapped to string type.
+- chore: refactored MappingTransformer to pave way for splitting into type based classes with
+`get_transform_exprs` methods.
+- chore: deleted long term deprecated classes
+
+3.9.0 (17/07/2026)
 ------------------
 
 Changed
 ^^^^^^^
-- bugfix: use isinstance for schema type membership checks and allow enum columns for GroupRareLevelsTransformer
+- chore: removed drop_original functionality `#557 <https://github.com/azukds/tubular/issues/557>_`
 - bugfix: sort dict attributes to ensure consistent json expressions
 - chore: added TRY ruleset to ruff config `#510 <https://github.com/azukds/tubular/issues/510>_`
+- bugfix: added register decorator to DatetimeComponentExtractor
 
 3.8.4 (25/06/2026)
 ------------------

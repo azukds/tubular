@@ -1250,18 +1250,21 @@ class TestTransform(GenericTransformTests):
             expected = expected.with_columns(
                 nw.col(col).cast(getattr(nw, x.return_type)),
             )
-        expected = nw.to_native(expected)
 
         column_order = nw.from_native(df_transformed).columns
 
+        df = nw.from_native(df)
+        for col in columns:
+            if col not in expected:
+                expected = expected.with_columns(df[col] for col in columns)
+
         assert_frame_equal_dispatch(
             df_transformed,
-            expected[column_order],
+            expected[column_order].to_native(),
         )
 
         # also test single row transform
         df = nw.from_native(df)
-        expected = nw.from_native(expected)
 
         for i in range(len(df)):
             df_transformed_row = x.transform(
@@ -1334,6 +1337,13 @@ class TestTransform(GenericTransformTests):
             )
 
         column_order = nw.from_native(df_transformed).columns
+
+        # drop_original functionality has been deprecated,
+        # so reintroduce original columns to expected df
+        df = nw.from_native(df)
+        for col in columns:
+            if col not in expected:
+                expected = expected.with_columns(df[col] for col in columns)
 
         assert_frame_equal_dispatch(
             df_transformed,

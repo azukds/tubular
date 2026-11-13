@@ -8,7 +8,6 @@ from tests import utils as u
 from tests.base_tests import (
     EmptyColumnsFailTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.numeric.test_BaseNumericTransformer import (
     BaseNumericTransformerInitTests,
@@ -212,7 +211,7 @@ class TestDifferenceTransformerTransform(BaseNumericTransformerTransformTests):
         )
 
 
-class TestOtherBaseBehaviour(OtherBaseBehaviourTests, OtherBaseBehaviourTestsNumeric):
+class TestOtherBaseBehaviour(OtherBaseBehaviourTests):
     """
     Class to run tests for DifferenceTransformer outside the three standard methods.
 

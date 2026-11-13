@@ -7,7 +7,6 @@ from tests.base_tests import (
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
     ReturnNativeTests,
 )
 from tests.utils import (
@@ -113,7 +112,6 @@ class TestTransform(GenericTransformTests, ReturnNativeTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

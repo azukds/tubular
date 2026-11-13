@@ -11,7 +11,6 @@ from tests.base_tests import (
     GenericFitTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
     ReturnNativeTests,
     WeightColumnFitMixinTests,
     WeightColumnInitMixinTests,
@@ -112,7 +111,6 @@ class TestLazyYSupport:
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour behaviour outside the three standard methods.

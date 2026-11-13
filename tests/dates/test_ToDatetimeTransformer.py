@@ -5,12 +5,10 @@ from beartype.roar import BeartypeCallHintParamViolation
 
 from tests.base_tests import (
     ColumnStrListInitTests,
-    DropOriginalInitMixinTests,
     EmptyColumnsFitTransformPassTests,
     GenericTransformTests,
     NewColumnNameInitMixintests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsDates,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -25,7 +23,6 @@ from tubular.dates import ToDatetimeTransformer
 
 class TestInit(
     NewColumnNameInitMixintests,
-    DropOriginalInitMixinTests,
     ColumnStrListInitTests,
 ):
     """Generic tests for transformer.init()."""
@@ -174,7 +171,6 @@ class TestTransform(GenericTransformTests):
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyColumnsFitTransformPassTests,
-    OtherBaseBehaviourTestsDates,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.

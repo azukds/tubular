@@ -7,7 +7,6 @@ from tests.base_tests import (
     EmptyCappingsFitTransformPassTests,
     GenericTransformTests,
     OtherBaseBehaviourTests,
-    OtherBaseBehaviourTestsNumeric,
 )
 from tests.capping.test_BaseCappingTransformer import (
     GenericCappingFitTests,
@@ -191,7 +190,6 @@ class TestLazyYSupport:
 class TestOtherBaseBehaviour(
     OtherBaseBehaviourTests,
     EmptyCappingsFitTransformPassTests,
-    OtherBaseBehaviourTestsNumeric,
 ):
     """
     Class to run tests for BaseTransformerBehaviour outside the three standard methods.
