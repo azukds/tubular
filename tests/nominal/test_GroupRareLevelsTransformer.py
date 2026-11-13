@@ -1,6 +1,7 @@
 import re
 
 import narwhals as nw
+import pandas as pd
 import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
@@ -437,6 +438,79 @@ class TestTransform(GenericNominalTransformTests):
             match=msg,
         ):
             transformer.transform(_convert_to_lazy(df, lazy=lazy))
+
+    def test_handling_all_str_like_types_pandas(self):
+        """Test that the transformer can handle any str-like type in pandas."""
+        df = pd.DataFrame(
+            {
+                "str": ["a", "b", "a", "a"],
+                "object": ["a", "b", "a", "a"],
+                "categorical": ["a", "b", "a", "a"],
+            },
+        )
+        df["str"] = df["str"].astype("string")
+        df["categorical"] = df["categorical"].astype("category")
+        trans = GroupRareLevelsTransformer(
+            columns=list(df.columns),
+            cut_off_percent=0.3,
+        )
+        df_transformed = trans.fit_transform(X=df)
+        expected = df.replace("b", "rare")
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=False),
+            expected,
+            check_categorical=False,
+        )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    def test_handling_all_str_like_types_polars(self, lazy: bool):
+        """Test that the transformer can handle any str-like type in polars."""
+        a_b_enum = pl.Enum(["a", "b"])
+        df = pl.DataFrame(
+            {
+                "str": ["a", "b", "a", "a"],
+                "object": ["a", "b", "a", "a"],
+                "categorical": ["a", "b", "a", "a"],
+                "enum": ["a", "b", "a", "a"],
+            },
+            schema={
+                "str": pl.String,
+                "object": pl.Object,
+                "categorical": pl.Categorical,
+                "enum": a_b_enum,
+            },
+        )
+        trans = GroupRareLevelsTransformer(
+            columns=list(df.columns),
+            cut_off_percent=0.3,
+        )
+
+        if _check_if_skip_test(trans, df, lazy=lazy):
+            return
+
+        df_transformed = trans.fit_transform(X=_convert_to_lazy(df, lazy=lazy))
+        a_rare_enum = pl.Enum(["a", "rare"])
+        expected = df = pl.DataFrame(
+            {
+                "str": ["a", "rare", "a", "a"],
+                "object": ["a", "b", "a", "a"],
+                "categorical": ["a", "rare", "a", "a"],
+                "enum": ["a", "rare", "a", "a"],
+            },
+            schema={
+                "str": pl.String,
+                "object": pl.Object,
+                # pl.Categorical is converted to pl.Enum in rare_encode_categorical_or_enum_columns
+                "categorical": a_rare_enum,
+                "enum": a_rare_enum,
+            },
+        )
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=lazy),
+            expected,
+        )
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
