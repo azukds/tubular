@@ -470,13 +470,11 @@ class TestTransform(GenericNominalTransformTests):
         df = pl.DataFrame(
             {
                 "str": ["a", "b", "a", "a"],
-                "object": ["a", "b", "a", "a"],
                 "categorical": ["a", "b", "a", "a"],
                 "enum": ["a", "b", "a", "a"],
             },
             schema={
                 "str": pl.String,
-                "object": pl.Object,
                 "categorical": pl.Categorical,
                 "enum": a_b_enum,
             },
@@ -494,13 +492,11 @@ class TestTransform(GenericNominalTransformTests):
         expected = df = pl.DataFrame(
             {
                 "str": ["a", "rare", "a", "a"],
-                "object": ["a", "b", "a", "a"],
                 "categorical": ["a", "rare", "a", "a"],
                 "enum": ["a", "rare", "a", "a"],
             },
             schema={
                 "str": pl.String,
-                "object": pl.Object,
                 # pl.Categorical is converted to pl.Enum in rare_encode_categorical_or_enum_columns
                 "categorical": a_rare_enum,
                 "enum": a_rare_enum,
@@ -511,6 +507,30 @@ class TestTransform(GenericNominalTransformTests):
             _collect_frame(df_transformed, lazy=lazy),
             expected,
         )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    def test_error_object_polars_dtype(self, lazy: bool):
+        """Test that the transformer raises an error for a pl.Object column."""
+        df = pl.DataFrame(
+            {"object": ["a", "b", "a", "a"]},
+            schema={"object": pl.Object},
+        )
+        trans = GroupRareLevelsTransformer(
+            columns=list(df.columns),
+            cut_off_percent=0.3,
+        )
+
+        if _check_if_skip_test(trans, df, lazy=lazy):
+            return
+
+        msg = re.escape(
+            "GroupRareLevelsTransformer: transformer not compatible with polars Object columns, but got polars Object {'object'}"
+        )
+        with pytest.raises(
+            TypeError,
+            match=msg,
+        ):
+            trans.fit_transform(_convert_to_lazy(df, lazy=lazy))
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])

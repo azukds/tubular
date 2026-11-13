@@ -6,6 +6,7 @@ import warnings
 from typing import Any, Literal
 
 import narwhals as nw
+import polars as pl
 from beartype import beartype
 
 from tubular._stats import (
@@ -237,13 +238,19 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         return json_dict
 
     # have removed beartype due to compatibility issue between nw.Schema/DType and beartype
-    def _check_str_like_columns(self, schema) -> None:  # noqa: ANN001
+    def _check_str_like_columns(
+        self,
+        schema,  # noqa: ANN001
+        polars_bool: bool | None = None,
+    ) -> None:
         """Check that transformer being called on only str-like columns.
 
         Parameters
         ----------
         schema : nw.Schema
             Schema of input data.
+        polars_bool : bool
+            Whether original df was from polars.
 
         Raises
         ------
@@ -266,13 +273,13 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         >>> test_df = pl.DataFrame({"a": ["w", "x"], "b": ["y", "z"]})
         >>> schema = nw.from_native(test_df).schema
 
-        >>> transformer._check_str_like_columns(schema)
+        >>> transformer._check_str_like_columns(schema, True)
 
         >>> # erroring example
         >>> test_df = pl.DataFrame({"a": [1, 2], "b": ["y", "z"]})
         >>> schema = nw.from_native(test_df).schema
 
-        >>> transformer._check_str_like_columns(schema)
+        >>> transformer._check_str_like_columns(schema, True)
         Traceback (most recent call last):
         ...
         TypeError: ...
@@ -294,6 +301,20 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
                 f"got non str-like {non_str_like_columns}"
             )
             raise TypeError(msg)
+
+        # pl.Object is not compatible with the unique method used
+        # downstream, therefore we check here and raise an error if any
+        # pl.Object columns passed.
+        if polars_bool:
+            object_cols = {
+                col for col in self.columns if isinstance(schema[col], nw.Object)
+            }
+            if len(object_cols) != 0:
+                msg = (
+                    f"{self.classname()}: transformer not compatible with polars "
+                    f"Object columns, but got polars Object {object_cols}"
+                )
+                raise TypeError(msg)
 
     @block_from_json
     @beartype
@@ -342,6 +363,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         ```
 
         """
+        polars_bool = False
+        if isinstance(X, pl.DataFrame | pl.LazyFrame):
+            polars_bool = True
+
         X = _convert_dataframe_to_narwhals(X)
 
         y = _convert_series_to_narwhals(y)
@@ -364,7 +389,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         schema = X.collect_schema()
 
-        self._check_str_like_columns(schema)
+        self._check_str_like_columns(schema, polars_bool)
 
         self.non_rare_levels = {}
         self.rare_levels_record = {}
