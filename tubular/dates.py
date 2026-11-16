@@ -1916,7 +1916,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         Returns
         -------
         X : pd/pl/nw.DataFrame
-            Input X with additional columns added, these are named "<method>_<original_column>"
+            Input X with additional columns added, these are named "<method>_<unit>_<original_column>"
 
         Example:
         --------
