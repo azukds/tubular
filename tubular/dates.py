@@ -33,6 +33,7 @@ from tubular.functions.dates import (
     extract_datetime_components,
     extract_datetime_info,
     extract_datetime_sinusoid_components,
+    get_datetime_sinusoid_transformed_col_name,
 )
 from tubular.types import (
     DataFrame,
@@ -1827,13 +1828,17 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         ... )
 
         >>> transformer.get_feature_names_out()
-        ['sin_6.283185307179586_month_a']
+        ['sin_month_a']
 
         ```
 
         """
         return [
-            f"{method}_{self.period if not isinstance(self.period, dict) else self.period[column]}_{self.units if not isinstance(self.units, dict) else self.units[column]}_{column}"
+            get_datetime_sinusoid_transformed_col_name(
+                method=method,
+                unit=self.units_dict[column],
+                column=column,
+            )
             for column in self.columns
             for method in self.method
         ]
