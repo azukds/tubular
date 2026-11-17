@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 import narwhals as nw
 from beartype import beartype
+from typing_extensions import deprecated
 
 from tubular._stats import (
     _get_mean_calculation_expressions,
@@ -43,8 +44,8 @@ from tubular.types import (
 
 
 @register
-class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
-    """Group together rare levels of nominal variables into a new rare level.
+class BaseGroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
+    """Base class for transformers that group together rare levels of nominal variables into a new rare level.
 
     Rare levels are defined by a cut off percentage, which can either be based on the
     number of rows or sum of weights. Any levels below this cut off value will be
@@ -100,19 +101,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
-    Examples
-    --------
-    ```pycon
-    >>> GroupRareLevelsTransformer(
-    ...     columns="a",
-    ...     cut_off_percent=0.02,
-    ...     rare_level_name="rare_level",
-    ... )
-    GroupRareLevelsTransformer(columns=['a'], cut_off_percent=0.02,
-                               rare_level_name='rare_level')
-
-    ```
-
     """
 
     polars_compatible = True
@@ -122,6 +110,9 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     jsonable = True
 
     FITS = True
+
+    # nw dtypes that subclasses can run on, to be set by subclasses
+    allowed_types: tuple = ()
 
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
@@ -189,26 +180,6 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
             jsonified transformer. Nested dict containing levels for attributes
             set at init and fit.
 
-        Examples
-        --------
-        ```pycon
-        >>> import tests.test_data as d
-
-        >>> df = d.create_df_8("pandas")
-
-        >>> x = GroupRareLevelsTransformer(
-        ...     columns=["b", "c"], cut_off_percent=0.4, unseen_levels_to_rare=False
-        ... )
-
-        >>> x.fit(df)
-        GroupRareLevelsTransformer(columns=['b', 'c'], cut_off_percent=0.4,
-                                   unseen_levels_to_rare=False)
-
-        >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'GroupRareLevelsTransformer', 'init': {'columns': ['b', 'c'], 'copy': False, 'verbose': False, 'return_native': True, 'cut_off_percent': 0.4, 'weights_column': None, 'rare_level_name': 'rare', 'record_rare_levels': True, 'unseen_levels_to_rare': False}, 'fit': {'is_fitted_': True, 'non_rare_levels': {'b': ['w'], 'c': ['a']}, 'training_data_levels': {'b': ['w', 'x', 'y', 'z'], 'c': ['a', 'b', 'c']}, 'rare_levels_record': {'b': ['x', 'y', 'z'], 'c': ['b', 'c']}}}
-
-        ```
-
         """
         self.check_is_fitted(["non_rare_levels"])
         json_dict = super().to_json()
@@ -237,8 +208,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         return json_dict
 
     # have removed beartype due to compatibility issue between nw.Schema/DType and beartype
-    def _check_str_like_columns(self, schema) -> None:  # noqa: ANN001
-        """Check that transformer being called on only str-like columns.
+    def _check_column_types(self, schema) -> None:  # noqa: ANN001
+        """Check that transformer being called on only columns of allowed types.
 
         Parameters
         ----------
@@ -247,53 +218,30 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Raises
         ------
-        TypeError: if columns are not str-like
-
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-        >>> import narwhals as nw
-
-        >>> transformer = GroupRareLevelsTransformer(
-        ...     columns="a",
-        ...     cut_off_percent=0.02,
-        ...     rare_level_name="rare_level",
-        ... )
-
-        >>> # non erroring example
-        >>> test_df = pl.DataFrame({"a": ["w", "x"], "b": ["y", "z"]})
-        >>> schema = nw.from_native(test_df).schema
-
-        >>> transformer._check_str_like_columns(schema)
-
-        >>> # erroring example
-        >>> test_df = pl.DataFrame({"a": [1, 2], "b": ["y", "z"]})
-        >>> schema = nw.from_native(test_df).schema
-
-        >>> transformer._check_str_like_columns(schema)
-        Traceback (most recent call last):
-        ...
-        TypeError: ...
-
-        ```
+        TypeError: if columns are not of the types in self.allowed_types
 
         """
-        str_like_columns = [
-            col
+        bad_types = {
+            col: schema[col]
             for col in self.columns
-            if schema[col] in {nw.String, nw.Categorical, nw.Object}
-        ]
+            if not isinstance(schema[col], self.allowed_types)
+        }
 
-        non_str_like_columns = set(self.columns).difference(
-            set(
-                str_like_columns,
-            ),
-        )
-
-        if len(non_str_like_columns) != 0:
-            msg = f"{self.classname()}: transformer must run on str-like columns, but got non str-like {non_str_like_columns}"
+        if bad_types:
+            allowed = "/".join(t.__name__ for t in self.allowed_types)
+            msg = f"{self.classname()}: transformer can only handle {allowed} type columns but got columns with types {bad_types}"
             raise TypeError(msg)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions, to be implemented by type specific subclasses.
+
+        Raises
+        ------
+        NotImplementedError: always, for the base class
+
+        """
+        msg = f"{self.classname()}: get_transform_exprs is not implemented for the base class, use a type specific subclass"
+        raise NotImplementedError(msg)
 
     @block_from_json
     @beartype
@@ -301,7 +249,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         self,
         X: DataFrame,
         y: Series | LazyFrame | None = None,
-    ) -> GroupRareLevelsTransformer:
+    ) -> BaseGroupRareLevelsTransformer:
         """Record non-rare levels for categorical variables.
 
         When transform is called, only levels records in non_rare_levels during fit will remain
@@ -320,26 +268,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         Returns
         -------
-            GroupRareLevelsTransformer: fitted class instance
-
-        Examples
-        --------
-        ```pycon
-        >>> import polars as pl
-
-        >>> transformer = GroupRareLevelsTransformer(
-        ...     columns="a",
-        ...     cut_off_percent=0.02,
-        ...     rare_level_name="rare_level",
-        ... )
-
-        >>> test_df = pl.DataFrame({"a": ["x", "y"], "b": ["w", "z"]})
-
-        >>> transformer.fit(test_df)
-        GroupRareLevelsTransformer(columns=['a'], cut_off_percent=0.02,
-                                   rare_level_name='rare_level')
-
-        ```
+            BaseGroupRareLevelsTransformer: fitted class instance
 
         """
         X = _convert_dataframe_to_narwhals(X)
@@ -364,7 +293,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         schema = X.collect_schema()
 
-        self._check_str_like_columns(schema)
+        self._check_column_types(schema)
 
         self.non_rare_levels = {}
         self.rare_levels_record = {}
@@ -425,7 +354,126 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         Parameters
         ----------
         X : DataFrame
-            Data to with catgeorical variables to apply rare level grouping to.
+            Data with nominal variables to apply rare level grouping to.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with rare levels grouped for into a new rare level.
+
+        """
+        X = BaseTransformer.transform(self, X, return_native_override=False)
+        X = _convert_dataframe_to_narwhals(X)
+
+        self._check_column_types(X.collect_schema())
+
+        self.check_is_fitted(["non_rare_levels"])
+
+        group_exprs = self.get_transform_exprs()
+
+        X = X.with_columns(*group_exprs) if group_exprs else X
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
+
+
+@register
+class GroupRareStringLevelsTransformer(BaseGroupRareLevelsTransformer):
+    """Group together rare levels of string columns into a new rare level.
+
+    Rare levels are defined by a cut off percentage, which can either be based on the
+    number of rows or sum of weights. Any levels below this cut off value will be
+    grouped into the rare level.
+
+    Attributes
+    ----------
+    cut_off_percent : float
+        Cut off percentage (either in terms of number of rows or sum of weight) for a given
+        level to be considered rare.
+
+    non_rare_levels : dict
+        Created in fit. A dict of non-rare levels (i.e. levels with more than cut_off_percent weight or rows)
+        that is used to identify rare levels in transform.
+
+    rare_level_name : str
+        Label for the new level that will be added to group together rare levels (as
+        defined by cut_off_percent).
+
+    record_rare_levels : bool
+        Should the 'rare' levels that will be grouped together be recorded? If not they will be lost
+        after the fit and the only information remaining will be the 'non'rare' levels.
+
+    rare_levels_record : dict
+        Only created (in fit) if record_rare_levels is True. This is dict containing a list of
+        levels that were grouped into 'rare' for each column the transformer was applied to.
+
+    weights_column : str
+        Name of weights columns to use if cut_off_percent should be in terms of sum of weight
+        not number of rows.
+
+    unseen_levels_to_rare : bool
+        If True, unseen levels in new data will be passed to rare, if set to false they will be left unchanged.
+
+    training_data_levels : dict[set]
+        Dictionary containing the set of values present in the training data for each column in self.columns. It
+        will only exist in if unseen_levels_to_rare is set to False.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> GroupRareStringLevelsTransformer(
+    ...     columns="a",
+    ...     cut_off_percent=0.02,
+    ...     rare_level_name="rare_level",
+    ... )
+    GroupRareStringLevelsTransformer(columns=['a'], cut_off_percent=0.02,
+                                     rare_level_name='rare_level')
+
+    ```
+
+    """
+
+    allowed_types = (nw.String,)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return rare_encode_str_columns(
+            cols=self.columns,
+            non_rare_levels=self.non_rare_levels,
+            unseen_levels_to_rare=self.unseen_levels_to_rare,
+            training_data_levels=self.training_data_levels,
+            rare_level_name=self.rare_level_name,
+        )
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Group rare levels together into a new 'rare' level.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data with string columns to apply rare level grouping to.
 
         Returns
         -------
@@ -437,7 +485,7 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         ```pycon
         >>> import polars as pl
 
-        >>> transformer = GroupRareLevelsTransformer(
+        >>> transformer = GroupRareStringLevelsTransformer(
         ...     columns="a",
         ...     cut_off_percent=0.5,
         ...     rare_level_name="rare_level",
@@ -462,52 +510,148 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         ```
 
         """
-        X = BaseTransformer.transform(self, X, return_native_override=False)
-        X = _convert_dataframe_to_narwhals(X)
+        return super().transform(X)
 
-        schema = X.collect_schema()
 
-        self._check_str_like_columns(schema)
+@register
+class GroupRareCategoricalLevelsTransformer(BaseGroupRareLevelsTransformer):
+    """Group together rare levels of categorical (or enum) columns into a new rare level.
 
-        self.check_is_fitted(["non_rare_levels"])
+    Output columns are cast to Enum, with categories made up of the non-rare levels
+    plus the rare level, so categories encoded as rare are forgotten.
 
-        str_cols = [col for col in self.columns if isinstance(schema[col], nw.String)]
-        cat_enum_cols = [
-            col
-            for col in self.columns
-            if isinstance(schema[col], (nw.Categorical, nw.Enum))
-        ]
+    Rare levels are defined by a cut off percentage, which can either be based on the
+    number of rows or sum of weights. Any levels below this cut off value will be
+    grouped into the rare level.
 
-        group_str_cols_expr = rare_encode_str_columns(
-            cols=str_cols,
+    Attributes
+    ----------
+    cut_off_percent : float
+        Cut off percentage (either in terms of number of rows or sum of weight) for a given
+        level to be considered rare.
+
+    non_rare_levels : dict
+        Created in fit. A dict of non-rare levels (i.e. levels with more than cut_off_percent weight or rows)
+        that is used to identify rare levels in transform.
+
+    rare_level_name : str
+        Label for the new level that will be added to group together rare levels (as
+        defined by cut_off_percent).
+
+    record_rare_levels : bool
+        Should the 'rare' levels that will be grouped together be recorded? If not they will be lost
+        after the fit and the only information remaining will be the 'non'rare' levels.
+
+    rare_levels_record : dict
+        Only created (in fit) if record_rare_levels is True. This is dict containing a list of
+        levels that were grouped into 'rare' for each column the transformer was applied to.
+
+    weights_column : str
+        Name of weights columns to use if cut_off_percent should be in terms of sum of weight
+        not number of rows.
+
+    unseen_levels_to_rare : bool
+        If True, unseen levels in new data will be passed to rare, if set to false they will be left unchanged.
+
+    training_data_levels : dict[set]
+        Dictionary containing the set of values present in the training data for each column in self.columns. It
+        will only exist in if unseen_levels_to_rare is set to False.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> GroupRareCategoricalLevelsTransformer(
+    ...     columns="a",
+    ...     cut_off_percent=0.02,
+    ...     rare_level_name="rare_level",
+    ... )
+    GroupRareCategoricalLevelsTransformer(columns=['a'], cut_off_percent=0.02,
+                                          rare_level_name='rare_level')
+
+    ```
+
+    """
+
+    allowed_types = (nw.Categorical, nw.Enum)
+
+    def get_transform_exprs(self) -> list[nw.Expr]:
+        """Get transform expressions.
+
+        Returns
+        -------
+        list[nw.Expr]: transform expressions for class
+
+        """
+        return rare_encode_categorical_or_enum_columns(
+            cols=self.columns,
             non_rare_levels=self.non_rare_levels,
             unseen_levels_to_rare=self.unseen_levels_to_rare,
             training_data_levels=self.training_data_levels,
             rare_level_name=self.rare_level_name,
         )
 
-        group_cat_enum_cols_expr = rare_encode_categorical_or_enum_columns(
-            cols=cat_enum_cols,
-            non_rare_levels=self.non_rare_levels,
-            unseen_levels_to_rare=self.unseen_levels_to_rare,
-            training_data_levels=self.training_data_levels,
-            rare_level_name=self.rare_level_name,
-        )
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Group rare levels together into a new 'rare' level.
 
-        group_exprs = [
-            *group_cat_enum_cols_expr,
-            *group_str_cols_expr,
-        ]
+        Parameters
+        ----------
+        X : DataFrame
+            Data with categorical columns to apply rare level grouping to.
 
-        X = (
-            X.with_columns(
-                *group_exprs,
-            )
-            if group_exprs
-            else X
-        )
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with rare levels grouped for into a new rare level.
 
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+
+        >>> transformer = GroupRareCategoricalLevelsTransformer(
+        ...     columns="a",
+        ...     cut_off_percent=0.5,
+        ...     rare_level_name="rare_level",
+        ... )
+
+        >>> test_df = pl.DataFrame({"a": ["x", "x", "y"], "b": ["w", "z", "z"]})
+        >>> test_df = test_df.with_columns(pl.col("a").cast(pl.Categorical))
+
+        >>> _ = transformer.fit(test_df)
+
+        >>> transformer.transform(test_df)
+        shape: (3, 2)
+        ┌────────────┬─────┐
+        │ a          ┆ b   │
+        │ ---        ┆ --- │
+        │ enum       ┆ str │
+        ╞════════════╪═════╡
+        │ x          ┆ w   │
+        │ x          ┆ z   │
+        │ rare_level ┆ z   │
+        └────────────┴─────┘
+
+        ```
+
+        """
+        return super().transform(X)
 
 
 @register
@@ -1838,3 +1982,180 @@ class OneHotEncodingTransformer(
         X = X.with_columns(*transform_exprs) if transform_exprs else X
 
         return _return_narwhals_or_native_dataframe(X, return_native)
+
+
+# DEPRECATED TRANSFORMERS
+
+
+@deprecated(
+    """This transformer has been deprecated and replaced with type specific transformer
+    classes, please use GroupRareStringLevelsTransformer/GroupRareCategoricalLevelsTransformer
+    from this file instead.
+    """,
+)
+@register
+class GroupRareLevelsTransformer(BaseGroupRareLevelsTransformer):
+    """Group together rare levels of nominal variables into a new rare level.
+
+    Rare levels are defined by a cut off percentage, which can either be based on the
+    number of rows or sum of weights. Any levels below this cut off value will be
+    grouped into the rare level.
+
+    Attributes
+    ----------
+    cut_off_percent : float
+        Cut off percentage (either in terms of number of rows or sum of weight) for a given
+        nominal level to be considered rare.
+
+    non_rare_levels : dict
+        Created in fit. A dict of non-rare levels (i.e. levels with more than cut_off_percent weight or rows)
+        that is used to identify rare levels in transform.
+
+    rare_level_name : any
+        Must be of the same type as columns.
+        Label for the new nominal level that will be added to group together rare levels (as
+        defined by cut_off_percent).
+
+    record_rare_levels : bool
+        Should the 'rare' levels that will be grouped together be recorded? If not they will be lost
+        after the fit and the only information remaining will be the 'non'rare' levels.
+
+    rare_levels_record : dict
+        Only created (in fit) if record_rare_levels is True. This is dict containing a list of
+        levels that were grouped into 'rare' for each column the transformer was applied to.
+
+    weights_column : str
+        Name of weights columns to use if cut_off_percent should be in terms of sum of weight
+        not number of rows.
+
+    unseen_levels_to_rare : bool
+        If True, unseen levels in new data will be passed to rare, if set to false they will be left unchanged.
+
+    training_data_levels : dict[set]
+        Dictionary containing the set of values present in the training data for each column in self.columns. It
+        will only exist in if unseen_levels_to_rare is set to False.
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> GroupRareLevelsTransformer(
+    ...     columns="a",
+    ...     cut_off_percent=0.02,
+    ...     rare_level_name="rare_level",
+    ... )
+    GroupRareLevelsTransformer(columns=['a'], cut_off_percent=0.02,
+                               rare_level_name='rare_level')
+
+    ```
+
+    """
+
+    # preserves legacy behaviour of accepting a mix of str-like column types
+    allowed_types = (nw.String, nw.Categorical, nw.Object)
+
+    @beartype
+    def transform(self, X: DataFrame) -> DataFrame:
+        """Group rare levels together into a new 'rare' level.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data to with catgeorical variables to apply rare level grouping to.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with rare levels grouped for into a new rare level.
+
+        Examples
+        --------
+        ```pycon
+        >>> import polars as pl
+
+        >>> transformer = GroupRareLevelsTransformer(
+        ...     columns="a",
+        ...     cut_off_percent=0.5,
+        ...     rare_level_name="rare_level",
+        ... )
+
+        >>> test_df = pl.DataFrame({"a": ["x", "x", "y"], "b": ["w", "z", "z"]})
+
+        >>> _ = transformer.fit(test_df)
+
+        >>> transformer.transform(test_df)
+        shape: (3, 2)
+        ┌────────────┬─────┐
+        │ a          ┆ b   │
+        │ ---        ┆ --- │
+        │ str        ┆ str │
+        ╞════════════╪═════╡
+        │ x          ┆ w   │
+        │ x          ┆ z   │
+        │ rare_level ┆ z   │
+        └────────────┴─────┘
+
+        ```
+
+        """
+        X = BaseTransformer.transform(self, X, return_native_override=False)
+        X = _convert_dataframe_to_narwhals(X)
+
+        schema = X.collect_schema()
+
+        self._check_column_types(schema)
+
+        self.check_is_fitted(["non_rare_levels"])
+
+        str_cols = [col for col in self.columns if isinstance(schema[col], nw.String)]
+        cat_enum_cols = [
+            col
+            for col in self.columns
+            if isinstance(schema[col], (nw.Categorical, nw.Enum))
+        ]
+
+        group_str_cols_expr = rare_encode_str_columns(
+            cols=str_cols,
+            non_rare_levels=self.non_rare_levels,
+            unseen_levels_to_rare=self.unseen_levels_to_rare,
+            training_data_levels=self.training_data_levels,
+            rare_level_name=self.rare_level_name,
+        )
+
+        group_cat_enum_cols_expr = rare_encode_categorical_or_enum_columns(
+            cols=cat_enum_cols,
+            non_rare_levels=self.non_rare_levels,
+            unseen_levels_to_rare=self.unseen_levels_to_rare,
+            training_data_levels=self.training_data_levels,
+            rare_level_name=self.rare_level_name,
+        )
+
+        group_exprs = [
+            *group_cat_enum_cols_expr,
+            *group_str_cols_expr,
+        ]
+
+        X = (
+            X.with_columns(
+                *group_exprs,
+            )
+            if group_exprs
+            else X
+        )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)

@@ -67,6 +67,20 @@ def create_categorical_df(library="pandas"):
     return df.to_native()
 
 
+def create_categorical_df_no_nulls(library="pandas"):
+    """Example with categorical columns a and b, without nulls - c is numeric target"""
+
+    df_dict = {"a": ["f", "g", "h"], "b": ["a", "b", "b"], "c": [1, 0, 1]}
+
+    df = u.dataframe_init_dispatch(df_dict, library)
+
+    df = nw.from_native(df)
+
+    df = df.with_columns(nw.col(col).cast(nw.Categorical) for col in ["a", "b"])
+
+    return df.to_native()
+
+
 def create_df_1(library="pandas"):
     """Create simple DataFrame with the following...
 

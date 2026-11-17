@@ -35,7 +35,9 @@ from tubular.misc import (
     SetValueTransformer,
 )
 from tubular.nominal import (
+    GroupRareCategoricalLevelsTransformer,
     GroupRareLevelsTransformer,
+    GroupRareStringLevelsTransformer,
     MeanResponseTransformer,
     OneHotEncodingTransformer,
 )
@@ -60,7 +62,9 @@ __all__ = [
     "DatetimeInfoExtractor",
     "DatetimeSinusoidCalculator",
     "DifferenceTransformer",
+    "GroupRareCategoricalLevelsTransformer",
     "GroupRareLevelsTransformer",
+    "GroupRareStringLevelsTransformer",
     "LowerCaseTransformer",
     "MappingTransformer",
     "MeanImputer",

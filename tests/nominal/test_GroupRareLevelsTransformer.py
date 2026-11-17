@@ -222,7 +222,7 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
         if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
-        msg = "GroupRareLevelsTransformer: transformer must run on str-like columns"
+        msg = "GroupRareLevelsTransformer: transformer can only handle String/Categorical/Object type columns"
         with pytest.raises(
             TypeError,
             match=msg,
@@ -430,7 +430,7 @@ class TestTransform(GenericNominalTransformTests):
         transformer = _handle_from_json(transformer, from_json)
 
         msg = re.escape(
-            "GroupRareLevelsTransformer: transformer must run on str-like columns, but got non str-like {'a'}",
+            "GroupRareLevelsTransformer: transformer can only handle String/Categorical/Object type columns",
         )
         with pytest.raises(
             TypeError,
