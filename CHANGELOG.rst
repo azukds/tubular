@@ -27,6 +27,12 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
+5.0.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: removed the period component in the output column names for DatetimeSinusoidCalculator
+
 4.1.0 (unreleased)
 -------------------
 Changed
