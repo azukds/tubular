@@ -37,6 +37,7 @@ Changed
 -------------------
 Changed
 ^^^^^^^
+- bugfix: fix bugs to allow pl.Enum, pandas string[python], and disallow pl.Object columns in GroupRareLevelsTransformer
 - chore: updated black on dependabot recommendation
 - bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
 

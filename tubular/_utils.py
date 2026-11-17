@@ -280,8 +280,10 @@ def _is_null(value: Any) -> bool:  # noqa: ANN401
         bool: True if value is None/NaN
 
     """
-    return value is None or (
-        math.isnan(value) if isinstance(value, numbers.Real) else False
+    return (
+        value is None
+        or (math.isnan(value) if isinstance(value, numbers.Real) else False)
+        or (pd.isna(value) if value is pd.NA else False)
     )
 
 
