@@ -439,7 +439,11 @@ class TestTransform(GenericNominalTransformTests):
         ):
             transformer.transform(_convert_to_lazy(df, lazy=lazy))
 
-    def test_handling_all_str_like_types_pandas(self):
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_handling_all_str_like_types_pandas(
+        self, lazy: bool, from_json: bool
+    ) -> None:
         """Test that the transformer can handle any str-like type in pandas."""
         df = pd.DataFrame(
             {
@@ -450,11 +454,18 @@ class TestTransform(GenericNominalTransformTests):
         )
         df["str"] = df["str"].astype("string")
         df["categorical"] = df["categorical"].astype("category")
-        trans = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=list(df.columns),
             cut_off_percent=0.3,
         )
-        df_transformed = trans.fit_transform(X=df)
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        transformer = transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         expected = df.replace("b", "rare")
 
         assert_frame_equal_dispatch(
@@ -464,7 +475,10 @@ class TestTransform(GenericNominalTransformTests):
         )
 
     @pytest.mark.parametrize("lazy", [True, False])
-    def test_handling_all_str_like_types_polars(self, lazy: bool):
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_handling_all_str_like_types_polars(
+        self, lazy: bool, from_json: bool
+    ) -> None:
         """Test that the transformer can handle any str-like type in polars."""
         a_b_enum = pl.Enum(["a", "b"])
         df = pl.DataFrame(
@@ -479,15 +493,18 @@ class TestTransform(GenericNominalTransformTests):
                 "enum": a_b_enum,
             },
         )
-        trans = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=list(df.columns),
             cut_off_percent=0.3,
         )
 
-        if _check_if_skip_test(trans, df, lazy=lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
 
-        df_transformed = trans.fit_transform(X=_convert_to_lazy(df, lazy=lazy))
+        transformer = transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
         a_rare_enum = pl.Enum(["a", "rare"])
         expected = df = pl.DataFrame(
             {
@@ -509,28 +526,26 @@ class TestTransform(GenericNominalTransformTests):
         )
 
     @pytest.mark.parametrize("lazy", [True, False])
-    def test_error_object_polars_dtype(self, lazy: bool):
+    def test_error_object_polars_dtype(self, lazy: bool) -> None:
         """Test that the transformer raises an error for a pl.Object column."""
         df = pl.DataFrame(
             {"object": ["a", "b", "a", "a"]},
             schema={"object": pl.Object},
         )
-        trans = GroupRareLevelsTransformer(
+        transformer = GroupRareLevelsTransformer(
             columns=list(df.columns),
             cut_off_percent=0.3,
         )
 
-        if _check_if_skip_test(trans, df, lazy=lazy):
+        if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
-        msg = re.escape(
-            "GroupRareLevelsTransformer: transformer not compatible with polars Object columns, but got polars Object {'object'}"
-        )
+        msg = "GroupRareLevelsTransformer: transformer must run on str-like columns"
         with pytest.raises(
             TypeError,
             match=msg,
         ):
-            trans.fit_transform(_convert_to_lazy(df, lazy=lazy))
+            transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
