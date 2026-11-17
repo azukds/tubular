@@ -4,7 +4,6 @@ from typing import Any
 
 import narwhals as nw
 from beartype import beartype
-from beartype.typing import Optional
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -114,7 +113,6 @@ class BaseAggregationTransformer(BaseTransformer):
             jsonified transformer. Nested dict containing levels for attributes
             set at init and fit.
 
-
         Example:
         -------
         ```pycon
@@ -144,7 +142,7 @@ class BaseAggregationTransformer(BaseTransformer):
     def transform(
         self,
         X: DataFrame,
-        return_native_override: Optional[bool] = None,
+        return_native_override: bool | None = None,
     ) -> DataFrame:
         """Perform pre-transform safety checks.
 
@@ -152,19 +150,19 @@ class BaseAggregationTransformer(BaseTransformer):
         ----------
         X : DataFrame
             DataFrame to transform by aggregating specified columns.
-
-        return_native_override: Optional[bool]
-            option to override return_native attr in transformer,
-            useful when calling parent methods
+        return_native_override: bool, optional
+            Option to override return_native attr in transformer,
+            useful when calling parent methods.
 
         Returns
         -------
         DataFrame
-            checked dataframe to transform.
+            Checked dataframe to transform.
 
         Raises
         ------
-        TypeError: If columns are non-numeric.
+        TypeError
+            If columns are not numeric or boolean.
 
         Examples
         --------
@@ -202,14 +200,19 @@ class BaseAggregationTransformer(BaseTransformer):
         schema = X.collect_schema()
 
         non_numerical_columns = [
-            col for col in self.columns if schema[col] not in NumericTypes
+            col
+            for col in self.columns
+            if schema[col] not in (set(NumericTypes) | {nw.Boolean})
         ]
 
         # convert to list and sort for consistency in return
         non_numerical_columns = list(non_numerical_columns)
         non_numerical_columns.sort()
         if len(non_numerical_columns) != 0:
-            msg = f"{self.classname}: attempting to call transformer on non-numeric columns {non_numerical_columns}, which is not supported"  # noqa:E501
+            msg = (
+                f"{self.classname}: attempting to call transformer on non-numeric "
+                f"columns {non_numerical_columns}, which is not supported"
+            )
             raise TypeError(msg)
 
         return _return_narwhals_or_native_dataframe(X, return_native=return_native)
