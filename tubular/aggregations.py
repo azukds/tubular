@@ -202,11 +202,9 @@ class BaseAggregationTransformer(BaseTransformer):
         self._bool_columns = set()
         non_numerical_columns = set()
         for col in self.columns:
-            if schema[col] in NumericTypes:
-                continue
             if schema[col] == nw.Boolean:
                 self._bool_columns.add(col)
-            else:
+            elif schema[col] not in NumericTypes:
                 non_numerical_columns.add(col)
 
         # convert to list and sort for consistency in return
