@@ -199,11 +199,15 @@ class BaseAggregationTransformer(BaseTransformer):
 
         schema = X.collect_schema()
 
-        non_numerical_columns = [
-            col
-            for col in self.columns
-            if schema[col] not in (set(NumericTypes) | {nw.Boolean})
-        ]
+        self._bool_columns = set()
+        non_numerical_columns = set()
+        for col in self.columns:
+            if schema[col] in NumericTypes:
+                continue
+            if schema[col] == nw.Boolean:
+                self._bool_columns.add(col)
+            else:
+                non_numerical_columns.add(col)
 
         # convert to list and sort for consistency in return
         non_numerical_columns = list(non_numerical_columns)
@@ -560,7 +564,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
 
         """
         return aggregate_over_columns(
-            columns=self.columns, aggregations=self.aggregations
+            columns=self.columns,
+            aggregations=self.aggregations,
+            bool_columns=self._bool_columns,
         )
 
     @beartype
