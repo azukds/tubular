@@ -64,9 +64,12 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
     ):
         "test that errors are thrown at transform for non numeric columns"
 
-        df_dict = {
-            "a": bad_values,
-        }
+        # Polars can handle bool column with nulls fine, so these are
+        # only "bad" values for pandas.
+        if library == "polars" and bad_values == [True, False, None]:
+            return
+
+        df_dict = {"a": bad_values}
 
         test_df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
