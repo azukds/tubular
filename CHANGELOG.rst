@@ -32,12 +32,12 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - feat: removed the period component in the output column names for DatetimeSinusoidCalculator
+- chore: removed cap on polars version
 
 4.1.0 (unreleased)
 -------------------
 Changed
 ^^^^^^^
-- chore: removed cap on polars version
 - chore: updated black on dependabot recommendation
 - bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
 
