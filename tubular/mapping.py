@@ -409,16 +409,19 @@ class BaseMappingTransformMixin(BaseTransformer):
                 if isinstance(schema[col], (*column_type,))
             ]
 
-            selected_mapping_exprs = mapping_function(
-                cols=selected_cols,
-                mappings=_filter_column_dict(self.mappings, selected_cols),
-                mappings_from_null=_filter_column_dict(
+            args = {
+                "cols": selected_cols,
+                "mappings": _filter_column_dict(self.mappings, selected_cols),
+                "mappings_from_null": _filter_column_dict(
                     self.mappings_from_null, selected_cols
                 ),
-                return_dtypes=_filter_column_dict(self.return_dtypes, selected_cols),
+                "return_dtypes": _filter_column_dict(self.return_dtypes, selected_cols),
                 # warnings are not needed, as class guards against bad types
-                verbose=False,
-            )
+                "verbose": False,
+            }
+            if column_type == [nw.Float64, nw.Float32]:
+                args["backend"] = backend
+            selected_mapping_exprs = mapping_function(**args)
 
             mapping_exprs = [*mapping_exprs, *selected_mapping_exprs]
 

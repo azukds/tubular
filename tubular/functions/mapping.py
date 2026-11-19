@@ -100,12 +100,14 @@ def _get_full_mapping_expr(
 
 
 @beartype
-def _get_partial_mapping_expr(
+def _get_partial_mapping_expr(  # noqa: PLR0917, PLR0913
     col: str,
     mappings: dict[str, dict[Any, Any]],
     mappings_from_null: dict[str, Any],
     pre_mapping_expr: nw.Expr | None = None,
     fix_nans: bool = False,
+    backend: Literal["pandas", "polars"] | None = None,
+    mapping_values_cast_type: RETURN_DTYPES | None = None,
 ) -> nw.Expr:
     """Get expression for column which may be partially mapped.
 
@@ -128,15 +130,41 @@ def _get_partial_mapping_expr(
     fix_nans:
         whether to convert nan->none during the mapping process
 
+    backend : {"pandas", "polars"}, optional
+        Which backend is used for data.
+
+    mapping_values_cast_type : RETURN_DTYPES, optional
+        If provided will cast `mappings` keys to this type.
+
     Returns
     -------
     list[nw.Expr]: expressions for transformation
+
+    Raises
+    ------
+    ValueError
+        If `backend` not provided when `mapping_values_cast_type` is.
 
     """
     if pre_mapping_expr is None:
         pre_mapping_expr = nw.col(col)
 
-    mappable_condition = nw.col(col).is_in(mappings[col])
+    # Polars 2 no longer implicitly casts to the shared supertype in
+    # is_in. To enable tubular to maintain the old behaviour, allow the
+    # option to explicitly cast the mapping values here.
+    if mapping_values_cast_type is not None:
+        if backend is None:
+            msg = "Backend must be specified when casting mapping vals"
+            raise ValueError(msg)
+        mapping_vals = nw.new_series(
+            name="mapping_vals",
+            values=list(mappings[col].keys()),
+            dtype=getattr(nw.dtypes, mapping_values_cast_type),
+            backend=backend,
+        )
+    else:
+        mapping_vals = list(mappings[col].keys())
+    mappable_condition = nw.col(col).is_in(mapping_vals)
 
     if fix_nans:
         mappable_condition |= nw.col(col).is_null()
@@ -226,11 +254,12 @@ def map_integer_columns(
     ]
 
 
-def map_float_columns(
+def map_float_columns(  # noqa: PLR0917, PLR0913
     cols: list[str],
     mappings: dict[str, dict[float, Any]],
     mappings_from_null: dict[str, Any],
     return_dtypes: dict[str, RETURN_DTYPES],
+    backend: Literal["pandas", "polars"],
     verbose: bool = True,
 ) -> list[nw.Expr]:
     """Get expressions for mapping float type columns.
@@ -250,6 +279,9 @@ def map_float_columns(
 
     return_dtypes:
         Dictionary of col:dtype for returned columns
+
+    backend : {"pandas", "polars"}
+        Which backend is used for data.
 
     verbose:
         Controls the verbosity of this function.
@@ -276,6 +308,8 @@ def map_float_columns(
             mappings=mappings,
             mappings_from_null=mappings_from_null,
             fix_nans=True,
+            backend=backend,
+            mapping_values_cast_type="Float64",
         ).cast(getattr(nw, return_dtypes[col]))
         if (return_dtypes[col] in {*INT_TYPE_NAMES, "Categorical"})
         else _null_safe_string_cast(
@@ -285,6 +319,8 @@ def map_float_columns(
                 mappings=mappings,
                 mappings_from_null=mappings_from_null,
                 fix_nans=True,
+                backend=backend,
+                mapping_values_cast_type="Float64",
             ),
         )
         if return_dtypes[col] == "String"
@@ -293,6 +329,8 @@ def map_float_columns(
             pre_mapping_expr=nw.col(col),
             mappings=mappings,
             mappings_from_null=mappings_from_null,
+            backend=backend,
+            mapping_values_cast_type="Float64",
         ).cast(getattr(nw, return_dtypes[col]))
         if return_dtypes[col] in FLOAT_TYPE_NAMES
         # boolean case
