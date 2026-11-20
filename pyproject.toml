@@ -43,7 +43,7 @@ classifiers=[
 lint = [
     "prek",
     "ruff>=0.2.2,<=0.15.6",
-    "codespell",
+    "codespell[toml]",
     "typos",
 ]
 dev = [
