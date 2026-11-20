@@ -1080,7 +1080,7 @@ requires-dist = [
     { name = "beartype", specifier = ">=0.19.0" },
     { name = "narwhals", specifier = ">=2.19.0" },
     { name = "pandas", specifier = ">=2.3.0,<3.0.0" },
-    { name = "polars", specifier = ">=1.21.0,<=1.38.1" },
+    { name = "polars", specifier = ">=1.21.0" },
     { name = "scikit-learn", specifier = ">=1.4" },
     { name = "typing-extensions", specifier = ">=4.5.0" },
 ]
