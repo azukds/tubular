@@ -1,4 +1,6 @@
+import narwhals as nw
 import numpy as np
+import pandas as pd
 import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
@@ -25,20 +27,29 @@ from tubular.misc import SetValueTransformer
 def expected_df_1(library, value):
     """Expected output of test_value_set_in_transform."""
 
+    # in pandas 3, nones aren't auto converted to nans, so do it here
+    # to match old behaviour on numeric fields
+    a_value = value
+    if value is None and library == "pandas":
+        a_value = np.nan
+
     df_dict = {
-        "a": [value] * 7,
+        "a": [a_value] * 7,
         "b": [value] * 7,
         "c": ["a", "b", "c", "d", "e", "f", None],
     }
 
     df = dataframe_init_dispatch(df_dict, library)
-    if library == "pandas":
-        df["c"] = df["c"].astype("category")
-    elif library == "polars":
-        df = df.with_columns(df["c"].cast(pl.Categorical))
+    nw_df = nw.from_native(df)
+    nw_df = nw_df.with_columns(nw.col("c").cast(nw.Categorical))
+    if pd.isna(value):
+        nw_df = nw_df.with_columns(
+            nw.col("a").cast(nw.Float64), nw.col("b").cast(nw.Float64)
+        )
+    df = nw_df.to_native()
+    if (library == "polars") and (isinstance(value, int)):
         # polars automatically downcasts to int32 in transformer
-        if isinstance(value, int):
-            df = df.with_columns(df[["a", "b"]].cast(pl.Int32))
+        df = df.with_columns(df[["a", "b"]].cast(pl.Int32))
     return df
 
 
@@ -93,9 +104,6 @@ class TestTransform(GenericTransformTests):
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy))
         expected = expected_df_1(library, value)
-
-        print(df_transformed)
-        print(expected)
 
         assert_frame_equal_dispatch(
             df1=_collect_frame(df_transformed, lazy),
