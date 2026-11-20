@@ -9,9 +9,8 @@ import pytest
 from tubular.functions.mapping import map_float_columns
 
 
-@pytest.mark.parametrize("library", ["pandas", "polars"])
 @pytest.mark.parametrize("verbose", [True, False])
-def test_warning(verbose, library, recwarn):
+def test_warning(verbose, recwarn):
     "test warning outputted as expected."
 
     map_float_columns(
@@ -20,7 +19,6 @@ def test_warning(verbose, library, recwarn):
         mappings_from_null={"a": None},
         return_dtypes={"a": "Boolean"},
         verbose=verbose,
-        backend=library,
     )
 
     msg = """map_float_columns: Note if working in pandas and casting to Boolean,
