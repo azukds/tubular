@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Annotated, Any
 
 import narwhals as nw
+import pandas as pd
 from beartype import beartype
 from beartype.vale import Is
 
@@ -25,7 +26,10 @@ def set_columns_to_value(columns: list[str], value: Any) -> list[nw.Expr]:  # no
     list[nw.Expr]: transform expressions
 
     """
-    return [nw.lit(value).alias(c) for c in columns]
+    exprs = [nw.lit(value).alias(c) for c in columns]
+    if pd.isna(value):
+        exprs = [expr.cast(nw.Float64) for expr in exprs]
+    return exprs
 
 
 @beartype

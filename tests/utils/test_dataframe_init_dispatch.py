@@ -57,19 +57,22 @@ def test_type_alignment():
             datetime.datetime(1995, 9, 27, tzinfo=datetime.timezone.utc),
         ],
     }
+    THREE = 3
+    PANDAS_3_PLUS = int(pd.__version__.split(".")[0]) >= THREE
+    STR_DTYPE = "str" if PANDAS_3_PLUS else object
 
     expected_pandas_types = {
         "a": np.int64,
         "a1": np.float64,
         "b": np.float64,
         "c": np.float64,
-        "d": object,
-        "e": object,
+        "d": STR_DTYPE,
+        "e": STR_DTYPE,
         "f": bool,
         "g": object,
         "h": object,
         "i": "date32[day][pyarrow]",
-        "j": "datetime64[ns, UTC]",
+        "j": "datetime64[us, UTC]",
     }
 
     expected_polars_types = {

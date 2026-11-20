@@ -33,6 +33,7 @@ Changed
 ^^^^^^^
 - chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
 - feat: added min/max version testing in github actions
+- feat: turned off pandas<3 version cap
 - chore: removed cap on polars version
 
 5.0.0 (19/11/2026)
