@@ -27,7 +27,14 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-5.0.0 (unreleased)
+6.0.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
+- feat: added min/max version testing in github actions
+
+5.0.0 (19/11/2026)
 -------------------
 Changed
 ^^^^^^^

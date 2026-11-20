@@ -203,7 +203,8 @@ cd tubular
 Next install `tubular` and development dependencies;
 
 ```shell
-pip install . -r requirements-dev.txt
+uv sync --group dev
+source .venv/bin/activate
 ```
 
 Finally run the test suite with `pytest`;
