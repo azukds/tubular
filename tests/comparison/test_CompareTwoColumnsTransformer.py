@@ -158,7 +158,8 @@ class TestCompareTwoColumnsTransformerTransform(GenericTransformTests):
         transformer = u._handle_from_json(transformer, from_json)
         transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
-        # Expected output for basic comparison
+        # in pandas 3, nones aren't auto converted to nans, so do it here
+        # to match old behaviour on numeric fields
         if library == "pandas":
             expected_result = [
                 value if not pd.isna(value) else np.nan for value in expected_result
