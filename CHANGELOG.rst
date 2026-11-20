@@ -33,6 +33,7 @@ Changed
 ^^^^^^^
 - chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
 - feat: added min/max version testing in github actions
+- chore: removed cap on polars version
 
 5.0.0 (19/11/2026)
 -------------------
@@ -40,14 +41,14 @@ Changed
 ^^^^^^^
 - feat: removed the period component in the output column names for DatetimeSinusoidCalculator
 
-4.1.0 (unreleased)
+4.1.1 (10/11/2026)
 -------------------
 Changed
 ^^^^^^^
 - chore: updated black on dependabot recommendation
 - bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
 
-4.0.2 (23/09/2026)
+4.1.0 (23/09/2026)
 -------------------
 Changed
 ^^^^^^^
