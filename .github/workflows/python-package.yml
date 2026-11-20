@@ -89,7 +89,7 @@ jobs:
             python -m pip install uv
             uv venv -p ${{ matrix.python-version }} $HOME/lints
             source $HOME/lints/bin/activate
-            uv pip install -r requirements-dev.txt
+            uv pip install .[dev]
           
         - name: Lint with ruff
           run: |
