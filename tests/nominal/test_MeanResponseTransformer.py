@@ -1414,7 +1414,10 @@ class TestTransform(GenericTransformTests):
         output_df = _collect_frame(output_df, lazy=lazy)
 
         if target == "c":
-            actual_levels = df[target].unique().to_list() if level == "all" else level
+            nw_df = nw.from_native(df)
+            actual_levels = (
+                nw_df[target].unique().to_list() if level == "all" else level
+            )
             expected_created_cols = [
                 prefix + "_" + suffix
                 for prefix, suffix in product(columns, actual_levels)

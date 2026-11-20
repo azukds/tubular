@@ -92,8 +92,10 @@ class TestTransform(GenericTransformTests):
         x = _handle_from_json(x, from_json)
 
         df_transformed = x.transform(_convert_to_lazy(df, lazy))
-
         expected = expected_df_1(library, value)
+
+        print(df_transformed)
+        print(expected)
 
         assert_frame_equal_dispatch(
             df1=_collect_frame(df_transformed, lazy),
