@@ -39,7 +39,7 @@ jobs:
           python -m pip install uv
           uv venv -p  ${{ matrix.python-version }} ${{ matrix.python-version }}
           source ${{ matrix.python-version }}/bin/activate
-          uv pip install .[dev]
+          uv pip install .[test]
           uv pip install "scikit-learn==${{ matrix.sklearn-version }}.*"
 
       - name: Test with pytest
@@ -89,7 +89,7 @@ jobs:
             python -m pip install uv
             uv venv -p ${{ matrix.python-version }} $HOME/lints
             source $HOME/lints/bin/activate
-            uv pip install .[dev]
+            uv pip install .[lint]
           
         - name: Lint with ruff
           run: |
