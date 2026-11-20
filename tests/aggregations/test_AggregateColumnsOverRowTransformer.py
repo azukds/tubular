@@ -46,13 +46,13 @@ class TestAggregateColumnsOverRowTransformerTransform(
             (
                 ["min", "max", "mean", "sum"],
                 {
-                    "a": [1, 2, 3, 4, 8],
-                    "b": [2, 3, 4, 5, 9],
-                    "c": [3, 4, 5, 6, 10],
-                    "a_b_c_min": [1, 2, 3, 4, 8],
-                    "a_b_c_max": [3, 4, 5, 6, 10],
-                    "a_b_c_mean": [2.0, 3.0, 4.0, 5.0, 9.0],
-                    "a_b_c_sum": [6, 9, 12, 15, 27],
+                    "a": [1, 2, 3, 4, 0],
+                    "b": [2, 3, 4, 5, 0],
+                    "c": [True, False, False, True, True],
+                    "a_b_c_min": [1, 0, 0, 1, 0],
+                    "a_b_c_max": [2, 3, 4, 5, 1],
+                    "a_b_c_mean": [4 / 3, 5 / 3, 7 / 3, 10 / 3, 1 / 3],
+                    "a_b_c_sum": [4, 5, 7, 10, 1],
                 },
             ),
         ],
@@ -74,9 +74,9 @@ class TestAggregateColumnsOverRowTransformerTransform(
         args["aggregations"] = aggregations
 
         df_dict = {
-            "a": [1, 2, 3, 4, 8],
-            "b": [2, 3, 4, 5, 9],
-            "c": [3, 4, 5, 6, 10],
+            "a": [1, 2, 3, 4, 0],
+            "b": [2, 3, 4, 5, 0],
+            "c": [True, False, False, True, True],
         }
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
@@ -110,14 +110,15 @@ class TestAggregateColumnsOverRowTransformerTransform(
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
+        args["columns"] = ["a", "b", "c"]
         args["aggregations"] = ["min", "max", "mean", "sum"]
 
         # Create a single-row DataFrame
         single_row_df_dict = {
             "a": [None],
             "b": [2],
-            "c": ["A"],
+            "c": [True],
+            "d": ["A"],
         }
         single_row_df = dataframe_init_dispatch(single_row_df_dict, library)
 
@@ -139,11 +140,12 @@ class TestAggregateColumnsOverRowTransformerTransform(
         expected_data = {
             "a": [None],
             "b": [2],
-            "c": ["A"],
-            "a_b_min": [2.0],
-            "a_b_max": [2.0],
-            "a_b_mean": [2.0],
-            "a_b_sum": [2.0],
+            "c": [True],
+            "d": ["A"],
+            "a_b_c_min": [1.0],
+            "a_b_c_max": [2.0],
+            "a_b_c_mean": [1.5],
+            "a_b_c_sum": [3.0],
         }
         expected_df = dataframe_init_dispatch(expected_data, library)
         # ensure none columns are numeric type
@@ -172,13 +174,18 @@ class TestAggregateColumnsOverRowTransformerTransform(
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b"]
+        # Pandas reads a bool column with nulls as object, so
+        # only test c column for polars.
+        if library == "polars":
+            args["columns"].append("c")
         args["aggregations"] = ["min", "max", "mean", "sum"]
 
         # Create a DataFrame with null values
         df_with_nulls_dict = {
             "a": [1.0, None, 3.0, None, 8.0],
             "b": [None, 3.0, None, 5.0, 9.0],
-            "c": ["A", "B", "A", "B", "A"],
+            "c": [None, True, None, False, False],
+            "d": ["A", "B", "A", "B", "A"],
         }
         df_with_nulls = dataframe_init_dispatch(df_with_nulls_dict, library)
 
@@ -193,12 +200,27 @@ class TestAggregateColumnsOverRowTransformerTransform(
         expected_data = {
             "a": [1, None, 3, None, 8],
             "b": [None, 3, None, 5, 9],
-            "c": ["A", "B", "A", "B", "A"],
-            "a_b_min": [1.0, 3.0, 3.0, 5.0, 8.0],
-            "a_b_max": [1.0, 3.0, 3.0, 5.0, 9.0],
-            "a_b_mean": [1.0, 3.0, 3.0, 5.0, 8.5],
-            "a_b_sum": [1.0, 3.0, 3.0, 5.0, 17.0],
+            "c": [None, True, None, False, False],
+            "d": ["A", "B", "A", "B", "A"],
         }
+        if library == "pandas":
+            expected_data.update(
+                {
+                    "a_b_min": [1.0, 3.0, 3.0, 5.0, 8.0],
+                    "a_b_max": [1.0, 3.0, 3.0, 5.0, 9.0],
+                    "a_b_mean": [1.0, 3.0, 3.0, 5.0, 8.5],
+                    "a_b_sum": [1.0, 3.0, 3.0, 5.0, 17.0],
+                }
+            )
+        else:
+            expected_data.update(
+                {
+                    "a_b_c_min": [1.0, 1.0, 3.0, 0.0, 0.0],
+                    "a_b_c_max": [1.0, 3.0, 3.0, 5.0, 9.0],
+                    "a_b_c_mean": [1.0, 2.0, 3.0, 2.5, 17 / 3],
+                    "a_b_c_sum": [1.0, 4.0, 3.0, 5.0, 17.0],
+                }
+            )
         expected_df = dataframe_init_dispatch(expected_data, library)
 
         assert_frame_equal_dispatch(

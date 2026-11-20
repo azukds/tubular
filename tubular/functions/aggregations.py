@@ -75,18 +75,27 @@ def aggregate_over_rows(
 
 
 def aggregate_over_columns(
-    columns: list[str], aggregations: ListOfColumnsOverRowAggregations
-) -> nw.Expr:
+    columns: list[str],
+    aggregations: ListOfColumnsOverRowAggregations,
+    bool_columns: list[str],
+) -> list[nw.Expr]:
     """Get expressions for aggregating data over columns.
 
     Returns
     -------
-    list[nw.Expr]: expressions for transformation
+    list[nw.Expr]
+        Expressions for transformation.
 
     """
+    # Create list of expressions for columns, casting bool columns to
+    # int so the aggregations always return numbers.
+    cols_exprs = [
+        nw.col(col).cast(nw.Int8) if col in bool_columns else nw.col(col)
+        for col in columns
+    ]
     return (
         [
-            horizontal_expr_map[aggregation](columns).alias(
+            horizontal_expr_map[aggregation](cols_exprs).alias(
                 "_".join(columns) + "_" + aggregation,
             )
             for aggregation in aggregations

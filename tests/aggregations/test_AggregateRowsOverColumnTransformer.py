@@ -88,7 +88,8 @@ class TestAggregateRowsOverColumnTransformerTransform(
                 {
                     "a": [1, 2, 3, 4, 8],
                     "b": [2, 3, 4, 5, 9],
-                    "c": ["A", "B", "A", "B", "A"],
+                    "c": [True, True, False, False, True],
+                    "d": ["A", "B", "A", "B", "A"],
                     "a_min": [1, 2, 1, 2, 1],
                     "a_max": [8, 4, 8, 4, 8],
                     "a_mean": [4.0, 3.0, 4.0, 3.0, 4.0],
@@ -101,6 +102,12 @@ class TestAggregateRowsOverColumnTransformerTransform(
                     "b_median": [4.0, 4.0, 4.0, 4.0, 4.0],
                     "b_count": [3, 2, 3, 2, 3],
                     "b_sum": [15, 8, 15, 8, 15],
+                    "c_min": [False, False, False, False, False],
+                    "c_max": [True, True, True, True, True],
+                    "c_mean": [2 / 3, 0.5, 2 / 3, 0.5, 2 / 3],
+                    "c_median": [1.0, 0.5, 1.0, 0.5, 1.0],
+                    "c_count": [3, 2, 3, 2, 3],
+                    "c_sum": [2, 1, 2, 1, 2],
                 },
             ),
         ],
@@ -117,9 +124,9 @@ class TestAggregateRowsOverColumnTransformerTransform(
     ):
         """Test transform method aggregates rows correctly."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
+        args["columns"] = ["a", "b", "c"]
         args["aggregations"] = aggregations
-        args["key"] = "c"
+        args["key"] = "d"
 
         df = create_aggregate_over_rows_test_df(library=library)
 
@@ -143,6 +150,8 @@ class TestAggregateRowsOverColumnTransformerTransform(
                 [
                     nw.col("a_count").cast(nw.UInt32),
                     nw.col("b_count").cast(nw.UInt32),
+                    nw.col("c_count").cast(nw.UInt32),
+                    nw.col("c_sum").cast(nw.UInt32),
                 ],
             ).to_native()
 
@@ -165,15 +174,16 @@ class TestAggregateRowsOverColumnTransformerTransform(
     ):
         """Test transform method with a single-row DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
+        args["columns"] = ["a", "b", "c"]
         args["aggregations"] = ["min", "max", "mean", "median", "count", "sum"]
-        args["key"] = "c"
+        args["key"] = "d"
 
         # Create a single-row DataFrame
         single_row_df_dict = {
             "a": [None],
             "b": [2],
-            "c": ["A"],
+            "c": [False],
+            "d": ["A"],
         }
         single_row_df = u.dataframe_init_dispatch(single_row_df_dict, library)
 
@@ -201,7 +211,8 @@ class TestAggregateRowsOverColumnTransformerTransform(
         expected_data = {
             "a": [None],
             "b": [2],
-            "c": ["A"],
+            "c": [False],
+            "d": ["A"],
             "a_min": [None],
             "a_max": [None],
             "a_mean": [None],
@@ -214,6 +225,12 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "b_median": [2.0],
             "b_count": [1],
             "b_sum": [2],
+            "c_min": [False],
+            "c_max": [False],
+            "c_mean": [0.0],
+            "c_median": [0.0],
+            "c_count": [1],
+            "c_sum": [0],
         }
         expected_df = u.dataframe_init_dispatch(expected_data, library)
         # ensure none columns are numeric type
@@ -234,7 +251,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
                 *[
                     # counts in polars are set to unsigned int
                     nw.col(col).cast(nw.UInt32)
-                    for col in ["a_count", "b_count"]
+                    for col in ["a_count", "b_count", "c_count", "c_sum"]
                 ],
             ).to_native()
 
@@ -257,14 +274,19 @@ class TestAggregateRowsOverColumnTransformerTransform(
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b"]
+        # Pandas reads a bool column with nulls as object, so
+        # only test c column for polars.
+        if library == "polars":
+            args["columns"].append("c")
         args["aggregations"] = ["min", "max", "mean", "median", "count", "sum"]
-        args["key"] = "c"
+        args["key"] = "d"
 
         # Create a DataFrame with null values
         df_with_nulls_dict = {
             "a": [1, None, 3, None, 8],
             "b": [None, 3, None, 5, 9],
-            "c": ["A", "B", "A", "B", "A"],
+            "c": [None, True, True, None, False],
+            "d": ["A", "B", "A", "B", "A"],
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
 
@@ -283,7 +305,8 @@ class TestAggregateRowsOverColumnTransformerTransform(
         expected_data = {
             "a": [1, None, 3, None, 8],
             "b": [None, 3, None, 5, 9],
-            "c": ["A", "B", "A", "B", "A"],
+            "c": [None, True, True, None, False],
+            "d": ["A", "B", "A", "B", "A"],
             "a_min": [1, None, 1, None, 1],
             "a_max": [8, None, 8, None, 8],
             "a_mean": [4.0, None, 4.0, None, 4.0],
@@ -297,6 +320,17 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "b_count": [1, 2, 1, 2, 1],
             "b_sum": [9.0, 8.0, 9.0, 8.0, 9.0],
         }
+        if library == "polars":
+            expected_data.update(
+                {
+                    "c_min": [False, True, False, True, False],
+                    "c_max": [True, True, True, True, True],
+                    "c_mean": [0.5, 1.0, 0.5, 1.0, 0.5],
+                    "c_median": [0.5, 1.0, 0.5, 1.0, 0.5],
+                    "c_count": [2, 1, 2, 1, 2],
+                    "c_sum": [1.0, 1.0, 1.0, 1.0, 1.0],
+                }
+            )
         expected_df = u.dataframe_init_dispatch(expected_data, library)
 
         # Polars uses efficient types which differ from pandas here we do convert.
@@ -307,6 +341,8 @@ class TestAggregateRowsOverColumnTransformerTransform(
                 [
                     nw.col("a_count").cast(nw.UInt32),
                     nw.col("b_count").cast(nw.UInt32),
+                    nw.col("c_count").cast(nw.UInt32),
+                    nw.col("c_sum").cast(nw.UInt32),
                 ],
             ).to_native()
 
