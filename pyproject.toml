@@ -23,7 +23,7 @@ dependencies = [
     "beartype >= 0.19.0",
     "typing-extensions>=4.5.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "Allianz UK Data Science Team", email="datasciencepackages@allianz.co.uk"}]
 description = "Python package implementing ML feature engineering and pre-processing for polars or pandas dataframes."
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -31,9 +31,9 @@ license = {file = "LICENSE"}
 keywords = ["polars", "pandas", "feature engineering", "pre-processing", "machine learning", "ML", "data science", "data transforms", "pipeline", "sklearn", "DS"]
 classifiers=[
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: BSD License",
 ]
@@ -45,6 +45,7 @@ test = [
     "pytest>=5.4.1, !=9.0.2",
     "pytest-mock>=3.5.1",
     "pytest-cov<=2.10.1",
+    "pyarrow>=17.0.0",
 ]
 
 lint = [
@@ -62,7 +63,6 @@ lint = [
 dev = [
     {include-group = 'test'},
     {include-group = 'lint'},
-    "pyarrow>=17.0.0",
     "pip",
     ]
 
