@@ -77,7 +77,7 @@ pytokens==0.4.1
     # via black
 pytz==2026.6
     # via pandas
-ruff==0.17.6
+ruff==0.15.6
     # via tubular (pyproject.toml)
 scikit-learn==1.7.2
     # via tubular (pyproject.toml)

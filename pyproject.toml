@@ -42,7 +42,7 @@ classifiers=[
 [project.optional-dependencies]
 lint = [
     "prek",
-    "ruff>=0.2.2",
+    "ruff>=0.2.2,<=0.15.6",
     "codespell",
     "typos",
 ]
