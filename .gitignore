@@ -112,6 +112,3 @@ venv.bak/
 
 # ruff
 .ruff_cache
-
-# remove when using uv for dependency management
-uv.lock
