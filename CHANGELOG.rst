@@ -34,6 +34,7 @@ Changed
 - chore: tidied up github actions workflow
 - feat: added github actions step to check that uv.lock is in sync with repo
 - feat: turned off pandas<3 version cap
+- chore: removed  test-aide from the env
 
 6.0.0 (20/11/2026)
 -------------------
