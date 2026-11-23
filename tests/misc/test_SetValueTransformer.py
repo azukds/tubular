@@ -27,14 +27,8 @@ from tubular.misc import SetValueTransformer
 def expected_df_1(library, value):
     """Expected output of test_value_set_in_transform."""
 
-    # in pandas 3, nones aren't auto converted to nans, so do it here
-    # to match old behaviour on numeric fields
-    a_value = value
-    if value is None and library == "pandas":
-        a_value = np.nan
-
     df_dict = {
-        "a": [a_value] * 7,
+        "a": [value] * 7,
         "b": [value] * 7,
         "c": ["a", "b", "c", "d", "e", "f", None],
     }
