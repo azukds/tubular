@@ -43,8 +43,6 @@ Changed
 - chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
 - feat: added min/max version testing in github actions
 - chore: removed cap on polars version
-- chore: tidied up github actions workflow
-- feat: added github actions step to check that uv.lock is in sync with repo
 
 5.0.0 (19/11/2026)
 -------------------
