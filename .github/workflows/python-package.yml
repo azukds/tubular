@@ -15,6 +15,9 @@ on:
     - cron: '30 7 * * 1' # monday morning
   workflow_dispatch:
 
+# Only one run per workflow and branch/PR at a time. A new push to the same ref
+# cancels the run still in progress, except on main, where every run finishes
+# so each merged commit gets a full result.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
