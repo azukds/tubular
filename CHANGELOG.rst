@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - feat: turned off pandas<3 version cap
+- chore: removed  test-aide from the env
 
 6.0.0 (20/11/2026)
 -------------------

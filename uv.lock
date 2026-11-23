@@ -286,9 +286,7 @@ name = "numpy"
 version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.12'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d0/ad/fed0499ce6a338d2a03ebae59cd15093910c8875328855781952abf6c2fe/numpy-2.4.6.tar.gz", hash = "sha256:f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda", size = 20735807, upload-time = "2026-05-18T23:37:14.07Z" }
 wheels = [
@@ -370,12 +368,7 @@ name = "numpy"
 version = "2.5.5"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4e/3a/8770c288c47f0b5c2a786d3c20e79f66fd245f2d42cd232d7cd5e00e83e5/numpy-2.5.5.tar.gz", hash = "sha256:5cddc243c75114ba845f01b1f87aca1572dbf7b6c2d88636ed3e1d2bccd7f1bf", size = 20873892, upload-time = "2026-11-15T21:32:28.607Z" }
 wheels = [
@@ -849,9 +842,7 @@ name = "scipy"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.12'",
 ]
 dependencies = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
@@ -925,12 +916,7 @@ name = "scipy"
 version = "1.18.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12'",
 ]
 dependencies = [
     { name = "numpy", version = "2.5.5", source = { registry = "https://pypi.org/simple" } },
@@ -1009,19 +995,6 @@ wheels = [
 ]
 
 [[package]]
-name = "test-aide"
-version = "0.1.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-    { name = "pytest-mock" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/30/de/63c9925c311003433063d0e74ded2bd52d0cbbbb5f4651fc648d2d14868f/test-aide-0.1.1.tar.gz", hash = "sha256:33a1a252c900af2c2f74ab23d0eaa0dadbb3c3414c03f514d8f6e995bb2f5cd5", size = 10454, upload-time = "2021-11-08T17:57:34.66Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/43/2ffe0e84abf1827917fe054f1e7095e46545240b85f0ca89c67b96b64e7a/test_aide-0.1.1-py3-none-any.whl", hash = "sha256:011d86f516738ac6d9ad88d46d6805f33aafbfef605f492485e93ee5fe83e2cc", size = 11203, upload-time = "2021-11-08T17:57:33.531Z" },
-]
-
-[[package]]
 name = "threadpoolctl"
 version = "3.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1057,7 +1030,6 @@ dev = [
     { name = "pytest-mock" },
     { name = "ruff" },
     { name = "tabulate" },
-    { name = "test-aide" },
     { name = "typos" },
 ]
 feature-table = [
@@ -1079,7 +1051,6 @@ test = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "tabulate" },
-    { name = "test-aide" },
 ]
 
 [package.metadata]
@@ -1107,7 +1078,6 @@ dev = [
     { name = "pytest-mock", specifier = ">=3.5.1" },
     { name = "ruff", specifier = "==0.15.6" },
     { name = "tabulate", specifier = ">=0.9.0" },
-    { name = "test-aide", specifier = ">=0.1.0" },
     { name = "typos" },
 ]
 feature-table = [{ name = "tabulate", specifier = ">=0.9.0" }]
@@ -1127,7 +1097,6 @@ test = [
     { name = "pytest-cov", specifier = "<=2.10.1" },
     { name = "pytest-mock", specifier = ">=3.5.1" },
     { name = "tabulate", specifier = ">=0.9.0" },
-    { name = "test-aide", specifier = ">=0.1.0" },
 ]
 
 [[package]]
