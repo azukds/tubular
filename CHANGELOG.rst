@@ -27,13 +27,18 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-6.0.0 (unreleased)
+6.1.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: turned off pandas<3 version cap
+
+6.0.0 (20/11/2026)
 -------------------
 Changed
 ^^^^^^^
 - chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
 - feat: added min/max version testing in github actions
-- feat: turned off pandas<3 version cap
 - chore: removed cap on polars version
 
 5.0.0 (19/11/2026)
