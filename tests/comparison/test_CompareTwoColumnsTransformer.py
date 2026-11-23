@@ -1,5 +1,8 @@
 import copy
 
+import narwhals as nw
+import numpy as np
+import pandas as pd
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -19,7 +22,15 @@ def create_compare_test_df(library="pandas"):
         "a": [1, 2, 3, None, 4],
         "b": [3, 2, 1, 5, None],
     }
-    return u.dataframe_init_dispatch(df_dict, library=library)
+
+    df = u.dataframe_init_dispatch(df_dict, library=library)
+    # in pandas 3, nones aren't auto converted to nans, so do it here
+    # to match old behaviour on numeric fields
+    if library == "pandas":
+        df["a"] = df["a"].astype(np.float64)
+        df["b"] = df["b"].astype(np.float64)
+
+    return df
 
 
 class TestCompareTwoColumnsTransformerInit(
@@ -147,13 +158,18 @@ class TestCompareTwoColumnsTransformerTransform(GenericTransformTests):
         transformer = u._handle_from_json(transformer, from_json)
         transformed_df = transformer.transform(u._convert_to_lazy(df, lazy))
 
-        # Expected output for basic comparison
-        expected_data = {
-            "a": [1, 2, 3, None, 4],
-            "b": [3, 2, 1, 5, None],
-            f"a{condition.value}b": expected_result,
-        }
-        expected_df = u.dataframe_init_dispatch(expected_data, library)
+        # in pandas 3, nones aren't auto converted to nans, so do it here
+        # to match old behaviour on numeric fields
+        if library == "pandas":
+            expected_result = [
+                value if not pd.isna(value) else np.nan for value in expected_result
+            ]
+        df_nw = nw.from_native(df).clone()
+        expected_df = df_nw.with_columns(
+            nw.new_series(
+                name=f"a{condition.value}b", values=expected_result, backend=library
+            )
+        ).to_native()
 
         u.assert_frame_equal_dispatch(
             u._collect_frame(transformed_df, lazy),
