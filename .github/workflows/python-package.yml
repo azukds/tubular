@@ -38,6 +38,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@v6
         with:
+          version-file: pyproject.toml
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - name: Install dependencies
@@ -62,6 +63,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: 3.11
+          version-file: pyproject.toml
           enable-cache: true
       - name: Install dependencies
         run: |
@@ -92,32 +94,33 @@ jobs:
 
     steps:
         - uses: actions/checkout@v5
-        with:
+          with:
           persist-credentials: false
 
         - uses: astral-sh/setup-uv@v6
           with:
             python-version: 3.11
+            version-file: pyproject.toml
             enable-cache: true
 
-         - name: Install linters
-      run: uv venv && uv pip install --group lint
+        - name: Install linters
+          run: uv venv && uv pip install --group lint
 
-      - name: Ruff
-        run: uv run --no-sync ruff check --output-format github .
+        - name: Ruff
+          run: uv run --no-sync ruff check --output-format github .
 
-      - name: codespell
-        if: ${{ !cancelled() }}
-        run: uv run --no-sync codespell .
+        - name: codespell
+          if: ${{ !cancelled() }}
+          run: uv run --no-sync codespell .
 
-      - name: typos
-        if: ${{ !cancelled() }}
-        run: uv run --no-sync typos .
+        - name: typos
+          if: ${{ !cancelled() }}
+          run: uv run --no-sync typos .
 
-      - name: Lint code examples in docs
-        if: ${{ !cancelled() }}
-        run: uv run --no-sync prek run blacken-docs --all-files
-            
-      - name: Check uv.lock is up to date
-        if: ${{ !cancelled() }}
-        run: uv lock --check
+        - name: Lint code examples in docs
+          if: ${{ !cancelled() }}
+          run: uv run --no-sync prek run blacken-docs --all-files
+
+        - name: Check uv.lock is up to date
+          if: ${{ !cancelled() }}
+          run: uv lock --check
