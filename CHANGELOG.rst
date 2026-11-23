@@ -27,7 +27,40 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-4.0.0 (unreleased)
+6.0.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
+- feat: added min/max version testing in github actions
+- chore: removed cap on polars version
+
+5.0.0 (19/11/2026)
+-------------------
+Changed
+^^^^^^^
+- feat: removed the period component in the output column names for DatetimeSinusoidCalculator
+
+4.1.1 (10/11/2026)
+-------------------
+Changed
+^^^^^^^
+- chore: updated black on dependabot recommendation
+- bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
+
+4.1.0 (23/09/2026)
+-------------------
+Changed
+^^^^^^^
+- bugfix: allow np ints in mean response encoder
+
+4.0.1 (14/08/2026)
+-------------------
+Changed
+^^^^^^^
+- bugfix: registered new imputer classes
+
+4.0.0 (14/08/2026)
 -------------------
 Changed
 ^^^^^^^
@@ -35,8 +68,16 @@ Changed
 - feat: added get_transform_exprs methods to BaseImputer `#751 <https://github.com/azukds/tubular/issues/751>_`
 - chore: refactored OtherBaseBehaviour test classes to make easier to maintain
 - feat: added tests for NumberImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added tests for StringImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added CategoricalImputer with tests and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
+- feat: added private class _EnumImputer, utilised by ArbitraryImputer `#752 <https://github.com/azukds/tubular/issues/752>_`
+- chore: deprecated ArbitraryImputer
 - feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
+- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
+being mapped to string type.
+- chore: refactored MappingTransformer to pave way for splitting into type based classes with
+`get_transform_exprs` methods.
 - chore: deleted long term deprecated classes
 
 3.9.0 (17/07/2026)

@@ -6,7 +6,6 @@ import warnings
 
 import narwhals as nw
 from beartype import beartype
-from narwhals.dtypes import DType  # noqa: F401 - required for nw.Schema see #455
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,

@@ -454,6 +454,32 @@ NumberNotBool = Annotated[
 
 
 @beartype
+def get_datetime_sinusoid_transformed_col_name(
+    method: MethodOptionStr,
+    unit: DatetimeSinusoidUnitsOptionStr,
+    column: str,
+) -> str:
+    """Get name of output column.
+
+    Parameters
+    ----------
+    method : {'sin', 'cos'}
+        Trigonometric method to apply.
+    unit : str
+        Datetime unit to use.
+    column : str
+        Name of column function applied to.
+
+    Returns
+    -------
+    str
+        Name of output column.
+
+    """
+    return f"{method}_{unit}_{column}"
+
+
+@beartype
 def extract_datetime_sinusoid_components(
     columns: list[str],
     period_dict: dict[str, NumberNotBool],
@@ -493,7 +519,13 @@ def extract_datetime_sinusoid_components(
             )()
             * (2 * np.pi / period_dict[column]),
             trig_method,
-        )().alias(f"{trig_method}_{period_dict[column]}_{units_dict[column]}_{column}")
+        )().alias(
+            get_datetime_sinusoid_transformed_col_name(
+                method=trig_method,
+                unit=units_dict[column],
+                column=column,
+            )
+        )
         for column in columns
         for trig_method in method
     ]

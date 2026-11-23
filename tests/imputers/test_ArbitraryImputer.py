@@ -54,7 +54,7 @@ def create_expected_df_3(library="pandas"):
     "expected df for transform test."
     expected_df_dict = {
         "a": [1, 2, 3, 4, 5, 6, None],
-        "b": ["a", "b", "c", "d", "e", "f", "g"],
+        "b": ["a", "b", "c", "d", "e", "f", None],
         "c": ["a", "b", "c", "d", "e", "f", "g"],
     }
 
@@ -88,13 +88,11 @@ class TestTransform(
     @pytest.mark.parametrize(
         ("column", "col_type", "impute_value"),
         [
-            ("a", "String", 1),
-            ("a", "Categorical", True),
-            ("b", "Float32", "bla"),
+            ("b", "Float32", True),
             ("c", "Boolean", 500),
         ],
     )
-    def test_type_mismatch_errors(
+    def test_general_type_mismatch_errors(
         self,
         column,
         col_type,
@@ -122,20 +120,13 @@ class TestTransform(
 
         transformer = _handle_from_json(transformer, from_json)
 
-        if isinstance(impute_value, str):
-            col_dtype = getattr(nw, col_type)
-            msg = f"""
-                ArbitraryImputer: transformer can only handle String/Categorical/Enum/Unknown type columns
-                but got columns with types {[col_dtype]}
-                """
-
-        elif isinstance(impute_value, bool):
+        if isinstance(impute_value, bool):
             allowed_types_str = "Boolean/Unknown"
             col_dtype = getattr(nw, col_type)
             if library == "pandas":
                 allowed_types_str += "/Object"
             msg = f"""
-                ArbitraryImputer: transformer can only handle {allowed_types_str} type columns
+                BooleanImputer: transformer can only handle {allowed_types_str} type columns
                 but got columns with types {[col_dtype]}
                 """
 
@@ -144,6 +135,64 @@ class TestTransform(
             msg = f"""
                 NumberImputer: transformer can only handle Float/Int/UInt/Unknown type columns
                 but got columns with types {[col_dtype]}
+                """
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape(msg),
+        ):
+            transformer.transform(u._convert_to_lazy(df, lazy))
+
+    @pytest.mark.parametrize(
+        "lazy",
+        [True, False],
+    )
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize(
+        ("col_type", "col_values", "impute_value"),
+        [
+            ("Boolean", [True, None], "hello"),
+            ("Float32", [1.0, 2.0], "bla"),
+        ],
+    )
+    def test_strlike_type_mismatch_errors(
+        self,
+        col_type,
+        impute_value,
+        col_values,
+        library,
+        lazy,
+        from_json,
+    ):
+        """Test that dtypes are preserved after imputation."""
+
+        column = "a"
+        df_dict = {column: col_values}
+
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        df = nw.from_native(df)
+
+        df = df.with_columns(
+            nw.col(column).cast(getattr(nw, col_type)),
+        )
+        schema = df.schema
+
+        df = nw.to_native(df)
+
+        transformer = ArbitraryImputer(impute_value=impute_value, columns=[column])
+
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
+            return
+
+        transformer = _handle_from_json(transformer, from_json)
+
+        msg = f"""{self.transformer_name}: str impute values can only be used on
+                String/Categorical/Enum type columns, and types must be consistent
+                in each usage, but got:
+                impute_value type: {type(impute_value)}
+                column types: {[schema[col] for col in [column]]}
                 """
 
         with pytest.raises(
@@ -204,12 +253,6 @@ class TestTransform(
         )
 
         expected_dtype = df_nw[column].dtype
-
-        native_namespace = nw.get_native_namespace(df_nw).__name__
-
-        # for pandas categorical are converted to enum
-        if col_type == "Categorical" and native_namespace == "pandas":
-            expected_dtype = nw.Enum
 
         actual_dtype = df_transformed_nw[column].dtype
 
@@ -380,6 +423,21 @@ class TestTransform(
         ("library"),
         ["pandas", "polars"],
     )
+    @pytest.mark.parametrize(
+        ("input_values", "input_type", "expected_output_values"),
+        [
+            (
+                ["a", "b", "c", "d", "e", "f", None],
+                "String",
+                ["a", "b", "c", "d", "e", "f", "g"],
+            ),
+            (
+                ["a", "b", "c", "d", "e", "f", None],
+                "Categorical",
+                ["a", "b", "c", "d", "e", "f", "g"],
+            ),
+        ],
+    )
     def test_expected_output_with_object_and_categorical_columns(
         self,
         library,
@@ -387,45 +445,62 @@ class TestTransform(
         uninitialized_transformers,
         lazy,
         from_json,
+        input_values,
+        input_type,
+        expected_output_values,
     ):
         """Test that transform is giving the expected output when applied to object and categorical columns."""
         # Create the DataFrame using the library parameter
-        df2 = d.create_df_2(library=library)
+        col = "a"
+        df_dict = {
+            col: input_values,
+        }
+        expected_df_dict = {
+            col: expected_output_values,
+        }
+
+        df = dataframe_init_dispatch(df_dict, library)
+        expected_df = dataframe_init_dispatch(expected_df_dict, library)
+        if input_type == "Categorical":
+            df = nw.from_native(df)
+            df = df.with_columns(nw.col(col).cast(getattr(nw, input_type))).to_native()
+            expected_df = nw.from_native(expected_df)
+            expected_df = expected_df.with_columns(
+                nw.col(col).cast(getattr(nw, input_type))
+            ).to_native()
 
         args = minimal_attribute_dict[self.transformer_name]
-        args["columns"] = ["b", "c"]
+        args["columns"] = [col]
         args["impute_value"] = "g"
 
         # Initialize the transformer
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
-        expected_df_3 = create_expected_df_3(library)
-
-        if u._check_if_skip_test(transformer, df2, lazy, from_json):
+        if u._check_if_skip_test(transformer, df, lazy, from_json):
             return
 
         transformer = _handle_from_json(transformer, from_json)
 
         # Transform the DataFrame
-        df_transformed = transformer.transform(u._convert_to_lazy(df2, lazy))
+        df_transformed = transformer.transform(u._convert_to_lazy(df, lazy))
 
         # Check whole dataframes
         u.assert_frame_equal_dispatch(
             u._collect_frame(df_transformed, lazy),
-            expected_df_3,
+            expected_df,
             # this turns off checks for category metadata like ordering
             # this transformer will convert an unordered pd categorical to ordered
             # so this is needed
             check_categorical=False,
         )
-        df2 = nw.from_native(df2)
-        expected_df_3 = nw.from_native(expected_df_3)
+        df = nw.from_native(df)
+        expected_df = nw.from_native(expected_df)
 
-        for i in range(len(df2)):
+        for i in range(len(df)):
             df_transformed_row = transformer.transform(
-                u._convert_to_lazy(df2[[i]].to_native(), lazy),
+                u._convert_to_lazy(df[[i]].to_native(), lazy),
             )
-            df_expected_row = expected_df_3[[i]].to_native()
+            df_expected_row = expected_df[[i]].to_native()
 
             u.assert_frame_equal_dispatch(
                 u._collect_frame(df_transformed_row, lazy),
@@ -472,7 +547,7 @@ class TestTransform(
 
         transformer.impute_values_ = impute_values_dict
         transformer.impute_value = "z"
-        transformer.columns = ["b", "c"]
+        transformer.columns = ["c"]
 
         transformer = _handle_from_json(transformer, from_json)
 

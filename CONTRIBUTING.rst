@@ -28,7 +28,9 @@ Then install tubular and dependencies for development;
 
    .. code::
 
-     pip install . -r requirements-dev.txt
+     uv sync --group dev
+     source .venv/bin/python 
+
 We use `prek <https://github.com/j178/prek>`_ for this project which is configured to check that code passes several lints:
 - `ruff <https://beta.ruff.rs/docs/>`_ - For a list of ruff rules followed by this project check pyproject.toml.
 - `codespell <https://github.com/codespell-project/codespell>`_
@@ -44,25 +46,6 @@ To configure ``prek`` for your local repository run the following;
 If working in a codespace the dev requirements and prek will be installed automatically in the dev container.
 
 If you are building the documentation locally you will need the `docs/requirements.txt <https://github.com/azukds/tubular/blob/main/docs/requirements.txt>`_.
-
-Dependencies
-^^^^^^^^^^^^
-A point of surprise for some might be that `requirements.txt` and `requirements-dev.txt` are not user-edited files in this repo -
-they are compiled using `pip-tools= <https://github.com/jazzband/pip-tools?tab=readme-ov-file#example-usage-for-pip-compile>`_ from
-dependencies listed `pyproject.toml`. When adding a new direct dependency, simply add it to the appropriate field inside the package config -
-there is no need to pin it, but you can specify a minimum requirement. Then use `pip-compile <https://medium.com/packagr/using-pip-compile-to-manage-dependencies-in-your-python-packages-8451b21a949e>`_
-to create a pinned set of dependencies, ensuring reproducibility.
-
-`requirements.txt` and `requirements-dev.txt` are still tracked under source control, despite being 'compiled'.
-
-To compile using `pip-tools`:
-
-  .. code::
-
-     pip install pip-tools # optional
-     pip-compile -v --no-emit-index-url --no-emit-trusted-host --output-file requirements.txt  pyproject.toml
-     pip-compile --extra dev -v --no-emit-index-url --no-emit-trusted-host --output-file requirements-dev.txt pyproject.toml
-
 
 General
 ^^^^^^^

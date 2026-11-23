@@ -7,7 +7,6 @@ from typing import Any, Literal
 
 import narwhals as nw
 from beartype import beartype
-from narwhals.dtypes import DType  # noqa: F401
 
 from tubular._stats import (
     _get_mean_calculation_expressions,
@@ -237,8 +236,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
 
         return json_dict
 
-    @beartype
-    def _check_str_like_columns(self, schema: nw.Schema) -> None:
+    # have removed beartype due to compatibility issue between nw.Schema/DType and beartype
+    def _check_str_like_columns(self, schema) -> None:  # noqa: ANN001
         """Check that transformer being called on only str-like columns.
 
         Parameters

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+import warnings
+from typing import Any
 
 import narwhals as nw
 import pandas as pd
@@ -11,13 +12,22 @@ from beartype import beartype
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
+    _filter_column_dict,
     _return_narwhals_or_native_dataframe,
     _sort_dict,
     _sort_nested_dict,
     block_from_json,
 )
 from tubular.base import BaseTransformer, register
-from tubular.types import DataFrame
+from tubular.functions.mapping import (
+    RETURN_DTYPES,
+    map_boolean_columns,
+    map_categorical_columns,
+    map_float_columns,
+    map_integer_columns,
+    map_string_columns,
+)
+from tubular.types import PANDAS_NULLABLE_TYPES, DataFrame
 
 
 @register
@@ -74,19 +84,6 @@ class BaseMappingTransformer(BaseTransformer):
     FITS = False
 
     jsonable = True
-
-    RETURN_DTYPES = Literal[
-        "String",
-        "Object",
-        "Categorical",
-        "Boolean",
-        "Int8",
-        "Int16",
-        "Int32",
-        "Int64",
-        "Float32",
-        "Float64",
-    ]
 
     @beartype
     def __init__(
@@ -145,7 +142,7 @@ class BaseMappingTransformer(BaseTransformer):
             provided_return_dtype_keys = set()
 
         for col in set(mappings.keys()).difference(provided_return_dtype_keys):
-            return_dtypes[col] = self._infer_return_type(mappings, col)
+            return_dtypes[col] = self._infer_return_type(col)
 
         self.return_dtypes = return_dtypes
 
@@ -188,9 +185,8 @@ class BaseMappingTransformer(BaseTransformer):
 
         return json_dict
 
-    @staticmethod
     def _infer_return_type(
-        mappings: dict[str, dict[str, str | float | int]],
+        self,
         col: str,
     ) -> str:
         """Infer return_dtypes from provided mappings.
@@ -203,13 +199,22 @@ class BaseMappingTransformer(BaseTransformer):
         Examples
         --------
         ```pycon
-        >>> BaseMappingTransformer._infer_return_type({"a": {"Y": 1, "N": 0}}, col="a")
+        >>> BaseMappingTransformer(mappings={"a": {"Y": 1, "N": 0}})._infer_return_type(col="a")
         'Int64'
 
         ```
 
         """
-        return str(pl.Series(mappings[col].values()).dtype)
+        dtype = str(pl.Series(self.mappings[col].values()).dtype)
+
+        if dtype == "Null":
+            dtype = "Float64"
+            warnings.warn(
+                f"{self.classname()}: Mappings with Null dtype have been provided, narwhals does not expose this dtype, so type will be assumed as Float64. Alternate types can be set using the return_dtypes argument.",
+                stacklevel=2,
+            )
+
+        return dtype
 
     def transform(
         self,
@@ -327,6 +332,11 @@ class BaseMappingTransformMixin(BaseTransformer):
         X : DataFrame
             Transformed input X with levels mapped according to mappings dict.
 
+        Raises
+        ------
+        TypeError:
+            If columns to be mapped in X have unsupported type.
+
         #  not currently including doctest for this, as is not intended to be used
         #  independently (should be inherited as a mixin)
 
@@ -343,72 +353,90 @@ class BaseMappingTransformMixin(BaseTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        mappable_conditions = {
-            col: nw.col(col).is_in(self.mappings[col]) for col in self.mappings
-        }
-
-        # if the column is categorical, narwhals struggles to infer a type
-        # during the when/then logic, so we need to tell polars to use string
-        # as a common type.
-        # types are then corrected before returning at the end
         schema = X.collect_schema()
-        mapping_exprs = {
-            col: nw.col(col).cast(nw.String)
-            if schema[col] in {nw.Categorical, nw.Enum}
-            else nw.col(col)
-            for col in self.mappings
-        }
 
-        mapping_exprs = {
-            col: nw.when(mappable_conditions[col])
-            .then(
-                # default here allows replace_strict to work, but the nulls are replaced
-                # in the otherwise section anyway
-                mapping_exprs[col].replace_strict(self.mappings[col], default=None)
+        if backend == "pandas":
+            bool_input = any(
+                isinstance(schema[col], nw.Boolean) for col in self.mappings
             )
-            .otherwise(mapping_exprs[col])
-            for col in self.mappings
-        }
+            bool_output = "Boolean" in self.return_dtypes.values()
+            if bool_input or bool_output:
+                X = X.to_native()
+                non_nullable_type_cols = [
+                    col
+                    for col in self.columns
+                    if not isinstance(X[col].dtype, (*PANDAS_NULLABLE_TYPES,))
+                ]
+                if non_nullable_type_cols:
+                    bad_types = {col: X[col].dtype for col in non_nullable_type_cols}
+                    msg = f"{self.classname()}: For pandas, casting to boolean from non-nullable dtypes is unsafe, please use df.convert_dtypes to convert types of bad cols {bad_types}."
+                    raise TypeError(msg)
+                X = nw.from_native(X)
 
-        # finally, handle mappings from null (imputations)
-        mapping_exprs = {
-            col: (mapping_exprs[col].fill_null(self.mappings_from_null[col]))
-            if self.mappings_from_null[col] is not None
-            else mapping_exprs[col]
-            for col in mapping_exprs
-        }
+        mapping_exprs = []
 
-        # handle casting for non-bool return types
-        # (bool has special handling at end)
-        mapping_exprs = {
-            col: mapping_exprs[col].cast(getattr(nw, self.return_dtypes[col]))
-            # pandas bool types need special handling
-            if not (self.return_dtypes[col] == "Boolean" and backend == "pandas")
-            else mapping_exprs[col]
-            for col in mapping_exprs
-        }
+        remaining_cols = self.columns
+
+        for column_type, mapping_function in zip(
+            [
+                [nw.Boolean],
+                [nw.Float64, nw.Float32],
+                [
+                    nw.Int8,
+                    nw.Int16,
+                    nw.Int32,
+                    nw.Int64,
+                    nw.UInt8,
+                    nw.UInt16,
+                    nw.UInt32,
+                    nw.UInt64,
+                ],
+                [nw.String],
+                [nw.Categorical],
+            ],
+            [
+                map_boolean_columns,
+                map_float_columns,
+                map_integer_columns,
+                map_string_columns,
+                map_categorical_columns,
+            ],
+            strict=True,
+        ):
+            selected_cols = [
+                col
+                for col in remaining_cols
+                if isinstance(schema[col], (*column_type,))
+            ]
+
+            selected_mapping_exprs = mapping_function(
+                cols=selected_cols,
+                mappings=_filter_column_dict(self.mappings, selected_cols),
+                mappings_from_null=_filter_column_dict(
+                    self.mappings_from_null, selected_cols
+                ),
+                return_dtypes=_filter_column_dict(self.return_dtypes, selected_cols),
+                # warnings are not needed, as class guards against bad types
+                verbose=False,
+            )
+
+            mapping_exprs = [*mapping_exprs, *selected_mapping_exprs]
+
+            remaining_cols = list(set(remaining_cols).difference(set(selected_cols)))
+
+        if len(remaining_cols) != 0:
+            bad_types = {col: schema[col] for col in remaining_cols}
+            msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {bad_types}"
+
+            raise (TypeError(msg))
 
         X = (
             X.with_columns(
-                **mapping_exprs,
+                *mapping_exprs,
             )
             if mapping_exprs
             else X
         )
-
-        # this last section is needed to ensure pandas bool columns
-        # are returned in sensible (non object) types
-        # maybe_convert_dtypes will not run on an expression,
-        # so do need a second with_columns call
-        if "Boolean" in self.return_dtypes.values() and backend == "pandas":
-            X = X.with_columns(
-                nw.maybe_convert_dtypes(X[col]).cast(
-                    getattr(nw, self.return_dtypes[col]),
-                )
-                if self.return_dtypes[col] == "Boolean"
-                else nw.col(col)
-                for col in self.mappings
-            )
 
         return _return_narwhals_or_native_dataframe(X, return_native)
 

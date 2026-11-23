@@ -15,15 +15,15 @@ on:
     - cron:  '30 7 * * 1' # 7:30 on monday morning
 
 jobs:
-  build:
+  test:
     runs-on: "ubuntu-22.04"
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        sklearn-version: ["1.7", "1.8"]
-        exclude:
-          - python-version: "3.10"
-            sklearn-version: "1.8"
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        resolution: ["highest"]
+        include:
+          - python-version: "3.11"
+            resolution: "lowest-direct"
 
     steps:
 
@@ -33,14 +33,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          
+
       - name: Install dependencies
         run: |
           python -m pip install uv
-          uv venv -p  ${{ matrix.python-version }} ${{ matrix.python-version }}
+          uv venv -p ${{ matrix.python-version }} ${{ matrix.python-version }}
           source ${{ matrix.python-version }}/bin/activate
-          uv pip install .[dev]
-          uv pip install "scikit-learn==${{ matrix.sklearn-version }}.*"
+          uv pip install . --resolution ${{ matrix.resolution }}
+          uv pip install --group test
 
       - name: Test with pytest
         if: always()
@@ -48,12 +48,29 @@ jobs:
           source ${{ matrix.python-version }}/bin/activate
           pytest . --cov=tubular/ --cov-report=html --cov-config=.coveragerc
 
-      - name: Upload coverage pytest html test results to github
-        if: always()
-        uses: actions/upload-artifact@v4
+
+  feature_table:
+    runs-on: "ubuntu-22.04"
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          name: coverage-html-pytest-results-${{ matrix.python-version }}-sklearn-${{ matrix.sklearn-version }}
-          path: htmlcov
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install uv
+          uv venv -p ${{ matrix.python-version }} ${{ matrix.python-version }}
+          source ${{ matrix.python-version }}/bin/activate
+          uv pip install .
+          uv pip install --group feature_table
 
       - name: Update feature table
         run: |
@@ -74,7 +91,7 @@ jobs:
     runs-on: "ubuntu-22.04"
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
         - uses: actions/checkout@v3
@@ -89,7 +106,7 @@ jobs:
             python -m pip install uv
             uv venv -p ${{ matrix.python-version }} $HOME/lints
             source $HOME/lints/bin/activate
-            uv pip install -r requirements-dev.txt
+            uv pip install . --group lint
           
         - name: Lint with ruff
           run: |
