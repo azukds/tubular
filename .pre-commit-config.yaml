@@ -32,6 +32,16 @@ repos:
         types_or: [python, pyi]
         require_serial: true
 
+      - id: auto-walrus
+        name: auto walrus
+        entry: uv run --locked --only-group lint auto-walrus
+        language: system
+
+      - id: codespell
+        name: codespell
+        entry: uv run --locked --only-group lint codespell
+        language: system
+
       - id: typos
         name: typos
         entry: uv run --locked --only-group lint typos
