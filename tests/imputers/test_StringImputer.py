@@ -199,10 +199,14 @@ class TestTransform(
         expected = df_nw.clone()
         expected = expected.with_columns(
             nw.new_series(name=column, values=expected_values, backend=library)
-        )
+        ).to_native()
+        if library == "pandas":
+            # transformer preserves the input column's storage dtype
+            # (object for an all-None column, str for a string column on pandas 3)
+            expected[column] = expected[column].astype(df[column].dtype)
 
         assert_frame_equal_dispatch(
-            expected.to_native(),
+            expected,
             df_transformed_nw.to_native(),
         )
 

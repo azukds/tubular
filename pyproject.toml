@@ -19,7 +19,7 @@ required-version = ">=0.9.5"
 name = "tubular"
 dynamic = ["version"]
 dependencies = [
-    "pandas>=2.3.0, <3.0.0",
+    "pandas>=2.3.0",
     "scikit-learn>=1.4",
     "narwhals >= 2.19.0",
     "polars >= 1.21.0",
