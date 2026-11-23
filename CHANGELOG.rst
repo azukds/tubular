@@ -27,13 +27,22 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-6.0.0 (unreleased)
+6.1.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- chore: tidied up github actions workflow 
+- feat: added github actions step to check that uv.lock is in sync with repo
+
+6.0.0 (20/11/2026)
 -------------------
 Changed
 ^^^^^^^
 - chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
 - feat: added min/max version testing in github actions
 - chore: removed cap on polars version
+- chore: tidied up github actions workflow 
+- feat: added github actions step to check that uv.lock is in sync with repo
 
 5.0.0 (19/11/2026)
 -------------------
