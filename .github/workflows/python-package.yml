@@ -71,13 +71,11 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv
-          source .venv/bin/activate
           uv pip install .
           uv pip install --group feature_table
 
       - name: Update feature table
         run: |
-          source .venv/bin/activate
           uv run utils/feature_table.py
 
       - name: Fail if update feature table produced changes
