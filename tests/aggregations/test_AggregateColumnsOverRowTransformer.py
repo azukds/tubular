@@ -173,11 +173,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
-        # Pandas reads a bool column with nulls as object, so
-        # only test c column for polars.
-        if library == "polars":
-            args["columns"].append("c")
+        args["columns"] = ["a", "b", "c"]
         args["aggregations"] = ["min", "max", "mean", "sum"]
 
         # Create a DataFrame with null values
@@ -188,6 +184,9 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "d": ["A", "B", "A", "B", "A"],
         }
         df_with_nulls = dataframe_init_dispatch(df_with_nulls_dict, library)
+        df_with_nulls = nw.to_native(
+            nw.maybe_convert_dtypes(nw.from_native(df_with_nulls))
+        )
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
@@ -202,30 +201,16 @@ class TestAggregateColumnsOverRowTransformerTransform(
             "b": [None, 3, None, 5, 9],
             "c": [None, True, None, False, False],
             "d": ["A", "B", "A", "B", "A"],
+            "a_b_c_min": [1.0, 1.0, 3.0, 0.0, 0.0],
+            "a_b_c_max": [1.0, 3.0, 3.0, 5.0, 9.0],
+            "a_b_c_mean": [1.0, 2.0, 3.0, 2.5, 17 / 3],
+            "a_b_c_sum": [1.0, 4.0, 3.0, 5.0, 17.0],
         }
-        if library == "pandas":
-            expected_data.update(
-                {
-                    "a_b_min": [1.0, 3.0, 3.0, 5.0, 8.0],
-                    "a_b_max": [1.0, 3.0, 3.0, 5.0, 9.0],
-                    "a_b_mean": [1.0, 3.0, 3.0, 5.0, 8.5],
-                    "a_b_sum": [1.0, 3.0, 3.0, 5.0, 17.0],
-                }
-            )
-        else:
-            expected_data.update(
-                {
-                    "a_b_c_min": [1.0, 1.0, 3.0, 0.0, 0.0],
-                    "a_b_c_max": [1.0, 3.0, 3.0, 5.0, 9.0],
-                    "a_b_c_mean": [1.0, 2.0, 3.0, 2.5, 17 / 3],
-                    "a_b_c_sum": [1.0, 4.0, 3.0, 5.0, 17.0],
-                }
-            )
         expected_df = dataframe_init_dispatch(expected_data, library)
 
         assert_frame_equal_dispatch(
             _collect_frame(transformed_df, lazy),
-            expected_df,
+            nw.to_native(nw.maybe_convert_dtypes(nw.from_native(expected_df))),
         )
 
 

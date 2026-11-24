@@ -273,11 +273,7 @@ class TestAggregateRowsOverColumnTransformerTransform(
     ):
         """Test transform method with null values in the DataFrame."""
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
-        args["columns"] = ["a", "b"]
-        # Pandas reads a bool column with nulls as object, so
-        # only test c column for polars.
-        if library == "polars":
-            args["columns"].append("c")
+        args["columns"] = ["a", "b", "c"]
         args["aggregations"] = ["min", "max", "mean", "median", "count", "sum"]
         args["key"] = "d"
 
@@ -289,6 +285,9 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "d": ["A", "B", "A", "B", "A"],
         }
         df_with_nulls = u.dataframe_init_dispatch(df_with_nulls_dict, library)
+        df_with_nulls = nw.to_native(
+            nw.maybe_convert_dtypes(nw.from_native(df_with_nulls))
+        )
 
         transformer = uninitialized_transformers[self.transformer_name](**args)
 
@@ -319,19 +318,15 @@ class TestAggregateRowsOverColumnTransformerTransform(
             "b_median": [9.0, 4.0, 9.0, 4.0, 9.0],
             "b_count": [1, 2, 1, 2, 1],
             "b_sum": [9.0, 8.0, 9.0, 8.0, 9.0],
+            "c_min": [False, True, False, True, False],
+            "c_max": [True, True, True, True, True],
+            "c_mean": [0.5, 1.0, 0.5, 1.0, 0.5],
+            "c_median": [0.5, 1.0, 0.5, 1.0, 0.5],
+            "c_count": [2, 1, 2, 1, 2],
+            "c_sum": [1.0, 1.0, 1.0, 1.0, 1.0],
         }
-        if library == "polars":
-            expected_data.update(
-                {
-                    "c_min": [False, True, False, True, False],
-                    "c_max": [True, True, True, True, True],
-                    "c_mean": [0.5, 1.0, 0.5, 1.0, 0.5],
-                    "c_median": [0.5, 1.0, 0.5, 1.0, 0.5],
-                    "c_count": [2, 1, 2, 1, 2],
-                    "c_sum": [1.0, 1.0, 1.0, 1.0, 1.0],
-                }
-            )
         expected_df = u.dataframe_init_dispatch(expected_data, library)
+        expected_df = nw.to_native(nw.maybe_convert_dtypes(nw.from_native(expected_df)))
 
         # Polars uses efficient types which differ from pandas here we do convert.
         # The transformer remains abstract, but tests can be specific
@@ -345,6 +340,24 @@ class TestAggregateRowsOverColumnTransformerTransform(
                     nw.col("c_sum").cast(nw.UInt32),
                 ],
             ).to_native()
+        # Pandas convert_dtypes can infer nullable ints for whole-number means/medians.
+        # Keep these as floats to match aggregation outputs.
+        else:
+            expected_df = (
+                nw.from_native(expected_df)
+                .with_columns(
+                    nw.col(col).cast(nw.Float64)
+                    for col in [
+                        "a_mean",
+                        "a_median",
+                        "b_mean",
+                        "b_median",
+                        "c_mean",
+                        "c_median",
+                    ]
+                )
+                .to_native()
+            )
 
         u.assert_frame_equal_dispatch(
             u._collect_frame(transformed_df, lazy),
