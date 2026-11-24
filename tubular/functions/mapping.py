@@ -4,6 +4,7 @@ import warnings
 from typing import Any, Literal
 
 import narwhals as nw
+import polars as pl
 from beartype import beartype
 
 from tubular._utils import _null_safe_string_cast
@@ -100,12 +101,13 @@ def _get_full_mapping_expr(
 
 
 @beartype
-def _get_partial_mapping_expr(
+def _get_partial_mapping_expr(  # noqa: PLR0917, PLR0913
     col: str,
     mappings: dict[str, dict[Any, Any]],
     mappings_from_null: dict[str, Any],
     pre_mapping_expr: nw.Expr | None = None,
     fix_nans: bool = False,
+    mapping_values_cast_type: RETURN_DTYPES | None = None,
 ) -> nw.Expr:
     """Get expression for column which may be partially mapped.
 
@@ -128,6 +130,9 @@ def _get_partial_mapping_expr(
     fix_nans:
         whether to convert nan->none during the mapping process
 
+    mapping_values_cast_type : RETURN_DTYPES, optional
+        If provided will cast `mappings` keys to this type.
+
     Returns
     -------
     list[nw.Expr]: expressions for transformation
@@ -136,7 +141,18 @@ def _get_partial_mapping_expr(
     if pre_mapping_expr is None:
         pre_mapping_expr = nw.col(col)
 
-    mappable_condition = nw.col(col).is_in(mappings[col])
+    # Polars 2 no longer implicitly casts to the shared supertype in
+    # is_in. To enable tubular to maintain the old behaviour, allow the
+    # option to explicitly cast the mapping values here.
+    if mapping_values_cast_type is not None:
+        mapping_vals = pl.Series(
+            name="mapping_vals",
+            values=list(mappings[col].keys()),
+            dtype=getattr(pl, mapping_values_cast_type),
+        ).to_list()
+    else:
+        mapping_vals = list(mappings[col].keys())
+    mappable_condition = nw.col(col).is_in(mapping_vals)
 
     if fix_nans:
         mappable_condition |= nw.col(col).is_null()
@@ -276,6 +292,7 @@ def map_float_columns(
             mappings=mappings,
             mappings_from_null=mappings_from_null,
             fix_nans=True,
+            mapping_values_cast_type="Float64",
         ).cast(getattr(nw, return_dtypes[col]))
         if (return_dtypes[col] in {*INT_TYPE_NAMES, "Categorical"})
         else _null_safe_string_cast(
@@ -285,6 +302,7 @@ def map_float_columns(
                 mappings=mappings,
                 mappings_from_null=mappings_from_null,
                 fix_nans=True,
+                mapping_values_cast_type="Float64",
             ),
         )
         if return_dtypes[col] == "String"
@@ -293,6 +311,7 @@ def map_float_columns(
             pre_mapping_expr=nw.col(col),
             mappings=mappings,
             mappings_from_null=mappings_from_null,
+            mapping_values_cast_type="Float64",
         ).cast(getattr(nw, return_dtypes[col]))
         if return_dtypes[col] in FLOAT_TYPE_NAMES
         # boolean case
