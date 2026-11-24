@@ -35,6 +35,7 @@ Changed
 - feat: added github actions step to check that uv.lock is in sync with repo
 - feat: turned off pandas<3 version cap
 - chore: removed  test-aide from the env
+- feat: allow bool columns in aggregation transformers
 
 6.0.0 (20/11/2026)
 -------------------
@@ -54,7 +55,6 @@ Changed
 -------------------
 Changed
 ^^^^^^^
-- feat: allow bool columns in aggregation transformers
 - chore: updated black on dependabot recommendation
 - bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
 
