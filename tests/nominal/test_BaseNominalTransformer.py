@@ -25,9 +25,9 @@ class GenericNominalTransformTests(GenericTransformTests):
     """
 
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_not_fitted_error_raised(self, initialized_transformers, library):
+    def test_not_fitted_error_raised(self, initialized_transformers, library, minimal_dataframe_lookup):
         if initialized_transformers[self.transformer_name].FITS:
-            df = d.create_df_1(library=library)
+            df = minimal_dataframe_lookup[self.transformer_name]
 
             transformer = initialized_transformers[self.transformer_name]
 
@@ -44,10 +44,11 @@ class GenericNominalTransformTests(GenericTransformTests):
         initialized_transformers,
         library,
         from_json,
+        minimal_dataframe_lookup,
     ):
         """Test that the original dataframe is not transformed when transform method used."""
 
-        df = d.create_df_1(library=library)
+        df = minimal_dataframe_lookup[self.transformer_name]
 
         transformer = initialized_transformers[self.transformer_name]
 
@@ -62,7 +63,7 @@ class GenericNominalTransformTests(GenericTransformTests):
 
         _ = transformer.transform(df)
 
-        assert_frame_equal_dispatch(df, d.create_df_1(library=library))
+        assert_frame_equal_dispatch(df, minimal_dataframe_lookup[self.transformer_name])
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
@@ -114,10 +115,11 @@ class GenericNominalTransformTests(GenericTransformTests):
         initialized_transformers,
         library,
         from_json,
+        minimal_dataframe_lookup,
     ):
         """Test that the original (pandas) dataframe index is not transformed when transform method used."""
 
-        df = d.create_df_1(library=library)
+        df = minimal_dataframe_lookup[self.transformer_name]
 
         x = initialized_transformers[self.transformer_name]
 
