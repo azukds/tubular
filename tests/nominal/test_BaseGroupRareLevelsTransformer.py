@@ -106,18 +106,6 @@ class BaseGroupRareLevelsTransformerInitTests(
                 columns="a", unseen_levels_to_rare=2
             )
 
-    # overload this one until weight mixin is converted to beartype
-    @pytest.mark.parametrize("weights_column", [0, ["a"], {"a": 10}])
-    def test_weight_arg_errors(self, weights_column, uninitialized_transformers):
-        """Test that appropriate errors are throw for bad weight arg."""
-
-        with pytest.raises(
-            BeartypeCallHintParamViolation,
-        ):
-            uninitialized_transformers[self.transformer_name](
-                columns="a", weights_column=weights_column
-            )
-
 
 class BaseGroupRareLevelsTransformerFitTests(
     GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests
