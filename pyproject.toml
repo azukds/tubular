@@ -12,18 +12,21 @@ packages = ["tubular"]
 [tool.setuptools_scm]
 # can be empty if no extra settings are needed, presence enables setuptools_scm
 
+[tool.uv]
+required-version = ">=0.9.5"
+
 [project]
 name = "tubular"
 dynamic = ["version"]
 dependencies = [
-    "pandas>=1.5.0, <3.0.0",
-    "scikit-learn>=1.2.0",
-    "narwhals >= 2.16.0",
-    "polars >= 1.21.0, <= 1.38.1",
+    "pandas>=2.3.0",
+    "scikit-learn>=1.4",
+    "narwhals >= 2.19.0",
+    "polars >= 1.21.0",
     "beartype >= 0.19.0",
     "typing-extensions>=4.5.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "Allianz UK Data Science Team", email="datasciencepackages@allianz.co.uk"}]
 description = "Python package implementing ML feature engineering and pre-processing for polars or pandas dataframes."
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -31,29 +34,42 @@ license = {file = "LICENSE"}
 keywords = ["polars", "pandas", "feature engineering", "pre-processing", "machine learning", "ML", "data science", "data transforms", "pipeline", "sklearn", "DS"]
 classifiers=[
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: BSD License",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "test-aide>=0.1.0",
+[dependency-groups]
+
+feature_table = [
+    "tabulate>=0.9.0",
+]
+
+test = [
     "pytest>=5.4.1, !=9.0.2",
     "pytest-mock>=3.5.1",
-    "pyarrow>=17.0.0",
     "pytest-cov<=2.10.1",
+    "pyarrow>=17.0.0",
+     {include-group = 'feature_table'},
+]
+
+lint = [
     "prek",
-    "ruff>=0.2.2",
+    "ruff==0.15.6",
     "auto-walrus==0.3.4",
-    "tabulate>=0.9.0",
     "codespell",
     "typos",
     "blacken-docs",
     "black >= 26.10.1",
     "pygments >= 2.20.0",
+]
+
+dev = [
+    {include-group = 'test'},
+    {include-group = 'lint'},
+    "pip",
     ]
 
 [project.urls]
@@ -67,7 +83,7 @@ skip = "_typos.toml"
 ignore-words-list = [
     "ser", # codespell:ignore
     "Ned", # codespell:ignore
- ]
+]
 
 [tool.ruff]
 # Same as Black.
@@ -85,7 +101,7 @@ select = [
     "ANN",
     "ARG",
     "ASYNC",
-    "B", # bugbear 
+    "B", # bugbear
     "C4",
     "COM",
     "D",
@@ -141,7 +157,7 @@ ignore = [
     "D203", # clashes with D211
     "D213", # clashes with D212
     "COM812", # conflicts with ruff formatter, which enforces this rule by default, produces a warning if used
-    ]
+]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -164,13 +180,13 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "D",
     "DOC",
     # below two complain about n arguments, with fixtures our tests
-    # often have many args and am less concerned about this than in 
+    # often have many args and am less concerned about this than in
     # main code
     "PLR0917",
     "PLR0913",
     "PLR0914",
     "PLR6301", # converting to e.g. staticmethod can interfere with pytest detecting tests
-    ]
+]
 "profiling/*"=["D", "DOC", "E501"]
 # too much to turn on D/DOC and E501 lints in one go,
 # will tackle individual modules at a time
@@ -193,7 +209,7 @@ branch = true
 include = ["tubular/*"]
 
 omit = [
-      "tests/*",
+    "tests/*",
 ]
 
 [tool.coverage.report]
