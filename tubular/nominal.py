@@ -641,7 +641,7 @@ class GroupRareCategoricalLevelsTransformer(BaseGroupRareLevelsTransformer):
         ┌────────────┬─────┐
         │ a          ┆ b   │
         │ ---        ┆ --- │
-        │ enum       ┆ str │
+        │ cat        ┆ str │
         ╞════════════╪═════╡
         │ x          ┆ w   │
         │ x          ┆ z   │

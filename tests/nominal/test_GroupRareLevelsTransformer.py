@@ -3,27 +3,18 @@ import re
 import narwhals as nw
 import polars as pl
 import pytest
-from beartype.roar import BeartypeCallHintParamViolation
-from test_BaseNominalTransformer import (
-    GenericNominalTransformTests,
-)
-from tests.nominal.test_BaseGroupRareLevelsTransformer import (
-    BaseGroupRareLevelsTransformerInitTests,
-    BaseGroupRareLevelsTransformerFitTests,
-    BaseGroupRareLevelsTransformerTransformTests,
-    create_group_rare_levels_test_df_with_invalid_weights,
-    create_group_rare_levels_test_df
-)
 
 import tests.test_data as d
 from tests.base_tests import (
-    ColumnStrListInitTests,
-    DummyWeightColumnMixinTests,
     EmptyColumnsFitTransformPassTests,
-    GenericFitTests,
     OtherBaseBehaviourTests,
-    WeightColumnFitMixinTests,
-    WeightColumnInitMixinTests,
+)
+from tests.nominal.test_BaseGroupRareLevelsTransformer import (
+    BaseGroupRareLevelsTransformerFitTests,
+    BaseGroupRareLevelsTransformerInitTests,
+    BaseGroupRareLevelsTransformerTransformTests,
+    create_group_rare_levels_test_df,
+    create_group_rare_levels_test_df_with_invalid_weights,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -35,12 +26,14 @@ from tests.utils import (
 )
 from tubular.nominal import GroupRareLevelsTransformer
 
+
 class TestInit(BaseGroupRareLevelsTransformerInitTests):
     """Tests for GroupRareLevelsTransformer.init()."""
 
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "GroupRareLevelsTransformer"
+
 
 class TestFit(BaseGroupRareLevelsTransformerFitTests):
     """Tests for GroupRareLevelsTransformer.fit()."""
@@ -56,7 +49,9 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
-        transformer = uninitialized_transformers[self.transformer_name](columns=[col], rare_level_name="bla")
+        transformer = uninitialized_transformers[self.transformer_name](
+            columns=[col], rare_level_name="bla"
+        )
 
         if _check_if_skip_test(transformer, df, lazy=lazy):
             return
@@ -94,7 +89,7 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
         assert actual == expected, (
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
-    
+
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_no_weight(self, library, lazy, uninitialized_transformers):
@@ -122,7 +117,7 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
         assert actual == expected, (
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
-    
+
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight(self, library, lazy, uninitialized_transformers):
@@ -150,6 +145,7 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
             f"non_rare_levels attribute not fit as expected, expected {expected} but got {actual}"
         )
 
+
 class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
     """Tests for GroupRareLevelsTransformer.transform()."""
 
@@ -168,13 +164,10 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
 
         df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 
-        # set categories for enum
-        categories = ["e", "c", "a", "rare"]
-
         return (
             nw.from_native(df)
             .with_columns(
-                nw.col("c").cast(nw.Enum(categories=categories)),
+                nw.col("c").cast(nw.Categorical),
             )
             .to_native()
         )

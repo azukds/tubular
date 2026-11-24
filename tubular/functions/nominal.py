@@ -134,7 +134,7 @@ def rare_encode_categorical_or_enum_columns(
         )
         grouped_expressions.append(
             grouped_expression.cast(
-                nw.Enum(non_rare_levels[col] + [rare_level_name]),
+                nw.Categorical,
             )
         )
     return grouped_expressions

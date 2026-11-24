@@ -1,28 +1,24 @@
+import narwhals as nw
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
-import tests.test_data as d
-from tubular.nominal import BaseGroupRareLevelsTransformer
-from tests.base_tests import (
-    ColumnStrListInitTests,
-    WeightColumnInitMixinTests,
-    DummyWeightColumnMixinTests,
-    EmptyColumnsFitTransformPassTests,
-    GenericFitTests,
-    OtherBaseBehaviourTests,
-    WeightColumnFitMixinTests,
-)
 from test_BaseNominalTransformer import (
     GenericNominalTransformTests,
 )
-import narwhals as nw
+
+from tests.base_tests import (
+    ColumnStrListInitTests,
+    DummyWeightColumnMixinTests,
+    GenericFitTests,
+    WeightColumnFitMixinTests,
+    WeightColumnInitMixinTests,
+)
 from tests.utils import (
     _check_if_skip_test,
-    _collect_frame,
     _convert_to_lazy,
     _handle_from_json,
-    assert_frame_equal_dispatch,
     dataframe_init_dispatch,
 )
+
 
 def create_group_rare_levels_test_df_with_invalid_weights(library="pandas"):
     """test df to use for fit tests of GroupRareLevelsTransformer"""
@@ -59,7 +55,10 @@ def create_group_rare_levels_test_df(library="pandas"):
 
     return df.to_native()
 
-class BaseGroupRareLevelsTransformerInitTests(ColumnStrListInitTests, WeightColumnInitMixinTests):
+
+class BaseGroupRareLevelsTransformerInitTests(
+    ColumnStrListInitTests, WeightColumnInitMixinTests
+):
     """Tests for GroupRareLevelsTransformer.init()."""
 
     def test_cut_off_percent_not_float_error(self, uninitialized_transformers):
@@ -67,55 +66,71 @@ class BaseGroupRareLevelsTransformerInitTests(ColumnStrListInitTests, WeightColu
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            uninitialized_transformers[self.transformer_name](columns="a", cut_off_percent="a")
+            uninitialized_transformers[self.transformer_name](
+                columns="a", cut_off_percent="a"
+            )
 
     def test_cut_off_percent_negative_error(self, uninitialized_transformers):
         """Test that an exception is raised if cut_off_percent is negative."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            uninitialized_transformers[self.transformer_name](columns="a", cut_off_percent=-1.0)
+            uninitialized_transformers[self.transformer_name](
+                columns="a", cut_off_percent=-1.0
+            )
 
     def test_cut_off_percent_gt_one_error(self, uninitialized_transformers):
         """Test that an exception is raised if cut_off_percent is greater than 1."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            uninitialized_transformers[self.transformer_name](columns="a", cut_off_percent=2.0)
+            uninitialized_transformers[self.transformer_name](
+                columns="a", cut_off_percent=2.0
+            )
 
     def test_record_rare_levels_not_bool_error(self, uninitialized_transformers):
         """Test that an exception is raised if record_rare_levels is not a bool."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            uninitialized_transformers[self.transformer_name](columns="a", record_rare_levels=2)
+            uninitialized_transformers[self.transformer_name](
+                columns="a", record_rare_levels=2
+            )
 
     def test_unseen_levels_to_rare_not_bool_error(self, uninitialized_transformers):
         """Test that an exception is raised if unseen_levels_to_rare is not a bool."""
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            uninitialized_transformers[self.transformer_name](columns="a", unseen_levels_to_rare=2)
+            uninitialized_transformers[self.transformer_name](
+                columns="a", unseen_levels_to_rare=2
+            )
 
     # overload this one until weight mixin is converted to beartype
     @pytest.mark.parametrize("weights_column", [0, ["a"], {"a": 10}])
-    def test_weight_arg_errors(
-        self,
-        weights_column,
-        uninitialized_transformers
-    ):
+    def test_weight_arg_errors(self, weights_column, uninitialized_transformers):
         """Test that appropriate errors are throw for bad weight arg."""
 
         with pytest.raises(
             BeartypeCallHintParamViolation,
         ):
-            uninitialized_transformers[self.transformer_name](columns="a", weights_column=weights_column)
+            uninitialized_transformers[self.transformer_name](
+                columns="a", weights_column=weights_column
+            )
 
-class BaseGroupRareLevelsTransformerFitTests(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests):
 
+class BaseGroupRareLevelsTransformerFitTests(
+    GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixinTests
+):
     @pytest.mark.parametrize("lazy", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_training_data_levels_stored(self, library, lazy, uninitialized_transformers, minimal_dataframe_lookup):
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_training_data_levels_stored(
+        self, lazy, uninitialized_transformers, minimal_dataframe_lookup
+    ):
         """Test that the levels present in the training data are stored if unseen_levels_to_rare is false"""
         df = minimal_dataframe_lookup[self.transformer_name]
 
@@ -142,15 +157,21 @@ class BaseGroupRareLevelsTransformerFitTests(GenericFitTests, WeightColumnFitMix
     # (compare this to an imputer, were finding None as the imputation value
     # is nonsensical)
 
-class BaseGroupRareLevelsTransformerTransformTests(GenericNominalTransformTests):
 
+class BaseGroupRareLevelsTransformerTransformTests(GenericNominalTransformTests):
     def test_non_mappable_rows_exception_raised(self):
         """override test in GenericNominalTransformTests as not relevant to this transformer."""
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_learnt_values_not_modified(self, library, from_json, lazy, uninitialized_transformers, minimal_dataframe_lookup):
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_learnt_values_not_modified(
+        self, from_json, lazy, uninitialized_transformers, minimal_dataframe_lookup
+    ):
         """Test that the non_rare_levels from fit are not changed in transform."""
         df = minimal_dataframe_lookup[self.transformer_name]
 

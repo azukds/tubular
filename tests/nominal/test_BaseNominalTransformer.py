@@ -7,7 +7,6 @@ import narwhals as nw
 import pytest
 from sklearn.exceptions import NotFittedError
 
-import tests.test_data as d
 from tests.base_tests import (
     GenericTransformTests,
 )
@@ -24,8 +23,14 @@ class GenericNominalTransformTests(GenericTransformTests):
     Note this deliberately avoids starting with "Tests" so that the tests are not run on import.
     """
 
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_not_fitted_error_raised(self, initialized_transformers, library, minimal_dataframe_lookup):
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_not_fitted_error_raised(
+        self, initialized_transformers, minimal_dataframe_lookup
+    ):
         if initialized_transformers[self.transformer_name].FITS:
             df = minimal_dataframe_lookup[self.transformer_name]
 
@@ -38,11 +43,14 @@ class GenericNominalTransformTests(GenericTransformTests):
                 initialized_transformers[self.transformer_name].transform(df)
 
     @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
     def test_original_df_not_updated(
         self,
         initialized_transformers,
-        library,
         from_json,
         minimal_dataframe_lookup,
     ):
@@ -106,14 +114,9 @@ class GenericNominalTransformTests(GenericTransformTests):
         )
 
     @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize(
-        "library",
-        ["pandas"],
-    )
     def test_pandas_index_not_updated(
         self,
         initialized_transformers,
-        library,
         from_json,
         minimal_dataframe_lookup,
     ):

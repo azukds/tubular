@@ -27,7 +27,17 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-6.1.0 (unreleased)
+7.0.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: split GroupRareLevelsTransformer into type specific GroupRareStringLevelsTransformer and GroupRareCategoricalLevelsTransformer, built on new BaseGroupRareLevelsTransformer with `get_transform_exprs` methods
+- chore: deprecated GroupRareLevelsTransformer
+- bugfix: updated GroupRareLevelsTransformer/GroupRareCategoricalLevelsTransformer to return
+categorical type columns, as returning Enums was broken for unseen levels, and these are hard 
+to handle in the new function based setup.
+
+6.1.0 (23/11/2026)
 -------------------
 Changed
 ^^^^^^^
@@ -53,8 +63,6 @@ Changed
 Changed
 ^^^^^^^
 - chore: updated black on dependabot recommendation
-- feat: split GroupRareLevelsTransformer into type specific GroupRareStringLevelsTransformer and GroupRareCategoricalLevelsTransformer, built on new BaseGroupRareLevelsTransformer with `get_transform_exprs` methods
-- chore: deprecated GroupRareLevelsTransformer
 - bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
 
 4.1.0 (23/09/2026)

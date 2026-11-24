@@ -3,20 +3,17 @@ import re
 import narwhals as nw
 import polars as pl
 import pytest
-from beartype.roar import BeartypeCallHintParamViolation
-from test_BaseNominalTransformer import (
-    GenericNominalTransformTests,
-)
 
 import tests.test_data as d
 from tests.base_tests import (
-    ColumnStrListInitTests,
-    DummyWeightColumnMixinTests,
     EmptyColumnsFitTransformPassTests,
-    GenericFitTests,
     OtherBaseBehaviourTests,
-    WeightColumnFitMixinTests,
-    WeightColumnInitMixinTests,
+)
+from tests.nominal.test_BaseGroupRareLevelsTransformer import (
+    BaseGroupRareLevelsTransformerFitTests,
+    BaseGroupRareLevelsTransformerInitTests,
+    BaseGroupRareLevelsTransformerTransformTests,
+    create_group_rare_levels_test_df,
 )
 from tests.utils import (
     _check_if_skip_test,
@@ -27,12 +24,6 @@ from tests.utils import (
     dataframe_init_dispatch,
 )
 from tubular.nominal import GroupRareStringLevelsTransformer
-from tests.nominal.test_BaseGroupRareLevelsTransformer import (
-    BaseGroupRareLevelsTransformerInitTests,
-    BaseGroupRareLevelsTransformerFitTests,
-    BaseGroupRareLevelsTransformerTransformTests, 
-    create_group_rare_levels_test_df_with_invalid_weights
-)
 
 
 def create_test_df_with_invalid_weights(library="pandas"):
@@ -55,6 +46,7 @@ class TestInit(BaseGroupRareLevelsTransformerInitTests):
     def setup_class(cls):
         cls.transformer_name = "GroupRareStringLevelsTransformer"
 
+
 class TestFit(BaseGroupRareLevelsTransformerFitTests):
     """Tests for GroupRareStringLevelsTransformer.fit()."""
 
@@ -69,12 +61,16 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
         """Test that checks error is raised if transform is run on non-strlike columns."""
         df = d.create_df_10(library=library)
 
-        transformer = uninitialized_transformers[self.transformer_name](columns=[col], rare_level_name="bla")
+        transformer = uninitialized_transformers[self.transformer_name](
+            columns=[col], rare_level_name="bla"
+        )
 
         if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
-        msg = f"{self.transformer_name}: transformer can only handle String type columns"
+        msg = (
+            f"{self.transformer_name}: transformer can only handle String type columns"
+        )
         with pytest.raises(
             TypeError,
             match=msg,
@@ -90,7 +86,7 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
         # first handle nulls
         df = nw.from_native(df)
         df = df.with_columns(
-            nw.col("b").fill_null("a"), 
+            nw.col("b").fill_null("a"),
         ).to_native()
 
         transformer = uninitialized_transformers[self.transformer_name](
@@ -112,7 +108,7 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
     @pytest.mark.parametrize("library", ["pandas", "polars"])
     def test_learnt_values_weight(self, library, lazy, uninitialized_transformers):
         """Test that the impute values learnt during fit, using a weight, are expected."""
-        df = create_group_rare_levels_test_df_with_invalid_weights(library=library)
+        df = create_test_df_with_invalid_weights(library=library)
 
         # first handle nulls
         df = nw.from_native(df)
@@ -142,24 +138,16 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
     def expected_df_1(self, library="pandas"):
         """Expected output for test_expected_output_no_weight."""
 
-        df_dict = {
-            "a": [1, 2, 3, 4, 5, 6, 7, 8, 9, None],
-            "b": ["a", "a", "a", "rare", "rare", "rare", "rare", "a", "a", "a"],
-            "c": ["a", "a", "c", "c", "e", "e", "rare", "rare", "rare", "e"],
-        }
+        df = d.create_df_5(library=library)
 
-        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
-
-        # set categories for enum
-        categories = ["e", "c", "a", "rare"]
-
-        return (
-            nw.from_native(df)
-            .with_columns(
-                nw.col("c").cast(nw.Enum(categories=categories)),
+        df = nw.from_native(df)
+        return df.with_columns(
+            nw.new_series(
+                name="b",
+                values=["a", "a", "a", "rare", "rare", "rare", "rare", "a", "a", "a"],
+                backend=library,
             )
-            .to_native()
-        )
+        ).to_native()
 
     def expected_df_2(self, library="pandas"):
         """Expected output for test_expected_output_weight."""
@@ -196,7 +184,7 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
         expected = self.expected_df_1(library=library)
 
         transformer = GroupRareStringLevelsTransformer(
-            columns=["b", "c"], cut_off_percent=0.2
+            columns=["b"], cut_off_percent=0.2
         )
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
@@ -256,7 +244,9 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
         df = nw.from_native(df)
         df = df.with_columns(nw.col("b").fill_null("a")).to_native()
 
-        transformer = GroupRareStringLevelsTransformer(columns=["b"], rare_level_name="bla")
+        transformer = GroupRareStringLevelsTransformer(
+            columns=["b"], rare_level_name="bla"
+        )
 
         if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
             return
@@ -267,7 +257,7 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
         transformer = _handle_from_json(transformer, from_json)
 
         msg = re.escape(
-            "GroupRareLevelsTransformer: transformer can only handle String/Categorical/Object type columns",
+            "GroupRareStringLevelsTransformer: transformer can only handle String type columns but got columns with types {'a': Float64}",
         )
         with pytest.raises(
             TypeError,
@@ -315,6 +305,7 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
         assert actual == expected, (
             f"unseen level handling not working as expected, expected {expected} but got {actual}"
         )
+
 
 class TestLazyYSupport:
     """Tests for lazy y support in GroupRareStringLevelsTransformer."""
