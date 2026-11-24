@@ -12,6 +12,9 @@ packages = ["tubular"]
 [tool.setuptools_scm]
 # can be empty if no extra settings are needed, presence enables setuptools_scm
 
+[tool.uv]
+required-version = ">=0.9.5"
+
 [project]
 name = "tubular"
 dynamic = ["version"]
@@ -98,7 +101,7 @@ select = [
     "ANN",
     "ARG",
     "ASYNC",
-    "B", # bugbear 
+    "B", # bugbear
     "C4",
     "COM",
     "D",
@@ -177,7 +180,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
     "D",
     "DOC",
     # below two complain about n arguments, with fixtures our tests
-    # often have many args and am less concerned about this than in 
+    # often have many args and am less concerned about this than in
     # main code
     "PLR0917",
     "PLR0913",
