@@ -70,7 +70,6 @@ jobs:
           enable-cache: true
       - name: Install dependencies
         run: |
-          python -m pip install uv
           uv venv
           source .venv/bin/activate
           uv pip install .
@@ -79,7 +78,7 @@ jobs:
       - name: Update feature table
         run: |
           source .venv/bin/activate
-          python utils/feature_table.py
+          uv run utils/feature_table.py
 
       - name: Fail if update feature table produced changes
         run: |
@@ -111,6 +110,10 @@ jobs:
 
         - name: Ruff
           run: uv run --no-sync ruff check --output-format github .
+
+        - name: Ruff format
+          if: ${{ !cancelled() }}
+          run: uv run --no-sync ruff format --check --diff .
 
         - name: codespell
           if: ${{ !cancelled() }}
