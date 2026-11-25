@@ -167,6 +167,10 @@ def minimal_attribute_dict():
             "method": ["sin"],
             "units": "month",
         },
+        "_BaseTypedMappingTransformer": {
+            "mappings": {"a": {1: 2, 3: 4}},
+            "return_dtypes": {"a": "Int8"},
+        },
         "_EnumImputer": {
             "columns": ["b"],
             "impute_value": "value",
@@ -180,6 +184,26 @@ def minimal_attribute_dict():
             "columns": ["b"],
         },
         "LowerCaseTransformer": {"columns": ["b"]},
+        "MapBooleanColumnsTransformer": {
+            "mappings": {"a": {True: 1, False: 0}},
+            "return_dtypes": {"a": "Int8"},
+        },
+        "MapCategoricalColumnsTransformer": {
+            "mappings": {"a": {"f": "x"}},
+            "return_dtypes": {"a": "String"},
+        },
+        "MapFloatColumnsTransformer": {
+            "mappings": {"a": {34.48: 1.0}},
+            "return_dtypes": {"a": "Float64"},
+        },
+        "MapIntegerColumnsTransformer": {
+            "mappings": {"a": {1: 2, 3: 4}},
+            "return_dtypes": {"a": "Int8"},
+        },
+        "MapStringColumnsTransformer": {
+            "mappings": {"b": {"f": "x"}},
+            "return_dtypes": {"b": "String"},
+        },
         "MappingTransformer": {
             "mappings": {"a": {1: 2, 3: 4}},
             # this arg is dependent on inputs, so
@@ -332,6 +356,9 @@ def minimal_dataframe_lookup(request) -> dict[str, pd.DataFrame]:
     min_df_dict["StringImputer"] = object_df
     min_df_dict["CategoricalImputer"] = categorical_df
     min_df_dict["BooleanImputer"] = bool_df
+    min_df_dict["MapBooleanColumnsTransformer"] = bool_df
+    min_df_dict["MapCategoricalColumnsTransformer"] = categorical_df
+    min_df_dict["MapFloatColumnsTransformer"] = num_df
 
     pyarrow_transformers = ["ExtractStringComponentsTransformer"]
 
