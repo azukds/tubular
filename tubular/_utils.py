@@ -1,5 +1,3 @@
-import math
-import numbers
 from contextlib import suppress
 from functools import wraps
 from importlib.metadata import version
@@ -277,12 +275,11 @@ def _is_null(value: Any) -> bool:  # noqa: ANN401
 
     Returns
     -------
-        bool: True if value is None/NaN
+        bool
+            True if value is None/NaN.
 
     """
-    return value is None or (
-        math.isnan(value) if isinstance(value, numbers.Real) else False
-    )
+    return value is None or (pd.isna(value))
 
 
 def _sort_dict(dictionary: dict) -> dict:
