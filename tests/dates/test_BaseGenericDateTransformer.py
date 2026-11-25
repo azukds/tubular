@@ -4,7 +4,7 @@ import datetime
 import narwhals as nw
 import numpy as np
 import pytest
-from dateutil.tz import gettz
+from dateutil.tz import tzoffset
 
 from tests.base_tests import (
     ColumnStrListInitTests,
@@ -22,6 +22,11 @@ from tests.utils import (
     dataframe_init_dispatch,
 )
 from tubular.dates import TIME_UNITS
+
+INVALID_TIMEZONES = [
+    tzoffset(name="invalid-timezone", offset=3600),
+    datetime.timezone(offset=datetime.timedelta(hours=2), name="invalid-timezone"),
+]
 
 
 class GenericDatesMixinTransformTests:
@@ -155,14 +160,8 @@ class GenericDatesMixinTransformTests:
         [True, False],
     )
     @pytest.mark.parametrize("from_json", [True, False])
-    @pytest.mark.parametrize("library", ["pandas"])
-    @pytest.mark.parametrize(
-        "bad_timezone",
-        [
-            "Factory",
-            "localtime",
-        ],
-    )
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("bad_timezone", INVALID_TIMEZONES)
     def test_bad_timezones_error(
         self,
         bad_timezone,
@@ -189,12 +188,12 @@ class GenericDatesMixinTransformTests:
 
         df_dict = {
             "a": [
-                datetime.datetime(1993, 9, 27, tzinfo=gettz(bad_timezone)),
-                datetime.datetime(2000, 3, 19, tzinfo=gettz(bad_timezone)),
+                datetime.datetime(1993, 9, 27, tzinfo=bad_timezone),
+                datetime.datetime(2000, 3, 19, tzinfo=bad_timezone),
             ],
             "b": [
-                datetime.datetime(1993, 9, 27, tzinfo=gettz("UTC")),
-                datetime.datetime(2000, 3, 19, tzinfo=gettz("UTC")),
+                datetime.datetime(1993, 9, 27, tzinfo=datetime.timezone.utc),
+                datetime.datetime(2000, 3, 19, tzinfo=datetime.timezone.utc),
             ],
         }
 

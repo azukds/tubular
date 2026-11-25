@@ -5,7 +5,6 @@ import pandas as pd
 import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
-from dateutil.tz import gettz
 
 import tests.test_data as d
 from tests.base_tests import (
@@ -16,6 +15,7 @@ from tests.base_tests import (
     OtherBaseBehaviourTests,
 )
 from tests.dates.test_BaseGenericDateTransformer import (
+    INVALID_TIMEZONES,
     GenericDatesMixinTransformTests,
     create_date_diff_different_dtypes,
 )
@@ -517,13 +517,7 @@ class TestTransform(
         assert msg in str(exc_info.value)
 
     @pytest.mark.parametrize("library", ["pandas"])
-    @pytest.mark.parametrize(
-        "bad_timezone",
-        [
-            "Factory",
-            "localtime",
-        ],
-    )
+    @pytest.mark.parametrize("bad_timezone", INVALID_TIMEZONES)
     @pytest.mark.parametrize("from_json", [True, False])
     def test_bad_timezones_error(
         self,
@@ -552,16 +546,16 @@ class TestTransform(
 
         df_dict = {
             "a": [
-                datetime.datetime(1993, 9, 27, tzinfo=gettz(bad_timezone)),
-                datetime.datetime(2000, 3, 19, tzinfo=gettz(bad_timezone)),
+                datetime.datetime(1993, 9, 27, tzinfo=bad_timezone),
+                datetime.datetime(2000, 3, 19, tzinfo=bad_timezone),
             ],
             "b": [
-                datetime.datetime(1993, 9, 27, tzinfo=gettz("UTC")),
-                datetime.datetime(2000, 3, 19, tzinfo=gettz("UTC")),
+                datetime.datetime(1993, 9, 27, tzinfo=datetime.timezone.utc),
+                datetime.datetime(2000, 3, 19, tzinfo=datetime.timezone.utc),
             ],
             "c": [
-                datetime.datetime(1993, 9, 27, tzinfo=gettz("UTC")),
-                datetime.datetime(2000, 3, 19, tzinfo=gettz("UTC")),
+                datetime.datetime(1993, 9, 27, tzinfo=datetime.timezone.utc),
+                datetime.datetime(2000, 3, 19, tzinfo=datetime.timezone.utc),
             ],
         }
 
