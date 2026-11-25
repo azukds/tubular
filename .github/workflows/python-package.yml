@@ -50,8 +50,59 @@ jobs:
           uv pip install . --resolution ${{ matrix.resolution }}
           uv pip install --group test
       - name: Test with pytest
-        run: uv run --no-sync pytest . --cov=tubular/ --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc
+        run: uv run --no-sync pytest . --ignore=tests/benchmarks --cov=tubular/ --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc
 
+
+  benchmark:
+    # Gates PRs on speed: runs the PR's benchmarks against the base branch's
+    # code and then the PR's code, on the same runner in the same job, and
+    # fails if any benchmark's median slows down by more than the threshold.
+    if: github.event_name == 'pull_request'
+    runs-on: "ubuntu-22.04"
+    timeout-minutes: 20
+    env:
+      BENCHMARK_THRESHOLD: "median:30%"
+      VENV_PYTHON: ${{ github.workspace }}/.venv/bin/python
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          version-file: pyproject.toml
+          python-version: "3.11"
+          enable-cache: true
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install .
+          uv pip install --group benchmark
+
+      - name: Benchmark base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # checkout main
+          git worktree add ../base "$BASE_SHA"
+          # copy latest benchmark tests over
+          cp -r tests/benchmarks ../base/tests/
+          cd ../base
+          # print versions for log
+          PYTHONPATH="$PWD" "$VENV_PYTHON" -c "import tubular; print(tubular.__file__)"
+          # run benchmarks on main and store
+          PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
+            --benchmark-storage=file://$RUNNER_TEMP/bench --benchmark-save=base \
+            -p no:cacheprovider
+
+      - name: Benchmark PR and compare to base
+        run: |
+          # run benchmarks on new branch against main
+          PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
+            --benchmark-storage=file://$RUNNER_TEMP/bench \
+            --benchmark-compare=0001 \
+            --benchmark-compare-fail="$BENCHMARK_THRESHOLD"
 
   feature_table:
     runs-on: "ubuntu-22.04"

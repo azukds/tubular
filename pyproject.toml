@@ -55,6 +55,12 @@ test = [
      {include-group = 'feature_table'},
 ]
 
+benchmark = [
+    "pytest>=5.4.1, !=9.0.2",
+    "pytest-benchmark>=5.0.0",
+    "pyarrow>=17.0.0",
+]
+
 lint = [
     "prek",
     "ruff==0.15.6",
