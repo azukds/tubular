@@ -27,7 +27,13 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-6.1.0 (unreleased)
+6.2.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: added `extractable_exprs` attr to track progress with adding `get_transform_exprs` methods.
+
+6.1.0 (23/11/2026)
 -------------------
 Changed
 ^^^^^^^
