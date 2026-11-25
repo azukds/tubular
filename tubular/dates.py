@@ -515,6 +515,10 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -548,6 +552,8 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -727,6 +733,10 @@ class ToDatetimeTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -753,6 +763,8 @@ class ToDatetimeTransformer(BaseTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -932,6 +944,10 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -955,6 +971,8 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -1160,6 +1178,10 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -1185,6 +1207,8 @@ class DatetimeInfoExtractor(BaseDatetimeTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     INCLUDE_OPTIONS = INCLUDE_OPTIONS
     RANGE_TO_MAP = RANGE_TO_MAP
@@ -1462,6 +1486,10 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     FITS: bool
         Indicates whether transform requires fit to be run first
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -1493,6 +1521,8 @@ class DatetimeComponentExtractor(BaseDatetimeTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -1710,6 +1740,10 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Example:
     -------
     ```pycon
@@ -1731,6 +1765,8 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(

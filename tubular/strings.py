@@ -51,6 +51,10 @@ class LowerCaseTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -85,6 +89,8 @@ class LowerCaseTransformer(BaseTransformer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -191,6 +197,10 @@ class ExtractStringComponentsTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -227,6 +237,8 @@ class ExtractStringComponentsTransformer(BaseTransformer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -415,6 +427,10 @@ class RemoveCharactersTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -448,6 +464,8 @@ class RemoveCharactersTransformer(BaseTransformer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -603,6 +621,10 @@ class StringContainsTransformer(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -641,6 +663,8 @@ class StringContainsTransformer(BaseTransformer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(

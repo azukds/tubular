@@ -100,6 +100,10 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -122,6 +126,8 @@ class GroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
     jsonable = True
 
     FITS = True
+
+    extractable_exprs = False
 
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
@@ -586,6 +592,10 @@ class MeanResponseTransformer(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -622,6 +632,8 @@ class MeanResponseTransformer(
     lazyframe_compatible = True
 
     FITS = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(  # noqa: PLR0917, PLR0913
@@ -1447,6 +1459,10 @@ class OneHotEncodingTransformer(
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -1483,6 +1499,8 @@ class OneHotEncodingTransformer(
     FITS = True
 
     MAX_LEVELS = 100
+
+    extractable_exprs = True
 
     @beartype
     def __init__(

@@ -278,6 +278,10 @@ class NumberImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     """
 
     polars_compatible = True
@@ -287,6 +291,8 @@ class NumberImputer(BaseImputer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -411,6 +417,10 @@ class StringImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     """
 
     polars_compatible = True
@@ -420,6 +430,8 @@ class StringImputer(BaseImputer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -545,6 +557,10 @@ class BooleanImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     """
 
     polars_compatible = True
@@ -554,6 +570,8 @@ class BooleanImputer(BaseImputer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -696,6 +714,10 @@ class CategoricalImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     """
 
     polars_compatible = True
@@ -705,6 +727,8 @@ class CategoricalImputer(BaseImputer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -847,6 +871,10 @@ class _EnumImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     """
 
     polars_compatible = True
@@ -856,6 +884,8 @@ class _EnumImputer(BaseImputer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = False
 
     @beartype
     def __init__(
@@ -1010,6 +1040,10 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -1043,6 +1077,8 @@ class MedianImputer(BaseImputer, WeightColumnMixin):
     jsonable = True
 
     FITS = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -1197,6 +1233,10 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -1230,6 +1270,8 @@ class MeanImputer(WeightColumnMixin, BaseImputer):
     jsonable = True
 
     FITS = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -1371,6 +1413,10 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -1404,6 +1450,8 @@ class ModeImputer(BaseImputer, WeightColumnMixin):
     jsonable = True
 
     FITS = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -1559,6 +1607,10 @@ class NullIndicator(BaseTransformer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -1587,6 +1639,8 @@ class NullIndicator(BaseTransformer):
     FITS = False
 
     jsonable = True
+
+    extractable_exprs = True
 
     @beartype
     def __init__(
@@ -1705,6 +1759,10 @@ class ArbitraryImputer(BaseImputer):
     lazyframe_compatible: bool
         class attribute, indicates whether transformer works with lazyframes
 
+    extractable_exprs: bool
+        class attribute, indicates whether expressions for transformation can be
+        extracted form fitted transformer using `get_transform_exprs` method
+
     Examples
     --------
     ```pycon
@@ -1731,6 +1789,8 @@ class ArbitraryImputer(BaseImputer):
     jsonable = True
 
     FITS = False
+
+    extractable_exprs = False
 
     @beartype
     def __init__(
