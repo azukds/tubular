@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - feat: added `extractable_exprs` attr to track progress with adding `get_transform_exprs` methods.
+- chore: deprecated OneDKmeansTransformer
 
 6.1.0 (23/11/2026)
 -------------------

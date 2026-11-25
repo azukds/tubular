@@ -215,6 +215,6 @@ pytest
 
 ## Contribute
 
-`tubular` is under active development, we're super excited if you're interested in contributing! 
+`tubular` is under active development, we're super excited if you're interested in contributing!
 
 See the [CONTRIBUTING](https://github.com/azukds/tubular/blob/main/CONTRIBUTING.rst) file for the full details of our working practices.
