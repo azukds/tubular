@@ -233,7 +233,8 @@ cd tubular
 Next install `tubular` and development dependencies;
 
 ```shell
-pip install . -r requirements-dev.txt
+uv sync --group dev
+source .venv/bin/activate
 ```
 
 Finally run the test suite with `pytest`;
@@ -244,6 +245,6 @@ pytest
 
 ## Contribute
 
-`tubular` is under active development, we're super excited if you're interested in contributing! 
+`tubular` is under active development, we're super excited if you're interested in contributing!
 
 See the [CONTRIBUTING](https://github.com/azukds/tubular/blob/main/CONTRIBUTING.rst) file for the full details of our working practices.

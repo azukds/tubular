@@ -39,24 +39,23 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
     Attributes
     ----------
-    columns : List[str]
-        List of columns to be operated on
-
+    columns : list of str
+        List of columns to be operated on.
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+        indicates if transformer was reconstructed from json, which
+        limits it's supported functionality to .transform
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
     FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
+        Class attribute, indicates whether transform requires fit to be
+        run first.
     jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
     lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     Examples
     --------
@@ -83,11 +82,11 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 
         Parameters
         ----------
-        columns : List[str]
+        columns : list of str
             List of columns to be operated on.
-
         **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+            Arbitrary keyword arguments passed onto BaseTransformer.init
+            method.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -102,15 +101,14 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         Parameters
         ----------
         X : DataFrame
-            A dataframe containing the required columns
-
-        y : Series | None
+            A dataframe containing the required columns.
+        y : Series, optional
             Required for pipeline.
 
         Returns
         -------
-            BaseNumericTransformer:
-                fitted class instance.
+        BaseNumericTransformer
+            Fitted class instance.
 
         Examples
         --------
@@ -149,15 +147,14 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
         ----------
         X : DataFrame
             Data to transform.
-
-        return_native_override: Optional[bool]
-            Option to override return_native attr in transformer, useful when calling parent
-            methods
+        return_native_override: bool, optional
+            Option to override return_native attr in transformer, useful
+            when calling parent methods.
 
         Returns
         -------
         X : DataFrame
-            Validated data
+            Validated data.
 
         Examples
         --------
@@ -198,26 +195,27 @@ class BaseNumericTransformer(BaseTransformer, CheckNumericMixin):
 class OneDKmeansTransformer(BaseNumericTransformer):
     """Generates a new column based on kmeans algorithm.
 
-    Transformer runs the kmeans algorithm based on given number of clusters and then identifies the bins' cuts based on the results.
+    Transformer runs the kmeans algorithm based on given number of
+    clusters and then identifies the bins' cuts based on the results.
     Finally it passes them into the a cut function.
 
     Attributes
     ----------
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+        Indicates if transformer was reconstructed from json, which
+        limits it's supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
     FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
+        Class attribute, indicates whether transform requires fit to be
+        run first.
     jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
     lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     extractable_exprs: bool
         class attribute, indicates whether expressions for transformation can be
@@ -255,24 +253,35 @@ class OneDKmeansTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        dict[str, dict[str, Any]]:
-            JSON representation of the transformer, including init parameters.
+        dict of {str: dict of {str: Any}}
+            JSON representation of the transformer, including init
+            parameters.
 
         Examples
         --------
         >>> import polars as pl
         >>> x = OneDKmeansTransformer(
-        ... columns='a',
-        ... n_clusters=2,
-        ... new_column_name="new",
-        ... kmeans_kwargs={"random_state": 42},
-        ...    )
-        >>> test_df=pl.DataFrame({'a': [1,2,3,4],  'b': [5,6,7,8]})
+        ...     columns='a',
+        ...     n_clusters=2,
+        ...     new_column_name="new",
+        ...     kmeans_kwargs={"random_state": 42},
+        ... )
+        >>> test_df=pl.DataFrame({'a': [1,2,3,4], 'b': [5,6,7,8]})
         >>> x.fit(test_df)
         OneDKmeansTransformer(columns=['a'], kmeans_kwargs={'random_state': 42},
                               n_clusters=2, new_column_name='new')
-        >>> x.to_json()
-        {'tubular_version': ..., 'classname': 'OneDKmeansTransformer', 'init': {'columns': ['a'], 'copy': False, 'verbose': False, 'return_native': True, 'new_column_name': 'new', 'n_init': 'auto', 'n_clusters': 2, 'kmeans_kwargs': {'random_state': 42}}, 'fit': {'is_fitted_': True, 'bins': [3, 4]}}
+        >>> x.to_json()  # doctest: +NORMALIZE_WHITESPACE
+        {'tubular_version': ...,
+         'classname': 'OneDKmeansTransformer',
+         'init': {'columns': ['a'],
+         'copy': False,
+         'verbose': False,
+         'return_native': True,
+         'new_column_name': 'new',
+         'n_init': 'auto',
+         'n_clusters': 2,
+         'kmeans_kwargs': {'random_state': 42}},
+         'fit': {'is_fitted_': True, 'bins': [3, 4]}}
 
         """
         self.check_is_fitted(["bins"])
@@ -304,28 +313,32 @@ class OneDKmeansTransformer(BaseNumericTransformer):
 
         Parameters
         ----------
-        columns : str or list[str]
+        columns : str or ListOfOneStr
             Name of the column to discretise.
-
         new_column_name : str
             Name given to the new discrete column.
-
-        n_clusters : int, default = 8
-            The number of clusters to form as well as the number of centroids to generate.
-
+        n_clusters : int, default=8
+            The number of clusters to form as well as the number of
+            centroids to generate.
         n_init: "auto" or int, default="auto"
-            Number of times the k-means algorithm is run with different centroid seeds.
-            The final results is the best output of n_init consecutive runs in terms of inertia.
-            Several runs are recommended for sparse high-dimensional problems (see `Clustering sparse data with k-means <https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#kmeans-sparse-high-dim>`__).
+            Number of times the k-means algorithm is run with different
+            centroid seeds.
+            The final results is the best output of n_init consecutive
+            runs in terms of inertia.
+            Several runs are recommended for sparse high-dimensional
+            problems (see `Clustering sparse data with k-means <https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#kmeans-sparse-high-dim>`__).
 
-            When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable;
-            1 if using init='k-means++' or init is an array-like.(Init is an arg in kmeans_kwargs. If init is not set then it defaults to k-means++ so n_init defaults to 1)
-
-        kmeans_kwargs : dict, default = {}
-            A dictionary of keyword arguments to be passed to the sklearn KMeans method when it is called in fit.
-
+            When n_init='auto', the number of runs depends on the value
+            of init: 10 if using init='random' or init is a callable;
+            1 if using init='k-means++' or init is an array-like. (Init
+            is an arg in kmeans_kwargs. If init is not set then it
+            defaults to k-means++ so n_init defaults to 1).
+        kmeans_kwargs : dict, default={}
+            A dictionary of keyword arguments to be passed to the
+            sklearn KMeans method when it is called in fit.
         **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init().
+            Arbitrary keyword arguments passed onto
+            BaseTransformer.init().
 
         """
         if kmeans_kwargs is None:
@@ -348,8 +361,8 @@ class OneDKmeansTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        list[str]:
-            list of features modified/created by the transformer
+        list of str
+            List of features modified/created by the transformer.
 
         Examples
         --------
@@ -380,19 +393,18 @@ class OneDKmeansTransformer(BaseNumericTransformer):
         ----------
         X : pd/pl.DataFrame
             Dataframe with columns to learn scaling values from.
-
-        y : None
+        y : Series, optional
             Required for pipeline.
 
         Returns
         -------
-            OneDKmeansTransformer:
-                Fitted class instance.
+        OneDKmeansTransformer
+            Fitted class instance.
 
         Raises
         ------
-        ValueError:
-            if columns in X contain missing values.
+        ValueError
+            If columns in X contain missing values.
 
         Examples
         --------
@@ -460,7 +472,7 @@ class OneDKmeansTransformer(BaseNumericTransformer):
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:
-        """Generate from input pd/pl.DataFrame (X) bins based on Kmeans results and add this column or columns in X.
+        """Generate bins based on Kmeans results and add this column to X.
 
         Parameters
         ----------
@@ -527,29 +539,29 @@ class OneDKmeansTransformer(BaseNumericTransformer):
 class DifferenceTransformer(BaseNumericTransformer):
     """Transformer that performs subtraction operation between two columns.
 
-    This transformer allows performing subtraction between two columns in a DataFrame
-    and stores the result in a new column.
+    This transformer allows performing subtraction between two columns
+    in a DataFrame and stores the result in a new column.
 
     Attributes
     ----------
     columns : ListOfTwoStrs
-        List of exactly two column names to operate on. The second column is subtracted from the first.
-
+        List of exactly two column names to operate on. The second
+        column is subtracted from the first.
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+        Indicates if transformer was reconstructed from json, which
+        limits it's supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
     FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
+        Class attribute, indicates whether transform requires fit to be
+        run first.
     jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
     lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     extractable_exprs: bool
         class attribute, indicates whether expressions for transformation can be
@@ -587,11 +599,12 @@ class DifferenceTransformer(BaseNumericTransformer):
         Parameters
         ----------
         columns : ListOfTwoStrs
-            List of exactly two column names to operate on. The second column is subtracted from the first.
+            List of exactly two column names to operate on. The second
+            column is subtracted from the first.
         verbose : bool, default=False
             Whether to print verbose output during transformation.
-        kwargs: bool
-            arguments for base class, e.g. verbose.
+        kwargs
+            Bool arguments for base class, e.g. verbose.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -605,7 +618,8 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        list[nw.Expr]: transform expressions for class
+        list of nw.Expr
+            Transform expressions for class.
 
         """
         return get_difference_of_two_columns(columns=self.columns)
@@ -615,7 +629,7 @@ class DifferenceTransformer(BaseNumericTransformer):
         self,
         X: DataFrame,
     ) -> DataFrame:
-        """Transform the DataFrame by applying the subtraction operation between two columns.
+        """Add new column with result of the subtraction operation between two columns.
 
         Parameters
         ----------
@@ -625,8 +639,8 @@ class DifferenceTransformer(BaseNumericTransformer):
         Returns
         -------
         DataFrame
-            Transformed DataFrame with the new column containing the subtraction results.
-
+            Transformed DataFrame with the new column containing the
+            subtraction results.
 
         Examples
         --------
@@ -664,8 +678,9 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        list[str]
-            List containing the name of the new column created by the transformation.
+        list of str
+            List containing the name of the new column created by the
+            transformation.
 
         """
         return [f"{self.columns[0]}_minus_{self.columns[1]}"]
@@ -675,32 +690,32 @@ class DifferenceTransformer(BaseNumericTransformer):
 class RatioTransformer(BaseNumericTransformer):
     """Transformer that performs division operation between two columns.
 
-    This transformer allows performing division between two columns in a DataFrame
-    and stores the result in a new column.
+    This transformer allows performing division between two columns in
+    a DataFrame and stores the result in a new column.
 
     Attributes
     ----------
     columns : ListOfTwoStrs
-        List of exactly two column names to operate on. The first column is the numerator,
-        and the second column is the denominator.
+        List of exactly two column names to operate on. The first column
+        is the numerator, and the second column is the denominator.
     return_dtype : str
-        The dtype of the resulting column, either 'Float32' or 'Float64'.
-
+        The dtype of the resulting column, either 'Float32' or
+        'Float64'.
     built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+        Indicates if transformer was reconstructed from json, which
+        limits it's supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
     FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
+        Class attribute, indicates whether transform requires fit to be
+        run first.
     jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
     lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     extractable_exprs: bool
         class attribute, indicates whether expressions for transformation can be
@@ -735,15 +750,25 @@ class RatioTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        dict[str, dict[str, Any]]:
-            JSON representation of the transformer, including init parameters.
+        dict of {str: dict of {str: Any}}
+            JSON representation of the transformer, including init
+            parameters.
 
         Examples
         --------
         ```pycon
-        >>> ratio_transformer = RatioTransformer(columns=["a", "b"], return_dtype="Float32")
-        >>> ratio_transformer.to_json()
-        {'tubular_version': ..., 'classname': 'RatioTransformer', 'init': {'columns': ['a', 'b'], 'copy': False, 'verbose': False, 'return_native': True, 'return_dtype': 'Float32'}, 'fit': {'is_fitted_': True}}
+        >>> ratio_transformer = RatioTransformer(
+        ...     columns=["a", "b"], return_dtype="Float32"
+        ... )
+        >>> ratio_transformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
+        {'tubular_version': ...,
+         'classname': 'RatioTransformer',
+         'init': {'columns': ['a', 'b'],
+         'copy': False,
+         'verbose': False,
+         'return_native': True,
+         'return_dtype': 'Float32'},
+         'fit': {'is_fitted_': True}}
 
         ```
 
@@ -765,12 +790,14 @@ class RatioTransformer(BaseNumericTransformer):
         Parameters
         ----------
         columns : ListOfTwoStrs
-            List of exactly two column names to operate on. The first column is the numerator,
-            and the second column is the denominator.
-        return_dtype : str, default='Float32'
-            The dtype of the resulting column, either 'Float32' or 'Float64'.
+            List of exactly two column names to operate on. The first
+            column is the numerator, and the second column is the
+            denominator.
+        return_dtype : str, default="Float32"
+            The dtype of the resulting column, either 'Float32' or
+            'Float64'.
         kwargs: bool
-            arguments for base class, e.g. verbose
+            Bool arguments for base class, e.g. verbose.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -783,7 +810,8 @@ class RatioTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        list[nw.Expr]: transform expressions for class
+        list of nw.Expr
+            Transform expressions for class.
 
         """
         return get_ratio_of_two_columns(
@@ -796,7 +824,7 @@ class RatioTransformer(BaseNumericTransformer):
         self,
         X: DataFrame,
     ) -> DataFrame:
-        """Transform the DataFrame by applying the division operation between two columns.
+        """Add new column with result of the division operation between two columns.
 
         Parameters
         ----------
@@ -806,7 +834,8 @@ class RatioTransformer(BaseNumericTransformer):
         Returns
         -------
         DataFrame
-            Transformed DataFrame with the new column containing the division results.
+            Transformed DataFrame with the new column containing the
+            division results.
 
         Examples
         --------
@@ -843,8 +872,9 @@ class RatioTransformer(BaseNumericTransformer):
 
         Returns
         -------
-        list[str]
-            List containing the name of the new column created by the transformation.
+        list of str
+            List containing the name of the new column created by the
+            transformation.
 
         """
         return [f"{self.columns[0]}_divided_by_{self.columns[1]}"]

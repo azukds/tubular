@@ -27,11 +27,42 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-4.1.0 (unreleased)
+6.1.0 (unreleased)
 -------------------
 Changed
 ^^^^^^^
+- chore: tidied up github actions workflow
+- feat: added github actions step to check that uv.lock is in sync with repo
+- feat: turned off pandas<3 version cap
+- chore: removed  test-aide from the env
 - feat: added `extractable_exprs` attr to track progress with adding `get_transform_exprs` methods.
+
+6.0.0 (20/11/2026)
+-------------------
+Changed
+^^^^^^^
+- chore: switched codespaces and github actions to use pyproject.toml for env, removed req.text file
+- feat: added min/max version testing in github actions
+- chore: removed cap on polars version
+
+5.0.0 (19/11/2026)
+-------------------
+Changed
+^^^^^^^
+- feat: removed the period component in the output column names for DatetimeSinusoidCalculator
+
+4.1.1 (10/11/2026)
+-------------------
+Changed
+^^^^^^^
+- chore: updated black on dependabot recommendation
+- bugfix: remove beartype from GroupRareLevelsTransformer._check_str_like_columns due to compatibility issue `#772 <https://github.com/azukds/tubular/issues/772>_`
+
+4.1.0 (23/09/2026)
+-------------------
+Changed
+^^^^^^^
+- bugfix: allow np ints in mean response encoder
 
 4.0.1 (14/08/2026)
 -------------------
@@ -53,7 +84,7 @@ Changed
 - chore: deprecated ArbitraryImputer
 - feat: added tests for BooleanImputer and made public `#752 <https://github.com/azukds/tubular/issues/752>_`
 - chore: refactored GroupRareLevelsTransformer to pave way for splitting into type based classes with `get_transform_exprs` methods.
-- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values 
+- bugfix: MappingTransformer issues with all null mappings, or columns with null/nan values
 being mapped to string type.
 - chore: refactored MappingTransformer to pave way for splitting into type based classes with
 `get_transform_exprs` methods.
@@ -329,7 +360,7 @@ Changed
 - chore: doctests for misc module, deleted old/stale example notebooks `#505  <https://github.com/azukds/tubular/issues/505>_`
 - chore: doctests for mapping module, deleted old/stale example notebooks `#504 <https://github.com/azukds/tubular/issues/504>_`
 - chore: doctests for numeric module `#507 <https://github.com/azukds/tubular/issues/507>_`
-- feat: added to/from json functionality for BaseTransformer and imputers file. 
+- feat: added to/from json functionality for BaseTransformer and imputers file.
 - feat: introduced `jsonable` class attribute across package to control whether json tests run for given class
 - feat: introduced _version class attribute that stores package version
 - feat: introduced block_from_json decorator to block non-transform related methods for transformers which have been rebuilt from json
@@ -371,7 +402,7 @@ Changed
 ^^^^^^^
 - bugfix: updated env to make package importable, added basic test for this
 - feat: added BaseAggregationTransformer and AggregateRowOverColumnsTransformer classes in new aggregations module
-- narwhalified DatetimeSinusoidCalculator '#425 <https://github.com/azukds/tubular/issues/425>_' 
+- narwhalified DatetimeSinusoidCalculator '#425 <https://github.com/azukds/tubular/issues/425>_'
 - Added deprecated warning for DateDiffLeapYearTransformer `#244 <https://github.com/azukds/tubular/issues/244>_`
 - Added new units 'week', 'fornight', 'lunar_month', 'common_year' and 'custom_days' to DateDifferenceTransformer. The time component will be truncated for these units and for unit 'D'.
 - feat: optimisation changes to BaseTransformer and imputers file. Edited to reduce number of copies and type changes from to/from_native calls, and select/with_columns being called many times. `#444 <https://github.com/azukds/tubular/issues/444>_`
@@ -394,8 +425,8 @@ Changed
 ^^^^^^^
 - narwhalified ToDatetimeTransformer. Also made some usability improvements, e.g. to accept multiple columns `#379 <https://github.com/azukds/tubular/issues/379>_`
 - fixed bug with MappingTransformer, BaseMappingTransformerMixin where nullable boolean mappings were being converted to non-nullable booleans
-- Working on above, found additional bug with mapping null values. 
-Considered removing this functionality, but it is actually needed for 
+- Working on above, found additional bug with mapping null values.
+Considered removing this functionality, but it is actually needed for
 inverse pipelines. Changed this part of logic to work more like an imputer.
 
 1.4.3 (02/06/2025)
@@ -454,7 +485,7 @@ Changed
 - Converted test dfs to flexible pandas/polars setup
 - Converted BaseNominalTransformer to utilise narwhals `#334 <https://github.com/azukds/tubular/issues/334>_`
 - narwhalified CheckNumericMixin `#336 <https://github.com/azukds/tubular/issues/336>_`
-- Changed behaviour of NearestMeanResponseImputer so that if there are no nulls at fit, 
+- Changed behaviour of NearestMeanResponseImputer so that if there are no nulls at fit,
   it warns and has no effect at transform, as opposed to erroring. The error was problematic for e.g.
   lightweight test runs where nulls are less likely to be present.
 
@@ -517,7 +548,7 @@ Added
 
 Changed
 ^^^^^^^
-- Standardised naming of weight arg across transformers 
+- Standardised naming of weight arg across transformers
 - Update DataFrameMethodTransformer tests to have inheritable init class that can be used by other test files.
 - Moved BaseTransformer, DataFrameMethodTransformer, BaseMappingTransformer, BaseMappingTransformerMixin, CrossColumnMappingTransformer and Mapping Transformer over to the new testing framework.
 - Refactored MappingTransformer by removing redundant init method.
@@ -527,9 +558,9 @@ Changed
 - Fixed bugs in MedianImputer and ModeImputer where they would error for all null columns.
 - Refactored ArbitraryImputer and BaseImputer tests in new format.
 - Refactored MedianImputer tests in new format.
-- Replaced occurrences of pd.Dataframe.drop() with del statement to speed up tubular. Note that no additional unit testing has been done for copy=False as this release is scheduled to remove copy. 
+- Replaced occurrences of pd.Dataframe.drop() with del statement to speed up tubular. Note that no additional unit testing has been done for copy=False as this release is scheduled to remove copy.
 - Created BaseCrossColumnNumericTransformer class. Refactored CrossColumnAddTransformer and CrossColumnMultiplyTransformer to use this class. Moved tests for these objects to new approach.
-- Created BaseCrossColumnMappingTransformer class and integrated into CrossColumnMappingTransformer tests  
+- Created BaseCrossColumnMappingTransformer class and integrated into CrossColumnMappingTransformer tests
 - Refactored BaseNominalTransformer tests in new format & moved its logic to the transform method.
 - Refactored ModeImputer tests in new format.
 - Added generic init tests to base tests for transformers that take two columns as an input.
@@ -542,9 +573,9 @@ Changed
 - Refactored DatetimeInfoExtractor to condense and improve readability
 - added minimal_dataframe_lookup fixture to conftest, and edited generic tests to use this
 - Alphabetised the minimal attribute dictionary for readability.
-- Refactored OHE transformer tests to align with new testing framework. 
+- Refactored OHE transformer tests to align with new testing framework.
 - Moved fixtures relating only to a single test out of conftest and into testing script where utilised.
-- !!!Introduced dependency on Sklearn's OneHotEncoder by adding test to check OHE transformer (which we are calling from within our OHE wrapper) is fit before transform 
+- !!!Introduced dependency on Sklearn's OneHotEncoder by adding test to check OHE transformer (which we are calling from within our OHE wrapper) is fit before transform
 - Refactored NearestMeanResponseImputer in line with new testing framework.
 
 
@@ -712,7 +743,7 @@ Fixed
 ^^^^^
 - updated black version to 22.3.0 and flake8 version to 5.0.4 to fix compatibility issues `#45 <https://github.com/azukds/tubular/pull/45>`_
 
-- removed kwargs argument from BaseTransformer in ``tubular/base.py`` to avoid silent erroring if incorrect arguments passed to transformers. Fixed a few tests which were revealed to have incorrect arguments passed by change `#56 <https://github.com/azukds/tubular/pull/56>`_ 
+- removed kwargs argument from BaseTransformer in ``tubular/base.py`` to avoid silent erroring if incorrect arguments passed to transformers. Fixed a few tests which were revealed to have incorrect arguments passed by change `#56 <https://github.com/azukds/tubular/pull/56>`_
 
 
 0.3.2 (2022-01-13)

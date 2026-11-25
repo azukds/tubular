@@ -239,7 +239,7 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         native_backend = nw.get_native_namespace(expected)
 
         for column in transformer.columns:
-            new_col_name = f"cos_12_month_{column}"
+            new_col_name = f"cos_month_{column}"
             # Get the column in the desired unit
             sinusoid_col = np.cos(expected[column].dt.month() * (2.0 * np.pi / 12))
             expected = expected.with_columns(
@@ -306,8 +306,8 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         native_backend = nw.get_native_namespace(expected)
 
         # Create new column names for sin and cos
-        new_cos_col_name = "cos_12_month_a"
-        new_sin_col_name = "sin_12_month_a"
+        new_cos_col_name = "cos_month_a"
+        new_sin_col_name = "sin_month_a"
         # Get the column in the desired unit
         column_in_desired_unit = expected["a"].dt.month
 
@@ -370,12 +370,12 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         # Add the new columns to the expected DataFrame
         expected = expected.with_columns(
             nw.new_series(
-                name="sin_12_month_a",
+                name="sin_month_a",
                 values=sin_12_month_a,
                 backend=native_backend.__name__,
             ),
             nw.new_series(
-                name="sin_12_day_b",
+                name="sin_day_b",
                 values=sin_12_day_b,
                 backend=native_backend.__name__,
             ),
@@ -426,12 +426,12 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         # Add the new columns to the expected DataFrame
         expected = expected.with_columns(
             nw.new_series(
-                name="sin_12_month_a",
+                name="sin_month_a",
                 values=sin_12_month_a,
                 backend=native_backend.__name__,
             ),
             nw.new_series(
-                name="sin_24_month_b",
+                name="sin_month_b",
                 values=sin_24_month_b,
                 backend=native_backend.__name__,
             ),
@@ -482,12 +482,12 @@ class TestTransform(GenericTransformTests, DatetimeMixinTransformTests):
         # Add the new columns to the expected DataFrame
         expected = expected.with_columns(
             nw.new_series(
-                name="sin_12_month_a",
+                name="sin_month_a",
                 values=sin_12_month_a,
                 backend=native_backend.__name__,
             ),
             nw.new_series(
-                name="sin_24_day_b",
+                name="sin_day_b",
                 values=sin_24_day_b,
                 backend=native_backend.__name__,
             ),

@@ -33,6 +33,7 @@ from tubular.functions.dates import (
     extract_datetime_components,
     extract_datetime_info,
     extract_datetime_sinusoid_components,
+    get_datetime_sinusoid_transformed_col_name,
 )
 from tubular.types import (
     DataFrame,
@@ -1863,13 +1864,17 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         ... )
 
         >>> transformer.get_feature_names_out()
-        ['sin_6.283185307179586_month_a']
+        ['sin_month_a']
 
         ```
 
         """
         return [
-            f"{method}_{self.period if not isinstance(self.period, dict) else self.period[column]}_{self.units if not isinstance(self.units, dict) else self.units[column]}_{column}"
+            get_datetime_sinusoid_transformed_col_name(
+                method=method,
+                unit=self.units_dict[column],
+                column=column,
+            )
             for column in self.columns
             for method in self.method
         ]
@@ -1947,7 +1952,7 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
         Returns
         -------
         X : pd/pl/nw.DataFrame
-            Input X with additional columns added, these are named "<method>_<original_column>"
+            Input X with additional columns added, these are named "<method>_<unit>_<original_column>"
 
         Example:
         --------
@@ -1970,14 +1975,14 @@ class DatetimeSinusoidCalculator(BaseDatetimeTransformer):
 
         >>> transformer.transform(test_df)
         shape: (2, 3)
-        ┌─────────────────────┬─────────────────────┬───────────────────────────────┐
-        │ a                   ┆ b                   ┆ sin_6.283185307179586_month_a │
-        │ ---                 ┆ ---                 ┆ ---                           │
-        │ datetime[μs]        ┆ datetime[μs]        ┆ f64                           │
-        ╞═════════════════════╪═════════════════════╪═══════════════════════════════╡
-        │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 ┆ 0.412118                      │
-        │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ -0.544021                     │
-        └─────────────────────┴─────────────────────┴───────────────────────────────┘
+        ┌─────────────────────┬─────────────────────┬─────────────┐
+        │ a                   ┆ b                   ┆ sin_month_a │
+        │ ---                 ┆ ---                 ┆ ---         │
+        │ datetime[μs]        ┆ datetime[μs]        ┆ f64         │
+        ╞═════════════════════╪═════════════════════╪═════════════╡
+        │ 1993-09-27 00:00:00 ┆ 1991-05-22 00:00:00 ┆ 0.412118    │
+        │ 2005-10-07 00:00:00 ┆ 2001-12-10 00:00:00 ┆ -0.544021   │
+        └─────────────────────┴─────────────────────┴─────────────┘
 
         ```
 
