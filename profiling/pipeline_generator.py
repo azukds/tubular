@@ -6,17 +6,14 @@ from tubular.imputers import (
     MeanImputer,
     MedianImputer,
     ModeImputer,
-    NearestMeanResponseImputer,
     NullIndicator,
 )
 from tubular.mapping import MappingTransformer
 from tubular.nominal import (
     GroupRareLevelsTransformer,
     MeanResponseTransformer,
-    NominalToIntegerTransformer,
     OneHotEncodingTransformer,
 )
-from tubular.numeric import LogTransformer
 
 
 class TubularPipelineGenerator:
@@ -30,14 +27,11 @@ class TubularPipelineGenerator:
             "MedianImputer",
             "MeanImputer",
             "ModeImputer",
-            "NearestMeanResponseImputer",
             "NullIndicator",
             "MappingTransformer",
-            "NominalToIntegerTransformer",
             "MeanResponseTransformer",
             "GroupRareLevelsTransformer",
             "OneHotEncodingTransformer",
-            "LogTransformer",
         ]
 
     @staticmethod
@@ -68,22 +62,12 @@ class TubularPipelineGenerator:
         return ModeImputer(columns=["HouseAge_4", "AveOccup_4", "Population_4"])
 
     @staticmethod
-    def get_NearestMeanResponseImputer() -> NearestMeanResponseImputer:
-        return NearestMeanResponseImputer(
-            columns=["HouseAge_5", "AveOccup_5", "Population_5"],
-        )
-
-    @staticmethod
     def get_NullIndicator() -> NullIndicator:
         return NullIndicator(columns=["HouseAge_6", "AveOccup_6", "Population_6"])
 
     @staticmethod
     def get_MappingTransformer() -> MappingTransformer:
         return MappingTransformer(mappings={"categorical_1": {"a": "c", "b": "d"}})
-
-    @staticmethod
-    def get_NominalToIntegerTransformer() -> NominalToIntegerTransformer:
-        return NominalToIntegerTransformer(columns=["categorical_2"])
 
     @staticmethod
     def get_MeanResponseTransformer() -> MeanResponseTransformer:
@@ -96,10 +80,6 @@ class TubularPipelineGenerator:
     @staticmethod
     def get_OneHotEncodingTransformer() -> OneHotEncodingTransformer:
         return OneHotEncodingTransformer(columns=["categorical_ohe"])
-
-    @staticmethod
-    def get_LogTransformer() -> LogTransformer:
-        return LogTransformer(columns=["HouseAge_7", "AveOccup_7", "Population_7"])
 
     def generate_pipeline(
         self,

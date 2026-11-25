@@ -24,18 +24,6 @@ def create_numeric_df_1(library="pandas"):
     return u.dataframe_init_dispatch(df_dict, library)
 
 
-def create_numeric_df_2(library="pandas"):
-    """Example with numeric dataframe that includes missing values."""
-
-    df_dict = {
-        "a": [2, 3, 2, 1, 4, 1],
-        "b": [None, None, 1, 3, 3, 4],
-        "c": [1, 1, 2, 3, 3, 3],
-    }
-
-    return u.dataframe_init_dispatch(df_dict, library)
-
-
 def create_bool_df(library="pandas"):
     """Example with boolean dataframe that includes missing values."""
 

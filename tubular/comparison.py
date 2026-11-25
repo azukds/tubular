@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import narwhals as nw
-
-if TYPE_CHECKING:
-    import pandas as pd
 from beartype import beartype
-from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -447,119 +443,3 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         X = X.with_columns(transform_expr)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-# DEPRECATED TRANSFORMERS
-@deprecated(
-    """This transformer has been superseded by CompareTwoColumnsTransformer
-    and so has been deprecated, and will be removed in a future major release.
-    """,
-)
-class EqualityChecker(
-    BaseTransformer,
-):
-    """Transformer to check if two columns are equal.
-
-    Attributes
-    ----------
-    built_from_json: bool
-        indicates if transformer was reconstructed from json,
-        which limits it's supported functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to
-        polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    deprecated: bool
-        indicates if class has been deprecated
-
-    """
-
-    polars_compatible = False
-
-    lazyframe_compatible = False
-
-    FITS = False
-
-    jsonable = False
-
-    deprecated = True
-
-    @beartype
-    def __init__(
-        self,
-        columns: ListOfTwoStrs,
-        new_column_name: str,
-        **kwargs: bool | None,
-    ) -> None:
-        """Initialise class instance.
-
-        Parameters
-        ----------
-        columns: list
-            List containing names of the two columns to check.
-
-        new_column_name: string
-            string containing the name of the new column.
-
-        **kwargs:
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
-
-        """
-        super().__init__(columns=columns, **kwargs)
-
-        self.new_column_name = new_column_name
-
-    def get_feature_names_out(self) -> list[str]:
-        """Get list of features modified/created by the transformer.
-
-        Returns
-        -------
-        list[str]:
-            list of features modified/created by the transformer
-
-        Examples
-        --------
-        ```pycon
-        >>> # base classes just return inputs
-        >>> transformer = EqualityChecker(
-        ...     columns=["a", "b"],
-        ...     new_column_name="bla",
-        ... )
-
-        >>> transformer.get_feature_names_out()
-        ['bla']
-
-        ```
-
-        """
-        return [self.new_column_name]
-
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Create a column which indicated equality between given columns.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            Data to apply mappings to.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            Transformed input X with additional boolean column.
-
-        """
-        X = super().transform(X)
-
-        X[self.new_column_name] = X[self.columns[0]] == X[self.columns[1]]
-
-        return X

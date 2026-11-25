@@ -1,5 +1,6 @@
 import datetime
 
+import pandas as pd
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -103,7 +104,17 @@ class TestTransform(GenericTransformTests):
             ],
         }
 
-        return dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+        df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
+
+        # prior to pandas 3, default time unit is ns
+        # so edit df to match
+        THREE = 3
+        PANDAS_3_PLUS = int(pd.__version__.split(".")[0]) >= THREE
+        if (library == "pandas") and (not PANDAS_3_PLUS):
+            for col in df:
+                df[col] = df[col].dt.as_unit("ns")
+
+        return df
 
     def create_to_datetime_test_df(self, library="pandas"):
         """Create DataFrame to be used in the ToDatetimeTransformer tests."""

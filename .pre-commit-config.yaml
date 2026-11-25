@@ -1,37 +1,63 @@
 repos:
--   repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.15.6
-    hooks:
-      # Run the linter.
-      - id: ruff
-        args: [ --fix, --exit-non-zero-on-fix ]
-      # Run the formatter.
-      - id: ruff-format
--   repo: https://github.com/MarcoGorelli/auto-walrus
-    rev: 0.3.4
-    hooks:
-    -   id: auto-walrus
--   repo: https://github.com/codespell-project/codespell
-    rev: 'v2.4.1'
-    hooks:
-      - id: codespell
-        additional_dependencies:
-          - tomli
--   repo: https://github.com/crate-ci/typos
-    rev: 'v1.39.0'
-    hooks:
-      - id: typos
--   repo: https://github.com/adamchainz/blacken-docs
-    rev: "1.20.0" 
-    hooks:
-    -   id: blacken-docs
-        args: [--skip-errors]
-        additional_dependencies:
-        - black==26.3.1
--   repo: local
-    hooks:
-      - id: generate-feature-table
-        name: Generate feature table for README
-        entry: python utils/feature_table.py
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0   # check the latest
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: check-toml
+    - id: check-merge-conflict
+    - id: check-added-large-files
+- repo: local
+  hooks:
+    - id: uv-lock
+      name: uv lock
+      entry: uv lock
+      language: system
+      pass_filenames: false
+      files: ^(pyproject\.toml|uv\.lock)$
+- repo: local
+  hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --locked --only-group lint ruff check --fix --exit-non-zero-on-fix
         language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --locked --only-group lint ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: auto-walrus
+        name: auto walrus
+        entry: uv run --locked --only-group lint auto-walrus
+        language: system
+
+      - id: codespell
+        name: codespell
+        entry: uv run --locked --only-group lint codespell
+        language: system
+
+      - id: typos
+        name: typos
+        entry: uv run --locked --only-group lint typos
+        language: system
+        pass_filenames: false
+
+      - id: blacken-docs
+        name: blacken-docs
+        entry: uv run --locked --only-group lint blacken-docs
+        language: system
+        files: \.(md|rst)$
+- repo: local
+  hooks:
+    - id: generate-feature-table
+      name: Generate feature table for README
+      entry: uv run --locked --group feature_table python utils/feature_table.py
+      language: system
+      pass_filenames: false
+      files: ^(tubular/.*\.py|utils/feature_table\.py)$
