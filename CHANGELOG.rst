@@ -41,6 +41,7 @@ Changed
 - feat: added github actions step to check that uv.lock is in sync with repo
 - feat: turned off pandas<3 version cap
 - chore: removed  test-aide from the env
+- feat: added blocking CI check for changelog edits on PRs
 
 6.0.0 (20/11/2026)
 -------------------
