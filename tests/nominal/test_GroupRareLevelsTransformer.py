@@ -1,6 +1,7 @@
 import re
 
 import narwhals as nw
+import pandas as pd
 import polars as pl
 import pytest
 
@@ -56,7 +57,7 @@ class TestFit(BaseGroupRareLevelsTransformerFitTests):
         if _check_if_skip_test(transformer, df, lazy=lazy):
             return
 
-        msg = f"{self.transformer_name}: transformer can only handle String/Categorical/Object type columns"
+        msg = f"{self.transformer_name}: transformer can only handle String/Categorical/Enum type columns"
         with pytest.raises(
             TypeError,
             match=msg,
@@ -190,7 +191,8 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_no_weight(self, library, from_json, lazy):
+    @pytest.mark.parametrize("cat_type", ["Categorical", "Enum"])
+    def test_expected_output_no_weight(self, library, from_json, lazy, cat_type):
         """Test that the output is expected from transform."""
         df = d.create_df_5(library=library)
 
@@ -199,7 +201,12 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
         df = df.with_columns(
             nw.col("b").fill_null("a"),
             nw.col("c").fill_null("e"),
-        ).to_native()
+        )
+
+        if cat_type == "Enum":
+            categories = df["c"].unique()
+            df = df.with_columns(nw.col("c").cast(nw.Enum(categories=categories)))
+        df = df.to_native()
 
         expected = self.expected_df_1(library=library)
 
@@ -231,7 +238,8 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
 
         # handle nulls
         df = nw.from_native(df)
-        df = df.with_columns(nw.col("b").fill_null("a")).to_native()
+        df = df.with_columns(nw.col("b").fill_null("a"))
+        df = df.to_native()
 
         expected = self.expected_df_2(library=library)
 
@@ -275,7 +283,7 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
         transformer = _handle_from_json(transformer, from_json)
 
         msg = re.escape(
-            "GroupRareLevelsTransformer: transformer can only handle String/Categorical/Object type columns",
+            "GroupRareLevelsTransformer: transformer can only handle String/Categorical/Enum type columns",
         )
         with pytest.raises(
             TypeError,
@@ -286,10 +294,18 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_expected_output_unseen_levels_not_encoded(self, library, from_json, lazy):
+    @pytest.mark.parametrize("cat_type", ["Categorical", "Enum"])
+    def test_expected_output_unseen_levels_not_encoded(
+        self, library, from_json, lazy, cat_type
+    ):
         """Test that unseen levels are not encoded when unseen_levels_to_rare is false"""
 
         df = d.create_df_8(library=library)
+        df = nw.from_native(df)
+        if cat_type == "Enum":
+            categories = df["c"].unique()
+            df = df.with_columns(nw.col("c").cast(nw.Enum(categories=categories)))
+        df = df.to_native()
 
         expected = ["w", "w", "rare", "rare", "unseen_level"]
 
@@ -327,12 +343,17 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", ["True", "False"])
     @pytest.mark.parametrize("library", ["pandas", "polars"])
-    def test_rare_categories_forgotten(self, library, from_json, lazy):
+    @pytest.mark.parametrize("cat_type", ["Categorical", "Enum"])
+    def test_rare_categories_forgotten(self, library, from_json, lazy, cat_type):
         "test that for category dtype, categories encoded as rare are forgotten by series"
 
         df = d.create_df_8(library=library)
-
         column = "c"
+        df = nw.from_native(df)
+        if cat_type == "Enum":
+            categories = df[column].unique()
+            df = df.with_columns(nw.col(column).cast(nw.Enum(categories=categories)))
+        df = df.to_native()
 
         transformer = GroupRareLevelsTransformer(
             columns=column,
@@ -359,6 +380,47 @@ class TestTransform(BaseGroupRareLevelsTransformerTransformTests):
             assert cat not in output_categories, (
                 f"{transformer.classname} output columns should forget rare encoded categories, expected {cat} to be forgotten from column {column}"
             )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_handling_all_str_like_types_pandas(
+        self, lazy: bool, from_json: bool
+    ) -> None:
+        """Test that the transformer can handle any str-like type in pandas."""
+        df = pd.DataFrame(
+            {
+                "str": ["a", "b", "a", "a"],
+                "categorical": ["a", "b", "a", "a"],
+            },
+        )
+        df["str"] = df["str"].astype("string")
+        df["categorical"] = df["categorical"].astype("category")
+        transformer = GroupRareLevelsTransformer(
+            columns=list(df.columns),
+            cut_off_percent=0.3,
+        )
+
+        if _check_if_skip_test(transformer, df, lazy=lazy, from_json=from_json):
+            return
+
+        transformer = transformer.fit(df)
+        transformer = _handle_from_json(transformer, from_json)
+
+        df_transformed = transformer.transform(_convert_to_lazy(df, lazy=lazy))
+        expected = pd.DataFrame(
+            {
+                "str": ["a", "rare", "a", "a"],
+                "categorical": ["a", "rare", "a", "a"],
+            },
+        )
+        expected["str"] = expected["str"].astype("string")
+        expected["categorical"] = expected["categorical"].astype("category")
+
+        assert_frame_equal_dispatch(
+            _collect_frame(df_transformed, lazy=False),
+            expected,
+            check_categorical=False,
+        )
 
 
 class TestLazyYSupport:

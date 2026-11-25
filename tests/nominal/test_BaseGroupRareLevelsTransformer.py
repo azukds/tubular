@@ -1,4 +1,6 @@
 import narwhals as nw
+import pandas as pd
+import polars as pl
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from test_BaseNominalTransformer import (
@@ -138,6 +140,42 @@ class BaseGroupRareLevelsTransformerFitTests(
         assert expected_training_data_levels == transformer.training_data_levels, (
             "Training data values not correctly stored when unseen_levels_to_rare is false"
         )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    def test_error_object_dtype(
+        self,
+        lazy,
+        uninitialized_transformers,
+        library,
+    ) -> None:
+        """Test that the transformer raises an error for a pl.Object column."""
+
+        if library == "polars":
+            df = pl.DataFrame(
+                {"object": ["a", "b", "a", "a"]},
+                schema={"object": pl.Object},
+            )
+        else:
+            df = pd.DataFrame({"object": [True, False, None]})
+
+        transformer = uninitialized_transformers[self.transformer_name](
+            columns=list(df.columns),
+            cut_off_percent=0.3,
+        )
+
+        if _check_if_skip_test(transformer, df, lazy=lazy):
+            return
+
+        bad_types = {"object": nw.Object}
+        allowed = "/".join(t.__name__ for t in transformer.allowed_types)
+        msg = f"{transformer.classname()}: transformer can only handle {allowed} type columns but got columns with types {bad_types}"
+
+        with pytest.raises(
+            TypeError,
+            match=msg,
+        ):
+            transformer.fit(_convert_to_lazy(df, lazy=lazy))
 
     # NOTE - have decided not to include the test for failed fit here,
     # as in the case of fitting on an empty df finding no rare/non-rare levels

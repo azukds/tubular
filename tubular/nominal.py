@@ -289,7 +289,8 @@ class BaseGroupRareLevelsTransformer(BaseTransformer, WeightColumnMixin):
         valid_weights_filter_expr = WeightColumnMixin.get_valid_weights_filter_expr(
             weights_column, self.verbose
         )
-        X = X.filter(valid_weights_filter_expr)
+        non_null_values = [~nw.col(col).is_null() for col in self.columns]
+        X = X.filter(valid_weights_filter_expr, *non_null_values)
 
         schema = X.collect_schema()
 
@@ -2067,7 +2068,7 @@ class GroupRareLevelsTransformer(BaseGroupRareLevelsTransformer):
     """
 
     # preserves legacy behaviour of accepting a mix of str-like column types
-    allowed_types = (nw.String, nw.Categorical, nw.Object)
+    allowed_types = (nw.String, nw.Categorical, nw.Enum)
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
