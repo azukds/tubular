@@ -31,7 +31,7 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
-- feat: added `extractable_exprs` attr to track progress with adding `get_transform_exprs` methods.
+- feat: added blocking CI check for changelog edits on PRs
 
 6.1.0 (23/11/2026)
 -------------------
@@ -41,7 +41,6 @@ Changed
 - feat: added github actions step to check that uv.lock is in sync with repo
 - feat: turned off pandas<3 version cap
 - chore: removed  test-aide from the env
-- feat: added blocking CI check for changelog edits on PRs
 
 6.0.0 (20/11/2026)
 -------------------
