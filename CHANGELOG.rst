@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - feat: setup codecov in CI and readme
+- feat: added blocking CI check for changelog edits on PRs
 
 6.1.0 (23/11/2026)
 -------------------

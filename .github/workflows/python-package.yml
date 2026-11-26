@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     timeout-minutes: 20
     strategy:
       matrix:
@@ -61,7 +61,7 @@ jobs:
           fail_ci_if_error: false
 
   feature_table:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     timeout-minutes: 10
 
     steps:
@@ -96,7 +96,7 @@ jobs:
           fi
 
   lint:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     timeout-minutes: 10
 
     steps:
