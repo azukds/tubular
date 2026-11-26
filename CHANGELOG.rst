@@ -31,7 +31,8 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
-- feat: added `extractable_exprs` attr to track progress with adding `get_transform_exprs` methods.
+- feat: setup codecov in CI and readme
+- feat: added blocking CI check for changelog edits on PRs
 
 6.1.0 (23/11/2026)
 -------------------
