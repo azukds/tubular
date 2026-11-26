@@ -32,24 +32,24 @@ class LowerCaseTransformer(BaseTransformer):
 
     Attributes
     ----------
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+    built_from_json : bool
+        Indicates if transformer was reconstructed from json, which
+        limits its supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
+    return_native : bool, default=True
+        Controls whether transformer returns narwhals or native
+        pandas/polars type.
+    jsonable : bool
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
+    FITS : bool
+        Class attribute, indicates whether transform requires fit to be
+        run first.
+    lazyframe_compatible : bool
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     Examples
     --------
@@ -96,11 +96,11 @@ class LowerCaseTransformer(BaseTransformer):
 
         Parameters
         ----------
-        columns: Union[str, ListOfStrings]
-            columns where values are to be lowercased.
-
+        columns : str or list of str
+            Columns where values are to be lowercased.
         **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+            Arbitrary bool keyword arguments passed onto
+            BaseTransformer.init method.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -110,7 +110,8 @@ class LowerCaseTransformer(BaseTransformer):
 
         Returns
         -------
-        list[nw.Expr]: transform expressions for class
+        list of nw.Expr
+            Transform expressions for class.
 
         """
         return convert_string_columns_to_lowercase(columns=self.columns)
@@ -162,34 +163,32 @@ class LowerCaseTransformer(BaseTransformer):
 
 @register
 class ExtractStringComponentsTransformer(BaseTransformer):
-    r"""Transformer class to extract components from string columns, split by given character.
+    """Transformer to extract components from string columns, split by given character.
 
     Attributes
     ----------
-    by: str
-        character to split on
-
-    return_n_components: int
-        number of components to return
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+    by : str
+        Character to split on.
+    return_n_components : int
+        Number of components to return.
+    built_from_json : bool
+        Indicates if transformer was reconstructed from json, which
+        limits its supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
+    return_native : bool, default=True
+        Controls whether transformer returns narwhals or native
+        pandas/polars type.
+    jsonable : bool
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
+    FITS : bool
+        Class attribute, indicates whether transform requires fit to be
+        run first.
+    lazyframe_compatible : bool
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     Examples
     --------
@@ -240,17 +239,15 @@ class ExtractStringComponentsTransformer(BaseTransformer):
 
         Parameters
         ----------
-        columns: Union[str, ListOfStrings]
-            columns containing string values to split into components.
-
-        by: str
-            character to split strings by
-
-        return_n_components:
-            number of components to return
-
+        columns : str or list of str
+            Columns containing string values to split into components.
+        by : str
+            Character to split strings by.
+        return_n_components : StrictlyPositiveInt
+            Number of components to return.
         **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+            Arbitrary bool keyword arguments passed onto
+            BaseTransformer.init method.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -263,8 +260,8 @@ class ExtractStringComponentsTransformer(BaseTransformer):
 
         Returns
         -------
-        list[str]:
-            list of features modified/created by the transformer
+        list of str
+            List of features modified/created by the transformer.
 
         Examples
         --------
@@ -291,9 +288,9 @@ class ExtractStringComponentsTransformer(BaseTransformer):
 
         Returns
         -------
-        dict[str, dict[str, Any]]:
-            jsonified transformer. Nested dict containing levels for attributes
-            set at init and fit.
+        dict of {str: dict of {str: Any}}
+            Jsonified transformer. Nested dict containing levels for
+            attributes set at init and fit.
 
         Examples
         --------
@@ -329,7 +326,8 @@ class ExtractStringComponentsTransformer(BaseTransformer):
 
         Returns
         -------
-        list[nw.Expr]: transform expressions for class
+        list of nw.Expr
+            Transform expressions for class.
 
         """
         return extract_string_components(
@@ -339,7 +337,7 @@ class ExtractStringComponentsTransformer(BaseTransformer):
         )
 
     def transform(self, X: DataFrame) -> DataFrame:
-        r"""Extract components from string columns, split by given character.
+        """Extract components from string columns, split by given character.
 
         Parameters
         ----------
@@ -349,7 +347,8 @@ class ExtractStringComponentsTransformer(BaseTransformer):
         Returns
         -------
         X : DataFrame
-            Transformed input X with string components extracted from columns.
+            Transformed input X with string components extracted from
+            columns.
 
         Examples
         --------
@@ -390,36 +389,36 @@ class RemoveCharactersTransformer(BaseTransformer):
 
     Attributes
     ----------
-    characters: list[str]
-        list of characters to remove from text columns.
-
-    characters_formatted: str
-        characters attr formatted into regex string.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+    characters : list of str
+        List of characters to remove from text columns.
+    characters_formatted : str
+        Characters attr formatted into regex string.
+    built_from_json : bool
+        Indicates if transformer was reconstructed from json, which
+        limits its supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
+    return_native : bool, default=True
+        Controls whether transformer returns narwhals or native
+        pandas/polars type.
+    jsonable : bool
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
+    FITS : bool
+        Class attribute, indicates whether transform requires fit to be
+        run first.
+    lazyframe_compatible : bool
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     Examples
     --------
     ```pycon
     >>> from pprint import pprint
-    >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\\d"])
+    >>> transformer = RemoveCharactersTransformer(
+    ...     columns=["a"], characters=["\\d"]
+    ... )
     >>> transformer
     RemoveCharactersTransformer(characters=['\\d'], columns=['a'])
 
@@ -460,14 +459,13 @@ class RemoveCharactersTransformer(BaseTransformer):
 
         Parameters
         ----------
-        columns: Union[str, ListOfStrings]
-            columns to remove characters from.
-
-        characters: list[str]
-            characters to remove from specified columns.
-
+        columns : str or list of str
+            Columns to remove characters from.
+        characters : list of str
+            Characters to remove from specified columns.
         **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+            Arbitrary bool keyword arguments passed onto
+            BaseTransformer.init method.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -481,15 +479,17 @@ class RemoveCharactersTransformer(BaseTransformer):
 
         Returns
         -------
-        dict[str, dict[str, Any]]:
-            jsonified transformer. Nested dict containing levels for attributes
-            set at init and fit.
+        dict of {str: dict of {str: Any}}
+            Jsonified transformer. Nested dict containing levels for
+            attributes set at init and fit.
 
         Examples
         --------
         ```pycon
         >>> from pprint import pprint
-        >>> transformer = RemoveCharactersTransformer(columns=["a", "b"], characters=["a"])
+        >>> transformer = RemoveCharactersTransformer(
+        ...     columns=["a", "b"], characters=["a"]
+        ... )
 
         >>> pprint(transformer.to_json())
         {'classname': 'RemoveCharactersTransformer',
@@ -515,7 +515,8 @@ class RemoveCharactersTransformer(BaseTransformer):
 
         Returns
         -------
-        list[nw.Expr]: transform expressions for class
+        list of nw.Expr
+            Transform expressions for class.
 
         """
         return remove_characters_from_string_columns(
@@ -533,14 +534,19 @@ class RemoveCharactersTransformer(BaseTransformer):
         Returns
         -------
         X : DataFrame
-            Transformed input X with characters stripped from specified columns.
+            Transformed input X with characters stripped from specified
+            columns.
 
         Examples
         --------
         ```pycon
         >>> import polars as pl
-        >>> test_df = pl.DataFrame({"a": ["  8hi!", None, "9999hello  "]})
-        >>> transformer = RemoveCharactersTransformer(columns=["a"], characters=["\W", "\s"])
+        >>> test_df = pl.DataFrame(
+        ...     {"a": ["  8hi!", None, "9999hello  "]}
+        ... )
+        >>> transformer = RemoveCharactersTransformer(
+        ...     columns=["a"], characters=["\W", "\s"]
+        ... )
         >>> transformer.transform(test_df)
         shape: (3, 1)
         ┌───────────┐
@@ -573,35 +579,33 @@ class StringContainsTransformer(BaseTransformer):
 
     Attributes
     ----------
-    reference: str
-        column or value to compare against, e.g.
-        look for values of reference='a' in columns ['b', 'c'].
-
-    reference_as_column: bool
-        indicates whether reference represents a column (or value).
-        Note, reference_as_column=True is not supported for pandas backend.
-
-    characters_formatted: str
-        characters attr formatted into regex string.
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
+    reference : str
+        Column or value to compare against, e.g. look for values of
+        reference='a' in columns ['b', 'c'].
+    reference_as_column : bool, default=False
+        Indicates whether reference represents a column (or value).
+        Note, reference_as_column=True is not supported for pandas
+        backend.
+    characters_formatted : str
+        Characters attr formatted into regex string.
+    built_from_json : bool
+        Indicates if transformer was reconstructed from json, which
+        limits its supported functionality to .transform.
     polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    return_native: bool, default = True
-        Controls whether transformer returns narwhals or native pandas/polars type
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
+        Class attribute, indicates whether transformer has been
+        converted to polars/pandas agnostic narwhals framework.
+    return_native : bool, default=True
+        Controls whether transformer returns narwhals or native
+        pandas/polars type.
+    jsonable : bool
+        Class attribute, indicates if transformer supports to/from_json
+        methods.
+    FITS : bool
+        Class attribute, indicates whether transform requires fit to be
+        run first.
+    lazyframe_compatible : bool
+        Class attribute, indicates whether transformer works with
+        lazyframes.
 
     Examples
     --------
@@ -654,17 +658,15 @@ class StringContainsTransformer(BaseTransformer):
 
         Parameters
         ----------
-        columns: Union[str, ListOfStrings]
-            columns to remove characters from.
-
-        reference: str
-            reference value to search for
-
-        reference_as_column: bool
-            whether to treat reference as a column or a literal
-
+        columns : str or list of str
+            Columns to remove characters from.
+        reference : str
+            Reference value to search for.
+        reference_as_column : bool, default=False
+            Whether to treat reference as a column or a literal.
         **kwargs
-            Arbitrary keyword arguments passed onto BaseTransformer.init method.
+            Arbitrary bool keyword arguments passed onto
+            BaseTransformer.init method.
 
         """
         super().__init__(columns=columns, **kwargs)
@@ -677,13 +679,15 @@ class StringContainsTransformer(BaseTransformer):
 
         Returns
         -------
-        list[str]:
-            list of features modified/created by the transformer
+        list of str
+            List of features modified/created by the transformer.
 
         Examples
         --------
         ```pycon
-        >>> transformer = StringContainsTransformer(columns=["a", "b"], reference="c")
+        >>> transformer = StringContainsTransformer(
+        ...     columns=["a", "b"], reference="c"
+        ... )
 
         >>> transformer.get_feature_names_out()
         ['a_contains_c', 'b_contains_c']
@@ -699,9 +703,9 @@ class StringContainsTransformer(BaseTransformer):
 
         Returns
         -------
-        dict[str, dict[str, Any]]:
-            jsonified transformer. Nested dict containing levels for attributes
-            set at init and fit.
+        dict of {str: dict of {str: Any}}
+            Jsonified transformer. Nested dict containing levels for
+            attributes set at init and fit.
 
         Examples
         --------
@@ -737,7 +741,8 @@ class StringContainsTransformer(BaseTransformer):
 
         Returns
         -------
-        list[nw.Expr]: transform expressions for class
+        list of nw.Expr
+            Transform expressions for class.
 
         """
         return indicate_if_string_columns_contain_reference(
@@ -757,18 +762,21 @@ class StringContainsTransformer(BaseTransformer):
         Returns
         -------
         X : DataFrame
-            Transformed input X with characters stripped from specified columns.
+            Transformed input X with characters stripped from specified
+            columns.
 
         Raises
         ------
-        TypeError: if called on pandas df when reference_as_column=True
+        TypeError
+            If called on pandas df when reference_as_column=True.
 
         Examples
         --------
         ```pycon
         >>> import polars as pl
         >>> test_df = pl.DataFrame(
-        ...     {"a": ["cat", "dog", None, "mouse"], "b": ["cat", "rat", None, "mouse"]}
+        ...     {"a": ["cat", "dog", None, "mouse"],
+        ...      "b": ["cat", "rat", None, "mouse"]}
         ... )
         >>> transformer = StringContainsTransformer(
         ...     columns=["a"], reference="b", reference_as_column=True
@@ -796,7 +804,10 @@ class StringContainsTransformer(BaseTransformer):
         backend = nw.get_native_namespace(X).__name__
 
         if backend == "pandas" and self.reference_as_column:
-            msg = f"{self.classname()}: reference_as_column=True is only supported for polars backend"
+            msg = (
+                f"{self.classname()}: reference_as_column=True is only supported for "
+                "polars backend"
+            )
             raise TypeError(msg)
 
         transform_exprs = self.get_transform_exprs()
