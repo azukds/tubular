@@ -7,6 +7,7 @@ test job ignores this directory; they run in the dedicated ``benchmark`` job
 in .github/workflows/python-package.yml, which compares a PR against its base.
 """
 
+import narwhals as nw
 import pytest
 
 from tests.benchmarks.utils import transform_with_exprs
@@ -22,7 +23,11 @@ def get_single_row_impute_df(request):
     # test both impute and non impute case
     bool_dict = {"a": [None], "b": [True]}
 
-    return dataframe_init_dispatch(bool_dict, library=library)
+    df = dataframe_init_dispatch(bool_dict, library=library)
+
+    df = nw.from_native(df)
+
+    return df.with_columns(nw.col("a").cast(nw.Boolean), nw.col("b").cast(nw.Boolean))
 
 
 def _fitted_transformer(df) -> BooleanImputer:
