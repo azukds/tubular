@@ -32,6 +32,7 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - feat: added blocking CI check for changelog edits on PRs
+- feat: added benchmark speed tests for the imputers file
 
 6.1.0 (23/11/2026)
 -------------------

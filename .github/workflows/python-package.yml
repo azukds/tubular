@@ -104,11 +104,14 @@ jobs:
 
       - name: Benchmark PR and compare to base
         run: |
-          # run benchmarks on new branch against main
           PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
             --benchmark-storage="$BENCH_STORAGE" \
             --benchmark-compare=0001 \
-            --benchmark-compare-fail="$BENCHMARK_THRESHOLD"
+            --benchmark-compare-fail="$BENCHMARK_THRESHOLD" \
+            --benchmark-columns=min,median,rounds \
+            --benchmark-group-by=fullname \
+            --benchmark-sort=name \
+            -q
 
   feature_table:
     runs-on: "ubuntu-latest"
