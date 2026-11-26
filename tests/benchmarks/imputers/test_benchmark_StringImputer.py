@@ -7,15 +7,29 @@ test job ignores this directory; they run in the dedicated ``benchmark`` job
 in .github/workflows/python-package.yml, which compares a PR against its base.
 """
 
+import pytest
+
 from tests.benchmarks.utils import transform_with_exprs
+from tests.utils import dataframe_init_dispatch
 from tubular.imputers import StringImputer
 
 
+@pytest.fixture(scope="module", params=["pandas", "polars"])
+def get_single_row_impute_df(request):
+
+    library = request.param
+
+    # test both impute and non impute case
+    bool_dict = {"a": [None], "b": ["hi"]}
+
+    return dataframe_init_dispatch(bool_dict, library=library)
+
+
 def _fitted_transformer(df) -> StringImputer:
-    return StringImputer(impute_value=-1, columns=["a", "b", "c"]).fit(df)
+    return StringImputer(impute_value="missing", columns=["a", "b"]).fit(df)
 
 
-def test_transform_single_row(benchmark, get_single_row_string_df):
-    transformer = _fitted_transformer(get_single_row_string_df)
+def test_transform_single_row(benchmark, get_single_row_impute_df):
+    transformer = _fitted_transformer(get_single_row_impute_df)
     transform_exprs = transformer.get_transform_exprs()
-    benchmark(transform_with_exprs, transform_exprs, get_single_row_string_df)
+    benchmark(transform_with_exprs, transform_exprs, get_single_row_impute_df)
