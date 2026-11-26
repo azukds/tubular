@@ -34,7 +34,7 @@ def _fitted_transformer(df) -> BooleanImputer:
     return BooleanImputer(impute_value=True, columns=["a", "b"]).fit(df)
 
 
-def test_transform_single_row(benchmark, get_single_row_impute_df):
+def test_BooleanImputer_transform_single_row(benchmark, get_single_row_impute_df):
     transformer = _fitted_transformer(get_single_row_impute_df)
     transform_exprs = transformer.get_transform_exprs()
     benchmark(transform_with_exprs, transform_exprs, get_single_row_impute_df)
