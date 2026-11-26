@@ -68,6 +68,7 @@ jobs:
       # be harder to trigger
       BENCHMARK_THRESHOLD: "min:30%"
       VENV_PYTHON: ${{ github.workspace }}/.venv/bin/python
+      BENCH_STORAGE: file://${{ github.workspace }}/.benchmarks
 
     steps:
       - uses: actions/checkout@v7
@@ -98,7 +99,7 @@ jobs:
           PYTHONPATH="$PWD" "$VENV_PYTHON" -c "import tubular; print(tubular.__file__)"
           # run benchmarks on main and store
           PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
-            --benchmark-storage=file://$RUNNER_TEMP/bench --benchmark-save=base \
+            --benchmark-storage="$BENCH_STORAGE" --benchmark-save=base \
             -p no:cacheprovider
 
       - name: Benchmark PR and compare to base
