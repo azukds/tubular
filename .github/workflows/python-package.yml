@@ -106,7 +106,7 @@ jobs:
         run: |
           # run benchmarks on new branch against main
           PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
-            --benchmark-storage=file://$RUNNER_TEMP/bench \
+            --benchmark-storage="$BENCH_STORAGE" \
             --benchmark-compare=0001 \
             --benchmark-compare-fail="$BENCHMARK_THRESHOLD"
 
