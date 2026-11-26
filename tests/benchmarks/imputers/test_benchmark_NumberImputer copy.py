@@ -31,7 +31,7 @@ def get_single_row_impute_df(request):
 
 
 def _fitted_transformer(df) -> NumberImputer:
-    return NumberImputer(impute_value="missing", columns=["a", "b"]).fit(df)
+    return NumberImputer(impute_value=-1, columns=["a", "b"]).fit(df)
 
 
 def test_transform_single_row(benchmark, get_single_row_impute_df):
