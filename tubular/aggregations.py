@@ -199,12 +199,10 @@ class BaseAggregationTransformer(BaseTransformer):
 
         schema = X.collect_schema()
 
-        self._bool_columns = set()
         non_numerical_columns = set()
         for col in self.columns:
-            if schema[col] == nw.Boolean:
-                self._bool_columns.add(col)
-            elif schema[col] not in NumericTypes:
+            dtype = schema[col]
+            if dtype != nw.Boolean and dtype not in NumericTypes:
                 non_numerical_columns.add(col)
 
         # convert to list and sort for consistency in return
@@ -212,7 +210,7 @@ class BaseAggregationTransformer(BaseTransformer):
         non_numerical_columns.sort()
         if len(non_numerical_columns) != 0:
             msg = (
-                f"{self.classname}: attempting to call transformer on non-numeric "
+                f"{self.classname()}: attempting to call transformer on non-numeric "
                 f"columns {non_numerical_columns}, which is not supported"
             )
             raise TypeError(msg)
@@ -463,6 +461,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     aggregations : list[str]
         List of aggregation methods to apply.
 
+    bool_columns : list of str
+        Subset of `columns` that are boolean.
+
     built_from_json: bool
         indicates if transformer was reconstructed from json,
         which limits it's supported functionality to .transform
@@ -486,7 +487,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
     ...     columns=["a", "b"],
     ...     aggregations=["min", "max"],
     ... )
-    AggregateColumnsOverRowTransformer(aggregations=['min', 'max'],
+    AggregateColumnsOverRowTransformer(aggregations=['min', 'max'], bool_columns=[],
                                        columns=['a', 'b'])
 
     ```
@@ -506,17 +507,23 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         self,
         columns: str | ListOfStrs,
         aggregations: ListOfColumnsOverRowAggregations,
+        bool_columns: ListOfStrs | None = None,
         **kwargs: bool,
     ) -> None:
         """Initialise class.
 
         Parameters
         ----------
-        columns : Union[str,list[str]]
-            List of column names to apply the aggregation transformations to.
+        columns : str or list of str
+            List of column names to apply the aggregation
+            transformations to. Assumed to be numeric unless included in
+            `bool_columns`.
 
         aggregations : list[str]
             List of aggregation methods to apply.
+
+        bool_columns : list of str, optional
+            Subset of `columns` that are boolean.
 
         kwargs: bool
             parameters for base class, e.g. verbose
@@ -528,6 +535,43 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
             **kwargs,
         )
         self.is_fitted_ = True  # Does not fit
+        self.bool_columns = bool_columns if bool_columns is not None else []
+
+    @block_from_json
+    def to_json(self) -> dict[str, Any]:
+        """Dump transformer to json dict.
+
+        Returns:
+        -------
+        dict[str, Any]:
+            jsonified transformer. Nested dict containing levels for attributes
+            set at init and fit.
+
+
+        Example:
+        -------
+        ```pycon
+        >>> transformer = AggregateColumnsOverRowTransformer(
+        ...     columns="a",
+        ...     aggregations=["min", "max"],
+        ... )
+        >>> transformer.to_json()  # doctest: +NORMALIZE_WHITESPACE
+        {'tubular_version': ...,
+            'classname': 'AggregateColumnsOverRowTransformer',
+            'init': {'columns': ['a'],
+            'copy': False,
+            'verbose': False,
+            'return_native': True,
+            'aggregations': ['min', 'max'],
+            'bool_columns': []},
+            'fit': {'is_fitted_': True}}
+
+        ```
+
+        """
+        json_dict = super().to_json()
+        json_dict["init"].update({"bool_columns": self.bool_columns})
+        return json_dict
 
     def get_feature_names_out(self) -> list[str]:
         """List features modified/created by the transformer.
@@ -564,7 +608,7 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         return aggregate_over_columns(
             columns=self.columns,
             aggregations=self.aggregations,
-            bool_columns=self._bool_columns,
+            bool_columns=self.bool_columns,
         )
 
     @beartype
@@ -613,6 +657,24 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         X = _convert_dataframe_to_narwhals(X)
 
         X = super().transform(X, return_native_override=False)
+
+        # Check bool columns are correct
+        schema = X.collect_schema()
+        declared = set(self.bool_columns)
+        actual = {col for col in self.columns if schema[col] == nw.Boolean}
+
+        missing = actual - declared  # bool columns not in bool_columns
+        incorrect = declared - actual  # non-bool columns in bool_columns
+
+        problems = []
+        if missing:
+            problems.append(f"add Boolean columns {sorted(missing)}")
+        if incorrect:
+            problems.append(f"remove non-Boolean or unselected columns {sorted(incorrect)}")
+
+        if problems:
+            msg = f"{self.classname()}: invalid bool_columns; " + "; ".join(problems)
+            raise ValueError(msg)
 
         transform_exprs = self.get_transform_exprs()
 

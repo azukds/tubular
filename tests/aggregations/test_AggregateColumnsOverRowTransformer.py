@@ -1,4 +1,5 @@
 import copy
+import re
 
 import narwhals as nw
 import pytest
@@ -72,6 +73,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b", "c"]
         args["aggregations"] = aggregations
+        args["bool_columns"] = ["c"]
 
         df_dict = {
             "a": [1, 2, 3, 4, 0],
@@ -112,6 +114,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b", "c"]
         args["aggregations"] = ["min", "max", "mean", "sum"]
+        args["bool_columns"] = ["c"]
 
         # Create a single-row DataFrame
         single_row_df_dict = {
@@ -175,6 +178,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
         args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
         args["columns"] = ["a", "b", "c"]
         args["aggregations"] = ["min", "max", "mean", "sum"]
+        args["bool_columns"] = ["c"]
 
         # Create a DataFrame with null values
         df_with_nulls_dict = {
@@ -212,6 +216,78 @@ class TestAggregateColumnsOverRowTransformerTransform(
             _collect_frame(transformed_df, lazy),
             nw.to_native(nw.maybe_convert_dtypes(nw.from_native(expected_df))),
         )
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize("bool_columns", [["a"], ["bla"]])
+    def test_bool_column_not_exist_error(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        from_json,
+        bool_columns: list[str],
+    ):
+        """Test transform method raises error when non-bool column in bool_columns."""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = ["a"]
+        args["aggregations"] = ["min", "max", "mean", "sum"]
+        args["bool_columns"] = bool_columns
+
+        df_dict = {"a": [1, 2, 3, 4, 0]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if _check_if_skip_test(transformer, df, lazy):
+            return
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "AggregateColumnsOverRowTransformer: invalid bool_columns; remove "
+                f"non-Boolean or unselected columns {bool_columns}"
+            )
+        ):
+            transformer.transform(_convert_to_lazy(df, lazy))
+
+    @pytest.mark.parametrize("lazy", [True, False])
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_bool_column_not_provided_error(
+        self,
+        library,
+        minimal_attribute_dict,
+        uninitialized_transformers,
+        lazy,
+        from_json,
+    ):
+        """Test transform method raises error when bool column not in bool_columns."""
+        args = copy.deepcopy(minimal_attribute_dict[self.transformer_name])
+        args["columns"] = ["a"]
+        args["aggregations"] = ["min", "max", "mean", "sum"]
+        args["bool_columns"] = None
+
+        df_dict = {"a": [True, False, False, True, True]}
+        df = dataframe_init_dispatch(df_dict, library)
+
+        transformer = uninitialized_transformers[self.transformer_name](**args)
+
+        if _check_if_skip_test(transformer, df, lazy):
+            return
+        transformer = _handle_from_json(transformer, from_json=from_json)
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "AggregateColumnsOverRowTransformer: invalid bool_columns; add "
+                "Boolean columns ['a']"
+            )
+        ):
+            transformer.transform(_convert_to_lazy(df, lazy))
 
 
 class TestOtherBaseBehaviour(
