@@ -12,7 +12,8 @@ def convert_string_columns_to_lowercase(columns: list[str]) -> list[nw.Expr]:
 
     Returns
     -------
-    list[nw.Expr]: expressions for transformation
+    list of nw.Expr
+        Expressions for transformation.
 
     """
     return [nw.col(col).str.to_lowercase() for col in columns]
@@ -26,7 +27,8 @@ def remove_characters_from_string_columns(
 
     Returns
     -------
-    list[nw.Expr]: expressions for transformation
+    list of nw.Expr
+        Expressions for transformation.
 
     """
     return [nw.col(col).str.replace_all(characters_formatted, "") for col in columns]
@@ -40,18 +42,17 @@ def indicate_if_string_columns_contain_reference(
 
     Parameters
     ----------
-    columns: list[str]
-        list of columns to search
-
-    reference: str
-            reference value to search for
-
-    reference_as_column: bool
-        whether to treat reference as a column or a literal
+    columns : list of str
+        List of columns to search.
+    reference : str
+        Reference value to search for.
+    reference_as_column : bool
+        Whether to treat reference as a column or a literal.
 
     Returns
     -------
-    list[nw.Expr]: expressions for transformation
+    list of nw.Expr
+        Expressions for transformation.
 
     """
     reference_for_expr = nw.col(reference) if reference_as_column else reference
@@ -68,11 +69,14 @@ def indicate_if_string_columns_contain_reference(
 def extract_string_components(
     columns: list[str], by: str, return_n_components: StrictlyPositiveInt
 ) -> list[nw.Expr]:
-    """Get expression for extracting components from a str columns, split by provided character.
+    """Get expression for extracting components from str columns.
+
+    Components are split by the provided character.
 
     Returns
     -------
-    list[nw.Expr]: expressions for transformation
+    list of nw.Expr
+        Expressions for transformation.
 
     """
     split_exprs = {col: nw.col(col).str.split(by=by) for col in columns}

@@ -12,7 +12,7 @@ Feature engineering on polars and pandas dataframes for machine learning!
 ![GitHub last commit](https://img.shields.io/github/last-commit/azukds/tubular)
 ![GitHub issues](https://img.shields.io/github/issues/azukds/tubular)
 ![Build](https://github.com/azukds/tubular/actions/workflows/python-package.yml/badge.svg?branch=main)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/azukds/tubular/HEAD?labpath=examples)
+[![codecov](https://codecov.io/gh/azukds/tubular/branch/main/graph/badge.svg)](https://codecov.io/gh/azukds/tubular)
 
 `tubular` implements pre-processing steps for tabular data commonly used in machine learning pipelines.
 
@@ -215,6 +215,6 @@ pytest
 
 ## Contribute
 
-`tubular` is under active development, we're super excited if you're interested in contributing! 
+`tubular` is under active development, we're super excited if you're interested in contributing!
 
 See the [CONTRIBUTING](https://github.com/azukds/tubular/blob/main/CONTRIBUTING.rst) file for the full details of our working practices.
