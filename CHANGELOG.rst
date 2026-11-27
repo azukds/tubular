@@ -31,8 +31,10 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
+- feat: setup codecov in CI and readme
 - feat: added blocking CI check for changelog edits on PRs
 - feat: added benchmark speed tests for the imputers file
+- chore: enabled E501 ruff rule on numeric.py and strings.py
 
 6.1.0 (23/11/2026)
 -------------------
@@ -41,7 +43,7 @@ Changed
 - chore: tidied up github actions workflow
 - feat: added github actions step to check that uv.lock is in sync with repo
 - feat: turned off pandas<3 version cap
-- chore: removed  test-aide from the env
+- chore: removed test-aide from the env
 
 6.0.0 (20/11/2026)
 -------------------

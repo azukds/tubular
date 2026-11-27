@@ -52,6 +52,13 @@ jobs:
       - name: Test with pytest
         run: uv run --no-sync pytest . --ignore=tests/benchmarks --cov=tubular/ --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc
 
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11' && matrix.resolution == 'highest'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   benchmark:
     # Gates PRs on speed: runs the PR's benchmarks against the base branch's
