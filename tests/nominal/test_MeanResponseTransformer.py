@@ -624,6 +624,13 @@ class TestFit(GenericFitTests, WeightColumnFitMixinTests, DummyWeightColumnMixin
 
         x.fit(_convert_to_lazy(df, lazy=lazy), df["a"])
 
+        expected_mappings = {
+            column: {
+                category: float(np.float32(value))
+                for category, value in mapping.items()
+            }
+            for column, mapping in expected_mappings.items()
+        }
         assert x.mappings == expected_mappings, (
             f"mappings not learnt as expected, expected {expected_mappings} but got {x.mappings}"
         )
@@ -1432,6 +1439,29 @@ class TestTransform(GenericTransformTests):
             assert actual_type == expected_type, (
                 f"{x.classname} should output columns with type determine by the return_type param, expected {expected_type} but got {actual_type}"
             )
+
+    @pytest.mark.parametrize("library", ["pandas", "polars"])
+    @pytest.mark.parametrize("return_type", ["Float32", "Float64"])
+    @pytest.mark.parametrize("from_json", [True, False])
+    def test_fitted_mapping_matches_transformed_values(
+        self, library, return_type, from_json
+    ):
+        """Fractional fitted encodings match the values emitted by transform."""
+        df = dataframe_init_dispatch(
+            dataframe_dict={"category": ["a", "a", "a", "b"], "y": [0, 0, 1, 1]},
+            library=library,
+        )
+        features = df[["category"]]
+        transformer = MeanResponseTransformer(
+            columns="category", return_type=return_type
+        ).fit(features, df["y"])
+        transformer = _handle_from_json(transformer, from_json)
+
+        encoded = nw.from_native(transformer.transform(features))["category"]
+        mapping = transformer.mappings["category"]
+
+        assert encoded.dtype == getattr(nw, return_type)
+        assert encoded.to_list() == [mapping["a"]] * 3 + [mapping["b"]]
 
     @pytest.mark.parametrize("lazy", [True, False])
     @pytest.mark.parametrize("from_json", [True, False])
