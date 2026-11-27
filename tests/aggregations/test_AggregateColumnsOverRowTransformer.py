@@ -250,7 +250,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             match=re.escape(
                 "AggregateColumnsOverRowTransformer: invalid bool_columns; remove "
                 f"non-Boolean or unselected columns {bool_columns}"
-            )
+            ),
         ):
             transformer.transform(_convert_to_lazy(df, lazy))
 
@@ -285,7 +285,7 @@ class TestAggregateColumnsOverRowTransformerTransform(
             match=re.escape(
                 "AggregateColumnsOverRowTransformer: invalid bool_columns; add "
                 "Boolean columns ['a']"
-            )
+            ),
         ):
             transformer.transform(_convert_to_lazy(df, lazy))
 

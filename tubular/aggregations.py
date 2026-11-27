@@ -628,7 +628,13 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         DataFrame
             Transformed DataFrame with aggregated columns.
 
-        Example:
+        Raises
+        ------
+        ValueError
+            If bool_columns contains non-bool columns or if any bool
+            columns aren't in bool_columns.
+
+        Examples
         --------
         ```pycon
         >>> import polars as pl
@@ -670,7 +676,9 @@ class AggregateColumnsOverRowTransformer(BaseAggregationTransformer):
         if missing:
             problems.append(f"add Boolean columns {sorted(missing)}")
         if incorrect:
-            problems.append(f"remove non-Boolean or unselected columns {sorted(incorrect)}")
+            problems.append(
+                f"remove non-Boolean or unselected columns {sorted(incorrect)}"
+            )
 
         if problems:
             msg = f"{self.classname()}: invalid bool_columns; " + "; ".join(problems)
