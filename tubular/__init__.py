@@ -28,7 +28,14 @@ from tubular.imputers import (
     NumberImputer,
     StringImputer,
 )
-from tubular.mapping import MappingTransformer
+from tubular.mapping import (
+    MapBooleanColumnsTransformer,
+    MapCategoricalColumnsTransformer,
+    MapFloatColumnsTransformer,
+    MapIntegerColumnsTransformer,
+    MappingTransformer,
+    MapStringColumnsTransformer,
+)
 from tubular.misc import (
     ColumnDtypeSetter,
     RenameColumnsTransformer,
@@ -62,6 +69,11 @@ __all__ = [
     "DifferenceTransformer",
     "GroupRareLevelsTransformer",
     "LowerCaseTransformer",
+    "MapBooleanColumnsTransformer",
+    "MapCategoricalColumnsTransformer",
+    "MapFloatColumnsTransformer",
+    "MapIntegerColumnsTransformer",
+    "MapStringColumnsTransformer",
     "MappingTransformer",
     "MeanImputer",
     "MeanResponseTransformer",
