@@ -32,7 +32,7 @@ def get_single_row_impute_df(request):
 
 def _fitted_transformer() -> ModeImputer:
     transformer = ModeImputer(columns=["a", "b"])
-    transformer.impute_values = {"a": 1, "b": 2}
+    transformer.impute_values_ = {"a": 1, "b": 2}
     return transformer
 
 
