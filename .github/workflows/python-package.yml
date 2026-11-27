@@ -63,7 +63,7 @@ jobs:
   benchmark:
     # Gates PRs on speed: runs the PR's benchmarks against the base branch's
     # code and then the PR's code, on the same runner in the same job, and
-    # fails if any benchmark's median slows down by more than the threshold.
+    # fails if any benchmark's min slows down by more than the threshold.
     if: github.event_name == 'pull_request'
     runs-on: "ubuntu-latest"
     timeout-minutes: 20
