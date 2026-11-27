@@ -59,11 +59,6 @@ ListOfMoreThanOneStrings = Annotated[
     Is[lambda list_arg: len(list_arg) > 1],
 ]
 
-ListOfThreeStrs = Annotated[
-    list[str],
-    Is[lambda list_arg: len(list_arg) == 3],  # noqa: PLR2004
-]
-
 Number = int | float
 
 PositiveNumber = Annotated[

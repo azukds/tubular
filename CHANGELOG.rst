@@ -35,6 +35,7 @@ Changed
 - feat: added blocking CI check for changelog edits on PRs
 - chore: enabled E501 ruff rule on numeric.py and strings.py
 - chore: deprecated DatetimeInfoExtractor
+- feat: allow bool columns in aggregation transformers
 
 6.1.0 (23/11/2026)
 -------------------
