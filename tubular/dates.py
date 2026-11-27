@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import narwhals as nw
 import numpy as np
 from beartype import beartype
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -1129,6 +1130,12 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 
 
+@deprecated(
+    """DatetimeInfoExtractor is deprecated and will be removed in a future release.
+    Use DatetimeComponentExtractor followed by MappingTransformer with
+    DEFAULT_MAPPINGS from tubular.functions.dates instead.
+    """,
+)
 @register
 class DatetimeInfoExtractor(BaseDatetimeTransformer):
     """Transformer to extract various features from datetime var.
