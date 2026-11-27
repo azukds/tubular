@@ -257,7 +257,8 @@ def create_aggregate_over_rows_test_df(library="pandas"):
     df_dict = {
         "a": [1, 2, 3, 4, 8],
         "b": [2, 3, 4, 5, 9],
-        "c": ["A", "B", "A", "B", "A"],
+        "c": [True, True, False, False, True],
+        "d": ["A", "B", "A", "B", "A"],
     }
 
     return u.dataframe_init_dispatch(dataframe_dict=df_dict, library=library)

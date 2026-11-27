@@ -1,3 +1,5 @@
+import datetime as dt
+
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 
@@ -48,7 +50,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
     @pytest.mark.parametrize(
         "bad_values",
         [
-            [True, False, None],
+            [dt.date(2020, 1, 1), dt.date(2020, 1, 2), dt.date(2020, 1, 2)],
             ["a", "b", "c"],
         ],
     )
@@ -64,9 +66,7 @@ class TestBaseAggregationTransformerTransform(GenericTransformTests):
     ):
         "test that errors are thrown at transform for non numeric columns"
 
-        df_dict = {
-            "a": bad_values,
-        }
+        df_dict = {"a": bad_values}
 
         test_df = dataframe_init_dispatch(dataframe_dict=df_dict, library=library)
 

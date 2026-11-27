@@ -27,14 +27,23 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-6.2.0 (unreleased)
+6.3.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: added type specific mapping transformers MapStringColumnsTransformer,
+MapIntegerColumnsTransformer, MapFloatColumnsTransformer, MapBooleanColumnsTransformer,
+MapCategoricalColumnsTransformer. MappingTransformer is retained for backwards compatibility
+
+6.2.0 (27/11/2026)
 -------------------
 Changed
 ^^^^^^^
 - feat: setup codecov in CI and readme
 - feat: added blocking CI check for changelog edits on PRs
 - chore: enabled E501 ruff rule on numeric.py and strings.py
-- feat: added type specific mapping transformers MapStringColumnsTransformer, MapIntegerColumnsTransformer, MapFloatColumnsTransformer, MapBooleanColumnsTransformer, MapCategoricalColumnsTransformer. MappingTransformer is retained for backwards compatibility
+- chore: deprecated DatetimeInfoExtractor
+- feat: allow bool columns in aggregation transformers
 
 6.1.0 (23/11/2026)
 -------------------
