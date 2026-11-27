@@ -73,7 +73,7 @@ jobs:
       # certainly get noisy failures
       # instead fail based on min, which will
       # be harder to trigger
-      BENCHMARK_THRESHOLD: "min:30%"
+      BENCHMARK_THRESHOLD: "min:5%"
       VENV_PYTHON: ${{ github.workspace }}/.venv/bin/python
       BENCH_STORAGE: file://${{ github.workspace }}/.benchmarks
 
