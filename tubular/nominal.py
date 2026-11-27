@@ -859,6 +859,7 @@ class MeanResponseTransformer(
         # of the fit process, so not including examples
 
         """
+        return_dtype = getattr(nw, self.return_type)
         exprs_dict = {
             encoded_column + "_mapped": (
                 (
@@ -872,10 +873,10 @@ class MeanResponseTransformer(
                         * nw.lit(self.prior)
                     )
                 )
-                / (nw.col("weight_sum") + nw.lit(self.prior)).cast(
-                    getattr(nw, self.return_type),
-                )
-            ).alias(encoded_column + "_mapped")
+                / (nw.col("weight_sum") + nw.lit(self.prior)).cast(return_dtype)
+            )
+            .cast(return_dtype)
+            .alias(encoded_column + "_mapped")
             for encoded_column in self.encoded_columns
         }
 

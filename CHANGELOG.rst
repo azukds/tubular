@@ -31,6 +31,7 @@ Each individual change should have a link to the pull request after the descript
 -------------------
 Changed
 ^^^^^^^
+- bug: match fitted mean response mappings to the configured output precision
 - feat: setup codecov in CI and readme
 - feat: added blocking CI check for changelog edits on PRs
 - chore: enabled E501 ruff rule on numeric.py and strings.py
