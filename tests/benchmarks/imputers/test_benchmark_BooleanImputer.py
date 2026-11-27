@@ -1,4 +1,4 @@
-"""Speed benchmarks for NumberImputer.
+"""Speed benchmarks for BooleanImputer.
 
 Run with: pytest tests/benchmarks --benchmark-only
 
@@ -30,11 +30,11 @@ def get_single_row_impute_df(request):
     return df.with_columns(nw.col("a").cast(nw.Boolean), nw.col("b").cast(nw.Boolean))
 
 
-def _fitted_transformer(df) -> BooleanImputer:
-    return BooleanImputer(impute_value=True, columns=["a", "b"]).fit(df)
+def _fitted_transformer() -> BooleanImputer:
+    return BooleanImputer(impute_value=True, columns=["a", "b"])
 
 
-def test_BooleanImputer_transform_single_row(benchmark, get_single_row_impute_df):
-    transformer = _fitted_transformer(get_single_row_impute_df)
+def test_transform_single_row(benchmark, get_single_row_impute_df):
+    transformer = _fitted_transformer()
     transform_exprs = transformer.get_transform_exprs()
     benchmark(transform_with_exprs, transform_exprs, get_single_row_impute_df)

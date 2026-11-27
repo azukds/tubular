@@ -1,4 +1,4 @@
-"""Speed benchmarks for NumberImputer.
+"""Speed benchmarks for ModeImputer.
 
 Run with: pytest tests/benchmarks --benchmark-only
 
@@ -12,7 +12,7 @@ import pytest
 
 from tests.benchmarks.utils import transform_with_exprs
 from tests.utils import dataframe_init_dispatch
-from tubular.imputers import NumberImputer
+from tubular.imputers import ModeImputer
 
 
 @pytest.fixture(scope="module", params=["pandas", "polars"])
@@ -30,11 +30,13 @@ def get_single_row_impute_df(request):
     return df.with_columns(nw.col("a").cast(nw.Float64), nw.col("b").cast(nw.Float64))
 
 
-def _fitted_transformer(df) -> NumberImputer:
-    return NumberImputer(impute_value=-1, columns=["a", "b"]).fit(df)
+def _fitted_transformer() -> ModeImputer:
+    transformer = ModeImputer(columns=["a", "b"])
+    transformer.impute_values = {"a": 1, "b": 2}
+    return transformer
 
 
-def test_NumberImputer_transform_single_row(benchmark, get_single_row_impute_df):
-    transformer = _fitted_transformer(get_single_row_impute_df)
+def test_transform_single_row(benchmark, get_single_row_impute_df):
+    transformer = _fitted_transformer()
     transform_exprs = transformer.get_transform_exprs()
     benchmark(transform_with_exprs, transform_exprs, get_single_row_impute_df)

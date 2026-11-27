@@ -30,11 +30,11 @@ def get_single_row_impute_df(request):
     return df.with_columns(nw.col("a").cast(nw.String), nw.col("b").cast(nw.String))
 
 
-def _fitted_transformer(df) -> StringImputer:
-    return StringImputer(impute_value="missing", columns=["a", "b"]).fit(df)
+def _fitted_transformer() -> StringImputer:
+    return StringImputer(impute_value="missing", columns=["a", "b"])
 
 
-def test_StringImputer_transform_single_row(benchmark, get_single_row_impute_df):
-    transformer = _fitted_transformer(get_single_row_impute_df)
+def test_transform_single_row(benchmark, get_single_row_impute_df):
+    transformer = _fitted_transformer()
     transform_exprs = transformer.get_transform_exprs()
     benchmark(transform_with_exprs, transform_exprs, get_single_row_impute_df)
