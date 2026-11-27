@@ -832,3 +832,11 @@ class TestOtherBaseBehaviour(
     @classmethod
     def setup_class(cls):
         cls.transformer_name = "DatetimeInfoExtractor"
+
+    def test_deprecation_warning(self):
+        """Test that instantiating DatetimeInfoExtractor emits a DeprecationWarning."""
+        with pytest.warns(
+            DeprecationWarning,
+            match="DatetimeComponentExtractor.*MappingTransformer",
+        ):
+            DatetimeInfoExtractor(columns=["a"])
