@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import narwhals as nw
 import pandas as pd
 import polars as pl
 from beartype import beartype
+from typing_extensions import deprecated
 
 from tubular._utils import (
     _convert_dataframe_to_narwhals,
@@ -28,10 +29,6 @@ from tubular.functions.mapping import (
     map_string_columns,
 )
 from tubular.types import PANDAS_NULLABLE_TYPES, DataFrame
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 # single source of truth for which input column types are handled by which
 # mapping function. Used by BaseMappingTransformMixin (dispatches across all
@@ -107,30 +104,6 @@ def _check_pandas_boolean_safety(
     if bad_types:
         msg = f"{classname}: For pandas, casting to boolean from non-nullable dtypes is unsafe, please use df.convert_dtypes to convert types of bad cols {bad_types}."
         raise TypeError(msg)
-
-
-def _get_mapping_exprs(
-    mapping_function: Callable[..., list[nw.Expr]],
-    cols: list[str],
-    mappings: dict[str, dict[Any, Any]],
-    mappings_from_null: dict[str, Any],
-    return_dtypes: dict[str, str],
-) -> list[nw.Expr]:
-    """Get mapping expressions for cols, using type specific mapping function.
-
-    Returns
-    -------
-    list[nw.Expr]: expressions for transformation
-
-    """
-    return mapping_function(
-        cols=cols,
-        mappings=_filter_column_dict(mappings, cols),
-        mappings_from_null=_filter_column_dict(mappings_from_null, cols),
-        return_dtypes=_filter_column_dict(return_dtypes, cols),
-        # warnings are not needed, as classes guard against bad types
-        verbose=False,
-    )
 
 
 @register
@@ -379,282 +352,6 @@ class BaseMappingTransformer(BaseTransformer):
 
 
 @register
-class BaseMappingTransformMixin(BaseTransformer):
-    """Mixin class to apply mappings to columns method.
-
-    Transformer uses the mappings attribute which should be a dict of dicts/mappings
-    for each required column.
-
-    Attributes
-    ----------
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    """
-
-    polars_compatible = True
-
-    lazyframe_compatible = True
-
-    FITS = False
-
-    jsonable = False
-
-    @beartype
-    def transform(
-        self,
-        X: DataFrame,
-        return_native_override: bool | None = None,
-    ) -> DataFrame:
-        """Apply mapping defined in the mappings dict to each column in the columns attribute.
-
-        Parameters
-        ----------
-        X : DataFrame
-            Data with nominal columns to transform.
-
-        return_native_override: Optional[bool]
-            option to override return_native attr in transformer, useful when calling parent
-            methods
-
-        Returns
-        -------
-        X : DataFrame
-            Transformed input X with levels mapped according to mappings dict.
-
-        Raises
-        ------
-        TypeError:
-            If columns to be mapped in X have unsupported type.
-
-        #  not currently including doctest for this, as is not intended to be used
-        #  independently (should be inherited as a mixin)
-
-        """
-        self.check_is_fitted(
-            ["mappings", "return_dtypes", "mappings_from_null", "is_fitted_"]
-        )
-
-        X = _convert_dataframe_to_narwhals(X)
-
-        return_native = self._process_return_native(return_native_override)
-
-        X = super().transform(X, return_native_override=False)
-
-        schema = X.collect_schema()
-
-        _check_pandas_boolean_safety(
-            X,
-            columns=self.columns,
-            return_dtypes=self.return_dtypes,
-            bool_input=any(
-                isinstance(schema[col], nw.Boolean) for col in self.mappings
-            ),
-            classname=self.classname(),
-        )
-
-        mapping_exprs = []
-
-        remaining_cols = self.columns
-
-        for column_types, mapping_function in MAPPING_TYPE_REGISTRY.values():
-            selected_cols = [
-                col for col in remaining_cols if isinstance(schema[col], column_types)
-            ]
-
-            mapping_exprs = [
-                *mapping_exprs,
-                *_get_mapping_exprs(
-                    mapping_function,
-                    cols=selected_cols,
-                    mappings=self.mappings,
-                    mappings_from_null=self.mappings_from_null,
-                    return_dtypes=self.return_dtypes,
-                ),
-            ]
-
-            remaining_cols = list(set(remaining_cols).difference(set(selected_cols)))
-
-        if len(remaining_cols) != 0:
-            bad_types = {col: schema[col] for col in remaining_cols}
-            msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {bad_types}"
-
-            raise (TypeError(msg))
-
-        X = (
-            X.with_columns(
-                *mapping_exprs,
-            )
-            if mapping_exprs
-            else X
-        )
-
-        return _return_narwhals_or_native_dataframe(X, return_native)
-
-
-@register
-class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
-    """Transformer to map values in columns to other values e.g. to merge two levels into one.
-
-    Note, the MappingTransformer does not require 'self-mappings' to be defined i.e. if you want
-    to map a value to itself, you can omit this value from the mappings rather than having to
-    map it to itself.
-
-    This transformer inherits from BaseMappingTransformMixin as well as the BaseMappingTransformer,
-    BaseMappingTransformer performs standard checks, while BasemappingTransformMixin handles the
-    actual logic.
-
-    Parameters
-    ----------
-    mappings : dict
-        Dictionary containing column mappings. Each value in mappings should be a dictionary
-        of key (column to apply mapping to) value (mapping dict for given columns) pairs. For
-        example the following dict {'a': {1: 2, 3: 4}, 'b': {'a': 1, 'b': 2}} would specify
-        a mapping for column a of 1->2, 3->4 and a mapping for column b of 'a'->1, b->2.
-
-    return_dtype: Optional[Dict[str, RETURN_DTYPES]]
-        Dictionary of col:dtype for returned columns
-
-    **kwargs
-        Arbitrary keyword arguments passed onto BaseMappingTransformer.init method.
-
-    Attributes
-    ----------
-    mappings : dict
-        Dictionary of mappings for each column individually. The dict passed to mappings in
-        init is set to the mappings attribute.
-
-    mappings_from_null: dict[str, Any]
-        dict storing what null values will be mapped to. Generally best to use an imputer,
-        but this functionality is useful for inverting pipelines.
-
-    return_dtypes: dict[str, RETURN_DTYPES]
-        Dictionary of col:dtype for returned columns
-
-    built_from_json: bool
-        indicates if transformer was reconstructed from json, which limits it's supported
-        functionality to .transform
-
-    polars_compatible : bool
-        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
-
-    jsonable: bool
-        class attribute, indicates if transformer supports to/from_json methods
-
-    FITS: bool
-        class attribute, indicates whether transform requires fit to be run first
-
-    lazyframe_compatible: bool
-        class attribute, indicates whether transformer works with lazyframes
-
-    Examples
-    --------
-    ```pycon
-    >>> transformer = MappingTransformer(
-    ...     mappings={"a": {"Y": 1, "N": 0}},
-    ...     return_dtypes={"a": "Int8"},
-    ... )
-    >>> transformer
-    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
-                       return_dtypes={'a': 'Int8'})
-
-    >>> # transformer can also be dumped to json and reinitialised
-    >>> json_dump = transformer.to_json()
-    >>> json_dump
-    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'N': 0, 'Y': 1}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
-
-    >>> MappingTransformer.from_json(json_dump)
-    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
-                       return_dtypes={'a': 'Int8'})
-
-    ```
-
-    """
-
-    polars_compatible = True
-
-    lazyframe_compatible = True
-
-    FITS = False
-
-    jsonable = True
-
-    @beartype
-    def transform(
-        self,
-        X: DataFrame,
-    ) -> DataFrame:
-        """Transform the input data X according to the mappings in the mappings attribute dict.
-
-        This method calls the BaseMappingTransformMixin.transform. Note, this transform method is
-        different to some of the transform methods in the nominal module, even though they also
-        use the BaseMappingTransformMixin.transform method. Here, if a value does not exist in
-        the mapping it is unchanged.
-
-        Parameters
-        ----------
-        X : DataFrame
-            Data with nominal columns to transform.
-
-        Returns
-        -------
-        X : DataFrame
-            Transformed input X with levels mapped according to mappings dict.
-
-        Examples
-        --------
-        ``pycon
-        >>> import polars as pl
-
-        >>> transformer = MappingTransformer(
-        ...   mappings={'a': {'Y': 1, 'N': 0}},
-        ...   return_dtypes={"a":"Int8"},
-        ...    )
-
-        >>> test_df=pl.DataFrame({'a': ["Y", "N"], 'b': [3,4]})
-
-        >>> transformer.transform(test_df)
-        shape: (2, 2)
-        ┌─────┬─────┐
-        │ a   ┆ b   │
-        │ --- ┆ --- │
-        │ i8  ┆ i64 │
-        ╞═════╪═════╡
-        │ 1   ┆ 3   │
-        │ 0   ┆ 4   │
-        └─────┴─────┘
-
-        ```
-
-        """
-        self.check_is_fitted("is_fitted_")
-        X = _convert_dataframe_to_narwhals(X)
-
-        X = BaseTransformer.transform(self, X, return_native_override=False)
-
-        X = BaseMappingTransformMixin.transform(
-            self,
-            X,
-            return_native_override=False,
-        )
-
-        return _return_narwhals_or_native_dataframe(X, self.return_native)
-
-
-@register
 class _BaseTypedMappingTransformer(BaseMappingTransformer):
     """Base class for mapping transformers which only handle a single input column type.
 
@@ -709,12 +406,16 @@ class _BaseTypedMappingTransformer(BaseMappingTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return _get_mapping_exprs(
-            MAPPING_TYPE_REGISTRY[self.column_type][1],
-            cols=self.columns,
-            mappings=self.mappings,
-            mappings_from_null=self.mappings_from_null,
-            return_dtypes=self.return_dtypes,
+        mapping_function = MAPPING_TYPE_REGISTRY[self.column_type][1]
+        return (
+            *mapping_function(
+                cols=self.columns,
+                mappings=self.mappings,
+                mappings_from_null=self.mappings_from_null,
+                return_dtypes=self.return_dtypes,
+                # warnings are not needed, as classes guard against bad types
+                verbose=False,
+            ),
         )
 
     @beartype
@@ -1188,3 +889,296 @@ class MapCategoricalColumnsTransformer(_BaseTypedMappingTransformer):
     """
 
     column_type = "categorical"
+
+
+# DEPRECATED CLASSES
+@register
+@deprecated(
+    """This mixin has been deprecated, and will be removed in a future version.
+    """,
+)
+class BaseMappingTransformMixin(BaseTransformer):
+    """Mixin class to apply mappings to columns method.
+
+    Transformer uses the mappings attribute which should be a dict of dicts/mappings
+    for each required column.
+
+    Attributes
+    ----------
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    FITS = False
+
+    jsonable = False
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+        return_native_override: bool | None = None,
+    ) -> DataFrame:
+        """Apply mapping defined in the mappings dict to each column in the columns attribute.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data with nominal columns to transform.
+
+        return_native_override: Optional[bool]
+            option to override return_native attr in transformer, useful when calling parent
+            methods
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with levels mapped according to mappings dict.
+
+        Raises
+        ------
+        TypeError:
+            If columns to be mapped in X have unsupported type.
+
+        #  not currently including doctest for this, as is not intended to be used
+        #  independently (should be inherited as a mixin)
+
+        """
+        self.check_is_fitted(
+            ["mappings", "return_dtypes", "mappings_from_null", "is_fitted_"]
+        )
+
+        X = _convert_dataframe_to_narwhals(X)
+
+        return_native = self._process_return_native(return_native_override)
+
+        X = super().transform(X, return_native_override=False)
+
+        schema = X.collect_schema()
+
+        _check_pandas_boolean_safety(
+            X,
+            columns=self.columns,
+            return_dtypes=self.return_dtypes,
+            bool_input=any(
+                isinstance(schema[col], nw.Boolean) for col in self.mappings
+            ),
+            classname=self.classname(),
+        )
+
+        mapping_exprs = []
+
+        remaining_cols = self.columns
+
+        for column_types, mapping_function in MAPPING_TYPE_REGISTRY.values():
+            selected_cols = [
+                col for col in remaining_cols if isinstance(schema[col], column_types)
+            ]
+
+            mapping_exprs = [
+                *mapping_exprs,
+                *mapping_function(
+                    cols=selected_cols,
+                    mappings=_filter_column_dict(self.mappings, selected_cols),
+                    mappings_from_null=_filter_column_dict(
+                        self.mappings_from_null, selected_cols
+                    ),
+                    return_dtypes=_filter_column_dict(
+                        self.return_dtypes, selected_cols
+                    ),
+                    # warnings are not needed, as classes guard against bad types
+                    verbose=False,
+                ),
+            ]
+
+            remaining_cols = list(set(remaining_cols).difference(set(selected_cols)))
+
+        if len(remaining_cols) != 0:
+            bad_types = {col: schema[col] for col in remaining_cols}
+            msg = f"{self.classname()}: The following columns have types which are not covered by the existing mapping logic {bad_types}"
+
+            raise (TypeError(msg))
+
+        X = (
+            X.with_columns(
+                *mapping_exprs,
+            )
+            if mapping_exprs
+            else X
+        )
+
+        return _return_narwhals_or_native_dataframe(X, return_native)
+
+
+@register
+@deprecated(
+    """This transformer has been deprecated and replaced with type specific transformer
+    classes, please use MapBooleanColumnsTransformer/MapCategoricalColumnsTransformer/
+    MapFloatColumnsTransformer/MapIntegerColumnsTransformer/MapStringColumnsTransformer
+    from this file instead.
+    """,
+)
+class MappingTransformer(BaseMappingTransformer, BaseMappingTransformMixin):
+    """Transformer to map values in columns to other values e.g. to merge two levels into one.
+
+    Note, the MappingTransformer does not require 'self-mappings' to be defined i.e. if you want
+    to map a value to itself, you can omit this value from the mappings rather than having to
+    map it to itself.
+
+    This transformer inherits from BaseMappingTransformMixin as well as the BaseMappingTransformer,
+    BaseMappingTransformer performs standard checks, while BasemappingTransformMixin handles the
+    actual logic.
+
+    Parameters
+    ----------
+    mappings : dict
+        Dictionary containing column mappings. Each value in mappings should be a dictionary
+        of key (column to apply mapping to) value (mapping dict for given columns) pairs. For
+        example the following dict {'a': {1: 2, 3: 4}, 'b': {'a': 1, 'b': 2}} would specify
+        a mapping for column a of 1->2, 3->4 and a mapping for column b of 'a'->1, b->2.
+
+    return_dtype: Optional[Dict[str, RETURN_DTYPES]]
+        Dictionary of col:dtype for returned columns
+
+    **kwargs
+        Arbitrary keyword arguments passed onto BaseMappingTransformer.init method.
+
+    Attributes
+    ----------
+    mappings : dict
+        Dictionary of mappings for each column individually. The dict passed to mappings in
+        init is set to the mappings attribute.
+
+    mappings_from_null: dict[str, Any]
+        dict storing what null values will be mapped to. Generally best to use an imputer,
+        but this functionality is useful for inverting pipelines.
+
+    return_dtypes: dict[str, RETURN_DTYPES]
+        Dictionary of col:dtype for returned columns
+
+    built_from_json: bool
+        indicates if transformer was reconstructed from json, which limits it's supported
+        functionality to .transform
+
+    polars_compatible : bool
+        class attribute, indicates whether transformer has been converted to polars/pandas agnostic narwhals framework
+
+    jsonable: bool
+        class attribute, indicates if transformer supports to/from_json methods
+
+    FITS: bool
+        class attribute, indicates whether transform requires fit to be run first
+
+    lazyframe_compatible: bool
+        class attribute, indicates whether transformer works with lazyframes
+
+    Examples
+    --------
+    ```pycon
+    >>> transformer = MappingTransformer(
+    ...     mappings={"a": {"Y": 1, "N": 0}},
+    ...     return_dtypes={"a": "Int8"},
+    ... )
+    >>> transformer
+    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                       return_dtypes={'a': 'Int8'})
+
+    >>> # transformer can also be dumped to json and reinitialised
+    >>> json_dump = transformer.to_json()
+    >>> json_dump
+    {'tubular_version': ..., 'classname': 'MappingTransformer', 'init': {'copy': False, 'verbose': False, 'return_native': True, 'mappings': {'a': {'N': 0, 'Y': 1}}, 'return_dtypes': {'a': 'Int8'}}, 'fit': {'is_fitted_': True}}
+
+    >>> MappingTransformer.from_json(json_dump)
+    MappingTransformer(mappings={'a': {'N': 0, 'Y': 1}},
+                       return_dtypes={'a': 'Int8'})
+
+    ```
+
+    """
+
+    polars_compatible = True
+
+    lazyframe_compatible = True
+
+    FITS = False
+
+    jsonable = True
+
+    @beartype
+    def transform(
+        self,
+        X: DataFrame,
+    ) -> DataFrame:
+        """Transform the input data X according to the mappings in the mappings attribute dict.
+
+        This method calls the BaseMappingTransformMixin.transform. Note, this transform method is
+        different to some of the transform methods in the nominal module, even though they also
+        use the BaseMappingTransformMixin.transform method. Here, if a value does not exist in
+        the mapping it is unchanged.
+
+        Parameters
+        ----------
+        X : DataFrame
+            Data with nominal columns to transform.
+
+        Returns
+        -------
+        X : DataFrame
+            Transformed input X with levels mapped according to mappings dict.
+
+        Examples
+        --------
+        ``pycon
+        >>> import polars as pl
+
+        >>> transformer = MappingTransformer(
+        ...   mappings={'a': {'Y': 1, 'N': 0}},
+        ...   return_dtypes={"a":"Int8"},
+        ...    )
+
+        >>> test_df=pl.DataFrame({'a': ["Y", "N"], 'b': [3,4]})
+
+        >>> transformer.transform(test_df)
+        shape: (2, 2)
+        ┌─────┬─────┐
+        │ a   ┆ b   │
+        │ --- ┆ --- │
+        │ i8  ┆ i64 │
+        ╞═════╪═════╡
+        │ 1   ┆ 3   │
+        │ 0   ┆ 4   │
+        └─────┴─────┘
+
+        ```
+
+        """
+        self.check_is_fitted("is_fitted_")
+        X = _convert_dataframe_to_narwhals(X)
+
+        X = BaseTransformer.transform(self, X, return_native_override=False)
+
+        X = BaseMappingTransformMixin.transform(
+            self,
+            X,
+            return_native_override=False,
+        )
+
+        return _return_narwhals_or_native_dataframe(X, self.return_native)
