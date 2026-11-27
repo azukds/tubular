@@ -17,6 +17,7 @@ from tubular.imputers import NullIndicator
 
 @pytest.fixture(scope="module", params=["pandas", "polars"])
 def get_single_row_impute_df(request):
+    "Setup single row dataframe covering main cases for transform."
 
     library = request.param
 
@@ -31,10 +32,19 @@ def get_single_row_impute_df(request):
 
 
 def _fitted_transformer() -> NullIndicator:
+    """Set up transformer instance ready to transform.
+
+    For ease/speed in pipeline, avoid fitting and directly
+    set any needed attrs.
+    """
     return NullIndicator(columns=["a", "b", "c"])
 
 
 def test_transform_single_row(benchmark, get_single_row_impute_df):
+    """Benchmark single row transform.
+
+    (using exprs, as this is recommended fast approach).
+    """
     transformer = _fitted_transformer()
     transform_exprs = transformer.get_transform_exprs()
     benchmark(transform_with_exprs, transform_exprs, get_single_row_impute_df)
