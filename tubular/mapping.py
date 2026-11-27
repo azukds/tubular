@@ -359,6 +359,9 @@ class _BaseTypedMappingTransformer(BaseMappingTransformer):
     are supported, and which function from tubular.functions.mapping builds the
     mapping expressions.
 
+    Once the deprecated MappingTransformer is removed from the repo, I think it would
+    make sense to condense this class into BaseMappingTransformer.
+
     Attributes
     ----------
     column_type: str
