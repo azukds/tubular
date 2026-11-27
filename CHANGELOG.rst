@@ -27,7 +27,13 @@ We use the tags:
 
 Each individual change should have a link to the pull request after the description of the change.
 
-6.2.0 (unreleased)
+6.3.0 (unreleased)
+-------------------
+Changed
+^^^^^^^
+- feat: added benchmark speed tests for the imputers file
+
+6.2.0 (27/11/2026)
 -------------------
 Changed
 ^^^^^^^

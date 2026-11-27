@@ -50,7 +50,7 @@ jobs:
           uv pip install . --resolution ${{ matrix.resolution }}
           uv pip install --group test
       - name: Test with pytest
-        run: uv run --no-sync pytest . --cov=tubular/ --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc
+        run: uv run --no-sync pytest . --ignore=tests/benchmarks --cov=tubular/ --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && matrix.resolution == 'highest'
@@ -59,6 +59,74 @@ jobs:
           files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  benchmark:
+    # Gates PRs on speed: runs the PR's benchmarks against the base branch's
+    # code and then the PR's code, on the same runner in the same job, and
+    # fails if any benchmark's min slows down by more than the threshold.
+    if: github.event_name == 'pull_request'
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 20
+    env:
+      # mean/med are quite influenced by noise
+      # when we are testing many transformers we will almost
+      # certainly get noisy failures
+      # instead fail based on min, which will
+      # be harder to trigger
+      BENCHMARK_THRESHOLD: "min:5%"
+      VENV_PYTHON: ${{ github.workspace }}/.venv/bin/python
+      BENCH_STORAGE: file://${{ github.workspace }}/.benchmarks
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Fetch base commit
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --depth=1 origin "$BASE_SHA"
+
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          version-file: pyproject.toml
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install .
+          uv pip install --group benchmark
+
+      - name: Benchmark base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # checkout main
+          git worktree add ../base "$BASE_SHA"
+          # copy latest benchmark tests over
+          cp -r tests/benchmarks ../base/tests/
+          cd ../base
+          # print versions for log
+          PYTHONPATH="$PWD" "$VENV_PYTHON" -c "import tubular; print(tubular.__file__)"
+          # run benchmarks on main and store
+          PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
+            --benchmark-storage="$BENCH_STORAGE" --benchmark-save=base \
+            -p no:cacheprovider
+
+      - name: Benchmark PR and compare to base
+        run: |
+          PYTHONPATH="$PWD" "$VENV_PYTHON" -m pytest tests/benchmarks --benchmark-only \
+            --benchmark-storage="$BENCH_STORAGE" \
+            --benchmark-compare=0001 \
+            --benchmark-compare-fail="$BENCHMARK_THRESHOLD" \
+            --benchmark-columns=min,median,rounds \
+            --benchmark-group-by=fullname \
+            --benchmark-sort=name \
+            -q
 
   feature_table:
     runs-on: "ubuntu-latest"
