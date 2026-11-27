@@ -65,7 +65,7 @@ jobs:
     # code and then the PR's code, on the same runner in the same job, and
     # fails if any benchmark's median slows down by more than the threshold.
     if: github.event_name == 'pull_request'
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     timeout-minutes: 20
     env:
       # mean/med are quite influenced by noise
