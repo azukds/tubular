@@ -34,6 +34,7 @@ Changed
 - feat: setup codecov in CI and readme
 - feat: added blocking CI check for changelog edits on PRs
 - chore: enabled E501 ruff rule on numeric.py and strings.py
+- chore: deprecated DatetimeInfoExtractor
 
 6.1.0 (23/11/2026)
 -------------------
