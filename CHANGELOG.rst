@@ -33,6 +33,7 @@ Changed
 ^^^^^^^
 - feat: added benchmark speed tests for the imputers file
 - feat: added benchmark speed tests for the aggregations file
+- feat: added benchmark speed tests for the capping file
 
 6.2.0 (27/11/2026)
 -------------------
