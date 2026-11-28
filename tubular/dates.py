@@ -637,12 +637,14 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return diff_two_dates(
-            columns=self.columns,
-            units=self.units,
-            new_column_name=self.new_column_name,
-            custom_days_divider=self.custom_days_divider,
-        )
+        return [
+            diff_two_dates(
+                columns=self.columns,
+                units=self.units,
+                new_column_name=self.new_column_name,
+                custom_days_divider=self.custom_days_divider,
+            )
+        ]
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -695,10 +697,10 @@ class DateDifferenceTransformer(BaseGenericDateTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        transform_expr = self.get_transform_exprs()
+        transform_exprs = self.get_transform_exprs()
 
         X = X.with_columns(
-            transform_expr,
+            *transform_exprs,
         )
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
@@ -1048,12 +1050,14 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return check_if_three_date_columns_are_sequential(
-            columns=self.columns,
-            lower_inclusive=self.lower_inclusive,
-            upper_inclusive=self.upper_inclusive,
-            new_column_name=self.new_column_name,
-        )
+        return [
+            check_if_three_date_columns_are_sequential(
+                columns=self.columns,
+                lower_inclusive=self.lower_inclusive,
+                upper_inclusive=self.upper_inclusive,
+                new_column_name=self.new_column_name,
+            )
+        ]
 
     @nw.narwhalify
     def transform(self, X: FrameT) -> FrameT:
@@ -1123,9 +1127,9 @@ class BetweenDatesTransformer(BaseGenericDateTransformer):
         """
         X = nw.from_native(super().transform(X))
 
-        transform_expr = self.get_transform_exprs()
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(transform_expr)
+        X = X.with_columns(*transform_exprs)
 
         return _return_narwhals_or_native_dataframe(X, return_native=self.return_native)
 

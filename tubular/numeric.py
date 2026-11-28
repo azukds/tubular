@@ -610,7 +610,7 @@ class DifferenceTransformer(BaseNumericTransformer):
             Transform expressions for class.
 
         """
-        return get_difference_of_two_columns(columns=self.columns)
+        return [get_difference_of_two_columns(columns=self.columns)]
 
     @beartype
     def transform(
@@ -655,9 +655,9 @@ class DifferenceTransformer(BaseNumericTransformer):
 
         X = super().transform(X, return_native_override=False)
 
-        transform_expr = self.get_transform_exprs()
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(transform_expr)
+        X = X.with_columns(*transform_exprs)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 
@@ -796,10 +796,12 @@ class RatioTransformer(BaseNumericTransformer):
             Transform expressions for class.
 
         """
-        return get_ratio_of_two_columns(
-            columns=self.columns,
-            return_dtype=self.return_dtype,
-        )
+        return [
+            get_ratio_of_two_columns(
+                columns=self.columns,
+                return_dtype=self.return_dtype,
+            )
+        ]
 
     @beartype
     def transform(
@@ -843,9 +845,9 @@ class RatioTransformer(BaseNumericTransformer):
         X = _convert_dataframe_to_narwhals(X)
         X = super().transform(X, return_native_override=False)
 
-        transform_expr = self.get_transform_exprs()
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(transform_expr)
+        X = X.with_columns(*transform_exprs)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
 

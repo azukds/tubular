@@ -376,10 +376,12 @@ class CompareTwoColumnsTransformer(BaseTransformer):
         list[nw.Expr]: transform expressions for class
 
         """
-        return compare_two_columns(
-            columns=self.columns,
-            condition=self.condition,
-        )
+        return [
+            compare_two_columns(
+                columns=self.columns,
+                condition=self.condition,
+            )
+        ]
 
     @beartype
     def transform(self, X: DataFrame) -> DataFrame:
@@ -438,8 +440,8 @@ class CompareTwoColumnsTransformer(BaseTransformer):
             )
             raise TypeError(message)
 
-        transform_expr = self.get_transform_exprs()
+        transform_exprs = self.get_transform_exprs()
 
-        X = X.with_columns(transform_expr)
+        X = X.with_columns(*transform_exprs)
 
         return _return_narwhals_or_native_dataframe(X, self.return_native)
