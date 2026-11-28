@@ -1,5 +1,6 @@
 # tests to apply to all columns str or list transformers
 import copy
+import inspect
 import re
 
 import joblib
@@ -1055,6 +1056,48 @@ class GenericTransformTests:
         )
 
         assert_frame_equal_dispatch(df, original_df)
+
+    @pytest.mark.parametrize("from_json", [True, False])
+    @pytest.mark.parametrize(
+        "minimal_dataframe_lookup",
+        ["pandas", "polars"],
+        indirect=True,
+    )
+    def test_get_transform_exprs_returns_list_of_exprs(
+        self,
+        initialized_transformers,
+        minimal_dataframe_lookup,
+        from_json,
+    ):
+        """Test that get_transform_exprs returns a list of narwhals expressions,
+        so that exprs from several transformers can be combined with
+        df.with_columns(*exprs)."""
+
+        df = minimal_dataframe_lookup[self.transformer_name]
+        x = initialized_transformers[self.transformer_name]
+
+        get_transform_exprs = getattr(x, "get_transform_exprs", None)
+
+        # skip transformers without a stateless get_transform_exprs method
+        if get_transform_exprs is None or any(
+            param.default is inspect.Parameter.empty
+            for param in inspect.signature(get_transform_exprs).parameters.values()
+        ):
+            return
+
+        if _check_if_skip_test(x, df, lazy=False, from_json=from_json):
+            return
+
+        x = x.fit(df, df["a"])
+
+        x = _handle_from_json(x, from_json)
+
+        transform_exprs = x.get_transform_exprs()
+
+        assert isinstance(transform_exprs, list), (
+            f"expected get_transform_exprs to return a list, got {type(transform_exprs)}"
+        )
+        assert all(isinstance(expr, nw.Expr) for expr in transform_exprs)
 
     @pytest.mark.parametrize("from_json", [True, False])
     @pytest.mark.parametrize(
